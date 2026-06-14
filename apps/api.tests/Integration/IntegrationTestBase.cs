@@ -8,7 +8,11 @@ using Microsoft.Extensions.DependencyInjection;
 using SplitRail.Api.Data;
 using SplitRail.Api.DTOs.Auth;
 using SplitRail.Api.DTOs.Invitations;
+using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.DTOs.Organizations;
+using SplitRail.Api.DTOs.Venues;
+using SplitRail.Api.Models;
+using SplitRail.Api.Models.Enums;
 using SplitRail.Api.Services;
 using Testcontainers.PostgreSql;
 using Xunit;
@@ -128,5 +132,110 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         var (_, rawToken) = await invitationService.SendInvitationAsync(
             new CreateInvitationRequest(email, roleId, venueIds));
         return rawToken;
+    }
+
+    protected async Task<(HttpClient Client, Guid VenueId, string AccessToken)> SetupFinancialAdminAsync(
+        string? email = null)
+    {
+        email ??= $"fin-{Guid.NewGuid():N}@example.com";
+        var (token, _, _) = await RegisterAndLoginAsync(email);
+        token = await CreateOrgAndGetTokenAsync(token, email, "SecurePass1");
+        var client = CreateAuthenticatedClient(token);
+
+        var venueResponse = await client.PostAsJsonAsync("/api/venues",
+            new CreateVenueRequest("Financial Test Venue"));
+        venueResponse.EnsureSuccessStatusCode();
+        var venue = await venueResponse.Content.ReadFromJsonAsync<VenueResponse>();
+
+        return (client, venue!.Id, token);
+    }
+
+    protected async Task<EventResponse> CreateEventViaApiAsync(
+        HttpClient client,
+        Guid venueId,
+        string title = "Test Show",
+        string eventDate = "2026-07-04",
+        string qboTagName = "EVENT-2026-07-04")
+    {
+        var response = await client.PostAsJsonAsync($"/api/venues/{venueId}/events",
+            new CreateEventRequest(title, eventDate, qboTagName));
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<EventResponse>())!;
+    }
+
+    protected async Task SetEventStatusDirectAsync(
+        string accessToken,
+        Guid eventId,
+        EventStatus status,
+        bool isBudgetLocked = true)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        var (userId, orgId) = ParseTokenClaims(accessToken);
+        tenantContext.SetContext(userId, orgId);
+
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var evt = await db.Events.FirstAsync(e => e.Id == eventId);
+        evt.Status = status;
+        evt.IsBudgetLocked = isBudgetLocked;
+        await db.SaveChangesAsync();
+    }
+
+    protected async Task<Guid> SeedLineItemDirectAsync(
+        string accessToken,
+        Guid eventId,
+        string blockType = "REVENUE",
+        decimal proformaValue = 10000m,
+        decimal settlementValue = 0m,
+        bool isArtistDeduction = false,
+        bool isHiddenFromPromoter = false)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        var (userId, orgId) = ParseTokenClaims(accessToken);
+        tenantContext.SetContext(userId, orgId);
+
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var lineItem = new FinancialLineItem
+        {
+            EventId = eventId,
+            BlockType = blockType,
+            RowLabel = "Seeded Row",
+            SortOrder = 0,
+            IsArtistDeduction = isArtistDeduction,
+            ProformaValue = proformaValue,
+            SettlementValue = settlementValue,
+            IsHiddenFromPromoter = isHiddenFromPromoter
+        };
+        db.FinancialLineItems.Add(lineItem);
+        await db.SaveChangesAsync();
+        return lineItem.Id;
+    }
+
+    protected async Task<(HttpClient Client, Guid UserId)> CreateScopedVenueUserAsync(
+        string adminAccessToken,
+        Guid venueId,
+        string email)
+    {
+        using var adminScope = Factory.Services.CreateScope();
+        var tenantContext = adminScope.ServiceProvider.GetRequiredService<ITenantContext>();
+        var (adminUserId, orgId) = ParseTokenClaims(adminAccessToken);
+        tenantContext.SetContext(adminUserId, orgId);
+
+        var db = adminScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var adminRole = await db.OrganizationRoles.FirstAsync(r =>
+            r.OrganizationId == orgId && r.RoleName == RoleNames.Admin);
+
+        var rawToken = await SendInvitationViaServiceAsync(
+            adminAccessToken, email, adminRole.Id, [venueId]);
+
+        var acceptResponse = await Client.PostAsJsonAsync("/api/invitations/accept",
+            new AcceptInvitationRequest(rawToken, "SecurePass1"));
+        acceptResponse.EnsureSuccessStatusCode();
+
+        var auth = await acceptResponse.Content.ReadFromJsonAsync<AcceptInvitationResponse>();
+        var userId = ParseTokenClaims(auth!.AccessToken).UserId;
+
+        return (CreateAuthenticatedClient(auth.AccessToken), userId);
     }
 }

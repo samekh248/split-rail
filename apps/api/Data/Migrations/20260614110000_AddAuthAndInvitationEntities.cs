@@ -1,11 +1,14 @@
 using System;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
+using SplitRail.Api.Data;
 
 #nullable disable
 
 namespace SplitRail.Api.Data.Migrations
 {
-    /// <inheritdoc />
+    [DbContext(typeof(ApplicationDbContext))]
+    [Migration("20260614110000_AddAuthAndInvitationEntities")]
     public partial class AddAuthAndInvitationEntities : Migration
     {
         /// <inheritdoc />

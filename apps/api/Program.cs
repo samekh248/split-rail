@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ using SplitRail.Api.Authorization;
 using SplitRail.Api.Configuration;
 using SplitRail.Api.Data;
 using SplitRail.Api.Middleware;
+using SplitRail.Api.Serialization;
 using SplitRail.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -78,8 +80,18 @@ builder.Services.AddScoped<UserService>();
 builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<VenueService>();
 builder.Services.AddScoped<InvitationService>();
+builder.Services.AddScoped<EventService>();
+builder.Services.AddScoped<LedgerService>();
+builder.Services.AddScoped<DealMathEngine>();
+builder.Services.AddScoped<CustomFormulaEvaluator>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(new DecimalStringJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new NullableDecimalStringJsonConverter());
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {

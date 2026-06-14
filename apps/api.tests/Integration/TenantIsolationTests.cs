@@ -66,7 +66,13 @@ public class TenantIsolationTests : IntegrationTestBase
         var rolesResponse = await clientB.GetAsync("/api/roles");
         var roles = await rolesResponse.Content.ReadFromJsonAsync<List<RoleResponse>>();
         roles.Should().HaveCount(4);
-        roles!.Should().OnlyContain(r => r.RoleName is RoleNames.Admin or RoleNames.VenueManager
-            or RoleNames.Promoter or RoleNames.ExternalBookkeeper);
+        var allowedRoleNames = new[]
+        {
+            RoleNames.Admin,
+            RoleNames.VenueManager,
+            RoleNames.Promoter,
+            RoleNames.ExternalBookkeeper
+        };
+        roles!.Should().OnlyContain(r => allowedRoleNames.Contains(r.RoleName));
     }
 }

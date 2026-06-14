@@ -1,5 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.Models;
+using SplitRail.Api.Models.Enums;
 using SplitRail.Api.Services;
 
 namespace SplitRail.Api.Data;
@@ -23,6 +25,9 @@ public class ApplicationDbContext : DbContext
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Invitation> Invitations => Set<Invitation>();
     public DbSet<InvitationVenueScope> InvitationVenueScopes => Set<InvitationVenueScope>();
+    public DbSet<Event> Events => Set<Event>();
+    public DbSet<FinancialLineItem> FinancialLineItems => Set<FinancialLineItem>();
+    public DbSet<EventArtist> EventArtists => Set<EventArtist>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,6 +42,9 @@ public class ApplicationDbContext : DbContext
         ConfigureRefreshToken(modelBuilder);
         ConfigureInvitation(modelBuilder);
         ConfigureInvitationVenueScope(modelBuilder);
+        ConfigureEvent(modelBuilder);
+        ConfigureFinancialLineItem(modelBuilder);
+        ConfigureEventArtist(modelBuilder);
 
         ApplyTenantQueryFilters(modelBuilder);
     }
@@ -65,6 +73,18 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<InvitationVenueScope>().HasQueryFilter(e =>
             _tenantContext.OrganizationId == null ||
             e.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<Event>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<FinancialLineItem>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<EventArtist>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
     }
 
     private static void ConfigureOrganization(ModelBuilder modelBuilder)
@@ -350,6 +370,201 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.Venue)
                 .WithMany()
                 .HasForeignKey(e => e.VenueId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureEvent(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Event>(entity =>
+        {
+            entity.ToTable("events");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.VenueId).HasColumnName("venue_id");
+
+            entity.Property(e => e.Title)
+                .HasColumnName("title")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.EventDate).HasColumnName("event_date");
+
+            entity.Property(e => e.Status)
+                .HasColumnName("status")
+                .HasMaxLength(20)
+                .HasConversion(
+                    v => EventStatusFormat.ToApiString(v),
+                    v => EventStatusFormat.FromApiString(v))
+                .HasDefaultValue(EventStatus.PreShow);
+
+            entity.Property(e => e.QboTagName)
+                .HasColumnName("qbo_tag_name")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.IsBudgetLocked)
+                .HasColumnName("is_budget_locked")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.SettledAt).HasColumnName("settled_at");
+            entity.Property(e => e.SettledByUserId).HasColumnName("settled_by_user_id");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasIndex(e => e.VenueId).HasDatabaseName("IX_events_venue_id");
+
+            entity.HasOne(e => e.Venue)
+                .WithMany()
+                .HasForeignKey(e => e.VenueId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.SettledByUser)
+                .WithMany()
+                .HasForeignKey(e => e.SettledByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    private static void ConfigureFinancialLineItem(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<FinancialLineItem>(entity =>
+        {
+            entity.ToTable("financial_line_items");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+
+            entity.Property(e => e.BlockType)
+                .HasColumnName("block_type")
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(e => e.RowLabel)
+                .HasColumnName("row_label")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.SortOrder)
+                .HasColumnName("sort_order")
+                .HasDefaultValue(0);
+
+            entity.Property(e => e.IsArtistDeduction)
+                .HasColumnName("is_artist_deduction")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.ProformaValue)
+                .HasColumnName("proforma_value")
+                .HasColumnType("numeric(12,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.SettlementValue)
+                .HasColumnName("settlement_value")
+                .HasColumnType("numeric(12,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.QboActualValue)
+                .HasColumnName("qbo_actual_value")
+                .HasColumnType("numeric(12,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.Notes).HasColumnName("notes");
+            entity.Property(e => e.IsHiddenFromPromoter)
+                .HasColumnName("is_hidden_from_promoter")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.Property(e => e.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            entity.HasIndex(e => e.EventId).HasDatabaseName("IX_financial_line_items_event_id");
+            entity.HasIndex(e => new { e.EventId, e.BlockType, e.SortOrder })
+                .HasDatabaseName("IX_financial_line_items_event_block_sort");
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.LineItems)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureEventArtist(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<EventArtist>(entity =>
+        {
+            entity.ToTable("event_artists");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+
+            entity.Property(e => e.ArtistName)
+                .HasColumnName("artist_name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.PerformanceOrder)
+                .HasColumnName("performance_order")
+                .HasDefaultValue(1);
+
+            entity.Property(e => e.DealType)
+                .HasColumnName("deal_type")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.CustomFormulaExpression)
+                .HasColumnName("custom_formula_expression");
+
+            entity.Property(e => e.BaseGuarantee)
+                .HasColumnName("base_guarantee")
+                .HasColumnType("numeric(12,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.BackendPercentage)
+                .HasColumnName("backend_percentage")
+                .HasColumnType("numeric(5,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.TaxWithholdingPercentage)
+                .HasColumnName("tax_withholding_percentage")
+                .HasColumnType("numeric(5,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.CalculatedNetPayout)
+                .HasColumnName("calculated_net_payout")
+                .HasColumnType("numeric(12,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            entity.HasIndex(e => e.EventId).HasDatabaseName("IX_event_artists_event_id");
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.Artists)
+                .HasForeignKey(e => e.EventId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

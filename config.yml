@@ -1,0 +1,3 @@
+specify:
+  branch_strategy: from_spec
+  branch_format: "feature/{{ spec.slug }}"

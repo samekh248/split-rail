@@ -43,3 +43,24 @@ public sealed class LastAdminException : ApiException
     public LastAdminException()
         : base("Cannot remove the last Admin.") { }
 }
+
+public sealed class LedgerStateException : ApiException
+{
+    public LedgerStateException(string message) : base(message) { }
+}
+
+public sealed class FormulaEvaluationException : ApiException
+{
+    public FormulaEvaluationException(string message, Guid? artistId = null) : base(message)
+    {
+        ArtistId = artistId;
+    }
+
+    public Guid? ArtistId { get; }
+}
+
+public sealed class ConcurrencyConflictException : ApiException
+{
+    public ConcurrencyConflictException(string message = "The record was modified by another user. Please refresh and retry.")
+        : base(message) { }
+}

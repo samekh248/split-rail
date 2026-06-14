@@ -1,0 +1,46 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SplitRail.Api.Authorization;
+using SplitRail.Api.DTOs.Ledger;
+using SplitRail.Api.Services;
+
+namespace SplitRail.Api.Controllers;
+
+[ApiController]
+[Route("api/venues/{venueId:guid}/events")]
+[Authorize]
+public class EventsController : ControllerBase
+{
+    private readonly EventService _eventService;
+
+    public EventsController(EventService eventService) => _eventService = eventService;
+
+    [HttpPost]
+    [RequirePermission(PermissionNames.ViewFinancials)]
+    public async Task<ActionResult<EventResponse>> Create(
+        Guid venueId,
+        CreateEventRequest request,
+        CancellationToken cancellationToken)
+    {
+        var result = await _eventService.CreateEventAsync(venueId, request, cancellationToken);
+        return Created(string.Empty, result);
+    }
+
+    [HttpGet]
+    [RequirePermission(PermissionNames.ViewFinancials)]
+    public async Task<ActionResult<IReadOnlyList<EventResponse>>> List(
+        Guid venueId,
+        CancellationToken cancellationToken) =>
+        Ok(await _eventService.ListEventsAsync(venueId, cancellationToken));
+
+    [HttpGet("{eventId:guid}")]
+    [RequirePermission(PermissionNames.ViewFinancials)]
+    public async Task<ActionResult<EventResponse>> Get(
+        Guid venueId,
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        var evt = await _eventService.GetEventAsync(venueId, eventId, cancellationToken);
+        return evt is null ? NotFound() : Ok(evt);
+    }
+}

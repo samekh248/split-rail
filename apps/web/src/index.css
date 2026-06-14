@@ -1,0 +1,156 @@
+:root {
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  line-height: 1.5;
+  color: #1a1a1a;
+  background: #f6f7f9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
+.app__header {
+  background: #1e293b;
+  color: #fff;
+  padding: 1rem 1.5rem;
+}
+
+.app__header h1 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.app__subtitle {
+  margin: 0.25rem 0 0;
+  opacity: 0.85;
+  font-size: 0.875rem;
+}
+
+.event-ledger-page {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.ledger-grid__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ledger-grid__meta {
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}
+
+.ledger-grid__summary {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+}
+
+.ledger-grid__variance-banner {
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.block-section {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.block-section__title {
+  margin: 0 0 0.75rem;
+}
+
+.ledger-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.ledger-table th,
+.ledger-table td {
+  border: 1px solid #e2e8f0;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.ledger-table th {
+  background: #f8fafc;
+}
+
+.ledger-input {
+  width: 100%;
+  min-width: 5rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+}
+
+.variance-cell--flagged {
+  background: #fef3c7;
+  color: #b45309;
+  font-weight: 600;
+}
+
+.artist-deal-panel,
+.ledger-grid__artists {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.formula-editor__tokens ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 0.5rem 0 0;
+}
+
+.formula-editor__tokens li {
+  background: #f1f5f9;
+  padding: 0.125rem 0.5rem;
+  border-radius: 4px;
+  font-family: ui-monospace, monospace;
+  font-size: 0.8125rem;
+}
+
+.formula-editor__error {
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 768px) {
+  .ledger-table {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .ledger-grid__summary {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}

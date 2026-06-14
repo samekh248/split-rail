@@ -37,7 +37,7 @@ public class RolesControllerTests : IntegrationTestBase
     {
         var (client, promoterRoleId) = await SetupAdminAsync();
         var response = await client.PatchAsJsonAsync($"/api/roles/{promoterRoleId}",
-            new UpdateRoleRequest(CanLockBudget: false));
+            new UpdateRoleRequest(null, CanLockBudget: false, null, null, null, null, null));
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var role = await response.Content.ReadFromJsonAsync<RoleResponse>();
         role!.CanLockBudget.Should().BeFalse();
@@ -48,7 +48,7 @@ public class RolesControllerTests : IntegrationTestBase
     {
         var (client, _) = await SetupAdminAsync();
         var response = await client.PatchAsJsonAsync($"/api/roles/{Guid.NewGuid()}",
-            new UpdateRoleRequest(CanLockBudget: false));
+            new UpdateRoleRequest(null, CanLockBudget: false, null, null, null, null, null));
         response.StatusCode.Should().Be(HttpStatusCode.NotFound);
     }
 }

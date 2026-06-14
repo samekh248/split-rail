@@ -1,0 +1,128 @@
+import { render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
+import { LedgerGrid } from '@/components/ledger/LedgerGrid';
+import type { LedgerGridResponse } from '@/types/generated-api';
+
+const mockLedger: LedgerGridResponse = {
+  eventId: 'evt-1',
+  venueId: 'ven-1',
+  title: 'Friday Headliner',
+  eventDate: '2026-07-04',
+  status: 'PRE_SHOW',
+  isBudgetLocked: false,
+  qboTagName: 'EVENT-2026-07-04',
+  editability: {
+    proforma: 'editable',
+    settlement: 'locked',
+    qboActuals: 'locked',
+  },
+  blocks: [
+    {
+      blockType: 'REVENUE',
+      rows: [
+        {
+          id: 'row-1',
+          rowLabel: 'GA Tickets',
+          sortOrder: 0,
+          isArtistDeduction: false,
+          proformaValue: '10000.00',
+          settlementValue: '0.00',
+          qboActualValue: '0.00',
+          variance: '0.00',
+          varianceFlagged: false,
+          notes: null,
+          isHiddenFromPromoter: false,
+          rowVersion: 'v1',
+        },
+      ],
+      blockTotals: { proforma: '10000.00', settlement: '0.00', qboActual: '0.00' },
+    },
+    {
+      blockType: 'EXPENSES',
+      rows: [],
+      blockTotals: {},
+    },
+    {
+      blockType: 'DEAL_MATH',
+      rows: [],
+      blockTotals: {},
+    },
+  ],
+  artists: [
+    {
+      id: 'artist-1',
+      artistName: 'The Headliner',
+      performanceOrder: 1,
+      dealType: 'guarantee',
+      customFormulaExpression: null,
+      baseGuarantee: '5000.00',
+      backendPercentage: '70.00',
+      taxWithholdingPercentage: '0.00',
+      calculatedNetPayout: '5000.00',
+      rowVersion: 'v1',
+    },
+  ],
+  summary: {
+    grossRevenue: '10000.00',
+    totalDeductions: '0.00',
+    netShowRevenue: '10000.00',
+  },
+};
+
+describe('LedgerGrid', () => {
+  it('renders all three block sections', () => {
+    render(<LedgerGrid ledger={mockLedger} />);
+
+    expect(screen.getByTestId('block-REVENUE')).toBeInTheDocument();
+    expect(screen.getByTestId('block-EXPENSES')).toBeInTheDocument();
+    expect(screen.getByTestId('block-DEAL_MATH')).toBeInTheDocument();
+  });
+
+  it('shows proforma as editable input in planning state', () => {
+    render(<LedgerGrid ledger={mockLedger} />);
+
+    expect(screen.getByTestId('proforma-row-1')).toBeInTheDocument();
+    expect(screen.queryByTestId('proforma-readonly-row-1')).not.toBeInTheDocument();
+  });
+
+  it('displays artist payout after recalc response', () => {
+    const updatedLedger: LedgerGridResponse = {
+      ...mockLedger,
+      artists: [
+        {
+          ...mockLedger.artists[0],
+          calculatedNetPayout: '6500.00',
+        },
+      ],
+    };
+
+    const { rerender } = render(<LedgerGrid ledger={mockLedger} />);
+    expect(screen.getByTestId('artist-payout-artist-1')).toHaveTextContent('$5,000.00');
+
+    rerender(<LedgerGrid ledger={updatedLedger} />);
+    expect(screen.getByTestId('artist-payout-artist-1')).toHaveTextContent('$6,500.00');
+  });
+
+  it('calls onProformaChange when proforma input blurs', async () => {
+    const user = userEvent.setup();
+    const onProformaChange = vi.fn();
+
+    render(
+      <LedgerGrid ledger={mockLedger} onProformaChange={onProformaChange} />,
+    );
+
+    const input = screen.getByTestId('proforma-row-1');
+    await user.clear(input);
+    await user.type(input, '12000');
+    await user.tab();
+
+    expect(onProformaChange).toHaveBeenCalledWith('row-1', '12000.00');
+  });
+
+  it('shows summary totals', () => {
+    render(<LedgerGrid ledger={mockLedger} />);
+    const summary = screen.getByTestId('ledger-summary');
+    expect(within(summary).getByText(/Gross: \$10,000.00/)).toBeInTheDocument();
+  });
+});
