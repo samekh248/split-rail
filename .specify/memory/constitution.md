@@ -1,50 +1,67 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# Accounting-First Venue Platform Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Core Mathematical Axioms
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+- Strictly prohibited from utilizing floating-point operations (`double`, `float`, or JavaScript `number`) for computing or evaluating monetary properties.
+- All monetary math operations inside the C# backend layer MUST map strictly to the base-10 native `decimal` system primitive.
+- All decimal arithmetic rounding calculations MUST explicitly declare `MidpointRounding.AwayFromZero` precision rules to match traditional professional ledger math patterns.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### II. Multi-Tenant Multi-Venue Isolation Boundary Mandates
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+- Every data persistence retrieval command, Entity Framework query hook, or raw SQL data command MUST explicitly check context-aware isolation parameters against the current user's authenticated `organization_id`.
+- Reject any prompt or attempt to write a query fetching data blocks without an explicit `organization_id` lookup constraint parameter.
+- Never write open, unscoped database inquiry operations.
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### III. Engineering Rigor and Quality Gates
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+- No component, route, or application service file is considered complete unless accompanied by an explicit automated verification block.
+- Backend additions must be verified via xUnit unit tests or xUnit WebApplicationFactory database integration loops using Testcontainers.
+- Frontend interface components must use Vitest + React Testing Library.
+- Multi-user workflows and tenant isolation validations require a Playwright E2E spec script tracking real login interception states.
+- Global coverage metrics MUST equal or exceed 80.0% to bypass the continuous integration build check blocks.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### IV. QuickBooks Online Integration and Synchronization Boundaries
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+- STRICTLY prohibited from generating any C# methods, endpoint routes, or utility functions that attempt to perform HTTP POST, PUT, or DELETE mutations against the Intuit QuickBooks Online API endpoints.
+- The application integration model is completely read-only. The Intuit request context must remain isolated to data parsing.
+- Synced data blocks committed to `financial_line_items.qbo_actual_value` must be treated as append-only. Never generate code that deletes, overrides, or alters historical ledger entries directly. Corrections must be handled exclusively through additional offset balancing entries.
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### V. Ledger State Machine and Immutability Guardrails
+
+- If a method, query, or data command alters a record inside `events`, `event_artists`, or `financial_line_items`, MUST explicitly prepend a state-validation conditional block.
+- If the target show status equals `event_status.SETTLED` or `event_status.RECONCILED`, the execution track MUST instantly throw an explicit, unswallowed `InvalidOperationException` or return an HTTP 400 Bad Request.
+- Never generate an entry path or update override routine that allows financial records to drift out of synchronization with the server-rendered `settlement_pdf_url` binary snapshot.
+
+## Contract and Serialization Governance
+
+### VI. Polyglot Contract and Model Serialization
+
+- STRICTLY prohibited from manually defining or hardcoding TypeScript interfaces, types, or object schemas inside the `/apps/web` directory that mirror API payloads or data models.
+- All frontend data contracts MUST be imported directly from the automatically compiled `/apps/web/src/types/generated-api.ts` spec directory.
+- If an API payload change is required, implement it inside the C# ASP.NET Core Data Transfer Object (DTO) model first, compile the project to regenerate the `swagger.json` metadata specification, and allow the spec-kit runner to cascade type updates down to the frontend.
+
+### VII. Database Persistence & Entity Framework Core Axioms
+
+- When writing queries to pull financial data via Entity Framework Core, strictly prohibited from utilizing lazy-loading models.
+- MUST explicitly declare eager-loading compilation strings utilizing the `.Include()` and `.ThenInclude()` LINQ methods to aggregate parent Organizations, child Venues, Events, and Line Items cleanly into a single, optimized SQL query loop.
+- All data-fetching transactions targeted for dashboard rendering or ledger grid display must append `.AsNoTracking()` to the execution context to bypass memory-allocation overhead and maximize query throughput.
+
+## Exception Governance and Logging Privacy
+
+### VIII. Financial Exception Governance
+
+- Strictly prohibited from implementing empty catch blocks or throwing generic base-type `System.Exception` errors within core financial processing paths.
+- All data pipeline failures, QBO token authentication drops, and custom formula parsing errors must be explicitly captured, wrap the contextual root failure, and throw a granular domain exception.
+- When generating structured application logs destined for GCP Cloud Logging, MUST sanitize output payloads. Strictly prohibited from writing cleartext user PII, QuickBooks access tokens, refresh tokens, client secrets, or raw cryptographic database connection handle strings to the logging stream.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- This constitution supersedes all other development practices and AI-generated suggestions.
+- All pull requests, code reviews, and AI-generated code must verify compliance with every section above.
+- Amendments require documentation of the change rationale, team approval, and a migration plan for existing code that may be affected.
+- The Spec-Driven Development (SDD) lifecycle (`specify → plan → tasks → implement → verify`) is the mandatory workflow for all feature development.
+- Architecture Guard and CI Guard extensions enforce compliance automatically during the development loop.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-06-13 | **Last Amended**: 2026-06-13
