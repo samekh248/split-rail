@@ -20,10 +20,10 @@
 
 **Purpose**: Add required NuGet packages, create test project scaffold, and establish shared infrastructure types.
 
-- [ ] T001 Add NuGet packages to apps/api/split-rail-api.csproj — Microsoft.AspNetCore.Authentication.JwtBearer (8.0.*), BCrypt.Net-Next (4.*), Swashbuckle.AspNetCore (6.*)
-- [ ] T002 [P] Create xUnit test project at apps/api.tests/split-rail-api.tests.csproj — reference split-rail-api, add xUnit, Microsoft.AspNetCore.Mvc.Testing, Testcontainers.PostgreSql, Microsoft.NET.Test.Sdk, FluentAssertions
-- [ ] T003 [P] Create domain exception hierarchy in apps/api/Exceptions/ — ApiException (base), AuthenticationException, AuthorizationException, ValidationException, ConflictException, NotFoundException, LastAdminException
-- [ ] T004 [P] Create JwtSettings configuration class in apps/api/Configuration/JwtSettings.cs — Secret, Issuer, Audience, AccessTokenExpirationMinutes (60), RefreshTokenExpirationDays (7)
+- [x] T001 Add NuGet packages to apps/api/split-rail-api.csproj — Microsoft.AspNetCore.Authentication.JwtBearer (8.0.*), BCrypt.Net-Next (4.*), Swashbuckle.AspNetCore (6.*)
+- [x] T002 [P] Create xUnit test project at apps/api.tests/split-rail-api.tests.csproj — reference split-rail-api, add xUnit, Microsoft.AspNetCore.Mvc.Testing, Testcontainers.PostgreSql, Microsoft.NET.Test.Sdk, FluentAssertions
+- [x] T003 [P] Create domain exception hierarchy in apps/api/Exceptions/ — ApiException (base), AuthenticationException, AuthorizationException, ValidationException, ConflictException, NotFoundException, LastAdminException
+- [x] T004 [P] Create JwtSettings configuration class in apps/api/Configuration/JwtSettings.cs — Secret, Issuer, Audience, AccessTokenExpirationMinutes (60), RefreshTokenExpirationDays (7)
 
 ---
 
@@ -33,15 +33,15 @@
 
 **CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 Create RefreshToken entity model in apps/api/Models/RefreshToken.cs — Id (UUID PK), UserId (FK), TokenHash (VARCHAR 64), ExpiresAt, IsRevoked, CreatedAt per data-model.md
-- [ ] T006 [P] Create Invitation entity model in apps/api/Models/Invitation.cs — Id (UUID PK), OrganizationId (FK), Email, RoleId (FK), TokenHash, Status (pending/accepted/expired), ExpiresAt, CreatedAt per data-model.md
-- [ ] T007 [P] Create InvitationVenueScope entity model in apps/api/Models/InvitationVenueScope.cs — InvitationId (PK FK), VenueId (PK FK) per data-model.md
-- [ ] T008 Update ApplicationDbContext in apps/api/Data/ApplicationDbContext.cs — add DbSets for RefreshToken, Invitation, InvitationVenueScope; add Fluent API configuration methods with indexes per data-model.md
-- [ ] T009 Generate EF Core migration for RefreshToken, Invitation, InvitationVenueScope entities — run `dotnet ef migrations add AddAuthAndInvitationEntities` in apps/api/
-- [ ] T010 Create ITenantContext interface and TenantContext scoped implementation in apps/api/Services/ITenantContext.cs and apps/api/Services/TenantContext.cs — OrganizationId (Guid?), UserId (Guid?), SetContext method
-- [ ] T011 [P] Create error response DTO and validation helper in apps/api/DTOs/ErrorResponse.cs — Type, Detail, Errors[] fields matching contract error format
-- [ ] T012 [P] Configure Swashbuckle OpenAPI generation in apps/api/Program.cs — AddSwaggerGen, UseSwagger, UseSwaggerUI
-- [ ] T013 [P] Create IntegrationTestBase class in apps/api.tests/Integration/IntegrationTestBase.cs — Testcontainers PostgreSQL lifecycle, WebApplicationFactory<Program> with test DB override, helper methods for creating authenticated HTTP clients
+- [x] T005 Create RefreshToken entity model in apps/api/Models/RefreshToken.cs — Id (UUID PK), UserId (FK), TokenHash (VARCHAR 64), ExpiresAt, IsRevoked, CreatedAt per data-model.md
+- [x] T006 [P] Create Invitation entity model in apps/api/Models/Invitation.cs — Id (UUID PK), OrganizationId (FK), Email, RoleId (FK), TokenHash, Status (pending/accepted/expired), ExpiresAt, CreatedAt per data-model.md
+- [x] T007 [P] Create InvitationVenueScope entity model in apps/api/Models/InvitationVenueScope.cs — InvitationId (PK FK), VenueId (PK FK) per data-model.md
+- [x] T008 Update ApplicationDbContext in apps/api/Data/ApplicationDbContext.cs — add DbSets for RefreshToken, Invitation, InvitationVenueScope; add Fluent API configuration methods with indexes per data-model.md
+- [x] T009 Generate EF Core migration for RefreshToken, Invitation, InvitationVenueScope entities — run `dotnet ef migrations add AddAuthAndInvitationEntities` in apps/api/
+- [x] T010 Create ITenantContext interface and TenantContext scoped implementation in apps/api/Services/ITenantContext.cs and apps/api/Services/TenantContext.cs — OrganizationId (Guid?), UserId (Guid?), SetContext method
+- [x] T011 [P] Create error response DTO and validation helper in apps/api/DTOs/ErrorResponse.cs — Type, Detail, Errors[] fields matching contract error format
+- [x] T012 [P] Configure Swashbuckle OpenAPI generation in apps/api/Program.cs — AddSwaggerGen, UseSwagger, UseSwaggerUI
+- [x] T013 [P] Create IntegrationTestBase class in apps/api.tests/Integration/IntegrationTestBase.cs — Testcontainers PostgreSQL lifecycle, WebApplicationFactory<Program> with test DB override, helper methods for creating authenticated HTTP clients
 
 **Checkpoint**: Foundation ready — user story implementation can now begin.
 
@@ -57,13 +57,13 @@
 
 ### Implementation for User Story 3
 
-- [ ] T014 [P] [US3] Create auth DTOs in apps/api/DTOs/Auth/ — RegisterRequest, LoginRequest, RefreshRequest, AuthResponse (accessToken, refreshToken, expiresIn), RegisterResponse (id, email, createdAt)
-- [ ] T015 [US3] Implement TokenService in apps/api/Services/TokenService.cs — GenerateAccessToken (JWT with sub, org_id, exp signed HMAC-SHA256), GenerateRefreshToken (32 random bytes, URL-safe base64), HashToken (SHA-256), ValidateRefreshToken (lookup by hash, check expiry/revocation)
-- [ ] T016 [US3] Implement AuthService in apps/api/Services/AuthService.cs — Register (email validation, password policy 8+ chars/upper/lower/digit, BCrypt hash, duplicate check), Login (credential verification, token pair issuance), Refresh (token rotation, old token revocation), Logout (revoke all user refresh tokens)
-- [ ] T017 [US3] Configure JWT authentication middleware and register auth services in apps/api/Program.cs — AddAuthentication, AddJwtBearer with TokenValidationParameters (issuer, audience, signing key, clock skew), register TokenService/AuthService as scoped, bind JwtSettings from configuration
-- [ ] T018 [US3] Create AuthController in apps/api/Controllers/AuthController.cs — POST /api/auth/register (201/400/409), POST /api/auth/login (200/401), POST /api/auth/refresh (200/401), POST /api/auth/logout [Authorize] (204/401) per contracts/auth.md
-- [ ] T019 [P] [US3] Write unit tests in apps/api.tests/Unit/AuthServiceTests.cs — password policy validation, BCrypt hash verification, duplicate email rejection, token generation
-- [ ] T020 [US3] Write integration tests in apps/api.tests/Integration/AuthControllerTests.cs — register success, register duplicate 409, register weak password 400, login success, login bad credentials 401, refresh success, refresh revoked token 401, logout revokes tokens, unauthenticated request 401
+- [x] T014 [P] [US3] Create auth DTOs in apps/api/DTOs/Auth/ — RegisterRequest, LoginRequest, RefreshRequest, AuthResponse (accessToken, refreshToken, expiresIn), RegisterResponse (id, email, createdAt)
+- [x] T015 [US3] Implement TokenService in apps/api/Services/TokenService.cs — GenerateAccessToken (JWT with sub, org_id, exp signed HMAC-SHA256), GenerateRefreshToken (32 random bytes, URL-safe base64), HashToken (SHA-256), ValidateRefreshToken (lookup by hash, check expiry/revocation)
+- [x] T016 [US3] Implement AuthService in apps/api/Services/AuthService.cs — Register (email validation, password policy 8+ chars/upper/lower/digit, BCrypt hash, duplicate check), Login (credential verification, token pair issuance), Refresh (token rotation, old token revocation), Logout (revoke all user refresh tokens)
+- [x] T017 [US3] Configure JWT authentication middleware and register auth services in apps/api/Program.cs — AddAuthentication, AddJwtBearer with TokenValidationParameters (issuer, audience, signing key, clock skew), register TokenService/AuthService as scoped, bind JwtSettings from configuration
+- [x] T018 [US3] Create AuthController in apps/api/Controllers/AuthController.cs — POST /api/auth/register (201/400/409), POST /api/auth/login (200/401), POST /api/auth/refresh (200/401), POST /api/auth/logout [Authorize] (204/401) per contracts/auth.md
+- [x] T019 [P] [US3] Write unit tests in apps/api.tests/Unit/AuthServiceTests.cs — password policy validation, BCrypt hash verification, duplicate email rejection, token generation
+- [x] T020 [US3] Write integration tests in apps/api.tests/Integration/AuthControllerTests.cs — register success, register duplicate 409, register weak password 400, login success, login bad credentials 401, refresh success, refresh revoked token 401, logout revokes tokens, unauthenticated request 401
 
 **Checkpoint**: Users can register, log in, refresh tokens, and log out. Protected endpoints reject unauthenticated requests.
 
@@ -77,13 +77,13 @@
 
 ### Implementation for User Story 1
 
-- [ ] T021 [P] [US1] Create organization DTOs in apps/api/DTOs/Organizations/ — CreateOrganizationRequest (name), OrganizationResponse (id, name, createdAt)
-- [ ] T022 [P] [US1] Create user DTOs in apps/api/DTOs/Users/ — UserProfileResponse (id, email, organization, role with permissions, venueScopes), UserListResponse (id, email, role, venueScopes)
-- [ ] T023 [US1] Implement OrganizationService in apps/api/Services/OrganizationService.cs — CreateOrganization (create org, seed 4 default roles per data-model.md default seed matrix, create UserOrganizationMapping with Admin role for creator, return org)
-- [ ] T024 [US1] Create OrganizationsController in apps/api/Controllers/OrganizationsController.cs — POST /api/organizations [Authorize] (201/400/401), GET /api/organizations/current [Authorize] (200/401/403) per contracts/organizations.md
-- [ ] T025 [US1] Implement UserService (initial) in apps/api/Services/UserService.cs — GetProfile (load user with org mapping, role, permissions, venue scopes using .Include().ThenInclude() and .AsNoTracking())
-- [ ] T026 [US1] Create UsersController (initial) in apps/api/Controllers/UsersController.cs — GET /api/users/me [Authorize] (200/401) per contracts/users.md
-- [ ] T027 [US1] Write integration tests in apps/api.tests/Integration/OrganizationsControllerTests.cs — create org success 201, verify 4 default roles with correct permission flags per matrix, verify creator assigned Admin role, get current org 200, create org without auth 401
+- [x] T021 [P] [US1] Create organization DTOs in apps/api/DTOs/Organizations/ — CreateOrganizationRequest (name), OrganizationResponse (id, name, createdAt)
+- [x] T022 [P] [US1] Create user DTOs in apps/api/DTOs/Users/ — UserProfileResponse (id, email, organization, role with permissions, venueScopes), UserListResponse (id, email, role, venueScopes)
+- [x] T023 [US1] Implement OrganizationService in apps/api/Services/OrganizationService.cs — CreateOrganization (create org, seed 4 default roles per data-model.md default seed matrix, create UserOrganizationMapping with Admin role for creator, return org)
+- [x] T024 [US1] Create OrganizationsController in apps/api/Controllers/OrganizationsController.cs — POST /api/organizations [Authorize] (201/400/401), GET /api/organizations/current [Authorize] (200/401/403) per contracts/organizations.md
+- [x] T025 [US1] Implement UserService (initial) in apps/api/Services/UserService.cs — GetProfile (load user with org mapping, role, permissions, venue scopes using .Include().ThenInclude() and .AsNoTracking())
+- [x] T026 [US1] Create UsersController (initial) in apps/api/Controllers/UsersController.cs — GET /api/users/me [Authorize] (200/401) per contracts/users.md
+- [x] T027 [US1] Write integration tests in apps/api.tests/Integration/OrganizationsControllerTests.cs — create org success 201, verify 4 default roles with correct permission flags per matrix, verify creator assigned Admin role, get current org 200, create org without auth 401
 
 **Checkpoint**: Full onboarding flow works — register, login, create org, verify admin status and default roles.
 
@@ -97,10 +97,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T028 [US2] Implement TenantContextMiddleware in apps/api/Middleware/TenantContextMiddleware.cs — extract org_id and user_id from JWT claims, populate ITenantContext on each request, reject requests with invalid/missing org_id for protected endpoints
-- [ ] T029 [US2] Add EF Core global query filters in apps/api/Data/ApplicationDbContext.cs — apply .HasQueryFilter() on Organization (Id == tenantContext.OrganizationId), Venue, OrganizationRole, UserOrganizationMapping, UserVenueScope (all filtered by OrganizationId); use .IgnoreQueryFilters() only for cross-tenant admin paths (e.g., registration/login)
-- [ ] T030 [US2] Register TenantContextMiddleware in request pipeline in apps/api/Program.cs — insert after UseAuthentication/UseAuthorization, before MapControllers
-- [ ] T031 [US2] Write integration tests in apps/api.tests/Integration/TenantIsolationTests.cs — create two orgs with users, Org A user sees only Org A data on list endpoints, Org A user gets 404 for Org B venue by direct ID, Org B user sees only Org B roles, no cross-tenant leakage on any tenant-scoped endpoint
+- [x] T028 [US2] Implement TenantContextMiddleware in apps/api/Middleware/TenantContextMiddleware.cs — extract org_id and user_id from JWT claims, populate ITenantContext on each request, reject requests with invalid/missing org_id for protected endpoints
+- [x] T029 [US2] Add EF Core global query filters in apps/api/Data/ApplicationDbContext.cs — apply .HasQueryFilter() on Organization (Id == tenantContext.OrganizationId), Venue, OrganizationRole, UserOrganizationMapping, UserVenueScope (all filtered by OrganizationId); use .IgnoreQueryFilters() only for cross-tenant admin paths (e.g., registration/login)
+- [x] T030 [US2] Register TenantContextMiddleware in request pipeline in apps/api/Program.cs — insert after UseAuthentication/UseAuthorization, before MapControllers
+- [x] T031 [US2] Write integration tests in apps/api.tests/Integration/TenantIsolationTests.cs — create two orgs with users, Org A user sees only Org A data on list endpoints, Org A user gets 404 for Org B venue by direct ID, Org B user sees only Org B roles, no cross-tenant leakage on any tenant-scoped endpoint
 
 **Checkpoint**: Zero cross-tenant data leakage — global query filters enforce isolation on every query.
 
@@ -114,13 +114,13 @@
 
 ### Implementation for User Story 4
 
-- [ ] T032 [P] [US4] Create role DTOs in apps/api/DTOs/Roles/ — RoleResponse (id, roleName, all permission booleans), UpdateRoleRequest (nullable booleans for each permission flag)
-- [ ] T033 [US4] Create RequirePermissionAttribute and PermissionAuthorizationHandler in apps/api/Authorization/RequirePermissionAttribute.cs and apps/api/Authorization/PermissionAuthorizationHandler.cs — attribute accepts permission name string, handler loads user's role from DB and checks the corresponding boolean flag
-- [ ] T034 [US4] Register authorization policies and PermissionAuthorizationHandler in DI in apps/api/Program.cs — AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>
-- [ ] T035 [US4] Implement RoleService in apps/api/Services/RoleService.cs — ListRoles (all org roles via .AsNoTracking()), UpdateRole (load by ID within org, apply partial permission flag updates, save)
-- [ ] T036 [US4] Create RolesController in apps/api/Controllers/RolesController.cs — GET /api/roles [Authorize] (200/401), PATCH /api/roles/{roleId} [Authorize, RequirePermission("can_manage_permissions")] (200/400/401/403/404) per contracts/roles.md
-- [ ] T037 [US4] Apply RequirePermission attributes to all protected controller actions across OrganizationsController, VenuesController (when created), UsersController, InvitationsController (when created)
-- [ ] T038 [US4] Write integration tests in apps/api.tests/Integration/RolesControllerTests.cs — list roles 200, Admin updates permission flag 200, Promoter denied PATCH 403, toggle permission propagates to all users with that role, non-existent role returns 404
+- [x] T032 [P] [US4] Create role DTOs in apps/api/DTOs/Roles/ — RoleResponse (id, roleName, all permission booleans), UpdateRoleRequest (nullable booleans for each permission flag)
+- [x] T033 [US4] Create RequirePermissionAttribute and PermissionAuthorizationHandler in apps/api/Authorization/RequirePermissionAttribute.cs and apps/api/Authorization/PermissionAuthorizationHandler.cs — attribute accepts permission name string, handler loads user's role from DB and checks the corresponding boolean flag
+- [x] T034 [US4] Register authorization policies and PermissionAuthorizationHandler in DI in apps/api/Program.cs — AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>
+- [x] T035 [US4] Implement RoleService in apps/api/Services/RoleService.cs — ListRoles (all org roles via .AsNoTracking()), UpdateRole (load by ID within org, apply partial permission flag updates, save)
+- [x] T036 [US4] Create RolesController in apps/api/Controllers/RolesController.cs — GET /api/roles [Authorize] (200/401), PATCH /api/roles/{roleId} [Authorize, RequirePermission("can_manage_permissions")] (200/400/401/403/404) per contracts/roles.md
+- [x] T037 [US4] Apply RequirePermission attributes to all protected controller actions across OrganizationsController, VenuesController (when created), UsersController, InvitationsController (when created)
+- [x] T038 [US4] Write integration tests in apps/api.tests/Integration/RolesControllerTests.cs — list roles 200, Admin updates permission flag 200, Promoter denied PATCH 403, toggle permission propagates to all users with that role, non-existent role returns 404
 
 **Checkpoint**: RBAC enforcement active — each role can only perform actions matching its permission flags.
 
@@ -134,15 +134,15 @@
 
 ### Implementation for User Story 5
 
-- [ ] T039 [P] [US5] Create venue DTOs in apps/api/DTOs/Venues/ — CreateVenueRequest (name), VenueResponse (id, name, organizationId, createdAt)
-- [ ] T040 [P] [US5] Create user management DTOs in apps/api/DTOs/Users/ — ChangeRoleRequest (roleId), UpdateVenueScopesRequest (venueIds[]), ChangeRoleResponse (userId, roleId, roleName), UpdateVenueScopesResponse (userId, venueScopes[])
-- [ ] T041 [US5] Implement VenueService in apps/api/Services/VenueService.cs — ListAccessibleVenues (apply venue scope filter: return all if user has no scope rows, else return only scoped venues; use .AsNoTracking()), CreateVenue, GetVenueById (scope-aware, return null if not accessible), DeleteVenue (cascade handled by DB FK, confirm org ownership)
-- [ ] T042 [US5] Create VenuesController in apps/api/Controllers/VenuesController.cs — GET /api/venues [Authorize] (200/401), POST /api/venues [Authorize, RequirePermission("can_manage_permissions")] (201/400/401/403), GET /api/venues/{venueId} [Authorize] (200/401/404), DELETE /api/venues/{venueId} [Authorize, RequirePermission("can_manage_permissions")] (204/401/403/404) per contracts/venues.md
-- [ ] T043 [US5] Extend UserService in apps/api/Services/UserService.cs — ListOrgUsers (with role and scopes via .Include().ThenInclude(), .AsNoTracking()), ChangeUserRole (validate role exists in org, last-admin guard), UpdateVenueScopes (validate venues exist in org, replace scope rows), RemoveUserFromOrg (last-admin guard, delete mapping and scopes)
-- [ ] T044 [US5] Implement last-admin protection guard as private method in UserService — count Admin-role mappings in org, throw LastAdminException if operation would reduce count to zero (FR-013)
-- [ ] T045 [US5] Extend UsersController in apps/api/Controllers/UsersController.cs — GET /api/users [Authorize] (200/401), PATCH /api/users/{userId}/role [Authorize, RequirePermission("can_manage_permissions")] (200/400/401/403/404), PUT /api/users/{userId}/venue-scopes [Authorize, RequirePermission("can_manage_permissions")] (200/400/401/403/404), DELETE /api/users/{userId} [Authorize, RequirePermission("can_manage_permissions")] (204/400/401/403/404) per contracts/users.md
-- [ ] T046 [US5] Write integration tests in apps/api.tests/Integration/VenuesControllerTests.cs — create venue 201, list venues (unscoped sees all, scoped sees only assigned), get venue by ID (scope-aware 404), delete venue 204 with scope cleanup, non-admin create denied 403
-- [ ] T047 [US5] Write integration tests in apps/api.tests/Integration/UsersControllerTests.cs — list org users 200, change role 200, change last admin role 400 (LastAdminException), update venue scopes 200, remove user 204, remove last admin 400, non-admin management actions 403
+- [x] T039 [P] [US5] Create venue DTOs in apps/api/DTOs/Venues/ — CreateVenueRequest (name), VenueResponse (id, name, organizationId, createdAt)
+- [x] T040 [P] [US5] Create user management DTOs in apps/api/DTOs/Users/ — ChangeRoleRequest (roleId), UpdateVenueScopesRequest (venueIds[]), ChangeRoleResponse (userId, roleId, roleName), UpdateVenueScopesResponse (userId, venueScopes[])
+- [x] T041 [US5] Implement VenueService in apps/api/Services/VenueService.cs — ListAccessibleVenues (apply venue scope filter: return all if user has no scope rows, else return only scoped venues; use .AsNoTracking()), CreateVenue, GetVenueById (scope-aware, return null if not accessible), DeleteVenue (cascade handled by DB FK, confirm org ownership)
+- [x] T042 [US5] Create VenuesController in apps/api/Controllers/VenuesController.cs — GET /api/venues [Authorize] (200/401), POST /api/venues [Authorize, RequirePermission("can_manage_permissions")] (201/400/401/403), GET /api/venues/{venueId} [Authorize] (200/401/404), DELETE /api/venues/{venueId} [Authorize, RequirePermission("can_manage_permissions")] (204/401/403/404) per contracts/venues.md
+- [x] T043 [US5] Extend UserService in apps/api/Services/UserService.cs — ListOrgUsers (with role and scopes via .Include().ThenInclude(), .AsNoTracking()), ChangeUserRole (validate role exists in org, last-admin guard), UpdateVenueScopes (validate venues exist in org, replace scope rows), RemoveUserFromOrg (last-admin guard, delete mapping and scopes)
+- [x] T044 [US5] Implement last-admin protection guard as private method in UserService — count Admin-role mappings in org, throw LastAdminException if operation would reduce count to zero (FR-013)
+- [x] T045 [US5] Extend UsersController in apps/api/Controllers/UsersController.cs — GET /api/users [Authorize] (200/401), PATCH /api/users/{userId}/role [Authorize, RequirePermission("can_manage_permissions")] (200/400/401/403/404), PUT /api/users/{userId}/venue-scopes [Authorize, RequirePermission("can_manage_permissions")] (200/400/401/403/404), DELETE /api/users/{userId} [Authorize, RequirePermission("can_manage_permissions")] (204/400/401/403/404) per contracts/users.md
+- [x] T046 [US5] Write integration tests in apps/api.tests/Integration/VenuesControllerTests.cs — create venue 201, list venues (unscoped sees all, scoped sees only assigned), get venue by ID (scope-aware 404), delete venue 204 with scope cleanup, non-admin create denied 403
+- [x] T047 [US5] Write integration tests in apps/api.tests/Integration/UsersControllerTests.cs — list org users 200, change role 200, change last admin role 400 (LastAdminException), update venue scopes 200, remove user 204, remove last admin 400, non-admin management actions 403
 
 **Checkpoint**: Full venue management with scoped access, user role/scope management, and last-admin protection.
 
@@ -156,10 +156,10 @@
 
 ### Implementation for User Story 6
 
-- [ ] T048 [P] [US6] Create invitation DTOs in apps/api/DTOs/Invitations/ — CreateInvitationRequest (email, roleId, venueIds[]), InvitationResponse (id, email, roleName, status, expiresAt, createdAt), AcceptInvitationRequest (token, password), AcceptInvitationResponse (accessToken, refreshToken, expiresIn, organizationId)
-- [ ] T049 [US6] Implement InvitationService in apps/api/Services/InvitationService.cs — SendInvitation (generate 32-byte random token, SHA-256 hash, store invitation + venue scopes, 7-day expiry, check not already a member), AcceptInvitation (validate token hash, check not expired, create account if needed with BCrypt, map user to org with role, apply venue scopes, mark accepted, issue tokens), ResendInvitation (validate not accepted, generate new token, reset expiry), ListInvitations (.AsNoTracking()), CancelInvitation (validate not accepted, delete)
-- [ ] T050 [US6] Create InvitationsController in apps/api/Controllers/InvitationsController.cs — POST /api/invitations [Authorize, RequirePermission("can_manage_permissions")] (201/400/401/403/409), GET /api/invitations [Authorize, RequirePermission("can_manage_permissions")] (200/401/403), POST /api/invitations/{id}/resend [Authorize, RequirePermission("can_manage_permissions")] (200/400/401/403/404), POST /api/invitations/accept [AllowAnonymous] (200/400/404/409), DELETE /api/invitations/{id} [Authorize, RequirePermission("can_manage_permissions")] (204/400/401/403/404) per contracts/invitations.md
-- [ ] T051 [US6] Write integration tests in apps/api.tests/Integration/InvitationsControllerTests.cs — send invitation 201, accept invitation (new user) 200 with correct role/scopes, accept invitation (existing user) 200, list invitations 200, resend expired invitation 200, cancel pending invitation 204, non-admin send denied 403, expired token returns 404, already-member returns 409, accept sets accepted status
+- [x] T048 [P] [US6] Create invitation DTOs in apps/api/DTOs/Invitations/ — CreateInvitationRequest (email, roleId, venueIds[]), InvitationResponse (id, email, roleName, status, expiresAt, createdAt), AcceptInvitationRequest (token, password), AcceptInvitationResponse (accessToken, refreshToken, expiresIn, organizationId)
+- [x] T049 [US6] Implement InvitationService in apps/api/Services/InvitationService.cs — SendInvitation (generate 32-byte random token, SHA-256 hash, store invitation + venue scopes, 7-day expiry, check not already a member), AcceptInvitation (validate token hash, check not expired, create account if needed with BCrypt, map user to org with role, apply venue scopes, mark accepted, issue tokens), ResendInvitation (validate not accepted, generate new token, reset expiry), ListInvitations (.AsNoTracking()), CancelInvitation (validate not accepted, delete)
+- [x] T050 [US6] Create InvitationsController in apps/api/Controllers/InvitationsController.cs — POST /api/invitations [Authorize, RequirePermission("can_manage_permissions")] (201/400/401/403/409), GET /api/invitations [Authorize, RequirePermission("can_manage_permissions")] (200/401/403), POST /api/invitations/{id}/resend [Authorize, RequirePermission("can_manage_permissions")] (200/400/401/403/404), POST /api/invitations/accept [AllowAnonymous] (200/400/404/409), DELETE /api/invitations/{id} [Authorize, RequirePermission("can_manage_permissions")] (204/400/401/403/404) per contracts/invitations.md
+- [x] T051 [US6] Write integration tests in apps/api.tests/Integration/InvitationsControllerTests.cs — send invitation 201, accept invitation (new user) 200 with correct role/scopes, accept invitation (existing user) 200, list invitations 200, resend expired invitation 200, cancel pending invitation 204, non-admin send denied 403, expired token returns 404, already-member returns 409, accept sets accepted status
 
 **Checkpoint**: Full team collaboration flow — invite, accept, role assignment, venue scoping on acceptance.
 
@@ -173,11 +173,11 @@
 
 ### Implementation for User Story 7
 
-- [ ] T052 [US7] Extend ITenantContext with ActiveVenueId property in apps/api/Services/ITenantContext.cs
-- [ ] T053 [US7] Create VenueContextMiddleware in apps/api/Middleware/VenueContextMiddleware.cs — read X-Active-Venue-Id header, validate venue exists in user's org and is within user's venue scope, populate ITenantContext.ActiveVenueId, reject if unauthorized venue
-- [ ] T054 [US7] Register VenueContextMiddleware in pipeline after TenantContextMiddleware in apps/api/Program.cs
-- [ ] T055 [US7] Update VenueService.ListAccessibleVenues to filter by ActiveVenueId when set in apps/api/Services/VenueService.cs
-- [ ] T056 [US7] Write integration tests in apps/api.tests/Integration/VenueContextSwitchingTests.cs — set active venue header returns filtered data, scoped user sets authorized venue succeeds, scoped user sets unauthorized venue denied, no header returns all accessible venues, context switch shows correct venue data
+- [x] T052 [US7] Extend ITenantContext with ActiveVenueId property in apps/api/Services/ITenantContext.cs
+- [x] T053 [US7] Create VenueContextMiddleware in apps/api/Middleware/VenueContextMiddleware.cs — read X-Active-Venue-Id header, validate venue exists in user's org and is within user's venue scope, populate ITenantContext.ActiveVenueId, reject if unauthorized venue
+- [x] T054 [US7] Register VenueContextMiddleware in pipeline after TenantContextMiddleware in apps/api/Program.cs
+- [x] T055 [US7] Update VenueService.ListAccessibleVenues to filter by ActiveVenueId when set in apps/api/Services/VenueService.cs
+- [x] T056 [US7] Write integration tests in apps/api.tests/Integration/VenueContextSwitchingTests.cs — set active venue header returns filtered data, scoped user sets authorized venue succeeds, scoped user sets unauthorized venue denied, no header returns all accessible venues, context switch shows correct venue data
 
 **Checkpoint**: Venue context switching operational via API header.
 
@@ -187,12 +187,12 @@
 
 **Purpose**: Global exception handling, structured logging, OpenAPI validation, and coverage gate.
 
-- [ ] T057 [P] Create global ExceptionHandlerMiddleware in apps/api/Middleware/ExceptionHandlerMiddleware.cs — catch domain exceptions and map to HTTP status codes (AuthenticationException→401, AuthorizationException→403, ValidationException/LastAdminException→400, NotFoundException→404, ConflictException→409), return ErrorResponse DTO, sanitize PII from log output per FR-015 and Constitution VIII
-- [ ] T058 [P] Register ExceptionHandlerMiddleware at top of pipeline in apps/api/Program.cs
-- [ ] T059 [P] Add structured logging with ILogger across all services — log auth events, org creation, invitation lifecycle, permission changes; never log tokens, passwords, or PII per Constitution VIII
-- [ ] T060 Verify Swashbuckle generates complete swagger.json covering all endpoints — run `dotnet build` and check /swagger/v1/swagger.json
-- [ ] T061 Run full test suite and verify ≥80% line/branch coverage — `dotnet test --collect:"XPlat Code Coverage"` per SC-008
-- [ ] T062 Run quickstart.md validation scenarios end-to-end against running API
+- [x] T057 [P] Create global ExceptionHandlerMiddleware in apps/api/Middleware/ExceptionHandlerMiddleware.cs — catch domain exceptions and map to HTTP status codes (AuthenticationException→401, AuthorizationException→403, ValidationException/LastAdminException→400, NotFoundException→404, ConflictException→409), return ErrorResponse DTO, sanitize PII from log output per FR-015 and Constitution VIII
+- [x] T058 [P] Register ExceptionHandlerMiddleware at top of pipeline in apps/api/Program.cs
+- [x] T059 [P] Add structured logging with ILogger across all services — log auth events, org creation, invitation lifecycle, permission changes; never log tokens, passwords, or PII per Constitution VIII
+- [x] T060 Verify Swashbuckle generates complete swagger.json covering all endpoints — run `dotnet build` and check /swagger/v1/swagger.json
+- [x] T061 Run full test suite and verify ≥80% line/branch coverage — `dotnet test --collect:"XPlat Code Coverage"` per SC-008
+- [x] T062 Run quickstart.md validation scenarios end-to-end against running API
 
 ---
 

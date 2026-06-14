@@ -1,0 +1,11 @@
+**/.git
+**/.env
+**/.env.*
+**/bin
+**/obj
+**/*.user
+**/*.suo
+**/coverage
+**/.vs
+**/.vscode
+**/.idea

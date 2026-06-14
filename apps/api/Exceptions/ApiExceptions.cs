@@ -1,0 +1,45 @@
+namespace SplitRail.Api.Exceptions;
+
+public abstract class ApiException : Exception
+{
+    protected ApiException(string message) : base(message) { }
+}
+
+public sealed class AuthenticationException : ApiException
+{
+    public AuthenticationException(string message = "Authentication failed.") : base(message) { }
+}
+
+public sealed class AuthorizationException : ApiException
+{
+    public AuthorizationException(string message = "Access denied.") : base(message) { }
+}
+
+public sealed class ValidationException : ApiException
+{
+    public ValidationException(string message) : base(message) { }
+
+    public ValidationException(IEnumerable<string> errors)
+        : base(string.Join("; ", errors))
+    {
+        Errors = errors.ToList();
+    }
+
+    public IReadOnlyList<string> Errors { get; } = [];
+}
+
+public sealed class ConflictException : ApiException
+{
+    public ConflictException(string message) : base(message) { }
+}
+
+public sealed class NotFoundException : ApiException
+{
+    public NotFoundException(string message = "Resource not found.") : base(message) { }
+}
+
+public sealed class LastAdminException : ApiException
+{
+    public LastAdminException()
+        : base("Cannot remove the last Admin.") { }
+}

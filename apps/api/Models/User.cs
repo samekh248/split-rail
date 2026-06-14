@@ -9,4 +9,5 @@ public class User
 
     public ICollection<UserOrganizationMapping> OrganizationMappings { get; set; } = [];
     public ICollection<UserVenueScope> VenueScopes { get; set; } = [];
+    public ICollection<RefreshToken> RefreshTokens { get; set; } = [];
 }

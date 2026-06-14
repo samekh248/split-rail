@@ -9,4 +9,5 @@ public class Organization
     public ICollection<Venue> Venues { get; set; } = [];
     public ICollection<OrganizationRole> Roles { get; set; } = [];
     public ICollection<UserOrganizationMapping> UserMappings { get; set; } = [];
+    public ICollection<Invitation> Invitations { get; set; } = [];
 }
