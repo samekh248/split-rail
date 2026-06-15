@@ -52,6 +52,20 @@ jobs:
   contract-type-drift:
     name: contract-type-drift
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: split-rail-db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -60,12 +74,36 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
+      - run: dotnet tool install --global dotnet-ef
       - run: dotnet build apps/api/split-rail-api.csproj -c Release
-      - run: dotnet run --project apps/api/split-rail-api.csproj --no-build --urls http://127.0.0.1:5000 &
+      - run: dotnet ef database update --project apps/api/split-rail-api.csproj --configuration Release
         env:
           ASPNETCORE_ENVIRONMENT: Development
+          DB_PASSWORD: postgres
+      - name: Start API and wait for Swagger
+        run: |
+          dotnet run --project apps/api/split-rail-api.csproj --no-build -c Release --urls http://127.0.0.1:5000 > /tmp/api.log 2>&1 &
+          API_PID=$!
+          for attempt in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:5000/swagger/v1/swagger.json >/dev/null; then
+              echo "API ready after ${attempt} attempt(s)"
+              exit 0
+            fi
+            if ! kill -0 "$API_PID" 2>/dev/null; then
+              echo "API process exited before Swagger became available"
+              cat /tmp/api.log
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Timed out waiting for Swagger"
+          cat /tmp/api.log
+          exit 1
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          DB_PASSWORD: postgres
           Preview__EnableTestSeeding: 'true'
-      - run: sleep 15
+          QboSync__EnableInProcessTimer: 'false'
       - run: npm ci && npm run gen:api && npm run build
         working-directory: apps/web
         env:
@@ -127,6 +165,20 @@ jobs:
     name: e2e-matrix
     needs: deploy-preview
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: split-rail-db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     strategy:
       fail-fast: false
       matrix:
@@ -144,12 +196,37 @@ jobs:
         working-directory: tests/e2e
       - run: npx playwright install --with-deps chromium firefox webkit
         working-directory: tests/e2e
-      - run: dotnet run --project apps/api/split-rail-api.csproj --urls http://127.0.0.1:5000 &
+      - run: dotnet tool install --global dotnet-ef
+      - run: dotnet build apps/api/split-rail-api.csproj -c Release
+      - run: dotnet ef database update --project apps/api/split-rail-api.csproj --configuration Release
         env:
-          ASPNETCORE_ENVIRONMENT: Preview
+          ASPNETCORE_ENVIRONMENT: Development
+          DB_PASSWORD: postgres
+      - name: Start API and wait for health
+        run: |
+          dotnet run --project apps/api/split-rail-api.csproj --no-build -c Release --urls http://127.0.0.1:5000 > /tmp/api.log 2>&1 &
+          API_PID=$!
+          for attempt in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:5000/swagger/v1/swagger.json >/dev/null; then
+              echo "API ready after ${attempt} attempt(s)"
+              exit 0
+            fi
+            if ! kill -0 "$API_PID" 2>/dev/null; then
+              echo "API process exited before becoming healthy"
+              cat /tmp/api.log
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Timed out waiting for API"
+          cat /tmp/api.log
+          exit 1
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          DB_PASSWORD: postgres
           Preview__UseFakeQboConnector: 'true'
           Preview__EnableTestSeeding: 'true'
-      - run: sleep 20
+          QboSync__EnableInProcessTimer: 'false'
       - run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2
         working-directory: tests/e2e
         env:
