@@ -23,13 +23,32 @@ const decimalFieldNames = new Set([
 ]);
 
 function normalizeDecimalStringFields(content) {
-  return content.replace(
-    /\/\*\* Format: double \*\/\r?\n(\s+)([A-Za-z0-9_]+)\?: number;/g,
-    (match, indent, fieldName) =>
-      decimalFieldNames.has(fieldName)
-        ? `${indent}${fieldName}?: string;`
-        : match,
+  const schemasStart = content.indexOf('    schemas: {');
+  const schemasEnd = content.indexOf('    responses: never;');
+  if (schemasStart < 0 || schemasEnd < 0) {
+    return content;
+  }
+
+  const before = content.slice(0, schemasStart);
+  let schemas = content.slice(schemasStart, schemasEnd);
+  const after = content.slice(schemasEnd);
+
+  const replaceDecimalNumber = (match, indent, fieldName, optional) =>
+    decimalFieldNames.has(fieldName)
+      ? `${indent}${fieldName}${optional} string;`
+      : match;
+
+  schemas = schemas.replace(
+    /\/\*\* Format: double \*\/\r?\n(\s+)([A-Za-z0-9_]+)(\?:|:) number;/g,
+    replaceDecimalNumber,
   );
+
+  schemas = schemas.replace(
+    /^(\s+)([A-Za-z0-9_]+)(\?:|:) number;/gm,
+    replaceDecimalNumber,
+  );
+
+  return before + schemas + after;
 }
 
 export function appendSchemaExports(content) {

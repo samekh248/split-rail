@@ -2501,7 +2501,7 @@ export interface components {
             qboTransactionId?: string | null;
             qboAccountId?: string | null;
             qboAccountName?: string | null;
-                        amount?: string;
+            amount: string;
             /** Format: date */
             transactionDate?: string;
             /** Format: date-time */

@@ -1,5 +1,8 @@
 namespace SplitRail.Api.DTOs.Qbo;
 
+using System.Text.Json.Serialization;
+using SplitRail.Api.Serialization;
+
 public record SyncResultDto(
     Guid EventId,
     Guid SyncBatchId,
@@ -42,7 +45,7 @@ public record UnmappedTransactionDto(
     string QboTransactionId,
     string QboAccountId,
     string QboAccountName,
-    decimal Amount,
+    [property: JsonConverter(typeof(DecimalStringJsonConverter))] decimal Amount,
     DateOnly TransactionDate,
     DateTimeOffset SyncedAt);
 

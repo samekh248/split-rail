@@ -23,7 +23,7 @@ public sealed class DecimalStringSchemaFilter : ISchemaFilter
                 continue;
             }
 
-            if (!UsesDecimalStringConverter(property))
+            if (!ShouldSerializeAsDecimalString(property))
                 continue;
 
             propertySchema.Type = "string";
@@ -31,6 +31,12 @@ public sealed class DecimalStringSchemaFilter : ISchemaFilter
             propertySchema.Example = new OpenApiString("0.00");
         }
     }
+
+    private static bool ShouldSerializeAsDecimalString(PropertyInfo property) =>
+        UsesDecimalStringConverter(property) || IsDecimalProperty(property);
+
+    private static bool IsDecimalProperty(PropertyInfo property) =>
+        property.PropertyType == typeof(decimal) || property.PropertyType == typeof(decimal?);
 
     private static bool UsesDecimalStringConverter(PropertyInfo property) =>
         property.GetCustomAttributes<JsonConverterAttribute>(inherit: true)
