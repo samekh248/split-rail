@@ -34,6 +34,8 @@ public class InMemorySettlementArchiveStore : ISettlementArchiveStore
     public byte[]? GetStoredPdf(string objectPath) =>
         _objects.TryGetValue(objectPath, out var bytes) ? bytes : null;
 
+    public byte[]? TryGetStoredPdf(string objectPath) => GetStoredPdf(objectPath);
+
     public IReadOnlyCollection<string> StoredObjectPaths => _objects.Keys.ToList();
 
     public int StoredObjectCount => _objects.Count;

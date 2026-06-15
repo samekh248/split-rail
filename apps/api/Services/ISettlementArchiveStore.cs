@@ -8,4 +8,6 @@ public interface ISettlementArchiveStore
         string objectPath,
         TimeSpan ttl,
         CancellationToken cancellationToken = default);
+
+    byte[]? TryGetStoredPdf(string objectPath) => null;
 }

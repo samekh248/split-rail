@@ -102,8 +102,8 @@ public class TestSeedingControllerTests : TestSeedingIntegrationTestBase
         using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var evt = await db.Events.AsNoTracking().FirstAsync(e => e.Id == lifecycle.EventId);
-        var archive = scope.ServiceProvider.GetRequiredService<InMemorySettlementArchiveStore>();
-        var pdf = archive.GetStoredPdf(evt.SettlementPdfUrl!)!;
+        var storedPath = SettlementService.ExtractObjectPath(evt.SettlementPdfUrl!);
+        var pdf = ArchiveStore.GetStoredPdf(storedPath)!;
         var expected = Convert.ToHexString(SHA256.HashData(pdf)).ToLowerInvariant();
         hash.HashHex.Should().Be(expected);
     }
@@ -122,8 +122,9 @@ public class TestSeedingControllerTests : TestSeedingIntegrationTestBase
         using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var evt = await db.Events.AsNoTracking().FirstAsync(e => e.Id == lifecycle.EventId);
+        var objectPath = SettlementService.ExtractObjectPath(evt.SettlementPdfUrl!);
 
-        var response = await Client.GetAsync($"/api/test-seed/settlement-pdf/{evt.SettlementPdfUrl}");
+        var response = await Client.GetAsync($"/api/test-seed/settlement-pdf/{objectPath}");
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         response.Content.Headers.ContentType!.MediaType.Should().Be("application/pdf");
         var bytes = await response.Content.ReadAsByteArrayAsync();

@@ -23,17 +23,21 @@ public class TestSeedingServiceTests
     }
 
     [Fact]
-    public async Task GetSettlementPdfHashAsync_WithoutArchiveStore_ReturnsNull()
+    public async Task GetSettlementPdfHashAsync_WithoutReadableArchive_ReturnsNull()
     {
-        var service = CreateService(archiveStore: null);
-        var result = await service.GetSettlementPdfHashAsync(Guid.NewGuid());
+        var service = CreateService(archiveStore: new EmptyArchiveStore());
+        var seed = await service.ResetAsync();
+        var lifecycle = await service.SeedLifecycleEventAsync(
+            new LifecycleEventSeedRequestDto(seed.OrgA.OrganizationId, seed.OrgA.InScopeVenueId));
+
+        var result = await service.GetSettlementPdfHashAsync(lifecycle.EventId);
         result.Should().BeNull();
     }
 
     [Fact]
     public void GetSettlementPdfBytes_WithoutArchiveStore_ReturnsNull()
     {
-        var service = CreateService(archiveStore: null);
+        var service = CreateService(archiveStore: new EmptyArchiveStore());
         service.GetSettlementPdfBytes("missing.pdf").Should().BeNull();
     }
 
@@ -129,12 +133,12 @@ public class TestSeedingServiceTests
 
     private static TestSeedingService CreateService(
         bool enableSeeding = true,
-        InMemorySettlementArchiveStore? archiveStore = null) =>
+        ISettlementArchiveStore? archiveStore = null) =>
         CreateServiceWithDb(enableSeeding, archiveStore).Service;
 
     private static (TestSeedingService Service, ApplicationDbContext Db) CreateServiceWithDb(
         bool enableSeeding = true,
-        InMemorySettlementArchiveStore? archiveStore = null)
+        ISettlementArchiveStore? archiveStore = null)
     {
         var tenantContext = new TenantContext();
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -142,7 +146,22 @@ public class TestSeedingServiceTests
             .Options;
         var db = new ApplicationDbContext(options, tenantContext);
         var previewOptions = Options.Create(new PreviewOptions { EnableTestSeeding = enableSeeding });
-        var service = new TestSeedingService(db, previewOptions, archiveStore);
+        var service = new TestSeedingService(
+            db,
+            previewOptions,
+            archiveStore ?? new InMemorySettlementArchiveStore());
         return (service, db);
+    }
+
+    private sealed class EmptyArchiveStore : ISettlementArchiveStore
+    {
+        public Task UploadAsync(string objectPath, byte[] pdfBytes, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task<(string Url, DateTimeOffset ExpiresAt)> CreateSignedUrlAsync(
+            string objectPath,
+            TimeSpan ttl,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(("https://example.test/file.pdf", DateTimeOffset.UtcNow.Add(ttl)));
     }
 }

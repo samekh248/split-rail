@@ -28,12 +28,12 @@ public class TestSeedingService
 
     private readonly ApplicationDbContext _db;
     private readonly PreviewOptions _previewOptions;
-    private readonly InMemorySettlementArchiveStore? _archiveStore;
+    private readonly ISettlementArchiveStore _archiveStore;
 
     public TestSeedingService(
         ApplicationDbContext db,
         IOptions<PreviewOptions> previewOptions,
-        InMemorySettlementArchiveStore? archiveStore = null)
+        ISettlementArchiveStore archiveStore)
     {
         _db = db;
         _previewOptions = previewOptions.Value;
@@ -234,16 +234,14 @@ public class TestSeedingService
     {
         EnsureEnabled();
 
-        if (_archiveStore is null)
-            return null;
-
         var evt = await _db.Events.AsNoTracking().FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken)
             ?? throw new NotFoundException("Event not found.");
 
         if (string.IsNullOrWhiteSpace(evt.SettlementPdfUrl))
             return null;
 
-        var pdf = _archiveStore.GetStoredPdf(evt.SettlementPdfUrl);
+        var objectPath = SettlementService.ExtractObjectPath(evt.SettlementPdfUrl);
+        var pdf = _archiveStore.TryGetStoredPdf(objectPath);
         if (pdf is null)
             return null;
 
@@ -254,7 +252,8 @@ public class TestSeedingService
     public byte[]? GetSettlementPdfBytes(string objectPath)
     {
         EnsureEnabled();
-        return _archiveStore?.GetStoredPdf(objectPath);
+        var normalizedPath = SettlementService.ExtractObjectPath(objectPath);
+        return _archiveStore.TryGetStoredPdf(normalizedPath);
     }
 
     private async Task<OrgSeedContextDto> SeedOrganizationAsync(
