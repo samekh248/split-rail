@@ -21,6 +21,10 @@ describe('SignaturePad', () => {
       moveTo: vi.fn(),
       lineTo: vi.fn(),
       stroke: vi.fn(),
+      strokeStyle: '',
+      lineWidth: 1,
+      lineCap: 'round',
+      lineJoin: 'round',
     })) as unknown as typeof HTMLCanvasElement.prototype.getContext;
 
     render(<SignaturePad onChange={onChange} width={200} height={80} />);

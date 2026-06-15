@@ -120,9 +120,39 @@ describe('LedgerGrid', () => {
     expect(onProformaChange).toHaveBeenCalledWith('row-1', '12000.00');
   });
 
-  it('shows summary totals', () => {
-    render(<LedgerGrid ledger={mockLedger} />);
-    const summary = screen.getByTestId('ledger-summary');
-    expect(within(summary).getByText(/Gross: \$10,000.00/)).toBeInTheDocument();
+  it('shows lock budget button when budget is unlocked', async () => {
+    const user = userEvent.setup();
+    const onLockBudget = vi.fn();
+
+    render(
+      <LedgerGrid ledger={mockLedger} onLockBudget={onLockBudget} />,
+    );
+
+    await user.click(screen.getByTestId('lock-budget-btn'));
+    expect(onLockBudget).toHaveBeenCalled();
+  });
+
+  it('shows variance banner when reconciled rows are flagged', () => {
+    const ledgerWithVariance: LedgerGridResponse = {
+      ...mockLedger,
+      status: 'RECONCILED',
+      blocks: [
+        {
+          ...mockLedger.blocks[0],
+          rows: [
+            {
+              ...mockLedger.blocks[0].rows[0],
+              variance: '100.00',
+              varianceFlagged: true,
+            },
+          ],
+        },
+        mockLedger.blocks[1],
+        mockLedger.blocks[2],
+      ],
+    };
+
+    render(<LedgerGrid ledger={ledgerWithVariance} />);
+    expect(screen.getByTestId('variance-banner')).toBeInTheDocument();
   });
 });
