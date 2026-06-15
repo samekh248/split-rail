@@ -2,8 +2,10 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using SplitRail.Api.Data;
 using SplitRail.Api.DTOs.Auth;
@@ -37,6 +39,18 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
         Factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
+            builder.ConfigureAppConfiguration((_, config) =>
+            {
+                config.AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["QboSync:EnableInProcessTimer"] = "false",
+                    ["QboSync:ClientId"] = "test-client",
+                    ["QboSync:ClientSecret"] = "test-secret",
+                    ["QboSync:RedirectUri"] = "http://localhost/api/qbo/callback",
+                    ["QboSync:InternalTriggerKey"] = "test-internal-key"
+                });
+            });
+
             builder.ConfigureServices(services =>
             {
                 var descriptor = services.SingleOrDefault(d =>
@@ -238,4 +252,101 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
         return (CreateAuthenticatedClient(auth.AccessToken), userId);
     }
+
+    protected async Task SeedQboCredentialDirectAsync(
+        string accessToken,
+        Guid venueId,
+        string realmId = "test-realm")
+    {
+        using var scope = Factory.Services.CreateScope();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        var (userId, orgId) = ParseTokenClaims(accessToken);
+        tenantContext.SetContext(userId, orgId);
+
+        var protector = scope.ServiceProvider
+            .GetRequiredService<IDataProtectionProvider>()
+            .CreateProtector("QboOAuthTokens");
+
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.QboVenueCredentials.Add(new QboVenueCredential
+        {
+            VenueId = venueId,
+            RealmId = realmId,
+            EncryptedAccessToken = protector.Protect("test-access-token"),
+            EncryptedRefreshToken = protector.Protect("test-refresh-token"),
+            TokenExpiresAt = DateTimeOffset.UtcNow.AddHours(1),
+            ConnectedAt = DateTimeOffset.UtcNow,
+            ConnectedByUserId = userId
+        });
+        await db.SaveChangesAsync();
+    }
+
+    protected async Task<Guid> SeedQboMappingDirectAsync(
+        string accessToken,
+        Guid venueId,
+        string qboAccountId,
+        Guid? mappedLineItemId,
+        string accountName = "Test Account",
+        string categoryLabel = "Production")
+    {
+        using var scope = Factory.Services.CreateScope();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        var (userId, orgId) = ParseTokenClaims(accessToken);
+        tenantContext.SetContext(userId, orgId);
+
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var mapping = new QboAccountMapping
+        {
+            VenueId = venueId,
+            QboAccountId = qboAccountId,
+            QboAccountName = accountName,
+            MappedCategoryLabel = categoryLabel,
+            MappedLineItemId = mappedLineItemId
+        };
+        db.QboAccountMappings.Add(mapping);
+        await db.SaveChangesAsync();
+        return mapping.Id;
+    }
+
+    protected async Task SeedSyncLedgerEntryDirectAsync(
+        string accessToken,
+        Guid eventId,
+        string qboTransactionId,
+        string qboAccountId,
+        decimal amount,
+        Guid? mappedLineItemId,
+        Guid? syncBatchId = null)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        var (userId, orgId) = ParseTokenClaims(accessToken);
+        tenantContext.SetContext(userId, orgId);
+
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.QboSyncLedgers.Add(new QboSyncLedger
+        {
+            EventId = eventId,
+            QboTransactionId = qboTransactionId,
+            QboAccountId = qboAccountId,
+            Amount = amount,
+            TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            MappedLineItemId = mappedLineItemId,
+            SyncBatchId = syncBatchId ?? Guid.NewGuid(),
+            SyncedAt = DateTimeOffset.UtcNow
+        });
+        await db.SaveChangesAsync();
+    }
+
+    protected WebApplicationFactory<Program> CreateFactoryWithQboHandler(HttpMessageHandler handler) =>
+        Factory.WithWebHostBuilder(builder =>
+        {
+            builder.ConfigureServices(services =>
+            {
+                services.AddSingleton(handler);
+                services.AddHttpClient("QboApi")
+                    .ConfigurePrimaryHttpMessageHandler(sp => sp.GetRequiredService<HttpMessageHandler>());
+                services.AddHttpClient("QboOAuth")
+                    .ConfigurePrimaryHttpMessageHandler(sp => sp.GetRequiredService<HttpMessageHandler>());
+            });
+        });
 }

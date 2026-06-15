@@ -42,6 +42,9 @@ public class ExceptionHandlerMiddleware
             LedgerStateException ledgerState => (HttpStatusCode.BadRequest, "ledger_state", ledgerState.Message, null),
             FormulaEvaluationException formula => (HttpStatusCode.UnprocessableEntity, "formula_evaluation", formula.Message, null),
             ConcurrencyConflictException concurrency => (HttpStatusCode.Conflict, "concurrency", concurrency.Message, null),
+            QboTokenRefreshException tokenRefresh => (HttpStatusCode.BadGateway, "qbo_token_refresh", tokenRefresh.Message, null),
+            QboSyncException sync => (HttpStatusCode.BadGateway, "qbo_sync", sync.Message, null),
+            QboMappingConflictException mapping => (HttpStatusCode.Conflict, "qbo_mapping", mapping.Message, null),
             _ => (HttpStatusCode.InternalServerError, "internal", "An unexpected error occurred.", null)
         };
 

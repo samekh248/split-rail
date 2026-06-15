@@ -19,4 +19,6 @@ public class Event
     public User? SettledByUser { get; set; }
     public ICollection<FinancialLineItem> LineItems { get; set; } = [];
     public ICollection<EventArtist> Artists { get; set; } = [];
+    public ICollection<QboSyncLedger> QboSyncLedgerEntries { get; set; } = [];
+    public ICollection<UnmappedQboTransaction> UnmappedQboTransactions { get; set; } = [];
 }

@@ -10,6 +10,8 @@ import {
 } from '@/api/ledger';
 import { ArtistDealPanel } from '@/components/artists/ArtistDealPanel';
 import { LedgerGrid } from '@/components/ledger/LedgerGrid';
+import { SyncNowButton } from '@/components/qbo/SyncNowButton';
+import { UnmappedBanner } from '@/components/qbo/UnmappedBanner';
 
 interface EventLedgerPageProps {
   venueId: string;
@@ -67,8 +69,22 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
     return <p data-testid="ledger-empty">No ledger data.</p>;
   }
 
+  const lineItemOptions = ledger.blocks
+    .flatMap((block) => block.rows)
+    .map((row) => ({ id: row.id, label: row.rowLabel }));
+
   return (
     <main className="event-ledger-page" data-testid="event-ledger-page">
+      <div className="event-ledger-page__toolbar">
+        <SyncNowButton venueId={venueId} eventId={eventId} />
+      </div>
+
+      <UnmappedBanner
+        venueId={venueId}
+        eventId={eventId}
+        lineItemOptions={lineItemOptions}
+      />
+
       <LedgerGrid
         ledger={ledger}
         lockBudgetPending={lockBudget.isPending}

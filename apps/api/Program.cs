@@ -2,11 +2,14 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using Polly;
 using SplitRail.Api;
 using SplitRail.Api.Authorization;
+using SplitRail.Api.BackgroundServices;
 using SplitRail.Api.Configuration;
 using SplitRail.Api.Data;
 using SplitRail.Api.Middleware;
@@ -18,6 +21,27 @@ var builder = WebApplication.CreateBuilder(args);
 DotEnv.Load(Path.Combine(builder.Environment.ContentRootPath, ".env"));
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+
+var qboSyncSection = builder.Configuration.GetSection(QboSyncOptions.SectionName);
+builder.Services.Configure<QboSyncOptions>(options =>
+{
+    qboSyncSection.Bind(options);
+    options.ClientId = Environment.GetEnvironmentVariable("QBO_CLIENT_ID") ?? options.ClientId;
+    options.ClientSecret = Environment.GetEnvironmentVariable("QBO_CLIENT_SECRET") ?? options.ClientSecret;
+    options.RedirectUri = Environment.GetEnvironmentVariable("QBO_REDIRECT_URI") ?? options.RedirectUri;
+    options.InternalTriggerKey = Environment.GetEnvironmentVariable("QBO_INTERNAL_TRIGGER_KEY") ?? options.InternalTriggerKey;
+    if (builder.Environment.IsProduction())
+        options.EnableInProcessTimer = qboSyncSection.GetValue("EnableInProcessTimer", false);
+});
+
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "dp-keys")));
+
+builder.Services.AddHttpClient("QboApi")
+    .AddTransientHttpErrorPolicy(policy =>
+        policy.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
+
+builder.Services.AddHttpClient("QboOAuth");
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
@@ -84,6 +108,11 @@ builder.Services.AddScoped<EventService>();
 builder.Services.AddScoped<LedgerService>();
 builder.Services.AddScoped<DealMathEngine>();
 builder.Services.AddScoped<CustomFormulaEvaluator>();
+builder.Services.AddScoped<QboTokenService>();
+builder.Services.AddScoped<QboTransactionClient>();
+builder.Services.AddScoped<QboSyncService>();
+builder.Services.AddScoped<QboMappingService>();
+builder.Services.AddHostedService<QboSyncHostedService>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>

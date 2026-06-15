@@ -28,6 +28,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<Event> Events => Set<Event>();
     public DbSet<FinancialLineItem> FinancialLineItems => Set<FinancialLineItem>();
     public DbSet<EventArtist> EventArtists => Set<EventArtist>();
+    public DbSet<QboAccountMapping> QboAccountMappings => Set<QboAccountMapping>();
+    public DbSet<QboVenueCredential> QboVenueCredentials => Set<QboVenueCredential>();
+    public DbSet<QboSyncLedger> QboSyncLedgers => Set<QboSyncLedger>();
+    public DbSet<UnmappedQboTransaction> UnmappedQboTransactions => Set<UnmappedQboTransaction>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -45,6 +49,10 @@ public class ApplicationDbContext : DbContext
         ConfigureEvent(modelBuilder);
         ConfigureFinancialLineItem(modelBuilder);
         ConfigureEventArtist(modelBuilder);
+        ConfigureQboAccountMapping(modelBuilder);
+        ConfigureQboVenueCredential(modelBuilder);
+        ConfigureQboSyncLedger(modelBuilder);
+        ConfigureUnmappedQboTransaction(modelBuilder);
 
         ApplyTenantQueryFilters(modelBuilder);
     }
@@ -85,6 +93,22 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<EventArtist>().HasQueryFilter(e =>
             _tenantContext.OrganizationId == null ||
             e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<QboAccountMapping>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<QboVenueCredential>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<QboSyncLedger>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<UnmappedQboTransaction>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Venue.OrganizationId == _tenantContext.OrganizationId);
     }
 
     private static void ConfigureOrganization(ModelBuilder modelBuilder)
@@ -565,6 +589,217 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.Event)
                 .WithMany(ev => ev.Artists)
                 .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureQboAccountMapping(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<QboAccountMapping>(entity =>
+        {
+            entity.ToTable("qbo_account_mappings");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.VenueId).HasColumnName("venue_id");
+
+            entity.Property(e => e.QboAccountId)
+                .HasColumnName("qbo_account_id")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.QboAccountName)
+                .HasColumnName("qbo_account_name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.MappedCategoryLabel)
+                .HasColumnName("mapped_category_label")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.MappedLineItemId).HasColumnName("mapped_line_item_id");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasIndex(e => new { e.VenueId, e.QboAccountId })
+                .IsUnique()
+                .HasDatabaseName("IX_qbo_account_mappings_venue_account");
+
+            entity.HasOne(e => e.Venue)
+                .WithMany(v => v.QboAccountMappings)
+                .HasForeignKey(e => e.VenueId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.MappedLineItem)
+                .WithMany()
+                .HasForeignKey(e => e.MappedLineItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    private static void ConfigureQboVenueCredential(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<QboVenueCredential>(entity =>
+        {
+            entity.ToTable("qbo_venue_credentials");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.VenueId).HasColumnName("venue_id");
+
+            entity.Property(e => e.RealmId)
+                .HasColumnName("realm_id")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.EncryptedAccessToken)
+                .HasColumnName("encrypted_access_token")
+                .IsRequired();
+
+            entity.Property(e => e.EncryptedRefreshToken)
+                .HasColumnName("encrypted_refresh_token")
+                .IsRequired();
+
+            entity.Property(e => e.TokenExpiresAt).HasColumnName("token_expires_at");
+            entity.Property(e => e.ConnectedAt)
+                .HasColumnName("connected_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.Property(e => e.ConnectedByUserId).HasColumnName("connected_by_user_id");
+
+            entity.HasIndex(e => e.VenueId)
+                .IsUnique()
+                .HasDatabaseName("IX_qbo_venue_credentials_venue_id");
+
+            entity.HasOne(e => e.Venue)
+                .WithOne(v => v.QboCredential)
+                .HasForeignKey<QboVenueCredential>(e => e.VenueId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ConnectedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.ConnectedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    private static void ConfigureQboSyncLedger(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<QboSyncLedger>(entity =>
+        {
+            entity.ToTable("qbo_sync_ledger");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+
+            entity.Property(e => e.QboTransactionId)
+                .HasColumnName("qbo_transaction_id")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.QboAccountId)
+                .HasColumnName("qbo_account_id")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.Amount)
+                .HasColumnName("amount")
+                .HasColumnType("numeric(12,2)");
+
+            entity.Property(e => e.TransactionDate).HasColumnName("transaction_date");
+            entity.Property(e => e.MappedLineItemId).HasColumnName("mapped_line_item_id");
+            entity.Property(e => e.SyncBatchId).HasColumnName("sync_batch_id");
+
+            entity.Property(e => e.SyncedAt)
+                .HasColumnName("synced_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasIndex(e => new { e.EventId, e.QboTransactionId })
+                .IsUnique()
+                .HasDatabaseName("IX_qbo_sync_ledger_event_txn");
+
+            entity.HasIndex(e => e.MappedLineItemId)
+                .HasDatabaseName("IX_qbo_sync_ledger_mapped_line_item_id");
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.QboSyncLedgerEntries)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.MappedLineItem)
+                .WithMany()
+                .HasForeignKey(e => e.MappedLineItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    private static void ConfigureUnmappedQboTransaction(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<UnmappedQboTransaction>(entity =>
+        {
+            entity.ToTable("unmapped_qbo_transactions");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+            entity.Property(e => e.VenueId).HasColumnName("venue_id");
+
+            entity.Property(e => e.QboTransactionId)
+                .HasColumnName("qbo_transaction_id")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.QboAccountId)
+                .HasColumnName("qbo_account_id")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.QboAccountName)
+                .HasColumnName("qbo_account_name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.Amount)
+                .HasColumnName("amount")
+                .HasColumnType("numeric(12,2)");
+
+            entity.Property(e => e.TransactionDate).HasColumnName("transaction_date");
+
+            entity.Property(e => e.SyncedAt)
+                .HasColumnName("synced_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasIndex(e => new { e.EventId, e.QboTransactionId })
+                .IsUnique()
+                .HasDatabaseName("IX_unmapped_qbo_txn_event_txn");
+
+            entity.HasIndex(e => new { e.VenueId, e.QboAccountId })
+                .HasDatabaseName("IX_unmapped_qbo_txn_venue_account");
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.UnmappedQboTransactions)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Venue)
+                .WithMany()
+                .HasForeignKey(e => e.VenueId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

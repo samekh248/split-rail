@@ -1,0 +1,73 @@
+import { useState } from 'react';
+import { useCreateMapping } from '@/api/qbo';
+import { useQueryClient } from '@tanstack/react-query';
+import { ledgerKeys } from '@/api/ledger';
+import { qboKeys } from '@/api/qbo';
+import type { UnmappedTransactionDto } from '@/types/generated-api';
+
+interface InlineMappingDropdownProps {
+  venueId: string;
+  eventId: string;
+  transaction: UnmappedTransactionDto;
+  lineItemOptions: Array<{ id: string; label: string }>;
+}
+
+export function InlineMappingDropdown({
+  venueId,
+  eventId,
+  transaction,
+  lineItemOptions,
+}: InlineMappingDropdownProps) {
+  const [selectedLineItemId, setSelectedLineItemId] = useState('');
+  const createMapping = useCreateMapping(venueId, eventId);
+  const queryClient = useQueryClient();
+
+  const handleConfirm = async () => {
+    const option = lineItemOptions.find((o) => o.id === selectedLineItemId);
+    if (!option) return;
+
+    await createMapping.mutateAsync({
+      qboAccountId: transaction.qboAccountId,
+      qboAccountName: transaction.qboAccountName,
+      mappedCategoryLabel: option.label,
+      mappedLineItemId: option.id,
+    });
+
+    queryClient.setQueryData(
+      qboKeys.unmappedList(venueId, eventId),
+      (prev: { transactions: UnmappedTransactionDto[]; unmappedCount: number } | undefined) => {
+        if (!prev) return prev;
+        const transactions = prev.transactions.filter((t) => t.id !== transaction.id);
+        return { ...prev, transactions, unmappedCount: transactions.length };
+      },
+    );
+
+    void queryClient.invalidateQueries({ queryKey: ledgerKeys.grid(venueId, eventId) });
+  };
+
+  return (
+    <div className="inline-mapping-dropdown" data-testid="inline-mapping-dropdown">
+      <select
+        aria-label="Map to ledger row"
+        value={selectedLineItemId}
+        onChange={(e) => setSelectedLineItemId(e.target.value)}
+        data-testid="inline-mapping-select"
+      >
+        <option value="">Select row…</option>
+        {lineItemOptions.map((option) => (
+          <option key={option.id} value={option.id}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        disabled={!selectedLineItemId || createMapping.isPending}
+        onClick={() => void handleConfirm()}
+        data-testid="inline-mapping-confirm"
+      >
+        Map
+      </button>
+    </div>
+  );
+}

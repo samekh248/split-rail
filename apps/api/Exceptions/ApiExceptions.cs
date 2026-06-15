@@ -64,3 +64,30 @@ public sealed class ConcurrencyConflictException : ApiException
     public ConcurrencyConflictException(string message = "The record was modified by another user. Please refresh and retry.")
         : base(message) { }
 }
+
+public sealed class QboTokenRefreshException : ApiException
+{
+    public QboTokenRefreshException(string message, Guid? venueId = null, string? realmId = null) : base(message)
+    {
+        VenueId = venueId;
+        RealmId = realmId;
+    }
+
+    public Guid? VenueId { get; }
+    public string? RealmId { get; }
+}
+
+public sealed class QboSyncException : ApiException
+{
+    public QboSyncException(string message, string? errorCode = null) : base(message)
+    {
+        ErrorCode = errorCode;
+    }
+
+    public string? ErrorCode { get; }
+}
+
+public sealed class QboMappingConflictException : ApiException
+{
+    public QboMappingConflictException(string message) : base(message) { }
+}

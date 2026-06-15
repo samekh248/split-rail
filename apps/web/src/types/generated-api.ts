@@ -1632,6 +1632,81 @@ export interface components {
             venueId?: string;
             venueName?: string | null;
         };
+        SyncResultDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            syncBatchId?: string;
+            transactionsProcessed?: number;
+            transactionsMapped?: number;
+            transactionsUnmapped?: number;
+            unmappedAccountIds?: string[] | null;
+            /** Format: date-time */
+            syncedAt?: string;
+        };
+        SyncStatusDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: date-time */
+            lastSyncedAt?: string | null;
+            /** Format: uuid */
+            lastSyncBatchId?: string | null;
+            totalMappedTransactions?: number;
+            totalUnmappedTransactions?: number;
+            qboConnected?: boolean;
+        };
+        QboAccountMappingDto: {
+            /** Format: uuid */
+            id?: string;
+            qboAccountId?: string | null;
+            qboAccountName?: string | null;
+            mappedCategoryLabel?: string | null;
+            /** Format: uuid */
+            mappedLineItemId?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        QboAccountMappingsResponse: {
+            /** Format: uuid */
+            venueId?: string;
+            mappings?: components["schemas"]["QboAccountMappingDto"][] | null;
+        };
+        CreateMappingRequest: {
+            qboAccountId?: string | null;
+            qboAccountName?: string | null;
+            mappedCategoryLabel?: string | null;
+            /** Format: uuid */
+            mappedLineItemId?: string | null;
+        };
+        UpdateMappingRequest: {
+            mappedCategoryLabel?: string | null;
+            /** Format: uuid */
+            mappedLineItemId?: string | null;
+        };
+        UnmappedTransactionDto: {
+            /** Format: uuid */
+            id?: string;
+            qboTransactionId?: string | null;
+            qboAccountId?: string | null;
+            qboAccountName?: string | null;
+            amount?: string | null;
+            transactionDate?: string | null;
+            /** Format: date-time */
+            syncedAt?: string;
+        };
+        UnmappedTransactionsResponse: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            venueId?: string;
+            unmappedCount?: number;
+            transactions?: components["schemas"]["UnmappedTransactionDto"][] | null;
+        };
+        UnmappedCountDto: {
+            /** Format: uuid */
+            eventId?: string;
+            unmappedCount?: number;
+        };
     };
     responses: never;
     parameters: never;
@@ -1641,3 +1716,14 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;
+
+export type SyncResultDto = components['schemas']['SyncResultDto'];
+export type SyncStatusDto = components['schemas']['SyncStatusDto'];
+export type QboAccountMappingDto = components['schemas']['QboAccountMappingDto'];
+export type QboAccountMappingsResponse = components['schemas']['QboAccountMappingsResponse'];
+export type CreateMappingRequest = components['schemas']['CreateMappingRequest'];
+export type UpdateMappingRequest = components['schemas']['UpdateMappingRequest'];
+export type UnmappedTransactionDto = components['schemas']['UnmappedTransactionDto'];
+export type UnmappedTransactionsResponse = components['schemas']['UnmappedTransactionsResponse'];
+export type UnmappedCountDto = components['schemas']['UnmappedCountDto'];
+export type UserProfileResponse = components['schemas']['UserProfileResponse'];
