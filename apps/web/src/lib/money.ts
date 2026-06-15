@@ -33,8 +33,11 @@ export function normalizeMoney(value: string): string {
 }
 
 /** Format for display with thousands separators and optional currency symbol. */
-export function formatMoney(value: string, currencySymbol = '$'): string {
-  const normalized = normalizeMoney(value);
+export function formatMoney(
+  value: string | null | undefined,
+  currencySymbol = '$',
+): string {
+  const normalized = normalizeMoney(value ?? '0.00');
   const negative = normalized.startsWith('-');
   const [whole, frac] = (negative ? normalized.slice(1) : normalized).split('.');
   const withCommas = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');

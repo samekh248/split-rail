@@ -9,9 +9,9 @@ import type {
   CreateArtistRequest,
   CreateLineItemRequest,
   EventArtistDto,
+  EventResponse,
   LedgerGridResponse,
   LineItemDto,
-  LockBudgetResponse,
   UpdateArtistRequest,
   UpdateLineItemRequest,
 } from '@/types/generated-api';
@@ -148,7 +148,7 @@ export function useLockBudget(venueId: string, eventId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: () =>
-      apiFetch<LockBudgetResponse>(
+      apiFetch<EventResponse>(
         `${ledgerPath(venueId, eventId)}/lock-budget`,
         { method: 'POST' },
       ),

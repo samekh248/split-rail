@@ -21,10 +21,19 @@ export function LedgerGrid({
   lockBudgetPending = false,
   canLockBudget = true,
 }: LedgerGridProps) {
-  const hasVarianceAlerts = ledger.blocks.some((block) =>
-    block.rows.some((row) => row.varianceFlagged),
+  const blocks = ledger.blocks ?? [];
+  const artists = ledger.artists ?? [];
+  const summary = ledger.summary;
+  const status = ledger.status ?? 'PRE_SHOW';
+  const hasVarianceAlerts = blocks.some((block) =>
+    (block.rows ?? []).some((row) => row.varianceFlagged),
   );
-  const isReconciled = ledger.status === 'RECONCILED';
+  const isReconciled = status === 'RECONCILED';
+  const editability = ledger.editability ?? {
+    proforma: 'locked',
+    settlement: 'locked',
+    qboActuals: 'locked',
+  };
 
   return (
     <div className="ledger-grid" data-testid="ledger-grid">
@@ -32,11 +41,11 @@ export function LedgerGrid({
         <div>
           <h2>{ledger.title}</h2>
           <p className="ledger-grid__meta">
-            {ledger.eventDate} · {ledger.status.replace('_', '-')}
+            {ledger.eventDate} · {status.replace('_', '-')}
             {ledger.isBudgetLocked ? ' · Budget locked' : ''}
           </p>
         </div>
-        {!ledger.isBudgetLocked && ledger.status === 'PRE_SHOW' && (
+        {!ledger.isBudgetLocked && status === 'PRE_SHOW' && (
           <button
             type="button"
             className="ledger-grid__lock-btn"
@@ -60,16 +69,16 @@ export function LedgerGrid({
       )}
 
       <div className="ledger-grid__summary" data-testid="ledger-summary">
-        <span>Gross: {formatMoney(ledger.summary.grossRevenue)}</span>
-        <span>Deductions: {formatMoney(ledger.summary.totalDeductions)}</span>
-        <span>Net: {formatMoney(ledger.summary.netShowRevenue)}</span>
+        <span>Gross: {formatMoney(summary?.grossRevenue)}</span>
+        <span>Deductions: {formatMoney(summary?.totalDeductions)}</span>
+        <span>Net: {formatMoney(summary?.netShowRevenue)}</span>
       </div>
 
-      {ledger.blocks.map((block) => (
+      {blocks.map((block) => (
         <BlockSection
           key={block.blockType}
           block={block}
-          editability={ledger.editability}
+          editability={editability}
           onProformaChange={onProformaChange}
           onSettlementChange={onSettlementChange}
           onNotesChange={onNotesChange}
@@ -79,7 +88,7 @@ export function LedgerGrid({
       <section className="ledger-grid__artists" data-testid="artist-payouts">
         <h3>Artist Payouts</h3>
         <ul>
-          {ledger.artists.map((artist) => (
+          {artists.map((artist) => (
             <li key={artist.id} data-testid={`artist-payout-${artist.id}`}>
               {artist.artistName}: {formatMoney(artist.calculatedNetPayout)}
             </li>

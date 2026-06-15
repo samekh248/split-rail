@@ -12,6 +12,7 @@ import { ArtistDealPanel } from '@/components/artists/ArtistDealPanel';
 import { LedgerGrid } from '@/components/ledger/LedgerGrid';
 import { SyncNowButton } from '@/components/qbo/SyncNowButton';
 import { UnmappedBanner } from '@/components/qbo/UnmappedBanner';
+import type { EventStatus } from '@/types/generated-api';
 import { FinalizeSettlementPanel } from '@/components/settlement/FinalizeSettlementPanel';
 import { SettlementLockedBanner } from '@/components/settlement/SettlementLockedBanner';
 
@@ -37,18 +38,19 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
       value: string,
     ) => {
       if (!ledger) return;
-      const row = ledger.blocks.flatMap((b) => b.rows).find((r) => r.id === id);
+      const row = (ledger.blocks ?? []).flatMap((b) => b.rows ?? []).find((r) => r.id === id);
       if (!row) return;
 
       await updateLineItem.mutateAsync({
         id,
-        rowLabel: row.rowLabel,
-        sortOrder: row.sortOrder,
-        isArtistDeduction: row.isArtistDeduction,
+        rowLabel: row.rowLabel ?? '',
+        sortOrder: row.sortOrder ?? 0,
+        isArtistDeduction: row.isArtistDeduction ?? false,
         proformaValue: field === 'proformaValue' ? value : row.proformaValue,
         settlementValue: field === 'settlementValue' ? value : row.settlementValue,
-        notes: field === 'notes' ? value : row.notes,
-        rowVersion: row.rowVersion,
+        notes: field === 'notes' ? value : row.notes ?? '',
+        isHiddenFromPromoter: row.isHiddenFromPromoter ?? false,
+        rowVersion: row.rowVersion ?? '',
       });
       await recalculate.mutateAsync();
     },
@@ -71,9 +73,10 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
     return <p data-testid="ledger-empty">No ledger data.</p>;
   }
 
-  const lineItemOptions = ledger.blocks
-    .flatMap((block) => block.rows)
-    .map((row) => ({ id: row.id, label: row.rowLabel }));
+  const lineItemOptions = (ledger.blocks ?? [])
+    .flatMap((block) => block.rows ?? [])
+    .filter((row) => row.id)
+    .map((row) => ({ id: row.id!, label: row.rowLabel ?? '' }));
 
   return (
     <main className="event-ledger-page" data-testid="event-ledger-page">
@@ -90,7 +93,7 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
       <SettlementLockedBanner
         venueId={venueId}
         eventId={eventId}
-        status={ledger.status}
+        status={ledger.status as EventStatus}
         settlementPdfAvailable={ledger.settlementPdfAvailable}
       />
 
@@ -110,13 +113,21 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
       />
 
       <ArtistDealPanel
-        artists={ledger.artists}
-        eventStatus={ledger.status}
+        artists={ledger.artists ?? []}
+        eventStatus={ledger.status as EventStatus}
         formulaError={formulaError}
         onAddArtist={async (artist) => {
           setFormulaError(null);
           try {
-            await createArtist.mutateAsync(artist);
+            await createArtist.mutateAsync({
+              artistName: artist.artistName,
+              performanceOrder: artist.performanceOrder,
+              dealType: artist.dealType,
+              customFormulaExpression: artist.customFormulaExpression ?? null,
+              baseGuarantee: artist.baseGuarantee,
+              backendPercentage: artist.backendPercentage,
+              taxWithholdingPercentage: artist.taxWithholdingPercentage,
+            });
             await recalculate.mutateAsync();
           } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to add artist';
@@ -144,6 +155,8 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
               isArtistDeduction: false,
               proformaValue: '0.00',
               settlementValue: '0.00',
+              notes: '',
+              isHiddenFromPromoter: false,
             })
           }
         >

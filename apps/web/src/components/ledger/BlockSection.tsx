@@ -23,7 +23,9 @@ export function BlockSection({
   onSettlementChange,
   onNotesChange,
 }: BlockSectionProps) {
-  const label = BLOCK_LABELS[block.blockType] ?? block.blockType;
+  const label = BLOCK_LABELS[block.blockType ?? ''] ?? block.blockType ?? 'Block';
+  const rows = block.rows ?? [];
+  const totals = block.blockTotals;
 
   return (
     <section
@@ -44,7 +46,7 @@ export function BlockSection({
           </tr>
         </thead>
         <tbody>
-          {block.rows.map((row) => (
+          {rows.map((row) => (
             <LedgerRow
               key={row.id}
               row={row}
@@ -58,9 +60,9 @@ export function BlockSection({
         <tfoot>
           <tr className="block-section__totals">
             <td>Totals</td>
-            <td>{formatMoney(block.blockTotals.proforma ?? '0.00')}</td>
-            <td>{formatMoney(block.blockTotals.settlement ?? '0.00')}</td>
-            <td>{formatMoney(block.blockTotals.qboActual ?? '0.00')}</td>
+            <td>{formatMoney(totals?.proforma)}</td>
+            <td>{formatMoney(totals?.settlement)}</td>
+            <td>{formatMoney(totals?.qboActual)}</td>
             <td colSpan={2} />
           </tr>
         </tfoot>

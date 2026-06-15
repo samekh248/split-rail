@@ -1,12 +1,13 @@
 import { formatMoney, isNonZeroVariance } from '@/lib/money';
 
 interface VarianceCellProps {
-  variance: string;
+  variance: string | null | undefined;
   varianceFlagged?: boolean;
 }
 
 export function VarianceCell({ variance, varianceFlagged }: VarianceCellProps) {
-  const flagged = varianceFlagged ?? isNonZeroVariance(variance);
+  const normalizedVariance = variance ?? '0.00';
+  const flagged = varianceFlagged ?? isNonZeroVariance(normalizedVariance);
 
   return (
     <td
@@ -14,7 +15,7 @@ export function VarianceCell({ variance, varianceFlagged }: VarianceCellProps) {
       data-testid="variance-cell"
       data-flagged={flagged ? 'true' : 'false'}
     >
-      {formatMoney(variance)}
+      {formatMoney(normalizedVariance)}
     </td>
   );
 }

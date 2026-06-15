@@ -2144,12 +2144,9 @@ export interface components {
             expiresIn?: number;
         };
         BlockTotalsDto: {
-            /** Format: double */
-            proforma?: number;
-            /** Format: double */
-            settlement?: number;
-            /** Format: double */
-            qboActual?: number;
+                        proforma?: string;
+                        settlement?: string;
+                        qboActual?: string;
         };
         ChangeRoleRequest: {
             /** Format: uuid */
@@ -2168,12 +2165,9 @@ export interface components {
             performanceOrder?: number;
             dealType?: string | null;
             customFormulaExpression?: string | null;
-            /** Format: double */
-            baseGuarantee?: number;
-            /** Format: double */
-            backendPercentage?: number;
-            /** Format: double */
-            taxWithholdingPercentage?: number;
+                        baseGuarantee?: string;
+                        backendPercentage?: string;
+                        taxWithholdingPercentage?: string;
         };
         CreateEventRequest: {
             title?: string | null;
@@ -2192,10 +2186,8 @@ export interface components {
             /** Format: int32 */
             sortOrder?: number;
             isArtistDeduction?: boolean;
-            /** Format: double */
-            proformaValue?: number;
-            /** Format: double */
-            settlementValue?: number;
+                        proformaValue?: string;
+                        settlementValue?: string;
             notes?: string | null;
             isHiddenFromPromoter?: boolean;
         };
@@ -2225,14 +2217,10 @@ export interface components {
             performanceOrder?: number;
             dealType?: string | null;
             customFormulaExpression?: string | null;
-            /** Format: double */
-            baseGuarantee?: number;
-            /** Format: double */
-            backendPercentage?: number;
-            /** Format: double */
-            taxWithholdingPercentage?: number;
-            /** Format: double */
-            calculatedNetPayout?: number;
+                        baseGuarantee?: string;
+                        backendPercentage?: string;
+                        taxWithholdingPercentage?: string;
+                        calculatedNetPayout?: string;
             rowVersion?: string | null;
         };
         EventResponse: {
@@ -2294,12 +2282,9 @@ export interface components {
             settlementPdfAvailable?: boolean;
         };
         LedgerSummaryDto: {
-            /** Format: double */
-            grossRevenue?: number;
-            /** Format: double */
-            totalDeductions?: number;
-            /** Format: double */
-            netShowRevenue?: number;
+                        grossRevenue?: string;
+                        totalDeductions?: string;
+                        netShowRevenue?: string;
         };
         LifecycleEventSeedRequestDto: {
             /** Format: uuid */
@@ -2325,14 +2310,10 @@ export interface components {
             /** Format: int32 */
             sortOrder?: number;
             isArtistDeduction?: boolean;
-            /** Format: double */
-            proformaValue?: number;
-            /** Format: double */
-            settlementValue?: number;
-            /** Format: double */
-            qboActualValue?: number;
-            /** Format: double */
-            variance?: number;
+                        proformaValue?: string;
+                        settlementValue?: string;
+                        qboActualValue?: string;
+                        variance?: string;
             varianceFlagged?: boolean;
             notes?: string | null;
             isHiddenFromPromoter?: boolean;
@@ -2345,8 +2326,7 @@ export interface components {
         MutateSettledEventRequestDto: {
             /** Format: uuid */
             eventId?: string;
-            /** Format: double */
-            newSettlementValue?: number;
+                        newSettlementValue?: string;
         };
         MutateSettledEventResponseDto: {
             rejected?: boolean;
@@ -2521,8 +2501,7 @@ export interface components {
             qboTransactionId?: string | null;
             qboAccountId?: string | null;
             qboAccountName?: string | null;
-            /** Format: double */
-            amount?: number;
+                        amount?: string;
             /** Format: date */
             transactionDate?: string;
             /** Format: date-time */
@@ -2543,12 +2522,9 @@ export interface components {
             performanceOrder?: number;
             dealType?: string | null;
             customFormulaExpression?: string | null;
-            /** Format: double */
-            baseGuarantee?: number;
-            /** Format: double */
-            backendPercentage?: number;
-            /** Format: double */
-            taxWithholdingPercentage?: number;
+                        baseGuarantee?: string;
+                        backendPercentage?: string;
+                        taxWithholdingPercentage?: string;
             rowVersion?: string | null;
         };
         UpdateLineItemRequest: {
@@ -2556,10 +2532,8 @@ export interface components {
             /** Format: int32 */
             sortOrder?: number;
             isArtistDeduction?: boolean;
-            /** Format: double */
-            proformaValue?: number;
-            /** Format: double */
-            settlementValue?: number;
+                        proformaValue?: string;
+                        settlementValue?: string;
             notes?: string | null;
             isHiddenFromPromoter?: boolean;
             rowVersion?: string | null;
@@ -2625,3 +2599,68 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;
+
+export type AcceptInvitationRequest = components['schemas']['AcceptInvitationRequest'];
+export type AcceptInvitationResponse = components['schemas']['AcceptInvitationResponse'];
+export type AuthResponse = components['schemas']['AuthResponse'];
+export type BlockTotalsDto = components['schemas']['BlockTotalsDto'];
+export type ChangeRoleRequest = components['schemas']['ChangeRoleRequest'];
+export type ChangeRoleResponse = components['schemas']['ChangeRoleResponse'];
+export type CreateArtistRequest = components['schemas']['CreateArtistRequest'];
+export type CreateEventRequest = components['schemas']['CreateEventRequest'];
+export type CreateInvitationRequest = components['schemas']['CreateInvitationRequest'];
+export type CreateLineItemRequest = components['schemas']['CreateLineItemRequest'];
+export type CreateMappingRequest = components['schemas']['CreateMappingRequest'];
+export type CreateOrganizationRequest = components['schemas']['CreateOrganizationRequest'];
+export type CreateVenueRequest = components['schemas']['CreateVenueRequest'];
+export type EditabilityDto = components['schemas']['EditabilityDto'];
+export type EventArtistDto = components['schemas']['EventArtistDto'];
+export type EventResponse = components['schemas']['EventResponse'];
+export type ExpectedSettlementDto = components['schemas']['ExpectedSettlementDto'];
+export type FinalizeSettlementRequest = components['schemas']['FinalizeSettlementRequest'];
+export type InvitationResponse = components['schemas']['InvitationResponse'];
+export type LedgerBlockDto = components['schemas']['LedgerBlockDto'];
+export type LedgerGridResponse = components['schemas']['LedgerGridResponse'];
+export type LedgerSummaryDto = components['schemas']['LedgerSummaryDto'];
+export type LifecycleEventSeedRequestDto = components['schemas']['LifecycleEventSeedRequestDto'];
+export type LifecycleEventSeedResponseDto = components['schemas']['LifecycleEventSeedResponseDto'];
+export type LineItemDto = components['schemas']['LineItemDto'];
+export type LoginRequest = components['schemas']['LoginRequest'];
+export type MutateSettledEventRequestDto = components['schemas']['MutateSettledEventRequestDto'];
+export type MutateSettledEventResponseDto = components['schemas']['MutateSettledEventResponseDto'];
+export type OrgSeedContextDto = components['schemas']['OrgSeedContextDto'];
+export type OrganizationResponse = components['schemas']['OrganizationResponse'];
+export type OrganizationSummaryDto = components['schemas']['OrganizationSummaryDto'];
+export type PermissionsDto = components['schemas']['PermissionsDto'];
+export type QboAccountMappingDto = components['schemas']['QboAccountMappingDto'];
+export type QboAccountMappingsResponse = components['schemas']['QboAccountMappingsResponse'];
+export type QboEgressRecordDto = components['schemas']['QboEgressRecordDto'];
+export type RefreshRequest = components['schemas']['RefreshRequest'];
+export type RegisterRequest = components['schemas']['RegisterRequest'];
+export type RegisterResponse = components['schemas']['RegisterResponse'];
+export type ResetSeedResponseDto = components['schemas']['ResetSeedResponseDto'];
+export type ReverseSettlementRequest = components['schemas']['ReverseSettlementRequest'];
+export type RoleDetailDto = components['schemas']['RoleDetailDto'];
+export type RoleResponse = components['schemas']['RoleResponse'];
+export type RoleSummaryDto = components['schemas']['RoleSummaryDto'];
+export type SeedSentinelsDto = components['schemas']['SeedSentinelsDto'];
+export type SettlementPdfHashResponseDto = components['schemas']['SettlementPdfHashResponseDto'];
+export type SettlementPdfLinkDto = components['schemas']['SettlementPdfLinkDto'];
+export type SettlementResultDto = components['schemas']['SettlementResultDto'];
+export type SyncResultDto = components['schemas']['SyncResultDto'];
+export type SyncStatusDto = components['schemas']['SyncStatusDto'];
+export type UnmappedCountDto = components['schemas']['UnmappedCountDto'];
+export type UnmappedTransactionDto = components['schemas']['UnmappedTransactionDto'];
+export type UnmappedTransactionsResponse = components['schemas']['UnmappedTransactionsResponse'];
+export type UpdateArtistRequest = components['schemas']['UpdateArtistRequest'];
+export type UpdateLineItemRequest = components['schemas']['UpdateLineItemRequest'];
+export type UpdateMappingRequest = components['schemas']['UpdateMappingRequest'];
+export type UpdateRoleRequest = components['schemas']['UpdateRoleRequest'];
+export type UpdateVenueScopesRequest = components['schemas']['UpdateVenueScopesRequest'];
+export type UpdateVenueScopesResponse = components['schemas']['UpdateVenueScopesResponse'];
+export type UserListResponse = components['schemas']['UserListResponse'];
+export type UserProfileResponse = components['schemas']['UserProfileResponse'];
+export type VenueResponse = components['schemas']['VenueResponse'];
+export type VenueScopeDto = components['schemas']['VenueScopeDto'];
+export type DealType = 'guarantee' | 'door_split' | 'custom';
+export type EventStatus = 'PRE_SHOW' | 'SETTLED' | 'RECONCILED';
