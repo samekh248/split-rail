@@ -54,6 +54,7 @@ public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionReq
             PermissionNames.LockBudget => role.CanLockBudget,
             PermissionNames.EditSettlement => role.CanEditSettlement,
             PermissionNames.SignSettlement => role.CanSignSettlement,
+            PermissionNames.ReverseSettlement => role.CanReverseSettlement,
             PermissionNames.TriggerQboSync => role.CanTriggerQboSync,
             PermissionNames.MapQboAccounts => role.CanMapQboAccounts,
             PermissionNames.ViewFinancials => role.CanViewFinancials,

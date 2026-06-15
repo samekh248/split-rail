@@ -77,6 +77,7 @@ public class OrganizationService
             CanLockBudget = true,
             CanEditSettlement = true,
             CanSignSettlement = true,
+            CanReverseSettlement = true,
             CanTriggerQboSync = true,
             CanMapQboAccounts = true,
             CanViewFinancials = true

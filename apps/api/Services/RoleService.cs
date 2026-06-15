@@ -29,6 +29,7 @@ public class RoleService
                 r.CanLockBudget,
                 r.CanEditSettlement,
                 r.CanSignSettlement,
+                r.CanReverseSettlement,
                 r.CanTriggerQboSync,
                 r.CanMapQboAccounts,
                 r.CanViewFinancials))
@@ -48,6 +49,7 @@ public class RoleService
         if (request.CanLockBudget.HasValue) role.CanLockBudget = request.CanLockBudget.Value;
         if (request.CanEditSettlement.HasValue) role.CanEditSettlement = request.CanEditSettlement.Value;
         if (request.CanSignSettlement.HasValue) role.CanSignSettlement = request.CanSignSettlement.Value;
+        if (request.CanReverseSettlement.HasValue) role.CanReverseSettlement = request.CanReverseSettlement.Value;
         if (request.CanTriggerQboSync.HasValue) role.CanTriggerQboSync = request.CanTriggerQboSync.Value;
         if (request.CanMapQboAccounts.HasValue) role.CanMapQboAccounts = request.CanMapQboAccounts.Value;
         if (request.CanViewFinancials.HasValue) role.CanViewFinancials = request.CanViewFinancials.Value;
@@ -63,6 +65,7 @@ public class RoleService
             role.CanLockBudget,
             role.CanEditSettlement,
             role.CanSignSettlement,
+            role.CanReverseSettlement,
             role.CanTriggerQboSync,
             role.CanMapQboAccounts,
             role.CanViewFinancials);

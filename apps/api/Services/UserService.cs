@@ -224,6 +224,7 @@ public class UserService
             role.CanLockBudget,
             role.CanEditSettlement,
             role.CanSignSettlement,
+            role.CanReverseSettlement,
             role.CanTriggerQboSync,
             role.CanMapQboAccounts,
             role.CanViewFinancials));

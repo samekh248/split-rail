@@ -91,3 +91,18 @@ public sealed class QboMappingConflictException : ApiException
 {
     public QboMappingConflictException(string message) : base(message) { }
 }
+
+public sealed class SettlementStateException : ApiException
+{
+    public SettlementStateException(string message) : base(message) { }
+}
+
+public sealed class SettlementArchiveException : ApiException
+{
+    public SettlementArchiveException(string message) : base(message) { }
+}
+
+public sealed class SignatureValidationException : ApiException
+{
+    public SignatureValidationException(string message) : base(message) { }
+}

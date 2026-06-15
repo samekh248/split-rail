@@ -21,6 +21,8 @@ var builder = WebApplication.CreateBuilder(args);
 DotEnv.Load(Path.Combine(builder.Environment.ContentRootPath, ".env"));
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
+builder.Services.Configure<SettlementArchiveOptions>(
+    builder.Configuration.GetSection(SettlementArchiveOptions.SectionName));
 
 var qboSyncSection = builder.Configuration.GetSection(QboSyncOptions.SectionName);
 builder.Services.Configure<QboSyncOptions>(options =>
@@ -83,6 +85,7 @@ builder.Services.AddAuthorization(options =>
         PermissionNames.LockBudget,
         PermissionNames.EditSettlement,
         PermissionNames.SignSettlement,
+        PermissionNames.ReverseSettlement,
         PermissionNames.TriggerQboSync,
         PermissionNames.MapQboAccounts,
         PermissionNames.ViewFinancials
@@ -112,6 +115,10 @@ builder.Services.AddScoped<QboTokenService>();
 builder.Services.AddScoped<QboTransactionClient>();
 builder.Services.AddScoped<QboSyncService>();
 builder.Services.AddScoped<QboMappingService>();
+builder.Services.AddScoped<SplitRail.Api.Services.SignatureValidator>();
+builder.Services.AddScoped<SettlementPdfRenderer>();
+builder.Services.AddScoped<SettlementService>();
+builder.Services.AddSingleton<ISettlementArchiveStore, GcsSettlementArchiveStore>();
 builder.Services.AddHostedService<QboSyncHostedService>();
 
 builder.Services.AddControllers()

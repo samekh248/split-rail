@@ -7,6 +7,7 @@ public record RoleResponse(
     bool CanLockBudget,
     bool CanEditSettlement,
     bool CanSignSettlement,
+    bool CanReverseSettlement,
     bool CanTriggerQboSync,
     bool CanMapQboAccounts,
     bool CanViewFinancials);
@@ -16,6 +17,7 @@ public record UpdateRoleRequest(
     bool? CanLockBudget,
     bool? CanEditSettlement,
     bool? CanSignSettlement,
+    bool? CanReverseSettlement,
     bool? CanTriggerQboSync,
     bool? CanMapQboAccounts,
     bool? CanViewFinancials);

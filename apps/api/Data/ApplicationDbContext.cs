@@ -32,6 +32,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<QboVenueCredential> QboVenueCredentials => Set<QboVenueCredential>();
     public DbSet<QboSyncLedger> QboSyncLedgers => Set<QboSyncLedger>();
     public DbSet<UnmappedQboTransaction> UnmappedQboTransactions => Set<UnmappedQboTransaction>();
+    public DbSet<SettlementReversal> SettlementReversals => Set<SettlementReversal>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -53,6 +54,7 @@ public class ApplicationDbContext : DbContext
         ConfigureQboVenueCredential(modelBuilder);
         ConfigureQboSyncLedger(modelBuilder);
         ConfigureUnmappedQboTransaction(modelBuilder);
+        ConfigureSettlementReversal(modelBuilder);
 
         ApplyTenantQueryFilters(modelBuilder);
     }
@@ -109,6 +111,10 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<UnmappedQboTransaction>().HasQueryFilter(e =>
             _tenantContext.OrganizationId == null ||
             e.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<SettlementReversal>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
     }
 
     private static void ConfigureOrganization(ModelBuilder modelBuilder)
@@ -224,6 +230,10 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.CanSignSettlement)
                 .HasColumnName("can_sign_settlement")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.CanReverseSettlement)
+                .HasColumnName("can_reverse_settlement")
                 .HasDefaultValue(false);
 
             entity.Property(e => e.CanTriggerQboSync)
@@ -437,6 +447,18 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.SettledAt).HasColumnName("settled_at");
             entity.Property(e => e.SettledByUserId).HasColumnName("settled_by_user_id");
+
+            entity.Property(e => e.ArtistSignatureData)
+                .HasColumnName("artist_signature_data");
+
+            entity.Property(e => e.SettlementPdfUrl)
+                .HasColumnName("settlement_pdf_url");
+
+            entity.Property(e => e.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
 
             entity.Property(e => e.CreatedAt)
                 .HasColumnName("created_at")
@@ -801,6 +823,46 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.VenueId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureSettlementReversal(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<SettlementReversal>(entity =>
+        {
+            entity.ToTable("settlement_reversals");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+            entity.Property(e => e.ReversedByUserId).HasColumnName("reversed_by_user_id");
+
+            entity.Property(e => e.Reason)
+                .HasColumnName("reason")
+                .IsRequired();
+
+            entity.Property(e => e.PreviousPdfUrl)
+                .HasColumnName("previous_pdf_url")
+                .IsRequired();
+
+            entity.Property(e => e.ReversedAt)
+                .HasColumnName("reversed_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasIndex(e => e.EventId).HasDatabaseName("IX_settlement_reversals_event_id");
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.Reversals)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ReversedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.ReversedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
         });
     }
 }

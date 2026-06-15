@@ -45,6 +45,9 @@ public class ExceptionHandlerMiddleware
             QboTokenRefreshException tokenRefresh => (HttpStatusCode.BadGateway, "qbo_token_refresh", tokenRefresh.Message, null),
             QboSyncException sync => (HttpStatusCode.BadGateway, "qbo_sync", sync.Message, null),
             QboMappingConflictException mapping => (HttpStatusCode.Conflict, "qbo_mapping", mapping.Message, null),
+            SettlementStateException settlementState => (HttpStatusCode.BadRequest, "ledger_state", settlementState.Message, null),
+            SignatureValidationException signature => (HttpStatusCode.BadRequest, "validation", signature.Message, null),
+            SettlementArchiveException archive => (HttpStatusCode.BadGateway, "settlement_archive", archive.Message, null),
             _ => (HttpStatusCode.InternalServerError, "internal", "An unexpected error occurred.", null)
         };
 

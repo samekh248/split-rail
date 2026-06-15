@@ -32,6 +32,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     protected WebApplicationFactory<Program> Factory = null!;
     protected HttpClient Client = null!;
+    protected InMemorySettlementArchiveStore ArchiveStore { get; } = new();
 
     public async Task InitializeAsync()
     {
@@ -47,7 +48,9 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                     ["QboSync:ClientId"] = "test-client",
                     ["QboSync:ClientSecret"] = "test-secret",
                     ["QboSync:RedirectUri"] = "http://localhost/api/qbo/callback",
-                    ["QboSync:InternalTriggerKey"] = "test-internal-key"
+                    ["QboSync:InternalTriggerKey"] = "test-internal-key",
+                    ["SettlementArchive:BucketName"] = "test-settlements-bucket",
+                    ["SettlementArchive:SignedUrlTtlMinutes"] = "15"
                 });
             });
 
@@ -60,6 +63,15 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
                 services.AddDbContext<ApplicationDbContext>(options =>
                     options.UseNpgsql(_postgres.GetConnectionString()));
+
+                var archiveDescriptor = services.SingleOrDefault(d =>
+                    d.ServiceType == typeof(ISettlementArchiveStore));
+                if (archiveDescriptor is not null)
+                    services.Remove(archiveDescriptor);
+
+                services.AddSingleton(ArchiveStore);
+                services.AddSingleton<ISettlementArchiveStore>(sp =>
+                    sp.GetRequiredService<InMemorySettlementArchiveStore>());
             });
         });
 
@@ -349,4 +361,29 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                     .ConfigurePrimaryHttpMessageHandler(sp => sp.GetRequiredService<HttpMessageHandler>());
             });
         });
+
+    protected async Task<EventResponse> SeedSettlementReadyEventAsync(
+        HttpClient client,
+        Guid venueId,
+        string accessToken)
+    {
+        var evt = await CreateEventViaApiAsync(client, venueId);
+        await SeedLineItemDirectAsync(accessToken, evt.EventId, settlementValue: 5000m);
+        await client.PostAsync($"/api/venues/{venueId}/events/{evt.EventId}/lock-budget", null);
+        return evt;
+    }
+
+    protected static string ValidSignatureBase64()
+    {
+        const string json = "[[{\"x\":10,\"y\":20},{\"x\":30,\"y\":40}]]";
+        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(json));
+    }
+
+    protected static bool IsQuestPdfSupported()
+    {
+        if (!OperatingSystem.IsWindows())
+            return true;
+
+        return Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE") is "AMD64" or "x86";
+    }
 }

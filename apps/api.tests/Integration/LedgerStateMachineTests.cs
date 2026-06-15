@@ -35,7 +35,7 @@ public class LedgerStateMachineTests : IntegrationTestBase
         var roles = await client.GetFromJsonAsync<List<RoleResponse>>("/api/roles");
         var adminRoleId = roles!.Single(r => r.RoleName == RoleNames.Admin).Id;
         await client.PatchAsJsonAsync($"/api/roles/{adminRoleId}",
-            new UpdateRoleRequest(null, CanLockBudget: false, null, null, null, null, null));
+            new UpdateRoleRequest(null, CanLockBudget: false, null, null, null, null, null, null));
 
         var response = await client.PostAsync(
             $"/api/venues/{venueId}/events/{evt.EventId}/lock-budget", null);

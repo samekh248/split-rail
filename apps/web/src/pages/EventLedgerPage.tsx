@@ -12,6 +12,8 @@ import { ArtistDealPanel } from '@/components/artists/ArtistDealPanel';
 import { LedgerGrid } from '@/components/ledger/LedgerGrid';
 import { SyncNowButton } from '@/components/qbo/SyncNowButton';
 import { UnmappedBanner } from '@/components/qbo/UnmappedBanner';
+import { FinalizeSettlementPanel } from '@/components/settlement/FinalizeSettlementPanel';
+import { SettlementLockedBanner } from '@/components/settlement/SettlementLockedBanner';
 
 interface EventLedgerPageProps {
   venueId: string;
@@ -84,6 +86,17 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
         eventId={eventId}
         lineItemOptions={lineItemOptions}
       />
+
+      <SettlementLockedBanner
+        venueId={venueId}
+        eventId={eventId}
+        status={ledger.status}
+        settlementPdfAvailable={ledger.settlementPdfAvailable}
+      />
+
+      {ledger.isBudgetLocked && ledger.status === 'PRE_SHOW' && (
+        <FinalizeSettlementPanel venueId={venueId} eventId={eventId} />
+      )}
 
       <LedgerGrid
         ledger={ledger}

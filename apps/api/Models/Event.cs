@@ -13,12 +13,16 @@ public class Event
     public bool IsBudgetLocked { get; set; }
     public DateTimeOffset? SettledAt { get; set; }
     public Guid? SettledByUserId { get; set; }
+    public string? ArtistSignatureData { get; set; }
+    public string? SettlementPdfUrl { get; set; }
+    public uint Xmin { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
 
     public Venue Venue { get; set; } = null!;
     public User? SettledByUser { get; set; }
     public ICollection<FinancialLineItem> LineItems { get; set; } = [];
     public ICollection<EventArtist> Artists { get; set; } = [];
+    public ICollection<SettlementReversal> Reversals { get; set; } = [];
     public ICollection<QboSyncLedger> QboSyncLedgerEntries { get; set; } = [];
     public ICollection<UnmappedQboTransaction> UnmappedQboTransactions { get; set; } = [];
 }

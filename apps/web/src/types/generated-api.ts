@@ -1468,6 +1468,8 @@ export interface components {
             blocks?: components["schemas"]["LedgerBlockDto"][] | null;
             artists?: components["schemas"]["EventArtistDto"][] | null;
             summary?: components["schemas"]["LedgerSummaryDto"];
+            settledAt?: string | null;
+            settlementPdfAvailable?: boolean;
         };
         LedgerSummaryDto: {
             /** Format: double */
@@ -1518,6 +1520,7 @@ export interface components {
             canLockBudget?: boolean;
             canEditSettlement?: boolean;
             canSignSettlement?: boolean;
+            canReverseSettlement?: boolean;
             canTriggerQboSync?: boolean;
             canMapQboAccounts?: boolean;
             canViewFinancials?: boolean;
@@ -1707,6 +1710,27 @@ export interface components {
             eventId?: string;
             unmappedCount?: number;
         };
+        FinalizeSettlementRequest: {
+            signatureData?: string | null;
+            confirmed?: boolean;
+        };
+        ReverseSettlementRequest: {
+            reason?: string | null;
+        };
+        SettlementResultDto: {
+            /** Format: uuid */
+            eventId?: string;
+            status?: string | null;
+            settledAt?: string | null;
+            /** Format: uuid */
+            settledByUserId?: string | null;
+            settlementPdfAvailable?: boolean;
+            editability?: components["schemas"]["EditabilityDto"];
+        };
+        SettlementPdfLinkDto: {
+            url?: string | null;
+            expiresAt?: string | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -1726,4 +1750,8 @@ export type UpdateMappingRequest = components['schemas']['UpdateMappingRequest']
 export type UnmappedTransactionDto = components['schemas']['UnmappedTransactionDto'];
 export type UnmappedTransactionsResponse = components['schemas']['UnmappedTransactionsResponse'];
 export type UnmappedCountDto = components['schemas']['UnmappedCountDto'];
+export type FinalizeSettlementRequest = components['schemas']['FinalizeSettlementRequest'];
+export type ReverseSettlementRequest = components['schemas']['ReverseSettlementRequest'];
+export type SettlementResultDto = components['schemas']['SettlementResultDto'];
+export type SettlementPdfLinkDto = components['schemas']['SettlementPdfLinkDto'];
 export type UserProfileResponse = components['schemas']['UserProfileResponse'];
