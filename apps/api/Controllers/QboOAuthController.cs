@@ -52,9 +52,8 @@ public class QboOAuthController : ControllerBase
         return Redirect(authUrl);
     }
 
-    [HttpGet("callback")]
+    [HttpGet("/api/qbo/callback")]
     [AllowAnonymous]
-    [Route("/api/qbo/callback")]
     public async Task<IActionResult> Callback(
         [FromQuery] string? code,
         [FromQuery] string? state,

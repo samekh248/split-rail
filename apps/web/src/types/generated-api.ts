@@ -883,6 +883,442 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/internal/qbo-sync-trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: {
+                    "X-Internal-Sync-Key"?: string;
+                };
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["QboAccountMappingsResponse"];
+                        "application/json": components["schemas"]["QboAccountMappingsResponse"];
+                        "text/json": components["schemas"]["QboAccountMappingsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateMappingRequest"];
+                    "text/json": components["schemas"]["CreateMappingRequest"];
+                    "application/*+json": components["schemas"]["CreateMappingRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["QboAccountMappingDto"];
+                        "application/json": components["schemas"]["QboAccountMappingDto"];
+                        "text/json": components["schemas"]["QboAccountMappingDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/mappings/{mappingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    mappingId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateMappingRequest"];
+                    "text/json": components["schemas"]["UpdateMappingRequest"];
+                    "application/*+json": components["schemas"]["UpdateMappingRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["QboAccountMappingDto"];
+                        "application/json": components["schemas"]["QboAccountMappingDto"];
+                        "text/json": components["schemas"]["QboAccountMappingDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    mappingId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/qbo/connect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/qbo/callback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    code?: string;
+                    state?: string;
+                    realmId?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/qbo/disconnect": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/events/{eventId}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SyncResultDto"];
+                        "application/json": components["schemas"]["SyncResultDto"];
+                        "text/json": components["schemas"]["SyncResultDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/events/{eventId}/sync-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SyncStatusDto"];
+                        "application/json": components["schemas"]["SyncStatusDto"];
+                        "text/json": components["schemas"]["SyncStatusDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/events/{eventId}/unmapped-transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UnmappedTransactionsResponse"];
+                        "application/json": components["schemas"]["UnmappedTransactionsResponse"];
+                        "text/json": components["schemas"]["UnmappedTransactionsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/events/{eventId}/unmapped-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UnmappedCountDto"];
+                        "application/json": components["schemas"]["UnmappedCountDto"];
+                        "text/json": components["schemas"]["UnmappedCountDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/roles": {
         parameters: {
             query?: never;
@@ -965,6 +1401,138 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/venues/{venueId}/events/{eventId}/settle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["FinalizeSettlementRequest"];
+                    "text/json": components["schemas"]["FinalizeSettlementRequest"];
+                    "application/*+json": components["schemas"]["FinalizeSettlementRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SettlementResultDto"];
+                        "application/json": components["schemas"]["SettlementResultDto"];
+                        "text/json": components["schemas"]["SettlementResultDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/events/{eventId}/reverse-settlement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ReverseSettlementRequest"];
+                    "text/json": components["schemas"]["ReverseSettlementRequest"];
+                    "application/*+json": components["schemas"]["ReverseSettlementRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SettlementResultDto"];
+                        "application/json": components["schemas"]["SettlementResultDto"];
+                        "text/json": components["schemas"]["SettlementResultDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/events/{eventId}/settlement-pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SettlementPdfLinkDto"];
+                        "application/json": components["schemas"]["SettlementPdfLinkDto"];
+                        "text/json": components["schemas"]["SettlementPdfLinkDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -987,6 +1555,240 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/test-seed/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ResetSeedResponseDto"];
+                        "application/json": components["schemas"]["ResetSeedResponseDto"];
+                        "text/json": components["schemas"]["ResetSeedResponseDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/test-seed/lifecycle-event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["LifecycleEventSeedRequestDto"];
+                    "text/json": components["schemas"]["LifecycleEventSeedRequestDto"];
+                    "application/*+json": components["schemas"]["LifecycleEventSeedRequestDto"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["LifecycleEventSeedResponseDto"];
+                        "application/json": components["schemas"]["LifecycleEventSeedResponseDto"];
+                        "text/json": components["schemas"]["LifecycleEventSeedResponseDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/test-seed/mutate-settled-event": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MutateSettledEventRequestDto"];
+                    "text/json": components["schemas"]["MutateSettledEventRequestDto"];
+                    "application/*+json": components["schemas"]["MutateSettledEventRequestDto"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MutateSettledEventResponseDto"];
+                        "application/json": components["schemas"]["MutateSettledEventResponseDto"];
+                        "text/json": components["schemas"]["MutateSettledEventResponseDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/test-seed/qbo-egress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["QboEgressRecordDto"][];
+                        "application/json": components["schemas"]["QboEgressRecordDto"][];
+                        "text/json": components["schemas"]["QboEgressRecordDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/test-seed/settlement-pdf/{objectPath}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    objectPath: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/test-seed/settlement-hash/{eventId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SettlementPdfHashResponseDto"];
+                        "application/json": components["schemas"]["SettlementPdfHashResponseDto"];
+                        "text/json": components["schemas"]["SettlementPdfHashResponseDto"];
+                    };
                 };
             };
         };
@@ -1397,6 +2199,13 @@ export interface components {
             notes?: string | null;
             isHiddenFromPromoter?: boolean;
         };
+        CreateMappingRequest: {
+            qboAccountId?: string | null;
+            qboAccountName?: string | null;
+            mappedCategoryLabel?: string | null;
+            /** Format: uuid */
+            mappedLineItemId?: string | null;
+        };
         CreateOrganizationRequest: {
             name?: string | null;
         };
@@ -1437,6 +2246,18 @@ export interface components {
             isBudgetLocked?: boolean;
             qboTagName?: string | null;
             editability?: components["schemas"]["EditabilityDto"];
+            /** Format: date-time */
+            settledAt?: string | null;
+            settlementPdfAvailable?: boolean;
+        };
+        ExpectedSettlementDto: {
+            computedNetPayout?: string | null;
+            grossRevenue?: string | null;
+            netShowRevenue?: string | null;
+        };
+        FinalizeSettlementRequest: {
+            signatureData?: string | null;
+            confirmed?: boolean;
         };
         InvitationResponse: {
             /** Format: uuid */
@@ -1468,6 +2289,7 @@ export interface components {
             blocks?: components["schemas"]["LedgerBlockDto"][] | null;
             artists?: components["schemas"]["EventArtistDto"][] | null;
             summary?: components["schemas"]["LedgerSummaryDto"];
+            /** Format: date-time */
             settledAt?: string | null;
             settlementPdfAvailable?: boolean;
         };
@@ -1478,6 +2300,23 @@ export interface components {
             totalDeductions?: number;
             /** Format: double */
             netShowRevenue?: number;
+        };
+        LifecycleEventSeedRequestDto: {
+            /** Format: uuid */
+            organizationId?: string;
+            /** Format: uuid */
+            venueId?: string;
+        };
+        LifecycleEventSeedResponseDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            venueId?: string;
+            qboTagName?: string | null;
+            expectedSettlement?: components["schemas"]["ExpectedSettlementDto"];
+            expectedVariance?: {
+                [key: string]: string;
+            } | null;
         };
         LineItemDto: {
             /** Format: uuid */
@@ -1503,6 +2342,32 @@ export interface components {
             email?: string | null;
             password?: string | null;
         };
+        MutateSettledEventRequestDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: double */
+            newSettlementValue?: number;
+        };
+        MutateSettledEventResponseDto: {
+            rejected?: boolean;
+            message?: string | null;
+        };
+        OrgSeedContextDto: {
+            /** Format: uuid */
+            organizationId?: string;
+            adminEmail?: string | null;
+            adminPassword?: string | null;
+            scopedUserEmail?: string | null;
+            scopedUserPassword?: string | null;
+            /** Format: uuid */
+            inScopeVenueId?: string;
+            /** Format: uuid */
+            outOfScopeVenueId?: string;
+            /** Format: uuid */
+            adminUserId?: string;
+            /** Format: uuid */
+            scopedUserId?: string;
+        };
         OrganizationResponse: {
             /** Format: uuid */
             id?: string;
@@ -1525,6 +2390,28 @@ export interface components {
             canMapQboAccounts?: boolean;
             canViewFinancials?: boolean;
         };
+        QboAccountMappingDto: {
+            /** Format: uuid */
+            id?: string;
+            qboAccountId?: string | null;
+            qboAccountName?: string | null;
+            mappedCategoryLabel?: string | null;
+            /** Format: uuid */
+            mappedLineItemId?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        QboAccountMappingsResponse: {
+            /** Format: uuid */
+            venueId?: string;
+            mappings?: components["schemas"]["QboAccountMappingDto"][] | null;
+        };
+        QboEgressRecordDto: {
+            method?: string | null;
+            host?: string | null;
+            /** Format: date-time */
+            timestamp?: string;
+        };
         RefreshRequest: {
             refreshToken?: string | null;
         };
@@ -1538,6 +2425,14 @@ export interface components {
             email?: string | null;
             /** Format: date-time */
             createdAt?: string;
+        };
+        ResetSeedResponseDto: {
+            orgA?: components["schemas"]["OrgSeedContextDto"];
+            orgB?: components["schemas"]["OrgSeedContextDto"];
+            sentinels?: components["schemas"]["SeedSentinelsDto"];
+        };
+        ReverseSettlementRequest: {
+            reason?: string | null;
         };
         RoleDetailDto: {
             /** Format: uuid */
@@ -1553,6 +2448,7 @@ export interface components {
             canLockBudget?: boolean;
             canEditSettlement?: boolean;
             canSignSettlement?: boolean;
+            canReverseSettlement?: boolean;
             canTriggerQboSync?: boolean;
             canMapQboAccounts?: boolean;
             canViewFinancials?: boolean;
@@ -1561,6 +2457,85 @@ export interface components {
             /** Format: uuid */
             id?: string;
             roleName?: string | null;
+        };
+        SeedSentinelsDto: {
+            orgAString?: string[] | null;
+            orgBStrings?: string[] | null;
+        };
+        SettlementPdfHashResponseDto: {
+            hashHex?: string | null;
+        };
+        SettlementPdfLinkDto: {
+            url?: string | null;
+            /** Format: date-time */
+            expiresAt?: string;
+        };
+        SettlementResultDto: {
+            /** Format: uuid */
+            eventId?: string;
+            status?: string | null;
+            /** Format: date-time */
+            settledAt?: string | null;
+            /** Format: uuid */
+            settledByUserId?: string | null;
+            settlementPdfAvailable?: boolean;
+            editability?: components["schemas"]["EditabilityDto"];
+        };
+        SyncResultDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            syncBatchId?: string;
+            /** Format: int32 */
+            transactionsProcessed?: number;
+            /** Format: int32 */
+            transactionsMapped?: number;
+            /** Format: int32 */
+            transactionsUnmapped?: number;
+            unmappedAccountIds?: string[] | null;
+            /** Format: date-time */
+            syncedAt?: string;
+        };
+        SyncStatusDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: date-time */
+            lastSyncedAt?: string | null;
+            /** Format: uuid */
+            lastSyncBatchId?: string | null;
+            /** Format: int32 */
+            totalMappedTransactions?: number;
+            /** Format: int32 */
+            totalUnmappedTransactions?: number;
+            qboConnected?: boolean;
+        };
+        UnmappedCountDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: int32 */
+            unmappedCount?: number;
+        };
+        UnmappedTransactionDto: {
+            /** Format: uuid */
+            id?: string;
+            qboTransactionId?: string | null;
+            qboAccountId?: string | null;
+            qboAccountName?: string | null;
+            /** Format: double */
+            amount?: number;
+            /** Format: date */
+            transactionDate?: string;
+            /** Format: date-time */
+            syncedAt?: string;
+        };
+        UnmappedTransactionsResponse: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            venueId?: string;
+            /** Format: int32 */
+            unmappedCount?: number;
+            transactions?: components["schemas"]["UnmappedTransactionDto"][] | null;
         };
         UpdateArtistRequest: {
             artistName?: string | null;
@@ -1589,11 +2564,17 @@ export interface components {
             isHiddenFromPromoter?: boolean;
             rowVersion?: string | null;
         };
+        UpdateMappingRequest: {
+            mappedCategoryLabel?: string | null;
+            /** Format: uuid */
+            mappedLineItemId?: string | null;
+        };
         UpdateRoleRequest: {
             canManagePermissions?: boolean | null;
             canLockBudget?: boolean | null;
             canEditSettlement?: boolean | null;
             canSignSettlement?: boolean | null;
+            canReverseSettlement?: boolean | null;
             canTriggerQboSync?: boolean | null;
             canMapQboAccounts?: boolean | null;
             canViewFinancials?: boolean | null;
@@ -1635,102 +2616,6 @@ export interface components {
             venueId?: string;
             venueName?: string | null;
         };
-        SyncResultDto: {
-            /** Format: uuid */
-            eventId?: string;
-            /** Format: uuid */
-            syncBatchId?: string;
-            transactionsProcessed?: number;
-            transactionsMapped?: number;
-            transactionsUnmapped?: number;
-            unmappedAccountIds?: string[] | null;
-            /** Format: date-time */
-            syncedAt?: string;
-        };
-        SyncStatusDto: {
-            /** Format: uuid */
-            eventId?: string;
-            /** Format: date-time */
-            lastSyncedAt?: string | null;
-            /** Format: uuid */
-            lastSyncBatchId?: string | null;
-            totalMappedTransactions?: number;
-            totalUnmappedTransactions?: number;
-            qboConnected?: boolean;
-        };
-        QboAccountMappingDto: {
-            /** Format: uuid */
-            id?: string;
-            qboAccountId?: string | null;
-            qboAccountName?: string | null;
-            mappedCategoryLabel?: string | null;
-            /** Format: uuid */
-            mappedLineItemId?: string | null;
-            /** Format: date-time */
-            createdAt?: string;
-        };
-        QboAccountMappingsResponse: {
-            /** Format: uuid */
-            venueId?: string;
-            mappings?: components["schemas"]["QboAccountMappingDto"][] | null;
-        };
-        CreateMappingRequest: {
-            qboAccountId?: string | null;
-            qboAccountName?: string | null;
-            mappedCategoryLabel?: string | null;
-            /** Format: uuid */
-            mappedLineItemId?: string | null;
-        };
-        UpdateMappingRequest: {
-            mappedCategoryLabel?: string | null;
-            /** Format: uuid */
-            mappedLineItemId?: string | null;
-        };
-        UnmappedTransactionDto: {
-            /** Format: uuid */
-            id?: string;
-            qboTransactionId?: string | null;
-            qboAccountId?: string | null;
-            qboAccountName?: string | null;
-            amount?: string | null;
-            transactionDate?: string | null;
-            /** Format: date-time */
-            syncedAt?: string;
-        };
-        UnmappedTransactionsResponse: {
-            /** Format: uuid */
-            eventId?: string;
-            /** Format: uuid */
-            venueId?: string;
-            unmappedCount?: number;
-            transactions?: components["schemas"]["UnmappedTransactionDto"][] | null;
-        };
-        UnmappedCountDto: {
-            /** Format: uuid */
-            eventId?: string;
-            unmappedCount?: number;
-        };
-        FinalizeSettlementRequest: {
-            signatureData?: string | null;
-            confirmed?: boolean;
-        };
-        ReverseSettlementRequest: {
-            reason?: string | null;
-        };
-        SettlementResultDto: {
-            /** Format: uuid */
-            eventId?: string;
-            status?: string | null;
-            settledAt?: string | null;
-            /** Format: uuid */
-            settledByUserId?: string | null;
-            settlementPdfAvailable?: boolean;
-            editability?: components["schemas"]["EditabilityDto"];
-        };
-        SettlementPdfLinkDto: {
-            url?: string | null;
-            expiresAt?: string | null;
-        };
     };
     responses: never;
     parameters: never;
@@ -1740,18 +2625,3 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;
-
-export type SyncResultDto = components['schemas']['SyncResultDto'];
-export type SyncStatusDto = components['schemas']['SyncStatusDto'];
-export type QboAccountMappingDto = components['schemas']['QboAccountMappingDto'];
-export type QboAccountMappingsResponse = components['schemas']['QboAccountMappingsResponse'];
-export type CreateMappingRequest = components['schemas']['CreateMappingRequest'];
-export type UpdateMappingRequest = components['schemas']['UpdateMappingRequest'];
-export type UnmappedTransactionDto = components['schemas']['UnmappedTransactionDto'];
-export type UnmappedTransactionsResponse = components['schemas']['UnmappedTransactionsResponse'];
-export type UnmappedCountDto = components['schemas']['UnmappedCountDto'];
-export type FinalizeSettlementRequest = components['schemas']['FinalizeSettlementRequest'];
-export type ReverseSettlementRequest = components['schemas']['ReverseSettlementRequest'];
-export type SettlementResultDto = components['schemas']['SettlementResultDto'];
-export type SettlementPdfLinkDto = components['schemas']['SettlementPdfLinkDto'];
-export type UserProfileResponse = components['schemas']['UserProfileResponse'];
