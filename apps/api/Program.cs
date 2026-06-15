@@ -167,8 +167,6 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Split-Rail API", Version = "v1" });
-    c.SupportNonNullableReferenceTypes();
-    c.NonNullableReferenceTypesAsRequired();
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "JWT Authorization header using the Bearer scheme.",
@@ -188,7 +186,6 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
-    c.SchemaFilter<DecimalStringSchemaFilter>();
 });
 
 var app = builder.Build();

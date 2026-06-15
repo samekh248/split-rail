@@ -39,7 +39,7 @@ function normalizeDecimalStringFields(content) {
       : match;
 
   schemas = schemas.replace(
-    /\/\*\* Format: double \*\/\r?\n(\s+)([A-Za-z0-9_]+)(\?:|:) number;/g,
+    / *\/\*\* Format: double \*\/\r?\n(\s+)([A-Za-z0-9_]+)(\?:|:) number;/g,
     replaceDecimalNumber,
   );
 

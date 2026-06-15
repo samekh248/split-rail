@@ -2144,9 +2144,9 @@ export interface components {
             expiresIn?: number;
         };
         BlockTotalsDto: {
-                        proforma?: string;
-                        settlement?: string;
-                        qboActual?: string;
+            proforma?: string;
+            settlement?: string;
+            qboActual?: string;
         };
         ChangeRoleRequest: {
             /** Format: uuid */
@@ -2165,9 +2165,9 @@ export interface components {
             performanceOrder?: number;
             dealType?: string | null;
             customFormulaExpression?: string | null;
-                        baseGuarantee?: string;
-                        backendPercentage?: string;
-                        taxWithholdingPercentage?: string;
+            baseGuarantee?: string;
+            backendPercentage?: string;
+            taxWithholdingPercentage?: string;
         };
         CreateEventRequest: {
             title?: string | null;
@@ -2186,8 +2186,8 @@ export interface components {
             /** Format: int32 */
             sortOrder?: number;
             isArtistDeduction?: boolean;
-                        proformaValue?: string;
-                        settlementValue?: string;
+            proformaValue?: string;
+            settlementValue?: string;
             notes?: string | null;
             isHiddenFromPromoter?: boolean;
         };
@@ -2217,10 +2217,10 @@ export interface components {
             performanceOrder?: number;
             dealType?: string | null;
             customFormulaExpression?: string | null;
-                        baseGuarantee?: string;
-                        backendPercentage?: string;
-                        taxWithholdingPercentage?: string;
-                        calculatedNetPayout?: string;
+            baseGuarantee?: string;
+            backendPercentage?: string;
+            taxWithholdingPercentage?: string;
+            calculatedNetPayout?: string;
             rowVersion?: string | null;
         };
         EventResponse: {
@@ -2282,9 +2282,9 @@ export interface components {
             settlementPdfAvailable?: boolean;
         };
         LedgerSummaryDto: {
-                        grossRevenue?: string;
-                        totalDeductions?: string;
-                        netShowRevenue?: string;
+            grossRevenue?: string;
+            totalDeductions?: string;
+            netShowRevenue?: string;
         };
         LifecycleEventSeedRequestDto: {
             /** Format: uuid */
@@ -2310,10 +2310,10 @@ export interface components {
             /** Format: int32 */
             sortOrder?: number;
             isArtistDeduction?: boolean;
-                        proformaValue?: string;
-                        settlementValue?: string;
-                        qboActualValue?: string;
-                        variance?: string;
+            proformaValue?: string;
+            settlementValue?: string;
+            qboActualValue?: string;
+            variance?: string;
             varianceFlagged?: boolean;
             notes?: string | null;
             isHiddenFromPromoter?: boolean;
@@ -2326,7 +2326,7 @@ export interface components {
         MutateSettledEventRequestDto: {
             /** Format: uuid */
             eventId?: string;
-                        newSettlementValue?: string;
+            newSettlementValue?: string;
         };
         MutateSettledEventResponseDto: {
             rejected?: boolean;
@@ -2501,7 +2501,7 @@ export interface components {
             qboTransactionId?: string | null;
             qboAccountId?: string | null;
             qboAccountName?: string | null;
-            amount: string;
+            amount?: string;
             /** Format: date */
             transactionDate?: string;
             /** Format: date-time */
@@ -2522,9 +2522,9 @@ export interface components {
             performanceOrder?: number;
             dealType?: string | null;
             customFormulaExpression?: string | null;
-                        baseGuarantee?: string;
-                        backendPercentage?: string;
-                        taxWithholdingPercentage?: string;
+            baseGuarantee?: string;
+            backendPercentage?: string;
+            taxWithholdingPercentage?: string;
             rowVersion?: string | null;
         };
         UpdateLineItemRequest: {
@@ -2532,8 +2532,8 @@ export interface components {
             /** Format: int32 */
             sortOrder?: number;
             isArtistDeduction?: boolean;
-                        proformaValue?: string;
-                        settlementValue?: string;
+            proformaValue?: string;
+            settlementValue?: string;
             notes?: string | null;
             isHiddenFromPromoter?: boolean;
             rowVersion?: string | null;
