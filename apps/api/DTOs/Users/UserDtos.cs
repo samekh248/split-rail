@@ -6,6 +6,7 @@ public record PermissionsDto(
     bool CanLockBudget,
     bool CanEditSettlement,
     bool CanSignSettlement,
+    bool CanReverseSettlement,
     bool CanTriggerQboSync,
     bool CanMapQboAccounts,
     bool CanViewFinancials);

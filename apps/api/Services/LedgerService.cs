@@ -416,7 +416,9 @@ public class LedgerService
             GetEditability(evt.Status, evt.IsBudgetLocked),
             blocks,
             evt.Artists.OrderBy(a => a.PerformanceOrder).Select(ToArtistDto).ToList(),
-            new LedgerSummaryDto(grossRevenue, totalDeductions, netShowRevenue));
+            new LedgerSummaryDto(grossRevenue, totalDeductions, netShowRevenue),
+            evt.SettledAt,
+            !string.IsNullOrWhiteSpace(evt.SettlementPdfUrl));
     }
 
     private async Task<Event> LoadEventForReadAsync(

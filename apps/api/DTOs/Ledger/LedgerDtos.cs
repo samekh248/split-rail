@@ -87,7 +87,9 @@ public record LedgerGridResponse(
     EditabilityDto Editability,
     IReadOnlyList<LedgerBlockDto> Blocks,
     IReadOnlyList<EventArtistDto> Artists,
-    LedgerSummaryDto Summary);
+    LedgerSummaryDto Summary,
+    DateTimeOffset? SettledAt = null,
+    bool SettlementPdfAvailable = false);
 
 public record EventResponse(
     Guid EventId,
@@ -97,7 +99,9 @@ public record EventResponse(
     string Status,
     bool IsBudgetLocked,
     string QboTagName,
-    EditabilityDto Editability);
+    EditabilityDto Editability,
+    DateTimeOffset? SettledAt = null,
+    bool SettlementPdfAvailable = false);
 
 public record CreateEventRequest(
     string Title,

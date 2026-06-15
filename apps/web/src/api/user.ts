@@ -14,3 +14,8 @@ export function useCanTriggerQboSync(): boolean {
   const { data } = useUserProfile();
   return data?.role?.permissions?.canTriggerQboSync ?? false;
 }
+
+export function useCanSignSettlement(): boolean {
+  const { data } = useUserProfile();
+  return data?.role?.permissions?.canSignSettlement ?? false;
+}

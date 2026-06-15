@@ -30,6 +30,10 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<string>("ArtistSignatureData")
+                        .HasColumnType("text")
+                        .HasColumnName("artist_signature_data");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -60,6 +64,10 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("settled_by_user_id");
 
+                    b.Property<string>("SettlementPdfUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("settlement_pdf_url");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
@@ -77,6 +85,12 @@ namespace SplitRail.Api.Data.Migrations
                     b.Property<Guid>("VenueId")
                         .HasColumnType("uuid")
                         .HasColumnName("venue_id");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -380,6 +394,12 @@ namespace SplitRail.Api.Data.Migrations
                         .HasDefaultValue(false)
                         .HasColumnName("can_map_qbo_accounts");
 
+                    b.Property<bool>("CanReverseSettlement")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("can_reverse_settlement");
+
                     b.Property<bool>("CanSignSettlement")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -620,6 +640,48 @@ namespace SplitRail.Api.Data.Migrations
                         .HasDatabaseName("IX_refresh_tokens_user_id");
 
                     b.ToTable("refresh_tokens", (string)null);
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.SettlementReversal", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("PreviousPdfUrl")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("previous_pdf_url");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<DateTimeOffset>("ReversedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reversed_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("ReversedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reversed_by_user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId")
+                        .HasDatabaseName("IX_settlement_reversals_event_id");
+
+                    b.HasIndex("ReversedByUserId");
+
+                    b.ToTable("settlement_reversals", (string)null);
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.UnmappedQboTransaction", b =>
@@ -940,6 +1002,25 @@ namespace SplitRail.Api.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("SplitRail.Api.Models.SettlementReversal", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.Event", "Event")
+                        .WithMany("Reversals")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SplitRail.Api.Models.User", "ReversedByUser")
+                        .WithMany()
+                        .HasForeignKey("ReversedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("ReversedByUser");
+                });
+
             modelBuilder.Entity("SplitRail.Api.Models.UnmappedQboTransaction", b =>
                 {
                     b.HasOne("SplitRail.Api.Models.Event", "Event")
@@ -1023,6 +1104,8 @@ namespace SplitRail.Api.Data.Migrations
                     b.Navigation("LineItems");
 
                     b.Navigation("QboSyncLedgerEntries");
+
+                    b.Navigation("Reversals");
 
                     b.Navigation("UnmappedQboTransactions");
                 });

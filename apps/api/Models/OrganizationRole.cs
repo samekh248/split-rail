@@ -10,6 +10,7 @@ public class OrganizationRole
     public bool CanLockBudget { get; set; }
     public bool CanEditSettlement { get; set; }
     public bool CanSignSettlement { get; set; }
+    public bool CanReverseSettlement { get; set; }
     public bool CanTriggerQboSync { get; set; }
     public bool CanMapQboAccounts { get; set; }
     public bool CanViewFinancials { get; set; }

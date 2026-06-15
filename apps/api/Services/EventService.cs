@@ -112,5 +112,7 @@ public class EventService
             EventStatusFormat.ToApiString(evt.Status),
             evt.IsBudgetLocked,
             evt.QboTagName,
-            LedgerService.GetEditability(evt.Status, evt.IsBudgetLocked));
+            LedgerService.GetEditability(evt.Status, evt.IsBudgetLocked),
+            evt.SettledAt,
+            !string.IsNullOrWhiteSpace(evt.SettlementPdfUrl));
 }

@@ -40,6 +40,7 @@ public static class PermissionNames
     public const string LockBudget = "can_lock_budget";
     public const string EditSettlement = "can_edit_settlement";
     public const string SignSettlement = "can_sign_settlement";
+    public const string ReverseSettlement = "can_reverse_settlement";
     public const string TriggerQboSync = "can_trigger_qbo_sync";
     public const string MapQboAccounts = "can_map_qbo_accounts";
     public const string ViewFinancials = "can_view_financials";
