@@ -138,8 +138,8 @@ jobs:
           TOTAL=0; HIT=0
           while IFS= read -r line; do
             case "$line" in
-              LF:*) TOTAL=${line#LF:} ;;
-              LH:*) HIT=${line#LH:} ;;
+              LF:*) TOTAL=$((TOTAL + ${line#LF:})) ;;
+              LH:*) HIT=$((HIT + ${line#LH:})) ;;
             esac
           done < coverage/frontend/lcov.info
           test "$TOTAL" -gt 0 || (echo "Empty frontend coverage" && exit 1)
