@@ -74,4 +74,35 @@ public class AuthServiceTests
         result.RefreshToken.Should().NotBeNullOrEmpty();
         result.ExpiresIn.Should().Be(3600);
     }
+
+    [Fact]
+    public async Task Login_InvalidPassword_ThrowsAuthenticationException()
+    {
+        var (authService, _) = CreateSut();
+        await authService.RegisterAsync(new RegisterRequest("user@example.com", "SecurePass1"));
+        var act = () => authService.LoginAsync(new LoginRequest("user@example.com", "WrongPass1"));
+        await act.Should().ThrowAsync<AuthenticationException>();
+    }
+
+    [Fact]
+    public async Task Logout_RevokesRefreshToken()
+    {
+        var (authService, db) = CreateSut();
+        var registered = await authService.RegisterAsync(new RegisterRequest("user@example.com", "SecurePass1"));
+        var login = await authService.LoginAsync(new LoginRequest("user@example.com", "SecurePass1"));
+        await authService.LogoutAsync(registered.Id);
+        var act = () => authService.RefreshAsync(new RefreshRequest(login.RefreshToken));
+        await act.Should().ThrowAsync<AuthenticationException>();
+    }
+
+    [Fact]
+    public async Task Refresh_RotatesTokenPair()
+    {
+        var (authService, _) = CreateSut();
+        await authService.RegisterAsync(new RegisterRequest("user@example.com", "SecurePass1"));
+        var login = await authService.LoginAsync(new LoginRequest("user@example.com", "SecurePass1"));
+        var refreshed = await authService.RefreshAsync(new RefreshRequest(login.RefreshToken));
+        refreshed.AccessToken.Should().NotBe(login.AccessToken);
+        refreshed.RefreshToken.Should().NotBe(login.RefreshToken);
+    }
 }

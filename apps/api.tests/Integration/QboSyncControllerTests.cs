@@ -57,4 +57,20 @@ public class QboSyncControllerTests : IntegrationTestBase
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
+
+    [Fact]
+    public async Task GetSyncStatus_ReturnsStatusForEvent()
+    {
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var evt = await CreateEventViaApiAsync(client, venueId);
+        await SeedQboCredentialDirectAsync(token, venueId);
+
+        var response = await client.GetAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/sync-status");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var status = await response.Content.ReadFromJsonAsync<SplitRail.Api.DTOs.Qbo.SyncStatusDto>();
+        status!.QboConnected.Should().BeTrue();
+        status.EventId.Should().Be(evt.EventId);
+    }
 }

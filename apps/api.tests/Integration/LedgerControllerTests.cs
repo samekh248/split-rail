@@ -159,4 +159,44 @@ public class LedgerControllerTests : IntegrationTestBase
             $"/api/venues/{venueId}/events/{evt.EventId}/recalculate", null);
         recalcResponse.StatusCode.Should().Be(HttpStatusCode.OK);
     }
+
+    [Fact]
+    public async Task UpdateArtist_RecalculatesPayout()
+    {
+        var (client, venueId, _) = await SetupFinancialAdminAsync();
+        var evt = await CreateEventViaApiAsync(client, venueId);
+
+        await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/line-items",
+            new CreateLineItemRequest("REVENUE", "GA Tickets", 0, false, 10000m, 0m, null));
+
+        var createResponse = await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/artists",
+            new CreateArtistRequest("Headliner", 1, "guarantee", null, 5000m, 70m, 0m));
+        var artist = await createResponse.Content.ReadFromJsonAsync<EventArtistDto>();
+
+        var updateResponse = await client.PutAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/artists/{artist!.Id}",
+            new UpdateArtistRequest("Headliner", 1, "guarantee", null, 3000m, 70m, 0m, artist.RowVersion));
+        updateResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var updated = await updateResponse.Content.ReadFromJsonAsync<EventArtistDto>();
+        updated!.CalculatedNetPayout.Should().Be(7000m);
+    }
+
+    [Fact]
+    public async Task DeleteArtist_Returns204()
+    {
+        var (client, venueId, _) = await SetupFinancialAdminAsync();
+        var evt = await CreateEventViaApiAsync(client, venueId);
+
+        var createResponse = await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/artists",
+            new CreateArtistRequest("Headliner", 1, "guarantee", null, 5000m, 70m, 0m));
+        var artist = await createResponse.Content.ReadFromJsonAsync<EventArtistDto>();
+
+        var deleteResponse = await client.DeleteAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/artists/{artist!.Id}");
+        deleteResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
 }
