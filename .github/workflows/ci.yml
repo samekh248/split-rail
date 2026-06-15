@@ -24,7 +24,7 @@ jobs:
         with:
           dotnet-version: ${{ env.DOTNET_VERSION }}
       - run: dotnet restore apps/api.tests/split-rail-api.tests.csproj
-      - run: dotnet test apps/api.tests/split-rail-api.tests.csproj --configuration Release --collect:"XPlat Code Coverage" --results-directory coverage/backend
+      - run: dotnet test apps/api.tests/split-rail-api.tests.csproj --configuration Release --collect:"XPlat Code Coverage" --results-directory coverage/backend --settings apps/api.tests/coverage.runsettings
       - uses: actions/upload-artifact@v4
         with:
           name: backend-coverage
