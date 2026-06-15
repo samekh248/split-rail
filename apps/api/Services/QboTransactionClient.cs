@@ -14,7 +14,7 @@ public record QboFetchedTransaction(
     decimal Amount,
     DateOnly TransactionDate);
 
-public class QboTransactionClient
+public class QboTransactionClient : IQboTransactionClient
 {
     private static readonly string[] TransactionEntityTypes = ["Purchase", "Bill", "Deposit", "JournalEntry"];
 

@@ -1,0 +1,15 @@
+{
+  "name": "@split-rail/e2e",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:shard": "playwright test --shard=$SHARD_INDEX/$SHARD_TOTAL"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}
