@@ -7,8 +7,10 @@ import {
   type ReactNode,
 } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { configureApiClient, resetSessionExpiredLatch } from '@/api/client';
 import { fetchUserProfile } from '@/api/user';
 import type { LoginRequest, UserProfileResponse } from '@/types/generated-api';
+import { clearActiveVenueId } from '@/venue/activeVenueStorage';
 import { bootstrapAuthSession, routeProfile } from './authBootstrap';
 import * as authApi from './authApi';
 
@@ -29,6 +31,7 @@ export interface AuthContextValue {
   setAuthView: (view: AuthView) => void;
   pending: boolean;
   error: string | null;
+  sessionExpired: boolean;
   clearError: () => void;
   login: (credentials: LoginRequest) => Promise<void>;
   onboard: (values: RegisterValues) => Promise<void>;
@@ -49,6 +52,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authView, setAuthViewState] = useState<AuthView>('login');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  const handleAutomaticSignOut = useCallback(() => {
+    void (async () => {
+      try {
+        await authApi.logout();
+      } catch {
+        /* best-effort */
+      }
+      queryClient.clear();
+      clearActiveVenueId();
+      setProfile(null);
+      setJustOnboarded(false);
+      setAuthViewState('login');
+      setPhase('unauthenticated');
+      setSessionExpired(true);
+    })();
+  }, [queryClient]);
+
+  useEffect(() => {
+    configureApiClient({
+      onRefresh: async () => {
+        await authApi.refreshSession();
+      },
+      onSessionExpired: handleAutomaticSignOut,
+    });
+  }, [handleAutomaticSignOut]);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,6 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const loadedProfile = await fetchUserProfile();
       setProfile(loadedProfile);
       setJustOnboarded(false);
+      setSessionExpired(false);
+      resetSessionExpiredLatch();
       setPhase(routeProfile(loadedProfile));
     } catch (err) {
       setError(authApi.mapAuthError(err));
@@ -98,6 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const loadedProfile = await authApi.onboard(values);
         setProfile(loadedProfile);
         setJustOnboarded(true);
+        setSessionExpired(false);
+        resetSessionExpiredLatch();
         setPhase('authenticated');
       } catch (err) {
         if (err instanceof authApi.OrgCreationError) {
@@ -124,6 +158,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const loadedProfile = await authApi.completeOrganizationSetup(name);
         setProfile(loadedProfile);
         setJustOnboarded(true);
+        setSessionExpired(false);
+        resetSessionExpiredLatch();
         setPhase('authenticated');
       } catch (err) {
         setError(authApi.mapAuthError(err));
@@ -141,8 +177,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authApi.logout();
     } finally {
       queryClient.clear();
+      clearActiveVenueId();
       setProfile(null);
       setJustOnboarded(false);
+      setSessionExpired(false);
+      resetSessionExpiredLatch();
       setAuthViewState('login');
       setPhase('unauthenticated');
       setPending(false);
@@ -158,6 +197,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthView,
       pending,
       error,
+      sessionExpired,
       clearError,
       login,
       onboard,
@@ -174,6 +214,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthView,
       pending,
       error,
+      sessionExpired,
       clearError,
       login,
       onboard,

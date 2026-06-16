@@ -227,10 +227,27 @@ jobs:
           Preview__UseFakeQboConnector: 'true'
           Preview__EnableTestSeeding: 'true'
           QboSync__EnableInProcessTimer: 'false'
+      - name: Build and start web preview
+        run: |
+          npm ci
+          VITE_E2E_HOOKS=true npm run build
+          npm run preview -- --host 127.0.0.1 --port 5173 > /tmp/web.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:5173/ >/dev/null; then
+              echo "Web preview ready after ${attempt} attempt(s)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Timed out waiting for web preview"
+          cat /tmp/web.log
+          exit 1
+        working-directory: apps/web
       - run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2
         working-directory: tests/e2e
         env:
-          PREVIEW_BASE_URL: http://127.0.0.1:5000
+          PREVIEW_BASE_URL: http://127.0.0.1:5173
+          WEB_BASE_URL: http://127.0.0.1:5173
           API_BASE_URL: http://127.0.0.1:5000
       - uses: actions/upload-artifact@v4
         if: failure()
