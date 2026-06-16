@@ -43,8 +43,12 @@ function authHeaders(): HeadersInit {
   return headers;
 }
 
-function venueContextHeaders(skipVenueContext?: boolean): HeadersInit {
+function venueContextHeaders(path: string, skipVenueContext?: boolean): HeadersInit {
   if (skipVenueContext) {
+    return {};
+  }
+  const normalizedPath = path.split('?')[0];
+  if (normalizedPath === '/users/me' || normalizedPath.startsWith('/auth/')) {
     return {};
   }
   const venueId = getActiveVenueId();
@@ -102,7 +106,7 @@ async function apiFetch<T>(path: string, init?: ApiFetchInit): Promise<T> {
     ...requestInit,
     headers: {
       ...authHeaders(),
-      ...venueContextHeaders(skipVenueContext),
+      ...venueContextHeaders(path, skipVenueContext),
       ...requestInit.headers,
     },
   });

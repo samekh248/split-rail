@@ -109,13 +109,13 @@ test.describe('Session refresh (UI)', () => {
       { access: accessToken, refresh: refreshToken },
     );
 
+    await page.goto(`${WEB_BASE_URL}/`);
+    await expect(page.getByRole('heading', { name: 'No venues yet' })).toBeVisible({
+      timeout: 15_000,
+    });
+
     let protectedCallCount = 0;
-    await page.route('**/api/**', async (route) => {
-      const url = route.request().url();
-      if (url.includes('/auth/')) {
-        await route.continue();
-        return;
-      }
+    await page.route('**/api/users/me', async (route) => {
       protectedCallCount += 1;
       if (protectedCallCount <= 3) {
         await route.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
@@ -130,9 +130,13 @@ test.describe('Session refresh (UI)', () => {
       await route.continue();
     });
 
-    await page.goto(`${WEB_BASE_URL}/`);
-    await expect(page.getByRole('heading', { name: 'No venues yet' })).toBeVisible();
-    expect(refreshCount).toBe(1);
+    await Promise.all([
+      page.evaluate(() => fetch('/api/users/me')),
+      page.evaluate(() => fetch('/api/users/me')),
+      page.evaluate(() => fetch('/api/users/me')),
+    ]);
+
+    await expect.poll(() => refreshCount).toBe(1);
   });
 
   test('unrecoverable session shows login with session-expired notice', async ({

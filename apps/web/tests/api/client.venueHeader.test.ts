@@ -64,6 +64,24 @@ describe('apiFetch venue header injection', () => {
     expect(headers['X-Active-Venue-Id']).toBeUndefined();
   });
 
+  it('omits the header on auth and profile bootstrap paths (C2.3)', async () => {
+    setActiveVenueId(VENUE_ID);
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ ok: true }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await apiFetch('/users/me');
+    await apiFetch('/auth/refresh', { method: 'POST', skipAuthRecovery: true });
+
+    for (const call of fetchMock.mock.calls) {
+      const headers = (call[1] as RequestInit).headers as Record<string, string>;
+      expect(headers['X-Active-Venue-Id']).toBeUndefined();
+    }
+  });
+
   it('re-attaches the header on 401 retry (C2.4)', async () => {
     localStorage.setItem('accessToken', 'token');
     localStorage.setItem('refreshToken', 'refresh');
