@@ -2,10 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import { apiFetch } from './client';
 import type { UserProfileResponse } from '@/types/generated-api';
 
+export function fetchUserProfile(): Promise<UserProfileResponse> {
+  return apiFetch<UserProfileResponse>('/users/me');
+}
+
 export function useUserProfile() {
   return useQuery({
     queryKey: ['user', 'me'],
-    queryFn: () => apiFetch<UserProfileResponse>('/users/me'),
+    queryFn: fetchUserProfile,
     staleTime: 60_000,
   });
 }

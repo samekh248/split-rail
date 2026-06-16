@@ -6,11 +6,13 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import type { LoginRequest } from '@/types/generated-api';
+import { useQueryClient } from '@tanstack/react-query';
+import { fetchUserProfile } from '@/api/user';
+import type { LoginRequest, UserProfileResponse } from '@/types/generated-api';
+import { bootstrapAuthSession, routeProfile } from './authBootstrap';
 import * as authApi from './authApi';
-import { getAccessToken, clearTokens } from './tokenStorage';
 
-export type AuthPhase = 'resolving' | 'unauthenticated' | 'authenticated';
+export type AuthPhase = 'resolving' | 'unauthenticated' | 'needs-organization' | 'authenticated';
 export type AuthView = 'login' | 'register';
 
 export interface RegisterValues {
@@ -21,34 +23,43 @@ export interface RegisterValues {
 
 export interface AuthContextValue {
   phase: AuthPhase;
+  profile: UserProfileResponse | null;
+  justOnboarded: boolean;
   authView: AuthView;
   setAuthView: (view: AuthView) => void;
   pending: boolean;
   error: string | null;
   clearError: () => void;
-  needsOrgRetry: boolean;
   login: (credentials: LoginRequest) => Promise<void>;
+  onboard: (values: RegisterValues) => Promise<void>;
+  /** @deprecated Use onboard */
   register: (values: RegisterValues) => Promise<void>;
+  createOrganization: (name: string) => Promise<void>;
   logout: () => Promise<void>;
+  dismissWelcome: () => void;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  const queryClient = useQueryClient();
   const [phase, setPhase] = useState<AuthPhase>('resolving');
+  const [profile, setProfile] = useState<UserProfileResponse | null>(null);
+  const [justOnboarded, setJustOnboarded] = useState(false);
   const [authView, setAuthViewState] = useState<AuthView>('login');
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [needsOrgRetry, setNeedsOrgRetry] = useState(false);
-  const [orgRetryName, setOrgRetryName] = useState('');
-  const [orgRetryCredentials, setOrgRetryCredentials] = useState<{
-    email: string;
-    password: string;
-  } | null>(null);
 
   useEffect(() => {
-    const token = getAccessToken();
-    setPhase(token ? 'authenticated' : 'unauthenticated');
+    let cancelled = false;
+    void bootstrapAuthSession().then((result) => {
+      if (cancelled) return;
+      setProfile(result.profile);
+      setPhase(result.phase);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const clearError = useCallback(() => setError(null), []);
@@ -58,57 +69,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setError(null);
   }, []);
 
+  const dismissWelcome = useCallback(() => setJustOnboarded(false), []);
+
   const login = useCallback(async (credentials: LoginRequest) => {
+    if (pending) return;
     setPending(true);
     setError(null);
     try {
       await authApi.login(credentials);
-      setPhase('authenticated');
+      const loadedProfile = await fetchUserProfile();
+      setProfile(loadedProfile);
+      setJustOnboarded(false);
+      setPhase(routeProfile(loadedProfile));
     } catch (err) {
       setError(authApi.mapAuthError(err));
       throw err;
     } finally {
       setPending(false);
     }
-  }, []);
+  }, [pending]);
 
-  const register = useCallback(
+  const onboard = useCallback(
     async (values: RegisterValues) => {
+      if (pending) return;
       setPending(true);
       setError(null);
       try {
-        if (needsOrgRetry) {
-          await authApi.createOrganization(values.organizationName || orgRetryName);
-          if (orgRetryCredentials) {
-            await authApi.login(orgRetryCredentials);
-          }
-          setNeedsOrgRetry(false);
-          setOrgRetryName('');
-          setOrgRetryCredentials(null);
-          setPhase('authenticated');
-          return;
-        }
-
-        await authApi.registerUser({ email: values.email, password: values.password });
-        await authApi.login({ email: values.email, password: values.password });
-        try {
-          await authApi.createOrganization(values.organizationName);
-          await authApi.login({ email: values.email, password: values.password });
-        } catch {
-          setNeedsOrgRetry(true);
-          setOrgRetryName(values.organizationName);
-          setOrgRetryCredentials({ email: values.email, password: values.password });
-          setError(
-            'Account created, but we couldn\'t set up your organization. Please retry.',
-          );
-          return;
-        }
+        const loadedProfile = await authApi.onboard(values);
+        setProfile(loadedProfile);
+        setJustOnboarded(true);
         setPhase('authenticated');
       } catch (err) {
         if (err instanceof authApi.OrgCreationError) {
-          setNeedsOrgRetry(true);
-          setOrgRetryName(values.organizationName);
-          setOrgRetryCredentials({ email: values.email, password: values.password });
+          setProfile(err.profile);
+          setPhase('needs-organization');
+          setError(err.message);
+          return;
         }
         setError(authApi.mapAuthError(err));
         throw err;
@@ -116,7 +112,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setPending(false);
       }
     },
-    [needsOrgRetry, orgRetryName, orgRetryCredentials],
+    [pending],
+  );
+
+  const createOrganization = useCallback(
+    async (name: string) => {
+      if (pending) return;
+      setPending(true);
+      setError(null);
+      try {
+        const loadedProfile = await authApi.completeOrganizationSetup(name);
+        setProfile(loadedProfile);
+        setJustOnboarded(true);
+        setPhase('authenticated');
+      } catch (err) {
+        setError(authApi.mapAuthError(err));
+        throw err;
+      } finally {
+        setPending(false);
+      }
+    },
+    [pending],
   );
 
   const logout = useCallback(async () => {
@@ -124,40 +140,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       await authApi.logout();
     } finally {
-      clearTokens();
-      setNeedsOrgRetry(false);
-      setOrgRetryName('');
-      setOrgRetryCredentials(null);
+      queryClient.clear();
+      setProfile(null);
+      setJustOnboarded(false);
       setAuthViewState('login');
       setPhase('unauthenticated');
       setPending(false);
     }
-  }, []);
+  }, [queryClient]);
 
   const value = useMemo(
     () => ({
       phase,
+      profile,
+      justOnboarded,
       authView,
       setAuthView,
       pending,
       error,
       clearError,
-      needsOrgRetry,
       login,
-      register,
+      onboard,
+      register: onboard,
+      createOrganization,
       logout,
+      dismissWelcome,
     }),
     [
       phase,
+      profile,
+      justOnboarded,
       authView,
       setAuthView,
       pending,
       error,
       clearError,
-      needsOrgRetry,
       login,
-      register,
+      onboard,
+      createOrganization,
       logout,
+      dismissWelcome,
     ],
   );
 

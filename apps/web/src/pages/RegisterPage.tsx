@@ -7,29 +7,22 @@ export interface RegisterPageProps {
 }
 
 export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
-  const { register, pending, error, needsOrgRetry } = useAuth();
+  const { onboard, pending, error } = useAuth();
 
   return (
     <AuthLayout
       title="Create account"
       subtitle="Register your organization on Split Rail"
       footer={
-        needsOrgRetry ? null : (
-          <p className="auth-layout__nav">
-            Already have an account?{' '}
-            <button type="button" className="auth-layout__link" onClick={onNavigateToLogin}>
-              Sign in
-            </button>
-          </p>
-        )
+        <p className="auth-layout__nav">
+          Already have an account?{' '}
+          <button type="button" className="auth-layout__link" onClick={onNavigateToLogin}>
+            Sign in
+          </button>
+        </p>
       }
     >
-      <RegisterForm
-        onSubmit={register}
-        pending={pending}
-        formError={error}
-        needsOrgRetry={needsOrgRetry}
-      />
+      <RegisterForm onSubmit={onboard} pending={pending} formError={error} />
     </AuthLayout>
   );
 }

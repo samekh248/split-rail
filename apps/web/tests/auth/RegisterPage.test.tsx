@@ -4,19 +4,31 @@ import { describe, expect, it, vi } from 'vitest';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { AuthContext, type AuthContextValue } from '@/auth/AuthContext';
 
-function renderWithAuth(overrides: Partial<AuthContextValue> = {}) {
-  const register = vi.fn().mockResolvedValue(undefined);
-  const value: AuthContextValue = {
+function baseAuthValue(): AuthContextValue {
+  return {
     phase: 'unauthenticated',
+    profile: null,
+    justOnboarded: false,
     authView: 'register',
     setAuthView: vi.fn(),
     pending: false,
     error: null,
     clearError: vi.fn(),
-    needsOrgRetry: false,
     login: vi.fn(),
-    register,
+    onboard: vi.fn(),
+    register: vi.fn(),
+    createOrganization: vi.fn(),
     logout: vi.fn(),
+    dismissWelcome: vi.fn(),
+  };
+}
+
+function renderWithAuth(overrides: Partial<AuthContextValue> = {}) {
+  const onboard = vi.fn().mockResolvedValue(undefined);
+  const value: AuthContextValue = {
+    ...baseAuthValue(),
+    onboard,
+    register: onboard,
     ...overrides,
   };
 
@@ -26,7 +38,7 @@ function renderWithAuth(overrides: Partial<AuthContextValue> = {}) {
     </AuthContext.Provider>,
   );
 
-  return { register };
+  return { onboard };
 }
 
 describe('RegisterPage', () => {
@@ -36,16 +48,16 @@ describe('RegisterPage', () => {
     expect(screen.getByLabelText('Organization name')).toBeInTheDocument();
   });
 
-  it('calls register on submit', async () => {
+  it('calls onboard on submit', async () => {
     const user = userEvent.setup();
-    const { register } = renderWithAuth();
+    const { onboard } = renderWithAuth();
 
     await user.type(screen.getByLabelText('Email'), 'new@example.com');
     await user.type(screen.getByLabelText('Password'), 'Password1');
     await user.type(screen.getByLabelText('Organization name'), 'Acme');
     await user.click(screen.getByRole('button', { name: 'Create account' }));
 
-    expect(register).toHaveBeenCalledWith({
+    expect(onboard).toHaveBeenCalledWith({
       email: 'new@example.com',
       password: 'Password1',
       organizationName: 'Acme',

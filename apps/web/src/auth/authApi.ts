@@ -1,18 +1,24 @@
+import { fetchUserProfile } from '@/api/user';
 import { apiFetch } from '@/api/client';
 import type {
   AuthResponse,
   CreateOrganizationRequest,
   LoginRequest,
   OrganizationResponse,
+  RefreshRequest,
   RegisterRequest,
   RegisterResponse,
+  UserProfileResponse,
 } from '@/types/generated-api';
-import { clearTokens, setTokens } from './tokenStorage';
+import { clearTokens, getRefreshToken, setTokens } from './tokenStorage';
 
 export class OrgCreationError extends Error {
-  constructor(message: string) {
-    super(message);
+  readonly profile: UserProfileResponse;
+
+  constructor(profile: UserProfileResponse) {
+    super('Account created, but we couldn\'t set up your organization. Please retry.');
     this.name = 'OrgCreationError';
+    this.profile = profile;
   }
 }
 
@@ -62,6 +68,22 @@ export async function registerUser(request: RegisterRequest): Promise<RegisterRe
   });
 }
 
+export async function refreshSession(): Promise<AuthResponse> {
+  const refreshToken = getRefreshToken();
+  if (!refreshToken) {
+    throw new Error('401: No refresh token');
+  }
+  const body: RefreshRequest = { refreshToken };
+  const response = await apiFetch<AuthResponse>('/auth/refresh', {
+    method: 'POST',
+    body: JSON.stringify(body),
+  });
+  if (response.accessToken && response.refreshToken) {
+    setTokens(response.accessToken, response.refreshToken);
+  }
+  return response;
+}
+
 export async function createOrganization(name: string): Promise<OrganizationResponse> {
   const body: CreateOrganizationRequest = { name };
   return apiFetch<OrganizationResponse>('/organizations', {
@@ -70,20 +92,36 @@ export async function createOrganization(name: string): Promise<OrganizationResp
   });
 }
 
+export async function onboard(values: {
+  email: string;
+  password: string;
+  organizationName: string;
+}): Promise<UserProfileResponse> {
+  await registerUser({ email: values.email, password: values.password });
+  await login({ email: values.email, password: values.password });
+  try {
+    await createOrganization(values.organizationName);
+  } catch {
+    const profile = await fetchUserProfile();
+    throw new OrgCreationError(profile);
+  }
+  await refreshSession();
+  return fetchUserProfile();
+}
+
+/** @deprecated Use onboard() — kept for existing tests */
 export async function registerWithOrganization(values: {
   email: string;
   password: string;
   organizationName: string;
 }): Promise<void> {
-  await registerUser({ email: values.email, password: values.password });
-  await login({ email: values.email, password: values.password });
-  try {
-    await createOrganization(values.organizationName);
-  } catch (error) {
-    throw new OrgCreationError(
-      'Account created, but we couldn\'t set up your organization. Please retry.',
-    );
-  }
+  await onboard(values);
+}
+
+export async function completeOrganizationSetup(name: string): Promise<UserProfileResponse> {
+  await createOrganization(name);
+  await refreshSession();
+  return fetchUserProfile();
 }
 
 export async function logout(): Promise<void> {
