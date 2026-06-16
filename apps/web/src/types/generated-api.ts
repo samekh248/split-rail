@@ -810,7 +810,28 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["OrganizationResponse"][];
+                        "application/json": components["schemas"]["OrganizationResponse"][];
+                        "text/json": components["schemas"]["OrganizationResponse"][];
+                    };
+                };
+            };
+        };
         put?: never;
         post: {
             parameters: {
@@ -878,6 +899,70 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/organizations/{organizationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    organizationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateOrganizationRequest"];
+                    "text/json": components["schemas"]["UpdateOrganizationRequest"];
+                    "application/*+json": components["schemas"]["UpdateOrganizationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["OrganizationResponse"];
+                        "application/json": components["schemas"]["OrganizationResponse"];
+                        "text/json": components["schemas"]["OrganizationResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    organizationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -2094,7 +2179,36 @@ export interface paths {
                 };
             };
         };
-        put?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateVenueRequest"];
+                    "text/json": components["schemas"]["UpdateVenueRequest"];
+                    "application/*+json": components["schemas"]["UpdateVenueRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["VenueResponse"];
+                        "application/json": components["schemas"]["VenueResponse"];
+                        "text/json": components["schemas"]["VenueResponse"];
+                    };
+                };
+            };
+        };
         post?: never;
         delete: {
             parameters: {
@@ -2543,6 +2657,9 @@ export interface components {
             /** Format: uuid */
             mappedLineItemId?: string | null;
         };
+        UpdateOrganizationRequest: {
+            name?: string | null;
+        };
         UpdateRoleRequest: {
             canManagePermissions?: boolean | null;
             canLockBudget?: boolean | null;
@@ -2552,6 +2669,9 @@ export interface components {
             canTriggerQboSync?: boolean | null;
             canMapQboAccounts?: boolean | null;
             canViewFinancials?: boolean | null;
+        };
+        UpdateVenueRequest: {
+            name?: string | null;
         };
         UpdateVenueScopesRequest: {
             venueIds?: string[] | null;
@@ -2655,7 +2775,9 @@ export type UnmappedTransactionsResponse = components['schemas']['UnmappedTransa
 export type UpdateArtistRequest = components['schemas']['UpdateArtistRequest'];
 export type UpdateLineItemRequest = components['schemas']['UpdateLineItemRequest'];
 export type UpdateMappingRequest = components['schemas']['UpdateMappingRequest'];
+export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
 export type UpdateRoleRequest = components['schemas']['UpdateRoleRequest'];
+export type UpdateVenueRequest = components['schemas']['UpdateVenueRequest'];
 export type UpdateVenueScopesRequest = components['schemas']['UpdateVenueScopesRequest'];
 export type UpdateVenueScopesResponse = components['schemas']['UpdateVenueScopesResponse'];
 export type UserListResponse = components['schemas']['UserListResponse'];

@@ -93,4 +93,163 @@ public class VenuesControllerTests : IntegrationTestBase
         var result = await response.Content.ReadFromJsonAsync<VenueResponse>();
         result!.Name.Should().Be("Detail Venue");
     }
+
+    // ---- User Story 2: Venue update ----
+
+    private async Task<(HttpClient Client, Guid VenueId)> SetupAdminWithVenueAsync(string venueName = "The Roxy")
+    {
+        var client = await SetupAdminClientAsync();
+        var create = await client.PostAsJsonAsync("/api/venues", new CreateVenueRequest(venueName));
+        var venue = await create.Content.ReadFromJsonAsync<VenueResponse>();
+        return (client, venue!.Id);
+    }
+
+    [Fact]
+    public async Task UpdateVenue_PermittedInScope_Returns200AndPersists()
+    {
+        var (client, venueId) = await SetupAdminWithVenueAsync();
+
+        var response = await client.PutAsJsonAsync($"/api/venues/{venueId}",
+            new UpdateVenueRequest("The Roxy (Updated)"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<VenueResponse>();
+        updated!.Name.Should().Be("The Roxy (Updated)");
+
+        var fetched = await client.GetFromJsonAsync<VenueResponse>($"/api/venues/{venueId}");
+        fetched!.Name.Should().Be("The Roxy (Updated)");
+    }
+
+    [Fact]
+    public async Task UpdateVenue_TrimsWhitespace()
+    {
+        var (client, venueId) = await SetupAdminWithVenueAsync();
+
+        var response = await client.PutAsJsonAsync($"/api/venues/{venueId}",
+            new UpdateVenueRequest("   Trimmed Venue   "));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var updated = await response.Content.ReadFromJsonAsync<VenueResponse>();
+        updated!.Name.Should().Be("Trimmed Venue");
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task UpdateVenue_EmptyOrWhitespaceName_Returns400(string name)
+    {
+        var (client, venueId) = await SetupAdminWithVenueAsync();
+
+        var response = await client.PutAsJsonAsync($"/api/venues/{venueId}",
+            new UpdateVenueRequest(name));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateVenue_NameOver200Chars_Returns400()
+    {
+        var (client, venueId) = await SetupAdminWithVenueAsync();
+
+        var response = await client.PutAsJsonAsync($"/api/venues/{venueId}",
+            new UpdateVenueRequest(new string('a', 201)));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task UpdateVenue_UnknownVenue_Returns404()
+    {
+        var (client, _) = await SetupAdminWithVenueAsync();
+
+        var response = await client.PutAsJsonAsync($"/api/venues/{Guid.NewGuid()}",
+            new UpdateVenueRequest("Ghost Venue"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
+    public async Task UpdateVenue_OutOfScopeUser_Returns404AndUnchanged()
+    {
+        var adminEmail = $"admin-vu-{Guid.NewGuid():N}@example.com";
+        var (adminToken, _, _) = await RegisterAndLoginAsync(adminEmail);
+        adminToken = await CreateOrgAndGetTokenAsync(adminToken, adminEmail, "SecurePass1");
+        using var adminClient = CreateAuthenticatedClient(adminToken);
+
+        var inScope = await adminClient.PostAsJsonAsync("/api/venues", new CreateVenueRequest("In Scope"));
+        var inScopeVenue = await inScope.Content.ReadFromJsonAsync<VenueResponse>();
+        var outOfScope = await adminClient.PostAsJsonAsync("/api/venues", new CreateVenueRequest("Out Of Scope"));
+        var outOfScopeVenue = await outOfScope.Content.ReadFromJsonAsync<VenueResponse>();
+
+        var memberEmail = $"scoped-{Guid.NewGuid():N}@example.com";
+        var (scopedClient, _) = await CreateScopedVenueUserAsync(adminToken, inScopeVenue!.Id, memberEmail);
+
+        var response = await scopedClient.PutAsJsonAsync($"/api/venues/{outOfScopeVenue!.Id}",
+            new UpdateVenueRequest("Hijacked"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+        var unchanged = await adminClient.GetFromJsonAsync<VenueResponse>($"/api/venues/{outOfScopeVenue.Id}");
+        unchanged!.Name.Should().Be("Out Of Scope");
+    }
+
+    [Fact]
+    public async Task UpdateVenue_MissingPermission_Returns403AndUnchanged()
+    {
+        var adminEmail = $"admin-perm-{Guid.NewGuid():N}@example.com";
+        var (adminToken, _, _) = await RegisterAndLoginAsync(adminEmail);
+        adminToken = await CreateOrgAndGetTokenAsync(adminToken, adminEmail, "SecurePass1");
+        using var adminClient = CreateAuthenticatedClient(adminToken);
+
+        var create = await adminClient.PostAsJsonAsync("/api/venues", new CreateVenueRequest("Members Venue"));
+        var venue = await create.Content.ReadFromJsonAsync<VenueResponse>();
+
+        var roles = await adminClient.GetFromJsonAsync<List<RoleResponse>>("/api/roles");
+        var promoterRoleId = roles!.Single(r => r.RoleName == RoleNames.Promoter).Id;
+        var memberEmail = $"promoter-{Guid.NewGuid():N}@example.com";
+        var rawToken = await SendInvitationViaServiceAsync(adminToken, memberEmail, promoterRoleId, [venue!.Id]);
+        await Client.PostAsJsonAsync("/api/invitations/accept",
+            new SplitRail.Api.DTOs.Invitations.AcceptInvitationRequest(rawToken, "SecurePass1"));
+        var memberLogin = await Client.PostAsJsonAsync("/api/auth/login",
+            new LoginRequest(memberEmail, "SecurePass1"));
+        var memberAuth = await memberLogin.Content.ReadFromJsonAsync<AuthResponse>();
+        using var memberClient = CreateAuthenticatedClient(memberAuth!.AccessToken);
+
+        var response = await memberClient.PutAsJsonAsync($"/api/venues/{venue.Id}",
+            new UpdateVenueRequest("Renamed By Promoter"));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        var unchanged = await adminClient.GetFromJsonAsync<VenueResponse>($"/api/venues/{venue.Id}");
+        unchanged!.Name.Should().Be("Members Venue");
+    }
+
+    [Fact]
+    public async Task UpdateVenue_WithoutAuth_Returns401()
+    {
+        var response = await Client.PutAsJsonAsync($"/api/venues/{Guid.NewGuid()}",
+            new UpdateVenueRequest("No Auth"));
+        response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    public async Task CreateVenue_EmptyOrWhitespaceName_Returns400(string name)
+    {
+        using var client = await SetupAdminClientAsync();
+
+        var response = await client.PostAsJsonAsync("/api/venues", new CreateVenueRequest(name));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task CreateVenue_NameOver200Chars_Returns400()
+    {
+        using var client = await SetupAdminClientAsync();
+
+        var response = await client.PostAsJsonAsync("/api/venues",
+            new CreateVenueRequest(new string('a', 201)));
+
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
 }

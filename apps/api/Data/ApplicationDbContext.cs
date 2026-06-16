@@ -62,7 +62,8 @@ public class ApplicationDbContext : DbContext
     private void ApplyTenantQueryFilters(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Organization>().HasQueryFilter(e =>
-            _tenantContext.OrganizationId == null || e.Id == _tenantContext.OrganizationId);
+            (_tenantContext.OrganizationId == null || e.Id == _tenantContext.OrganizationId)
+            && e.ArchivedAt == null);
 
         modelBuilder.Entity<Venue>().HasQueryFilter(e =>
             _tenantContext.OrganizationId == null || e.OrganizationId == _tenantContext.OrganizationId);
@@ -136,6 +137,9 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasColumnName("created_at")
                 .HasDefaultValueSql("NOW()");
+
+            entity.Property(e => e.ArchivedAt)
+                .HasColumnName("archived_at");
         });
     }
 
