@@ -8,15 +8,19 @@ function renderWithAuth(overrides: Partial<AuthContextValue> = {}) {
   const login = vi.fn().mockResolvedValue(undefined);
   const value: AuthContextValue = {
     phase: 'unauthenticated',
+    profile: null,
+    justOnboarded: false,
     authView: 'login',
     setAuthView: vi.fn(),
     pending: false,
     error: null,
     clearError: vi.fn(),
-    needsOrgRetry: false,
     login,
+    onboard: vi.fn(),
     register: vi.fn(),
+    createOrganization: vi.fn(),
     logout: vi.fn(),
+    dismissWelcome: vi.fn(),
     ...overrides,
   };
 

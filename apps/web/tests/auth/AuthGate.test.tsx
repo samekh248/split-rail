@@ -1,5 +1,7 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '@/App';
 import { AuthProvider } from '@/auth/AuthContext';
@@ -8,11 +10,31 @@ vi.mock('@/pages/EventLedgerPage', () => ({
   EventLedgerPage: () => <div data-testid="mock-ledger-page">Ledger</div>,
 }));
 
+function profileWithOrg() {
+  return {
+    id: 'user-1',
+    email: 'user@example.com',
+    organization: { id: 'org-1', name: 'Acme' },
+    role: { roleName: 'Admin', permissions: {} },
+    venueScopes: [],
+  };
+}
+
+function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  return ({ children }: { children: ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+}
+
 function renderApp() {
   return render(
     <AuthProvider>
       <App />
     </AuthProvider>,
+    { wrapper: createWrapper() },
   );
 }
 
@@ -29,13 +51,34 @@ describe('Auth gate', () => {
     expect(screen.queryByTestId('mock-ledger-page')).not.toBeInTheDocument();
   });
 
-  it('shows dashboard when token is present', async () => {
+  it('shows dashboard when token is present and profile has org', async () => {
     localStorage.setItem('accessToken', 'existing-token');
     localStorage.setItem('refreshToken', 'existing-refresh');
 
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/users/me')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve(profileWithOrg()),
+          });
+        }
+        if (url.includes('/venues')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve([]),
+          });
+        }
+        return Promise.reject(new Error(`Unexpected fetch: ${url}`));
+      }),
+    );
+
     renderApp();
 
-    expect(await screen.findByTestId('mock-ledger-page')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'No venues yet' })).toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: 'Sign in' })).not.toBeInTheDocument();
   });
 
@@ -56,15 +99,31 @@ describe('Auth gate', () => {
 
     vi.stubGlobal(
       'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 204,
+      vi.fn().mockImplementation((url: string) => {
+        if (url.includes('/users/me')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve(profileWithOrg()),
+          });
+        }
+        if (url.includes('/venues')) {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve([]),
+          });
+        }
+        if (url.includes('/auth/logout')) {
+          return Promise.resolve({ ok: true, status: 204 });
+        }
+        return Promise.reject(new Error(`Unexpected fetch: ${url}`));
       }),
     );
 
     renderApp();
 
-    await screen.findByTestId('mock-ledger-page');
+    await screen.findByRole('heading', { name: 'No venues yet' });
     await user.click(screen.getByRole('button', { name: 'Sign out' }));
 
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();

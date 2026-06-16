@@ -35,13 +35,4 @@ describe('RegisterForm', () => {
       'An account with this email already exists.',
     );
   });
-
-  it('in org-retry mode shows only organization field', () => {
-    render(<RegisterForm onSubmit={vi.fn()} needsOrgRetry />);
-
-    expect(screen.queryByLabelText('Email')).not.toBeInTheDocument();
-    expect(screen.queryByLabelText('Password')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Organization name')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Retry organization setup' })).toBeInTheDocument();
-  });
 });

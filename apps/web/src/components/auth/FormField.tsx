@@ -9,6 +9,7 @@ export interface FormFieldProps {
   required?: boolean;
   autoComplete?: string;
   disabled?: boolean;
+  describedBy?: string;
 }
 
 export function FormField({
@@ -22,8 +23,10 @@ export function FormField({
   required,
   autoComplete,
   disabled,
+  describedBy,
 }: FormFieldProps) {
   const errorId = `${id}-error`;
+  const describedByIds = [describedBy, error ? errorId : undefined].filter(Boolean).join(' ') || undefined;
 
   return (
     <div className="form-field">
@@ -38,7 +41,7 @@ export function FormField({
         onChange={(e) => onChange(e.target.value)}
         onBlur={onBlur}
         aria-invalid={error ? true : undefined}
-        aria-describedby={error ? errorId : undefined}
+        aria-describedby={describedByIds}
         aria-required={required ? true : undefined}
         autoComplete={autoComplete}
         disabled={disabled}

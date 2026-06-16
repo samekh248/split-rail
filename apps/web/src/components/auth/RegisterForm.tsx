@@ -11,14 +11,12 @@ export interface RegisterFormProps {
   onSubmit: (values: RegisterValues) => Promise<void>;
   pending?: boolean;
   formError?: string | null;
-  needsOrgRetry?: boolean;
 }
 
 export function RegisterForm({
   onSubmit,
   pending = false,
   formError,
-  needsOrgRetry = false,
 }: RegisterFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,8 +29,8 @@ export function RegisterForm({
 
   const validate = () => {
     const next = {
-      email: needsOrgRetry ? undefined : validateEmail(email),
-      password: needsOrgRetry ? undefined : validatePassword(password),
+      email: validateEmail(email),
+      password: validatePassword(password),
       organizationName: validateOrganizationName(organizationName),
     };
     setErrors(next);
@@ -52,36 +50,32 @@ export function RegisterForm({
           {formError}
         </p>
       ) : null}
-      {!needsOrgRetry ? (
-        <>
-          <FormField
-            id="register-email"
-            label="Email"
-            type="email"
-            value={email}
-            onChange={setEmail}
-            onBlur={() => setErrors((prev) => ({ ...prev, email: validateEmail(email) }))}
-            error={errors.email}
-            required
-            autoComplete="email"
-            disabled={pending}
-          />
-          <FormField
-            id="register-password"
-            label="Password"
-            type="password"
-            value={password}
-            onChange={setPassword}
-            onBlur={() =>
-              setErrors((prev) => ({ ...prev, password: validatePassword(password) }))
-            }
-            error={errors.password}
-            required
-            autoComplete="new-password"
-            disabled={pending}
-          />
-        </>
-      ) : null}
+      <FormField
+        id="register-email"
+        label="Email"
+        type="email"
+        value={email}
+        onChange={setEmail}
+        onBlur={() => setErrors((prev) => ({ ...prev, email: validateEmail(email) }))}
+        error={errors.email}
+        required
+        autoComplete="email"
+        disabled={pending}
+      />
+      <FormField
+        id="register-password"
+        label="Password"
+        type="password"
+        value={password}
+        onChange={setPassword}
+        onBlur={() =>
+          setErrors((prev) => ({ ...prev, password: validatePassword(password) }))
+        }
+        error={errors.password}
+        required
+        autoComplete="new-password"
+        disabled={pending}
+      />
       <FormField
         id="register-organization"
         label="Organization name"
@@ -100,7 +94,7 @@ export function RegisterForm({
         disabled={pending}
       />
       <button type="submit" className="auth-form__submit" disabled={pending}>
-        {pending ? 'Creating account…' : needsOrgRetry ? 'Retry organization setup' : 'Create account'}
+        {pending ? 'Creating account…' : 'Create account'}
       </button>
     </form>
   );

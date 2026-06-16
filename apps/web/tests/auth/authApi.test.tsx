@@ -4,6 +4,8 @@ import {
   login,
   logout,
   mapAuthError,
+  onboard,
+  OrgCreationError,
   registerUser,
   registerWithOrganization,
 } from '@/auth/authApi';
@@ -41,8 +43,8 @@ describe('authApi', () => {
     });
   });
 
-  describe('register orchestration', () => {
-    it('runs register → login → create-organization sequence', async () => {
+  describe('onboard orchestration', () => {
+    it('runs register → login → create-organization → refresh → profile sequence', async () => {
       const fetchMock = vi
         .fn()
         .mockResolvedValueOnce({
@@ -74,19 +76,44 @@ describe('authApi', () => {
               name: 'Acme',
               createdAt: '2026-01-01T00:00:00Z',
             }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              accessToken: 'access-3',
+              refreshToken: 'refresh-3',
+              expiresIn: 3600,
+            }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              id: 'user-id',
+              email: 'new@example.com',
+              organization: { id: 'org-id', name: 'Acme' },
+              role: { roleName: 'Admin' },
+              venueScopes: [],
+            }),
         });
       vi.stubGlobal('fetch', fetchMock);
 
-      await registerWithOrganization({
+      const profile = await onboard({
         email: 'new@example.com',
         password: 'Password1',
         organizationName: 'Acme',
       });
 
-      expect(fetchMock).toHaveBeenCalledTimes(3);
+      expect(fetchMock).toHaveBeenCalledTimes(5);
       expect(fetchMock.mock.calls[0]?.[0]).toBe('/api/auth/register');
       expect(fetchMock.mock.calls[1]?.[0]).toBe('/api/auth/login');
       expect(fetchMock.mock.calls[2]?.[0]).toBe('/api/organizations');
+      expect(fetchMock.mock.calls[3]?.[0]).toBe('/api/auth/refresh');
+      expect(fetchMock.mock.calls[4]?.[0]).toBe('/api/users/me');
+      expect(profile.organization?.name).toBe('Acme');
     });
 
     it('throws OrgCreationError when organization step fails after login', async () => {
@@ -117,16 +144,28 @@ describe('authApi', () => {
           status: 400,
           statusText: 'Bad Request',
           json: () => Promise.resolve({ detail: 'Organization name is required.' }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              id: 'user-id',
+              email: 'new@example.com',
+              organization: null,
+              role: null,
+              venueScopes: [],
+            }),
         });
       vi.stubGlobal('fetch', fetchMock);
 
       await expect(
-        registerWithOrganization({
+        onboard({
           email: 'new@example.com',
           password: 'Password1',
           organizationName: 'Acme',
         }),
-      ).rejects.toThrow("couldn't set up your organization");
+      ).rejects.toBeInstanceOf(OrgCreationError);
 
       expect(localStorage.getItem('accessToken')).toBe('access-2');
     });
@@ -145,6 +184,60 @@ describe('authApi', () => {
       await expect(
         registerUser({ email: 'exists@example.com', password: 'Password1' }),
       ).rejects.toThrow('409');
+    });
+
+    it('registerWithOrganization delegates to onboard', async () => {
+      const fetchMock = vi
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 201,
+          json: () =>
+            Promise.resolve({ id: 'u', email: 'new@example.com', createdAt: '2026-01-01T00:00:00Z' }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              accessToken: 'a',
+              refreshToken: 'r',
+              expiresIn: 3600,
+            }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 201,
+          json: () =>
+            Promise.resolve({ id: 'org', name: 'Acme', createdAt: '2026-01-01T00:00:00Z' }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              accessToken: 'a2',
+              refreshToken: 'r2',
+              expiresIn: 3600,
+            }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              organization: { id: 'org', name: 'Acme' },
+            }),
+        });
+      vi.stubGlobal('fetch', fetchMock);
+
+      await registerWithOrganization({
+        email: 'new@example.com',
+        password: 'Password1',
+        organizationName: 'Acme',
+      });
+
+      expect(fetchMock).toHaveBeenCalledTimes(5);
     });
   });
 
