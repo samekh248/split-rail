@@ -7,12 +7,19 @@ export interface LoginPageProps {
 }
 
 export function LoginPage({ onNavigateToRegister }: LoginPageProps) {
-  const { login, pending, error } = useAuth();
+  const { login, pending, error, sessionExpired } = useAuth();
 
   return (
     <AuthLayout
       title="Sign in"
       subtitle="Access your Split Rail workspace"
+      notice={
+        sessionExpired ? (
+          <p className="session-expired-notice" role="status">
+            Your session expired — please sign in again.
+          </p>
+        ) : null
+      }
       footer={
         <p className="auth-layout__nav">
           Don&apos;t have an account?{' '}

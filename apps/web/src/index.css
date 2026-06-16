@@ -185,6 +185,17 @@ body {
   font-size: 0.9375rem;
 }
 
+.session-expired-notice {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: #fef3c7;
+  border: 1px solid #fcd34d;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
 .auth-layout__footer {
   margin-top: 1.5rem;
   text-align: center;

@@ -77,6 +77,7 @@ export async function refreshSession(): Promise<AuthResponse> {
   const response = await apiFetch<AuthResponse>('/auth/refresh', {
     method: 'POST',
     body: JSON.stringify(body),
+    skipAuthRecovery: true,
   });
   if (response.accessToken && response.refreshToken) {
     setTokens(response.accessToken, response.refreshToken);

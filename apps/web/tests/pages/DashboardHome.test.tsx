@@ -34,6 +34,7 @@ function createWrapper() {
     createOrganization: vi.fn(),
     logout: mockLogout,
     dismissWelcome: vi.fn(),
+    sessionExpired: false,
   } satisfies AuthContextValue;
 
   return ({ children }: { children: ReactNode }) => (
