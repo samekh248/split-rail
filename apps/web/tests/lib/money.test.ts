@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  absMoney,
   addMoney,
+  compareMoney,
   formatMoney,
   isNonZeroVariance,
+  isZeroMoney,
   normalizeMoney,
   parseMoneyInput,
   subtractMoney,
@@ -33,5 +36,14 @@ describe('money', () => {
     expect(isNonZeroVariance('0.00')).toBe(false);
     expect(isNonZeroVariance('0.01')).toBe(true);
     expect(isNonZeroVariance('-0.01')).toBe(true);
+  });
+
+  it('compares and normalizes signed values', () => {
+    expect(compareMoney('10.00', '5.00')).toBe(1);
+    expect(compareMoney('5.00', '10.00')).toBe(-1);
+    expect(compareMoney('5.00', '5.00')).toBe(0);
+    expect(isZeroMoney('0.00')).toBe(true);
+    expect(isZeroMoney('bad')).toBe(false);
+    expect(absMoney('-12.34')).toBe('12.34');
   });
 });

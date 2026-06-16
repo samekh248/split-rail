@@ -80,4 +80,17 @@ public class VenuesControllerTests : IntegrationTestBase
         var response = await client.DeleteAsync($"/api/venues/{venue!.Id}");
         response.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
+
+    [Fact]
+    public async Task GetVenue_ReturnsVenueDetails()
+    {
+        using var client = await SetupAdminClientAsync();
+        var create = await client.PostAsJsonAsync("/api/venues", new CreateVenueRequest("Detail Venue"));
+        var venue = await create.Content.ReadFromJsonAsync<VenueResponse>();
+
+        var response = await client.GetAsync($"/api/venues/{venue!.Id}");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<VenueResponse>();
+        result!.Name.Should().Be("Detail Venue");
+    }
 }

@@ -34,45 +34,58 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected HttpClient Client = null!;
     protected InMemorySettlementArchiveStore ArchiveStore { get; } = new();
 
+    protected virtual bool ReplaceSettlementArchiveStore => true;
+
+    protected virtual void AddAppConfiguration(Dictionary<string, string?> config)
+    {
+        config["QboSync:EnableInProcessTimer"] = "false";
+        config["QboSync:ClientId"] = "test-client";
+        config["QboSync:ClientSecret"] = "test-secret";
+        config["QboSync:RedirectUri"] = "http://localhost/api/qbo/callback";
+        config["QboSync:InternalTriggerKey"] = "test-internal-key";
+        config["SettlementArchive:BucketName"] = "test-settlements-bucket";
+        config["SettlementArchive:SignedUrlTtlMinutes"] = "15";
+    }
+
+    protected virtual void ConfigureTestServices(IServiceCollection services, string connectionString)
+    {
+        var descriptor = services.SingleOrDefault(d =>
+            d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
+        if (descriptor is not null)
+            services.Remove(descriptor);
+
+        services.AddDbContext<ApplicationDbContext>(options =>
+            options.UseNpgsql(connectionString));
+
+        if (!ReplaceSettlementArchiveStore)
+            return;
+
+        var archiveDescriptor = services.SingleOrDefault(d =>
+            d.ServiceType == typeof(ISettlementArchiveStore));
+        if (archiveDescriptor is not null)
+            services.Remove(archiveDescriptor);
+
+        services.AddSingleton(ArchiveStore);
+        services.AddSingleton<ISettlementArchiveStore>(sp =>
+            sp.GetRequiredService<InMemorySettlementArchiveStore>());
+    }
+
     public async Task InitializeAsync()
     {
         await _postgres.StartAsync();
 
+        var connectionString = _postgres.GetConnectionString();
         Factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.ConfigureAppConfiguration((_, config) =>
             {
-                config.AddInMemoryCollection(new Dictionary<string, string?>
-                {
-                    ["QboSync:EnableInProcessTimer"] = "false",
-                    ["QboSync:ClientId"] = "test-client",
-                    ["QboSync:ClientSecret"] = "test-secret",
-                    ["QboSync:RedirectUri"] = "http://localhost/api/qbo/callback",
-                    ["QboSync:InternalTriggerKey"] = "test-internal-key",
-                    ["SettlementArchive:BucketName"] = "test-settlements-bucket",
-                    ["SettlementArchive:SignedUrlTtlMinutes"] = "15"
-                });
+                var settings = new Dictionary<string, string?>();
+                AddAppConfiguration(settings);
+                config.AddInMemoryCollection(settings);
             });
 
             builder.ConfigureServices(services =>
-            {
-                var descriptor = services.SingleOrDefault(d =>
-                    d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-                if (descriptor is not null)
-                    services.Remove(descriptor);
-
-                services.AddDbContext<ApplicationDbContext>(options =>
-                    options.UseNpgsql(_postgres.GetConnectionString()));
-
-                var archiveDescriptor = services.SingleOrDefault(d =>
-                    d.ServiceType == typeof(ISettlementArchiveStore));
-                if (archiveDescriptor is not null)
-                    services.Remove(archiveDescriptor);
-
-                services.AddSingleton(ArchiveStore);
-                services.AddSingleton<ISettlementArchiveStore>(sp =>
-                    sp.GetRequiredService<InMemorySettlementArchiveStore>());
-            });
+                ConfigureTestServices(services, connectionString));
         });
 
         Client = Factory.CreateClient();

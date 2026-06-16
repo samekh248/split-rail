@@ -61,4 +61,45 @@ public class QboMappingTests : IntegrationTestBase
 
         response.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
+
+    [Fact]
+    public async Task GetMappings_ReturnsVenueMappings()
+    {
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        await SeedQboMappingDirectAsync(token, venueId, "ACC-LIST", null, "Listed Account");
+
+        var response = await client.GetAsync($"/api/venues/{venueId}/mappings");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var mappings = await response.Content.ReadFromJsonAsync<QboAccountMappingsResponse>();
+        mappings!.Mappings.Should().ContainSingle(m => m.QboAccountId == "ACC-LIST");
+    }
+
+    [Fact]
+    public async Task UpdateMapping_ReturnsUpdatedMapping()
+    {
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var mappingId = await SeedQboMappingDirectAsync(token, venueId, "ACC-UPD", null);
+
+        var response = await client.PutAsJsonAsync(
+            $"/api/venues/{venueId}/mappings/{mappingId}",
+            new UpdateMappingRequest("Updated Category", null));
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var updated = await response.Content.ReadFromJsonAsync<QboAccountMappingDto>();
+        updated!.MappedCategoryLabel.Should().Be("Updated Category");
+    }
+
+    [Fact]
+    public async Task DeleteMapping_Returns204()
+    {
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var mappingId = await SeedQboMappingDirectAsync(token, venueId, "ACC-DEL", null);
+
+        var response = await client.DeleteAsync($"/api/venues/{venueId}/mappings/{mappingId}");
+        response.StatusCode.Should().Be(HttpStatusCode.NoContent);
+
+        var list = await client.GetFromJsonAsync<QboAccountMappingsResponse>($"/api/venues/{venueId}/mappings");
+        list!.Mappings.Should().NotContain(m => m.Id == mappingId);
+    }
 }

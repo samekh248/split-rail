@@ -1,6 +1,7 @@
 import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { appendSchemaExportsFile } from './append-schema-exports.mjs';
 
 const defaultUrl = 'http://localhost:5000/swagger/v1/swagger.json';
 const openApiUrl = process.env.OPENAPI_URL ?? defaultUrl;
@@ -17,3 +18,5 @@ execSync(`npx openapi-typescript "${openApiUrl}" -o "${outFile}"`, {
   stdio: 'inherit',
   shell: true,
 });
+
+appendSchemaExportsFile(outFile);

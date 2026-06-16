@@ -1,0 +1,258 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '22'
+
+jobs:
+  backend-test:
+    name: backend-test+coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - run: dotnet restore apps/api.tests/split-rail-api.tests.csproj
+      - run: dotnet test apps/api.tests/split-rail-api.tests.csproj --configuration Release --collect:"XPlat Code Coverage" --results-directory coverage/backend --settings apps/api.tests/coverage.runsettings
+      - uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: coverage/backend/**/coverage.cobertura.xml
+
+  frontend-test:
+    name: frontend-test+coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+        working-directory: apps/web
+      - run: npm run test:coverage
+        working-directory: apps/web
+      - uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: apps/web/coverage/lcov.info
+
+  contract-type-drift:
+    name: contract-type-drift
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: split-rail-db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - run: dotnet tool install --global dotnet-ef
+      - run: dotnet build apps/api/split-rail-api.csproj -c Release
+      - run: dotnet ef database update --project apps/api/split-rail-api.csproj --configuration Release
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          DB_PASSWORD: postgres
+      - name: Start API and wait for Swagger
+        run: |
+          dotnet run --project apps/api/split-rail-api.csproj --no-build -c Release --urls http://127.0.0.1:5000 > /tmp/api.log 2>&1 &
+          API_PID=$!
+          for attempt in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:5000/swagger/v1/swagger.json >/dev/null; then
+              echo "API ready after ${attempt} attempt(s)"
+              exit 0
+            fi
+            if ! kill -0 "$API_PID" 2>/dev/null; then
+              echo "API process exited before Swagger became available"
+              cat /tmp/api.log
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Timed out waiting for Swagger"
+          cat /tmp/api.log
+          exit 1
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          DB_PASSWORD: postgres
+          Preview__EnableTestSeeding: 'true'
+          QboSync__EnableInProcessTimer: 'false'
+      - run: npm ci && npm run gen:api && npm run build
+        working-directory: apps/web
+        env:
+          OPENAPI_URL: http://127.0.0.1:5000/swagger/v1/swagger.json
+      - run: git diff --exit-code apps/web/src/types/generated-api.ts
+
+  coverage-gate:
+    name: coverage-gate
+    needs: [backend-test, frontend-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: coverage/backend
+      - uses: actions/download-artifact@v4
+        with:
+          name: frontend-coverage
+          path: coverage/frontend
+      - name: Check backend coverage
+        run: |
+          FILE=$(find coverage/backend -name 'coverage.cobertura.xml' | head -1)
+          test -n "$FILE" || (echo "Missing backend coverage report" && exit 1)
+          RATE=$(grep -oP 'line-rate="\K[0-9.]+' "$FILE" | head -1)
+          PCT=$(echo "$RATE * 100" | bc)
+          echo "Backend coverage: ${PCT}%"
+          awk "BEGIN { exit !($PCT >= 80.0) }"
+      - name: Check frontend coverage
+        run: |
+          test -f coverage/frontend/lcov.info || (echo "Missing frontend coverage report" && exit 1)
+          TOTAL=0; HIT=0
+          while IFS= read -r line; do
+            case "$line" in
+              LF:*) TOTAL=$((TOTAL + ${line#LF:})) ;;
+              LH:*) HIT=$((HIT + ${line#LH:})) ;;
+            esac
+          done < coverage/frontend/lcov.info
+          test "$TOTAL" -gt 0 || (echo "Empty frontend coverage" && exit 1)
+          PCT=$(echo "scale=2; $HIT * 100 / $TOTAL" | bc)
+          echo "Frontend coverage: ${PCT}%"
+          awk "BEGIN { exit !($PCT >= 80.0) }"
+
+  deploy-preview:
+    name: deploy-preview
+    needs: [coverage-gate, contract-type-drift]
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    outputs:
+      preview_url: ${{ steps.deploy.outputs.preview_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: deploy
+        run: |
+          echo "preview_url=http://127.0.0.1:5000" >> "$GITHUB_OUTPUT"
+        # Replace with deploy/preview/deploy-preview.sh when GCP credentials are configured
+
+  e2e-matrix:
+    name: e2e-matrix
+    needs: deploy-preview
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: split-rail-db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [chromium, firefox, webkit]
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - run: npm ci
+        working-directory: tests/e2e
+      - run: npx playwright install --with-deps chromium firefox webkit
+        working-directory: tests/e2e
+      - run: dotnet tool install --global dotnet-ef
+      - run: dotnet build apps/api/split-rail-api.csproj -c Release
+      - run: dotnet ef database update --project apps/api/split-rail-api.csproj --configuration Release
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          DB_PASSWORD: postgres
+      - name: Start API and wait for health
+        run: |
+          dotnet run --project apps/api/split-rail-api.csproj --no-build -c Release --urls http://127.0.0.1:5000 > /tmp/api.log 2>&1 &
+          API_PID=$!
+          for attempt in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:5000/swagger/v1/swagger.json >/dev/null; then
+              echo "API ready after ${attempt} attempt(s)"
+              exit 0
+            fi
+            if ! kill -0 "$API_PID" 2>/dev/null; then
+              echo "API process exited before becoming healthy"
+              cat /tmp/api.log
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "Timed out waiting for API"
+          cat /tmp/api.log
+          exit 1
+        env:
+          ASPNETCORE_ENVIRONMENT: Development
+          DB_PASSWORD: postgres
+          Preview__UseFakeQboConnector: 'true'
+          Preview__EnableTestSeeding: 'true'
+          QboSync__EnableInProcessTimer: 'false'
+      - run: npx playwright test --project=${{ matrix.project }} --shard=${{ matrix.shard }}/2
+        working-directory: tests/e2e
+        env:
+          PREVIEW_BASE_URL: http://127.0.0.1:5000
+          API_BASE_URL: http://127.0.0.1:5000
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-${{ matrix.project }}-${{ matrix.shard }}
+          path: |
+            tests/e2e/playwright-report/
+            tests/e2e/test-results/
+
+  e2e-gate:
+    name: e2e-gate
+    needs: e2e-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "E2E matrix passed"
+
+  teardown-preview:
+    name: teardown-preview
+    needs: [deploy-preview, e2e-gate]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Preview teardown complete"
+        # Replace with deploy/preview/teardown-preview.sh when GCP credentials are configured

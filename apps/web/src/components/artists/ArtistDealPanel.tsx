@@ -62,7 +62,7 @@ export function ArtistDealPanel({
       <ul className="artist-deal-panel__list">
         {artists.map((artist) => (
           <li key={artist.id} data-testid={`artist-row-${artist.id}`}>
-            <strong>{artist.artistName}</strong> — {artist.dealType.replace('_', ' ')}
+            <strong>{artist.artistName}</strong> — {artist.dealType?.replace('_', ' ') ?? 'unknown'}
             {' · Payout: '}
             <span data-testid={`payout-${artist.id}`}>
               {formatMoney(artist.calculatedNetPayout)}
@@ -72,7 +72,7 @@ export function ArtistDealPanel({
                 type="button"
                 className="artist-deal-panel__remove"
                 data-testid={`remove-artist-${artist.id}`}
-                onClick={() => onRemoveArtist(artist.id)}
+                onClick={() => artist.id && onRemoveArtist(artist.id)}
               >
                 Remove
               </button>

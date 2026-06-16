@@ -86,6 +86,18 @@ public class InvitationsControllerTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task ResendInvitation_Returns200()
+    {
+        var (client, adminToken, roleId, venueId) = await SetupAdminWithVenueAsync();
+        await SendInvitationViaServiceAsync(adminToken, "resend@example.com", roleId, [venueId]);
+        var list = await client.GetFromJsonAsync<List<InvitationResponse>>("/api/invitations");
+        var invitation = list!.Single(i => i.Email == "resend@example.com");
+
+        var response = await client.PostAsync($"/api/invitations/{invitation.Id}/resend", null);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task AcceptInvitation_SetsAcceptedStatus()
     {
         var (client, adminToken, roleId, venueId) = await SetupAdminWithVenueAsync();

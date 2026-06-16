@@ -12,6 +12,7 @@ using SplitRail.Api.Authorization;
 using SplitRail.Api.BackgroundServices;
 using SplitRail.Api.Configuration;
 using SplitRail.Api.Data;
+using SplitRail.Api.Http;
 using SplitRail.Api.Middleware;
 using SplitRail.Api.Serialization;
 using SplitRail.Api.Services;
@@ -23,6 +24,11 @@ DotEnv.Load(Path.Combine(builder.Environment.ContentRootPath, ".env"));
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection(JwtSettings.SectionName));
 builder.Services.Configure<SettlementArchiveOptions>(
     builder.Configuration.GetSection(SettlementArchiveOptions.SectionName));
+builder.Services.Configure<PreviewOptions>(
+    builder.Configuration.GetSection(PreviewOptions.SectionName));
+
+var previewOptions = builder.Configuration.GetSection(PreviewOptions.SectionName).Get<PreviewOptions>()
+    ?? new PreviewOptions();
 
 var qboSyncSection = builder.Configuration.GetSection(QboSyncOptions.SectionName);
 builder.Services.Configure<QboSyncOptions>(options =>
@@ -39,9 +45,20 @@ builder.Services.Configure<QboSyncOptions>(options =>
 builder.Services.AddDataProtection()
     .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "dp-keys")));
 
-builder.Services.AddHttpClient("QboApi")
-    .AddTransientHttpErrorPolicy(policy =>
-        policy.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
+if (previewOptions.UseFakeQboConnector)
+{
+    builder.Services.AddSingleton<QboEgressRecordingHandler>();
+    builder.Services.AddHttpClient("QboApi")
+        .AddHttpMessageHandler(sp => sp.GetRequiredService<QboEgressRecordingHandler>())
+        .AddTransientHttpErrorPolicy(policy =>
+            policy.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
+}
+else
+{
+    builder.Services.AddHttpClient("QboApi")
+        .AddTransientHttpErrorPolicy(policy =>
+            policy.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
+}
 
 builder.Services.AddHttpClient("QboOAuth");
 
@@ -113,12 +130,30 @@ builder.Services.AddScoped<DealMathEngine>();
 builder.Services.AddScoped<CustomFormulaEvaluator>();
 builder.Services.AddScoped<QboTokenService>();
 builder.Services.AddScoped<QboTransactionClient>();
+if (previewOptions.UseFakeQboConnector)
+{
+    builder.Services.AddScoped<IQboTransactionClient, FakeQboTransactionClient>();
+}
+else
+{
+    builder.Services.AddScoped<IQboTransactionClient>(sp => sp.GetRequiredService<QboTransactionClient>());
+}
+
+builder.Services.AddScoped<TestSeedingService>();
 builder.Services.AddScoped<QboSyncService>();
 builder.Services.AddScoped<QboMappingService>();
 builder.Services.AddScoped<SplitRail.Api.Services.SignatureValidator>();
 builder.Services.AddScoped<SettlementPdfRenderer>();
 builder.Services.AddScoped<SettlementService>();
-builder.Services.AddSingleton<ISettlementArchiveStore, GcsSettlementArchiveStore>();
+builder.Services.AddSingleton<InMemorySettlementArchiveStore>();
+builder.Services.AddSingleton<GcsSettlementArchiveStore>();
+builder.Services.AddSingleton<ISettlementArchiveStore>(sp =>
+{
+    var preview = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PreviewOptions>>().Value;
+    if (preview.UseFakeQboConnector || preview.EnableTestSeeding)
+        return sp.GetRequiredService<InMemorySettlementArchiveStore>();
+    return sp.GetRequiredService<GcsSettlementArchiveStore>();
+});
 builder.Services.AddHostedService<QboSyncHostedService>();
 
 builder.Services.AddControllers()

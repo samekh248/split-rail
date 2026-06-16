@@ -56,42 +56,48 @@ public class SettlementService
 
         var strokes = _signatureValidator.ValidateAndParse(request.SignatureData);
 
-        var evt = await LoadEventForFinalizeAsync(venueId, eventId, cancellationToken);
-        ValidateFinalizePreconditions(evt);
-
-        var snapshot = BuildSnapshot(evt);
-        var pdfBytes = _pdfRenderer.Render(snapshot, strokes);
-
-        var settlementId = Guid.NewGuid();
-        var objectPath = BuildObjectPath(evt, settlementId);
-
-        await _archiveStore.UploadAsync(objectPath, pdfBytes, cancellationToken);
-
-        var settledAt = DateTimeOffset.UtcNow;
-        var objectReference = BuildObjectReference(objectPath);
-
-        evt.ArtistSignatureData = request.SignatureData.Trim();
-        evt.SettledAt = settledAt;
-        evt.SettledByUserId = userId;
-        evt.SettlementPdfUrl = objectReference;
-        evt.Status = EventStatus.Settled;
-
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
         try
         {
+            var evt = await LoadEventForFinalizeWithLockAsync(venueId, eventId, cancellationToken);
+
+            if (evt.Status is EventStatus.Settled or EventStatus.Reconciled)
+                throw new ConcurrencyConflictException();
+
+            ValidateFinalizePreconditions(evt);
+
+            var snapshot = BuildSnapshot(evt);
+            var pdfBytes = _pdfRenderer.Render(snapshot, strokes);
+
+            var settlementId = Guid.NewGuid();
+            var objectPath = BuildObjectPath(evt, settlementId);
+
+            await _archiveStore.UploadAsync(objectPath, pdfBytes, cancellationToken);
+
+            var settledAt = DateTimeOffset.UtcNow;
+            var objectReference = BuildObjectReference(objectPath);
+
+            evt.ArtistSignatureData = request.SignatureData.Trim();
+            evt.SettledAt = settledAt;
+            evt.SettledByUserId = userId;
+            evt.SettlementPdfUrl = objectReference;
+            evt.Status = EventStatus.Settled;
+
             await _db.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Settlement finalized for event {EventId} at venue {VenueId} by user {UserId}",
+                eventId,
+                venueId,
+                userId);
+
+            return ToResultDto(evt);
         }
         catch (DbUpdateConcurrencyException)
         {
             throw new ConcurrencyConflictException();
         }
-
-        _logger.LogInformation(
-            "Settlement finalized for event {EventId} at venue {VenueId} by user {UserId}",
-            eventId,
-            venueId,
-            userId);
-
-        return ToResultDto(evt);
     }
 
     public async Task<SettlementResultDto> ReverseAsync(
@@ -209,13 +215,21 @@ public class SettlementService
                 MoneyFormat.ToMoneyString(netShowRevenue)));
     }
 
-    private async Task<Event> LoadEventForFinalizeAsync(
+    private async Task<Event> LoadEventForFinalizeWithLockAsync(
         Guid venueId,
         Guid eventId,
         CancellationToken cancellationToken)
     {
         if (!await _venueService.IsVenueAccessibleAsync(_tenantContext.UserId!.Value, venueId, cancellationToken))
             throw new NotFoundException("Event not found.");
+
+        await _db.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+             SELECT 1 FROM events
+             WHERE id = {eventId} AND venue_id = {venueId}
+             FOR UPDATE
+             """,
+            cancellationToken);
 
         var evt = await _db.Events
             .Include(e => e.Venue)

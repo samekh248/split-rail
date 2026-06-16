@@ -11,7 +11,7 @@ public class QboSyncService
 {
     private readonly ApplicationDbContext _db;
     private readonly QboTokenService _tokenService;
-    private readonly QboTransactionClient _transactionClient;
+    private readonly IQboTransactionClient _transactionClient;
     private readonly VenueService _venueService;
     private readonly ITenantContext _tenantContext;
     private readonly ILogger<QboSyncService> _logger;
@@ -19,7 +19,7 @@ public class QboSyncService
     public QboSyncService(
         ApplicationDbContext db,
         QboTokenService tokenService,
-        QboTransactionClient transactionClient,
+        IQboTransactionClient transactionClient,
         VenueService venueService,
         ITenantContext tenantContext,
         ILogger<QboSyncService> logger)

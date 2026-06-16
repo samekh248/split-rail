@@ -10,7 +10,7 @@ interface LedgerRowProps {
   onNotesChange?: (id: string, notes: string) => void;
 }
 
-function isEditable(level: string): boolean {
+function isEditable(level: string | null | undefined): boolean {
   return level === 'editable';
 }
 
@@ -30,7 +30,7 @@ export function LedgerRow({
   ) => {
     if (!onChange) return;
     const parsed = parseMoneyInput(raw);
-    if (parsed !== null) {
+    if (parsed !== null && row.id) {
       onChange(row.id, parsed);
     }
   };
@@ -82,7 +82,7 @@ export function LedgerRow({
             defaultValue={row.notes ?? ''}
             aria-label={`Notes ${row.rowLabel}`}
             data-testid={`notes-${row.id}`}
-            onBlur={(e) => onNotesChange?.(row.id, e.target.value)}
+            onBlur={(e) => row.id && onNotesChange?.(row.id, e.target.value)}
           />
         ) : (
           row.notes

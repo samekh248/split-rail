@@ -30,7 +30,7 @@ export function UnmappedBanner({ venueId, eventId, lineItemOptions }: UnmappedBa
 
       {expanded && listData && (
         <ul className="unmapped-banner__list" data-testid="unmapped-list">
-          {listData.transactions.map((txn) => (
+          {(listData.transactions ?? []).map((txn) => (
             <li key={txn.id} data-testid={`unmapped-item-${txn.id}`}>
               <span>{txn.qboAccountName}</span>
               <span>{formatMoney(txn.amount)}</span>
