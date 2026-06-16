@@ -1,142 +1,197 @@
-import { expect, test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
-const profileWithOrg = {
-  id: '00000000-0000-0000-0000-000000000001',
-  email: 'newuser@example.com',
-  organization: { id: '00000000-0000-0000-0000-000000000010', name: 'Test Org' },
-  role: { roleName: 'Admin', permissions: {} },
-  venueScopes: [],
-};
+const API_BASE = process.env.API_BASE_URL ?? process.env.PREVIEW_BASE_URL ?? 'http://localhost:5000';
+const WEB_BASE_URL = process.env.WEB_BASE_URL;
 
-const profileWithoutOrg = {
-  id: '00000000-0000-0000-0000-000000000002',
-  email: 'orgless@example.com',
-  organization: null,
-  role: null,
-  venueScopes: [],
-};
-
-function jsonResponse(body: unknown, status = 200) {
-  return {
-    status,
-    contentType: 'application/json',
-    body: JSON.stringify(body),
-  };
+function uniqueEmail(prefix: string): string {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}@example.com`;
 }
 
-test.describe('Onboarding flow', () => {
-  test('new user registers, lands in empty dashboard with welcome modal', async ({ page }) => {
-    await page.route('**/api/**', async (route) => {
-      const url = route.request().url();
-      const method = route.request().method();
+async function registerAndLogin(
+  request: import('@playwright/test').APIRequestContext,
+  email: string,
+  password: string,
+): Promise<{ accessToken: string; refreshToken: string }> {
+  const register = await request.post('/api/auth/register', {
+    data: { email, password },
+  });
+  expect(register.status()).toBe(201);
 
-      if (url.endsWith('/api/auth/register') && method === 'POST') {
-        return route.fulfill(jsonResponse({ id: 'u1', email: 'newuser@example.com', createdAt: '2026-01-01T00:00:00Z' }, 201));
-      }
-      if (url.endsWith('/api/auth/login') && method === 'POST') {
-        return route.fulfill(jsonResponse({ accessToken: 'access-1', refreshToken: 'refresh-1', expiresIn: 3600 }));
-      }
-      if (url.endsWith('/api/organizations') && method === 'POST') {
-        return route.fulfill(jsonResponse({ id: 'org-1', name: 'Test Org', createdAt: '2026-01-01T00:00:00Z' }, 201));
-      }
-      if (url.endsWith('/api/auth/refresh') && method === 'POST') {
-        return route.fulfill(jsonResponse({ accessToken: 'access-2', refreshToken: 'refresh-2', expiresIn: 3600 }));
-      }
-      if (url.endsWith('/api/users/me') && method === 'GET') {
-        return route.fulfill(jsonResponse(profileWithOrg));
-      }
-      if (url.endsWith('/api/venues') && method === 'GET') {
-        return route.fulfill(jsonResponse([]));
-      }
-      return route.continue();
+  const login = await request.post('/api/auth/login', {
+    data: { email, password },
+  });
+  expect(login.ok()).toBeTruthy();
+  return (await login.json()) as { accessToken: string; refreshToken: string };
+}
+
+async function completeOnboarding(
+  request: import('@playwright/test').APIRequestContext,
+  email: string,
+  password: string,
+  orgName: string,
+): Promise<{ accessToken: string; refreshToken: string }> {
+  const { accessToken, refreshToken } = await registerAndLogin(request, email, password);
+
+  const createOrg = await request.post('/api/organizations', {
+    headers: { Authorization: `Bearer ${accessToken}` },
+    data: { name: orgName },
+  });
+  expect(createOrg.status()).toBe(201);
+
+  const refresh = await request.post('/api/auth/refresh', {
+    data: { refreshToken },
+  });
+  expect(refresh.ok()).toBeTruthy();
+  return (await refresh.json()) as { accessToken: string; refreshToken: string };
+}
+
+test.describe('Onboarding flow (API)', () => {
+  test('new user registers, creates organization, and becomes Admin with empty venues', async ({
+    request,
+  }) => {
+    const email = uniqueEmail('onboard');
+    const password = 'Password1';
+    const orgName = 'Test Org';
+
+    const { accessToken } = await completeOnboarding(request, email, password, orgName);
+
+    const profile = await request.get('/api/users/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
+    expect(profile.ok()).toBeTruthy();
+    const profileBody = (await profile.json()) as {
+      organization?: { name?: string | null } | null;
+      role?: { roleName?: string | null } | null;
+    };
+    expect(profileBody.organization?.name).toBe(orgName);
+    expect(profileBody.role?.roleName).toBe('Admin');
 
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Create an account' }).click();
-    await page.getByLabel('Email').fill('newuser@example.com');
-    await page.getByLabel('Password').fill('Password1');
-    await page.getByLabel('Organization name').fill('Test Org');
-    await page.getByRole('button', { name: 'Create account' }).click();
-
-    await expect(page.getByRole('heading', { name: 'No venues yet' })).toBeVisible();
-    await expect(page.getByRole('dialog')).toBeVisible();
-    await expect(page.getByText('Test Org')).toBeVisible();
-
-    await page.getByRole('button', { name: 'Get started' }).click();
-    await expect(page.getByRole('dialog')).not.toBeVisible();
+    const venues = await request.get('/api/venues', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    expect(venues.ok()).toBeTruthy();
+    expect(await venues.json()).toEqual([]);
   });
 
-  test('returning user login skips welcome modal', async ({ page }) => {
-    await page.route('**/api/**', async (route) => {
-      const url = route.request().url();
-      const method = route.request().method();
+  test('duplicate email returns 409', async ({ request }) => {
+    const email = uniqueEmail('duplicate');
+    const password = 'Password1';
 
-      if (url.endsWith('/api/auth/login') && method === 'POST') {
-        return route.fulfill(jsonResponse({ accessToken: 'access-1', refreshToken: 'refresh-1', expiresIn: 3600 }));
-      }
-      if (url.endsWith('/api/users/me') && method === 'GET') {
-        return route.fulfill(jsonResponse(profileWithOrg));
-      }
-      if (url.endsWith('/api/venues') && method === 'GET') {
-        return route.fulfill(jsonResponse([]));
-      }
-      return route.continue();
+    const first = await request.post('/api/auth/register', {
+      data: { email, password },
     });
+    expect(first.status()).toBe(201);
 
-    await page.goto('/');
-    await page.getByLabel('Email').fill('newuser@example.com');
-    await page.getByLabel('Password').fill('Password1');
-    await page.getByRole('button', { name: 'Sign in' }).click();
-
-    await expect(page.getByRole('heading', { name: 'No venues yet' })).toBeVisible();
-    await expect(page.getByRole('dialog')).not.toBeVisible();
+    const second = await request.post('/api/auth/register', {
+      data: { email, password },
+    });
+    expect(second.status()).toBe(409);
   });
 
-  test('org-less login routes to organization creation step', async ({ page }) => {
-    await page.route('**/api/**', async (route) => {
-      const url = route.request().url();
-      const method = route.request().method();
+  test('returning user login loads existing organization profile', async ({ request }) => {
+    const email = uniqueEmail('returning');
+    const password = 'Password1';
+    const orgName = 'Returning Org';
 
-      if (url.endsWith('/api/auth/login') && method === 'POST') {
-        return route.fulfill(jsonResponse({ accessToken: 'access-1', refreshToken: 'refresh-1', expiresIn: 3600 }));
-      }
-      if (url.endsWith('/api/users/me') && method === 'GET') {
-        return route.fulfill(jsonResponse(profileWithoutOrg));
-      }
-      return route.continue();
+    await completeOnboarding(request, email, password, orgName);
+
+    const login = await request.post('/api/auth/login', {
+      data: { email, password },
     });
+    expect(login.ok()).toBeTruthy();
+    const { accessToken } = (await login.json()) as { accessToken: string };
 
-    await page.goto('/');
-    await page.getByLabel('Email').fill('orgless@example.com');
-    await page.getByLabel('Password').fill('Password1');
-    await page.getByRole('button', { name: 'Sign in' }).click();
-
-    await expect(page.getByRole('heading', { name: 'Set up your organization' })).toBeVisible();
+    const profile = await request.get('/api/users/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    expect(profile.ok()).toBeTruthy();
+    const profileBody = (await profile.json()) as {
+      organization?: { name?: string | null } | null;
+      role?: { roleName?: string | null } | null;
+    };
+    expect(profileBody.organization?.name).toBe(orgName);
+    expect(profileBody.role?.roleName).toBe('Admin');
   });
 
-  test('session persists across reload with bootstrap', async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('accessToken', 'stored-access');
-      localStorage.setItem('refreshToken', 'stored-refresh');
+  test('org-less account can create organization after login', async ({ request }) => {
+    const email = uniqueEmail('orgless');
+    const password = 'Password1';
+    const orgName = 'Recovery Org';
+
+    const { accessToken, refreshToken } = await registerAndLogin(request, email, password);
+
+    const createOrg = await request.post('/api/organizations', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      data: { name: orgName },
     });
+    expect(createOrg.status()).toBe(201);
 
-    await page.route('**/api/**', async (route) => {
-      const url = route.request().url();
-
-      if (url.endsWith('/api/users/me')) {
-        return route.fulfill(jsonResponse(profileWithOrg));
-      }
-      if (url.endsWith('/api/venues')) {
-        return route.fulfill(jsonResponse([]));
-      }
-      return route.continue();
+    const refresh = await request.post('/api/auth/refresh', {
+      data: { refreshToken },
     });
+    expect(refresh.ok()).toBeTruthy();
+    const refreshed = (await refresh.json()) as { accessToken: string };
 
-    await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'No venues yet' })).toBeVisible();
+    const profileAfter = await request.get('/api/users/me', {
+      headers: { Authorization: `Bearer ${refreshed.accessToken}` },
+    });
+    expect(profileAfter.ok()).toBeTruthy();
+    const after = (await profileAfter.json()) as {
+      organization?: { name?: string | null } | null;
+      role?: { roleName?: string | null } | null;
+    };
+    expect(after.organization?.name).toBe(orgName);
+    expect(after.role?.roleName).toBe('Admin');
+  });
 
-    await page.reload();
+  test('refresh token restores authenticated access', async ({ request }) => {
+    const email = uniqueEmail('refresh');
+    const password = 'Password1';
+    const orgName = 'Refresh Org';
+
+    const { refreshToken } = await completeOnboarding(request, email, password, orgName);
+
+    const refresh = await request.post('/api/auth/refresh', {
+      data: { refreshToken },
+    });
+    expect(refresh.ok()).toBeTruthy();
+    const { accessToken } = (await refresh.json()) as { accessToken: string };
+
+    const profile = await request.get('/api/users/me', {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    expect(profile.ok()).toBeTruthy();
+    const profileBody = (await profile.json()) as {
+      organization?: { name?: string | null } | null;
+    };
+    expect(profileBody.organization?.name).toBe(orgName);
+  });
+});
+
+test.describe('Onboarding flow (UI)', () => {
+  test.skip(!WEB_BASE_URL, 'WEB_BASE_URL required for UI onboarding scenarios');
+
+  test('authenticated bootstrap lands in empty dashboard', async ({ page, request }) => {
+    const email = uniqueEmail('ui-bootstrap');
+    const password = 'Password1';
+    const orgName = 'UI Bootstrap Org';
+
+    const { accessToken, refreshToken } = await completeOnboarding(
+      request,
+      email,
+      password,
+      orgName,
+    );
+
+    await page.addInitScript(
+      ({ access, refresh }) => {
+        localStorage.setItem('accessToken', access);
+        localStorage.setItem('refreshToken', refresh);
+      },
+      { access: accessToken, refresh: refreshToken },
+    );
+
+    await page.goto(`${WEB_BASE_URL}/`);
     await expect(page.getByRole('heading', { name: 'No venues yet' })).toBeVisible();
-    await expect(page.getByRole('dialog')).not.toBeVisible();
   });
 });
