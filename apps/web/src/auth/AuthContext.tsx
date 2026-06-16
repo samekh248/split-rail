@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { configureApiClient, resetSessionExpiredLatch } from '@/api/client';
 import { fetchUserProfile } from '@/api/user';
 import type { LoginRequest, UserProfileResponse } from '@/types/generated-api';
+import { clearActiveVenueId } from '@/venue/activeVenueStorage';
 import { bootstrapAuthSession, routeProfile } from './authBootstrap';
 import * as authApi from './authApi';
 
@@ -61,6 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         /* best-effort */
       }
       queryClient.clear();
+      clearActiveVenueId();
       setProfile(null);
       setJustOnboarded(false);
       setAuthViewState('login');
@@ -173,6 +175,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authApi.logout();
     } finally {
       queryClient.clear();
+      clearActiveVenueId();
       setProfile(null);
       setJustOnboarded(false);
       setSessionExpired(false);

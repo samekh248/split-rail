@@ -1,4 +1,5 @@
 import { getAccessToken, getRefreshToken } from '@/auth/tokenStorage';
+import { getActiveVenueId } from '@/venue/activeVenueStorage';
 
 const API_BASE = '/api';
 
@@ -12,6 +13,7 @@ export class SessionExpiredError extends Error {
 export interface ApiFetchInit extends RequestInit {
   skipAuthRecovery?: boolean;
   isRetry?: boolean;
+  skipVenueContext?: boolean;
 }
 
 interface ApiClientHandlers {
@@ -39,6 +41,17 @@ function authHeaders(): HeadersInit {
     headers.Authorization = `Bearer ${token}`;
   }
   return headers;
+}
+
+function venueContextHeaders(skipVenueContext?: boolean): HeadersInit {
+  if (skipVenueContext) {
+    return {};
+  }
+  const venueId = getActiveVenueId();
+  if (!venueId) {
+    return {};
+  }
+  return { 'X-Active-Venue-Id': venueId };
 }
 
 function isAuthFailure(error: unknown): boolean {
@@ -91,11 +104,15 @@ async function performRefresh(): Promise<void> {
 }
 
 async function apiFetch<T>(path: string, init?: ApiFetchInit): Promise<T> {
-  const { skipAuthRecovery, isRetry, ...requestInit } = init ?? {};
+  const { skipAuthRecovery, isRetry, skipVenueContext, ...requestInit } = init ?? {};
 
   const response = await fetch(`${API_BASE}${path}`, {
     ...requestInit,
-    headers: { ...authHeaders(), ...requestInit.headers },
+    headers: {
+      ...authHeaders(),
+      ...venueContextHeaders(skipVenueContext),
+      ...requestInit.headers,
+    },
   });
 
   if (!response.ok) {

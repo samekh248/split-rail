@@ -302,6 +302,124 @@ body {
   color: #64748b;
 }
 
+.app__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.venue-switcher {
+  position: relative;
+}
+
+.venue-switcher__trigger {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.venue-switcher__trigger:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.venue-switcher__label {
+  opacity: 0.85;
+  font-size: 0.75rem;
+}
+
+.venue-switcher__current {
+  font-weight: 600;
+}
+
+.venue-switcher__chevron {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.venue-switcher__menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  min-width: 12rem;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  background: #fff;
+  color: #1a1a1a;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+  z-index: 20;
+}
+
+.venue-switcher__option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.venue-switcher__option--highlighted {
+  background: #f1f5f9;
+}
+
+.venue-switcher__option--active {
+  font-weight: 600;
+}
+
+.venue-switcher__option:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: -2px;
+}
+
+.venue-switcher__check {
+  color: #2563eb;
+}
+
+.venue-switcher--single {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 640px) {
+  .app__header-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .app__header-actions {
+    justify-content: space-between;
+  }
+
+  .venue-switcher__menu {
+    left: 0;
+    right: auto;
+    min-width: 100%;
+  }
+}
+
 .app__header-row {
   display: flex;
   justify-content: space-between;

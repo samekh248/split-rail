@@ -1,27 +1,30 @@
+import { useEffect, useRef, useState } from 'react';
 import { EventLedgerPage } from '@/pages/EventLedgerPage';
-import { useVenues } from '@/api/venues';
+import { VenueSwitcher } from '@/components/venue/VenueSwitcher';
 import { useAuth } from '@/auth/useAuth';
+import { useActiveVenue } from '@/venue/useActiveVenue';
+import { DEFAULT_EVENT_ID } from '@/venue/defaults';
 
 export interface DashboardHomeProps {
   organizationName: string;
 }
 
-function parseRouteParams(): { venueId: string; eventId: string } {
-  const params = new URLSearchParams(window.location.search);
-  const venueId = params.get('venueId') ?? '00000000-0000-0000-0000-000000000001';
-  const eventId = params.get('eventId') ?? '00000000-0000-0000-0000-000000000002';
-  return { venueId, eventId };
-}
-
 export function DashboardHome({ organizationName }: DashboardHomeProps) {
   const { logout } = useAuth();
-  const { data: venues, isLoading, error, refetch } = useVenues();
-  const routeParams = parseRouteParams();
+  const { venues, activeVenueId, isLoading, isError, refetch } = useActiveVenue();
+  const [eventId, setEventId] = useState(DEFAULT_EVENT_ID);
+  const previousVenueIdRef = useRef<string | null>(activeVenueId);
 
-  const venueId =
-    routeParams.venueId !== '00000000-0000-0000-0000-000000000001'
-      ? routeParams.venueId
-      : (venues?.[0]?.id ?? routeParams.venueId);
+  useEffect(() => {
+    if (
+      previousVenueIdRef.current !== null &&
+      activeVenueId !== null &&
+      previousVenueIdRef.current !== activeVenueId
+    ) {
+      setEventId(DEFAULT_EVENT_ID);
+    }
+    previousVenueIdRef.current = activeVenueId;
+  }, [activeVenueId]);
 
   return (
     <div className="app">
@@ -31,9 +34,12 @@ export function DashboardHome({ organizationName }: DashboardHomeProps) {
             <h1>Split Rail</h1>
             <p className="app__subtitle">{organizationName}</p>
           </div>
-          <button type="button" className="app__logout" onClick={() => void logout()}>
-            Sign out
-          </button>
+          <div className="app__header-actions">
+            <VenueSwitcher />
+            <button type="button" className="app__logout" onClick={() => void logout()}>
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 
@@ -43,7 +49,7 @@ export function DashboardHome({ organizationName }: DashboardHomeProps) {
         </div>
       ) : null}
 
-      {!isLoading && error ? (
+      {!isLoading && isError ? (
         <div className="dashboard-empty dashboard-empty--error" role="alert">
           <p>Unable to load venues. Please try again.</p>
           <button type="button" className="dashboard-empty__retry" onClick={() => void refetch()}>
@@ -52,7 +58,7 @@ export function DashboardHome({ organizationName }: DashboardHomeProps) {
         </div>
       ) : null}
 
-      {!isLoading && !error && venues && venues.length === 0 ? (
+      {!isLoading && !isError && venues.length === 0 ? (
         <section className="dashboard-empty" aria-labelledby="dashboard-empty-heading">
           <h2 id="dashboard-empty-heading" className="dashboard-empty__heading">
             No venues yet
@@ -63,8 +69,8 @@ export function DashboardHome({ organizationName }: DashboardHomeProps) {
         </section>
       ) : null}
 
-      {!isLoading && !error && venues && venues.length > 0 ? (
-        <EventLedgerPage venueId={venueId} eventId={routeParams.eventId} />
+      {!isLoading && !isError && activeVenueId ? (
+        <EventLedgerPage venueId={activeVenueId} eventId={eventId} />
       ) : null}
     </div>
   );

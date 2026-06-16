@@ -4,6 +4,7 @@ import { RegisterPage } from '@/pages/RegisterPage';
 import { OrganizationCreateStep } from '@/components/onboarding/OrganizationCreateStep';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { useAuth } from '@/auth/useAuth';
+import { VenueProvider } from '@/venue/VenueContext';
 
 export default function App() {
   const {
@@ -47,7 +48,9 @@ export default function App() {
 
   return (
     <>
-      <DashboardHome organizationName={organizationName} />
+      <VenueProvider>
+        <DashboardHome organizationName={organizationName} />
+      </VenueProvider>
       {justOnboarded ? (
         <WelcomeModal organizationName={organizationName} onDismiss={dismissWelcome} />
       ) : null}
