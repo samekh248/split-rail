@@ -230,7 +230,7 @@ jobs:
       - name: Build and start web preview
         run: |
           npm ci
-          npm run build
+          VITE_E2E_HOOKS=true npm run build
           npm run preview -- --host 127.0.0.1 --port 5173 > /tmp/web.log 2>&1 &
           for attempt in $(seq 1 30); do
             if curl -sf http://127.0.0.1:5173/ >/dev/null; then

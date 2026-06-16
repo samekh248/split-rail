@@ -130,13 +130,15 @@ test.describe('Session refresh (UI)', () => {
       await route.continue();
     });
 
+    await page.waitForFunction(() => window.__splitRail?.apiFetch != null);
+
     await Promise.all([
-      page.evaluate(() => fetch('/api/users/me')),
-      page.evaluate(() => fetch('/api/users/me')),
-      page.evaluate(() => fetch('/api/users/me')),
+      page.evaluate(() => window.__splitRail!.apiFetch('/users/me')),
+      page.evaluate(() => window.__splitRail!.apiFetch('/users/me')),
+      page.evaluate(() => window.__splitRail!.apiFetch('/users/me')),
     ]);
 
-    await expect.poll(() => refreshCount).toBe(1);
+    await expect.poll(() => refreshCount, { timeout: 10_000 }).toBe(1);
   });
 
   test('unrecoverable session shows login with session-expired notice', async ({

@@ -23,3 +23,9 @@ createRoot(document.getElementById('root')!).render(
     </QueryClientProvider>
   </StrictMode>,
 );
+
+if (import.meta.env.VITE_E2E_HOOKS === 'true') {
+  void import('@/api/client').then(({ apiFetch }) => {
+    window.__splitRail = { apiFetch };
+  });
+}
