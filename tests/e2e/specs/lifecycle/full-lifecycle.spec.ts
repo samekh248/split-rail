@@ -54,8 +54,8 @@ test.describe('Full lifecycle state machine', () => {
 
     const ledgerSettled = await request.get(`${base}/ledger`, { headers });
     const settled = (await ledgerSettled.json()) as { editability: { proforma: string; settlement: string; notes: string } };
-    expect(settled.editability.proforma).toBe('locked');
-    expect(settled.editability.settlement).toBe('locked');
+    expect(settled.editability.proforma).toBe('read-only');
+    expect(settled.editability.settlement).toBe('read-only');
 
     const pdfLink = await request.get(`${base}/settlement-pdf`, { headers });
     expect(pdfLink.ok()).toBeTruthy();
