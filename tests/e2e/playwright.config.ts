@@ -5,10 +5,10 @@ const shardTotal = process.env.SHARD_TOTAL ? Number(process.env.SHARD_TOTAL) : u
 
 export default defineConfig({
   testDir: './specs',
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: 2,
-  workers: process.env.CI ? 2 : undefined,
+  workers: 1,
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : 'list',
   timeout: 120_000,
   use: {
