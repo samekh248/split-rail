@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, type Page } from '@playwright/test';
 import { resetSeed } from '../../fixtures/seed';
 
 const API_BASE = process.env.API_BASE_URL ?? process.env.PREVIEW_BASE_URL ?? 'http://localhost:5000';
@@ -22,64 +22,54 @@ async function seedAndLogin(
   return login(email, password);
 }
 
+async function bootstrapDashboard(
+  page: Page,
+  tokens: { accessToken: string; refreshToken: string },
+  sessionStorageSeed?: { activeVenueId?: string },
+): Promise<void> {
+  await page.addInitScript(
+    ({ access, refresh, rememberedVenueId }) => {
+      localStorage.setItem('accessToken', access);
+      localStorage.setItem('refreshToken', refresh);
+      if (rememberedVenueId) {
+        sessionStorage.setItem('activeVenueId', rememberedVenueId);
+      }
+    },
+    {
+      access: tokens.accessToken,
+      refresh: tokens.refreshToken,
+      rememberedVenueId: sessionStorageSeed?.activeVenueId,
+    },
+  );
+
+  await page.goto(`${WEB_BASE_URL}/`);
+  await expect(page.getByTestId('venue-switcher')).toBeVisible({ timeout: 15_000 });
+}
+
 test.describe('Venue switching (UI)', () => {
   test.skip(!WEB_BASE_URL, 'WEB_BASE_URL or PREVIEW_BASE_URL required for venue switching UI scenarios');
 
   test('full-access user sees all organization venues (E1)', async ({ page }) => {
-    const { accessToken, refreshToken } = await seedAndLogin(
-      'alpha-admin@e2e.test',
-      'E2eTestPass1',
-    );
+    const tokens = await seedAndLogin('alpha-admin@e2e.test', 'E2eTestPass1');
+    await bootstrapDashboard(page, tokens);
 
-    await page.addInitScript(
-      ({ access, refresh }) => {
-        localStorage.setItem('accessToken', access);
-        localStorage.setItem('refreshToken', refresh);
-      },
-      { access: accessToken, refresh: refreshToken },
-    );
-
-    await page.goto('/');
-
-    await expect(page.getByTestId('venue-switcher')).toBeVisible();
     await page.getByTestId('venue-switcher-trigger').click();
     await expect(page.getByRole('option', { name: /Alpha Main Hall/ })).toBeVisible();
     await expect(page.getByRole('option', { name: /Alpha Side Room/ })).toBeVisible();
   });
 
   test('scoped user sees only assigned venues (E2)', async ({ page }) => {
-    const { accessToken, refreshToken } = await seedAndLogin(
-      'alpha-scoped@e2e.test',
-      'E2eTestPass1',
-    );
+    const tokens = await seedAndLogin('alpha-scoped@e2e.test', 'E2eTestPass1');
+    await bootstrapDashboard(page, tokens);
 
-    await page.addInitScript(
-      ({ access, refresh }) => {
-        localStorage.setItem('accessToken', access);
-        localStorage.setItem('refreshToken', refresh);
-      },
-      { access: accessToken, refresh: refreshToken },
-    );
-
-    await page.goto('/');
-
-    await expect(page.getByTestId('venue-switcher')).toBeVisible();
-    await page.getByTestId('venue-switcher-trigger').click();
-    await expect(page.getByRole('option', { name: /Alpha Main Hall/ })).toBeVisible();
-    await expect(page.getByRole('option', { name: /Alpha Side Room/ })).not.toBeVisible();
+    await expect(page.getByTestId('venue-switcher-current')).toHaveText('Alpha Main Hall');
+    await expect(page.getByTestId('venue-switcher')).toHaveClass(/venue-switcher--single/);
+    await expect(page.getByTestId('venue-switcher-trigger')).toHaveCount(0);
   });
 
   test('selecting a venue updates ledger and sends X-Active-Venue-Id (E3)', async ({ page }) => {
     const seed = await resetSeed();
-    const { accessToken, refreshToken } = await login('alpha-admin@e2e.test', 'E2eTestPass1');
-
-    await page.addInitScript(
-      ({ access, refresh }) => {
-        localStorage.setItem('accessToken', access);
-        localStorage.setItem('refreshToken', refresh);
-      },
-      { access: accessToken, refresh: refreshToken },
-    );
+    const tokens = await login('alpha-admin@e2e.test', 'E2eTestPass1');
 
     const capturedHeaders: string[] = [];
     await page.route('**/api/venues/*/events/**', async (route) => {
@@ -90,8 +80,7 @@ test.describe('Venue switching (UI)', () => {
       await route.continue();
     });
 
-    await page.goto('/');
-
+    await bootstrapDashboard(page, tokens);
     await page.getByTestId('venue-switcher-trigger').click();
     await page.getByRole('option', { name: /Alpha Side Room/ }).click();
 
@@ -106,32 +95,21 @@ test.describe('Venue switching (UI)', () => {
     request,
   }) => {
     const seed = await resetSeed();
-    const { accessToken, refreshToken } = await login('alpha-scoped@e2e.test', 'E2eTestPass1');
+    const tokens = await login('alpha-scoped@e2e.test', 'E2eTestPass1');
 
     const denied = await request.get(`/api/venues/${seed.orgA.outOfScopeVenueId}`, {
       headers: {
-        Authorization: `Bearer ${accessToken}`,
+        Authorization: `Bearer ${tokens.accessToken}`,
         'X-Active-Venue-Id': seed.orgA.outOfScopeVenueId,
       },
     });
     expect([403, 404]).toContain(denied.status());
 
-    await page.addInitScript(
-      ({ access, refresh, outOfScopeId }) => {
-        localStorage.setItem('accessToken', access);
-        localStorage.setItem('refreshToken', refresh);
-        sessionStorage.setItem('activeVenueId', outOfScopeId);
-      },
-      {
-        access: accessToken,
-        refresh: refreshToken,
-        outOfScopeId: seed.orgA.outOfScopeVenueId,
-      },
-    );
-
-    await page.goto('/');
+    await bootstrapDashboard(page, tokens, {
+      activeVenueId: seed.orgA.outOfScopeVenueId,
+    });
 
     await expect(page.getByTestId('venue-switcher-current')).toHaveText('Alpha Main Hall');
-    await expect(page.getByRole('option', { name: /Alpha Side Room/ })).not.toBeVisible();
+    await expect(page.getByRole('option', { name: /Alpha Side Room/ })).toHaveCount(0);
   });
 });
