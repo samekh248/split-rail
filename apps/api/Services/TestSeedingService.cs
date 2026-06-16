@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SplitRail.Api.Configuration;
@@ -29,15 +30,18 @@ public class TestSeedingService
     private readonly ApplicationDbContext _db;
     private readonly PreviewOptions _previewOptions;
     private readonly ISettlementArchiveStore _archiveStore;
+    private readonly IDataProtector _tokenProtector;
 
     public TestSeedingService(
         ApplicationDbContext db,
         IOptions<PreviewOptions> previewOptions,
-        ISettlementArchiveStore archiveStore)
+        ISettlementArchiveStore archiveStore,
+        IDataProtectionProvider dataProtectionProvider)
     {
         _db = db;
         _previewOptions = previewOptions.Value;
         _archiveStore = archiveStore;
+        _tokenProtector = dataProtectionProvider.CreateProtector("QboOAuthTokens");
     }
 
     public void EnsureEnabled()
@@ -187,6 +191,21 @@ public class TestSeedingService
             PerformanceOrder = 1
         };
         _db.EventArtists.Add(artist);
+
+        if (!await _db.QboVenueCredentials.AnyAsync(c => c.VenueId == venue.Id, cancellationToken))
+        {
+            _db.QboVenueCredentials.Add(new QboVenueCredential
+            {
+                Id = Guid.NewGuid(),
+                VenueId = venue.Id,
+                RealmId = "e2e-realm-001",
+                EncryptedAccessToken = _tokenProtector.Protect("e2e-fake-access-token"),
+                EncryptedRefreshToken = _tokenProtector.Protect("e2e-fake-refresh-token"),
+                TokenExpiresAt = DateTimeOffset.UtcNow.AddDays(365),
+                ConnectedAt = DateTimeOffset.UtcNow
+            });
+        }
+
         await _db.SaveChangesAsync(cancellationToken);
 
         var grossRevenue = 9500.00m;
