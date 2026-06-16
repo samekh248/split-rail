@@ -53,6 +53,24 @@ describe('api client', () => {
     await expect(apiFetch('/missing')).rejects.toThrow('404: Event not found.');
   });
 
+  it('apiFetch reads PascalCase Detail from middleware errors', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: false,
+        status: 500,
+        statusText: 'Internal Server Error',
+        json: () =>
+          Promise.resolve({
+            Type: 'internal',
+            Detail: 'An unexpected error occurred.',
+          }),
+      }),
+    );
+
+    await expect(apiFetch('/broken')).rejects.toThrow('500: An unexpected error occurred.');
+  });
+
   it('apiFetch falls back to status text when error body is not JSON', async () => {
     vi.stubGlobal(
       'fetch',

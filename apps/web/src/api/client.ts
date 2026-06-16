@@ -18,8 +18,13 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     let detail = response.statusText;
     try {
-      const body = (await response.json()) as { detail?: string; title?: string };
-      detail = body.detail ?? body.title ?? detail;
+      const body = (await response.json()) as {
+        detail?: string;
+        Detail?: string;
+        title?: string;
+        Title?: string;
+      };
+      detail = body.detail ?? body.Detail ?? body.title ?? body.Title ?? detail;
     } catch {
       /* ignore parse errors */
     }

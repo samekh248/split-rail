@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '@/App';
+import { AuthProvider } from '@/auth/AuthContext';
 
 vi.mock('@/pages/EventLedgerPage', () => ({
   EventLedgerPage: ({ venueId, eventId }: { venueId: string; eventId: string }) => (
@@ -11,23 +12,32 @@ vi.mock('@/pages/EventLedgerPage', () => ({
 }));
 
 describe('App', () => {
-  it('renders the shell and passes route params to the ledger page', () => {
-    window.history.pushState({}, '', '/?venueId=ven-123&eventId=evt-456');
-
-    render(<App />);
-
-    expect(screen.getByText('Split Rail')).toBeInTheDocument();
-    expect(screen.getByText('Event Financial Ledger')).toBeInTheDocument();
-    expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent('ven-123:evt-456');
+  beforeEach(() => {
+    localStorage.clear();
+    window.history.pushState({}, '', '/');
   });
 
-  it('falls back to default ids when query params are missing', () => {
-    window.history.pushState({}, '', '/');
-
-    render(<App />);
-
-    expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(
-      '00000000-0000-0000-0000-000000000001:00000000-0000-0000-0000-000000000002',
+  it('shows login when unauthenticated', async () => {
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
     );
+
+    expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+  });
+
+  it('renders dashboard with route params when authenticated', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/?venueId=ven-123&eventId=evt-456');
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+    );
+
+    expect(await screen.findByTestId('mock-ledger-page')).toHaveTextContent('ven-123:evt-456');
   });
 });

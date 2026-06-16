@@ -138,12 +138,14 @@ Focus on high-signal findings. Limit to 50 findings total; aggregate remainder i
 
 - Any requirement or plan element conflicting with a MUST principle
 - Missing mandated sections or quality gates from constitution
+- Missing ≥80% test coverage functional requirement, success criterion, coverage gate task, or plan constraint when Constitution III applies → **CRITICAL**
 
 #### E. Coverage Gaps
 
 - Requirements with zero associated tasks
 - Tasks with no mapped requirement/story
-- Success Criteria requiring buildable work (performance, security, availability) not reflected in tasks
+- Success Criteria requiring buildable work (performance, security, availability, **test coverage ≥80%**) not reflected in tasks
+- User story phases missing automated test tasks when Constitution III applies → **CRITICAL**
 
 #### F. Inconsistency
 

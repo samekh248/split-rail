@@ -160,6 +160,8 @@ Command ends after Phase 2 planning. Report branch, IMPL_PLAN path, and generate
 
 - Use absolute paths for filesystem operations; use project-relative paths for references in documentation and agent context files
 - ERROR on gate failures or unresolved clarifications
+- Constitution Check MUST verify Principle III (Engineering Rigor): automated tests accompany all new code; ≥80.0% line/branch coverage gate enforced independently for backend and frontend; missing or unparseable coverage reports treated as failing
+- Technical Context **Constraints** MUST state ≥80.0% coverage requirement when constitution is present
 
 ## Done When
 
