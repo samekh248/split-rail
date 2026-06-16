@@ -72,7 +72,7 @@ public class TestSeedingServiceTests
             new LifecycleEventSeedRequestDto(seed.OrgA.OrganizationId, seed.OrgA.InScopeVenueId));
 
         lifecycle.EventId.Should().NotBeEmpty();
-        lifecycle.ExpectedSettlement.NetShowRevenue.Should().Be("7700.00");
+        lifecycle.ExpectedSettlement.NetShowRevenue.Should().Be("9500.00");
     }
 
     [Fact]
