@@ -170,7 +170,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 9. Completion validation:
    - Verify all required tasks are completed
    - Check that implemented features match the original specification
-   - Validate that tests pass and coverage meets requirements
+   - Validate that tests pass and coverage meets requirements: backend and frontend MUST each report ≥80.0% line/branch coverage (coverlet cobertura and Vitest lcov); missing or unparseable reports FAIL validation (Constitution III)
    - Confirm the implementation follows the technical plan
 
 Note: This command assumes a complete task breakdown exists in tasks.md. If tasks are incomplete or missing, suggest running `/speckit-tasks` first to regenerate the task list.
@@ -216,6 +216,6 @@ Report final status with summary of completed work.
 ## Done When
 
 - [ ] All tasks in tasks.md completed and marked `[X]`
-- [ ] Implementation validated against specification, plan, and test coverage
+- [ ] Implementation validated against specification, plan, and ≥80.0% test coverage gate (backend and frontend independently)
 - [ ] Extension hooks dispatched or skipped according to the rules in Mandatory Post-Execution Hooks above
 - [ ] Completion reported to user with summary of completed work

@@ -130,10 +130,12 @@ Given that feature description, do this:
     5. Generate Functional Requirements
        Each requirement must be testable
        Use reasonable defaults for unspecified details (document assumptions in Assumptions section)
+       **Constitution III**: MUST include a functional requirement that the feature achieves ≥80% line/branch coverage across backend and frontend (CI-enforced)
     6. Define Success Criteria
        Create measurable, technology-agnostic outcomes
        Include both quantitative metrics (time, performance, volume) and qualitative measures (user satisfaction, task completion)
        Each criterion must be verifiable without implementation details
+       **Constitution III exception**: MUST include a success criterion for ≥80% line/branch coverage across backend and frontend (CI-enforced) — this constitution-mandated quality gate is required even though it references verification infrastructure
     7. Identify Key Entities (if data involved)
     8. Return: SUCCESS (spec ready for planning)
 
@@ -167,6 +169,7 @@ Given that feature description, do this:
       - [ ] Edge cases are identified
       - [ ] Scope is clearly bounded
       - [ ] Dependencies and assumptions identified
+      - [ ] ≥80% test coverage requirement present in functional requirements and success criteria (Constitution III)
       
       ## Feature Readiness
       
