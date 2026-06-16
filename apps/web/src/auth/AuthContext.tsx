@@ -73,7 +73,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     configureApiClient({
-      onRefresh: () => authApi.refreshSession(),
+      onRefresh: async () => {
+        await authApi.refreshSession();
+      },
       onSessionExpired: handleAutomaticSignOut,
     });
   }, [handleAutomaticSignOut]);

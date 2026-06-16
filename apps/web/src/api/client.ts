@@ -54,14 +54,6 @@ function venueContextHeaders(skipVenueContext?: boolean): HeadersInit {
   return { 'X-Active-Venue-Id': venueId };
 }
 
-function isAuthFailure(error: unknown): boolean {
-  if (error instanceof SessionExpiredError) {
-    return true;
-  }
-  const message = error instanceof Error ? error.message : String(error);
-  return message.includes('401');
-}
-
 function isNetworkFailure(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
   return message.includes('Failed to fetch') || message.includes('NetworkError');
