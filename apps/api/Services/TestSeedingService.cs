@@ -76,6 +76,10 @@ public class TestSeedingService
             var events = await _db.Events.Where(e => venueIds.Contains(e.VenueId)).ToListAsync(cancellationToken);
             var eventIds = events.Select(e => e.Id).ToList();
 
+            _db.SettlementReversals.RemoveRange(
+                await _db.SettlementReversals.Where(r => eventIds.Contains(r.EventId)).ToListAsync(cancellationToken));
+            _db.UnmappedQboTransactions.RemoveRange(
+                await _db.UnmappedQboTransactions.Where(t => eventIds.Contains(t.EventId)).ToListAsync(cancellationToken));
             _db.FinancialLineItems.RemoveRange(
                 await _db.FinancialLineItems.Where(li => eventIds.Contains(li.EventId)).ToListAsync(cancellationToken));
             _db.EventArtists.RemoveRange(
@@ -83,15 +87,32 @@ public class TestSeedingService
             _db.QboSyncLedgers.RemoveRange(
                 await _db.QboSyncLedgers.Where(l => eventIds.Contains(l.EventId)).ToListAsync(cancellationToken));
             _db.Events.RemoveRange(events);
+
+            _db.QboAccountMappings.RemoveRange(
+                await _db.QboAccountMappings.Where(m => venueIds.Contains(m.VenueId)).ToListAsync(cancellationToken));
+            _db.QboVenueCredentials.RemoveRange(
+                await _db.QboVenueCredentials.Where(c => venueIds.Contains(c.VenueId)).ToListAsync(cancellationToken));
             _db.UserVenueScopes.RemoveRange(
                 await _db.UserVenueScopes.Where(s => userIds.Contains(s.UserId)).ToListAsync(cancellationToken));
             _db.Venues.RemoveRange(venues);
+
+            var invitationIds = await _db.Invitations
+                .Where(i => orgIds.Contains(i.OrganizationId))
+                .Select(i => i.Id)
+                .ToListAsync(cancellationToken);
+            _db.InvitationVenueScopes.RemoveRange(
+                await _db.InvitationVenueScopes.Where(s => invitationIds.Contains(s.InvitationId)).ToListAsync(cancellationToken));
+            _db.Invitations.RemoveRange(
+                await _db.Invitations.Where(i => orgIds.Contains(i.OrganizationId)).ToListAsync(cancellationToken));
             _db.UserOrganizationMappings.RemoveRange(
                 await _db.UserOrganizationMappings.Where(m => orgIds.Contains(m.OrganizationId)).ToListAsync(cancellationToken));
             _db.OrganizationRoles.RemoveRange(
                 await _db.OrganizationRoles.Where(r => orgIds.Contains(r.OrganizationId)).ToListAsync(cancellationToken));
             _db.Organizations.RemoveRange(
                 await _db.Organizations.Where(o => orgIds.Contains(o.Id)).ToListAsync(cancellationToken));
+
+            _db.RefreshTokens.RemoveRange(
+                await _db.RefreshTokens.Where(t => userIds.Contains(t.UserId)).ToListAsync(cancellationToken));
             _db.Users.RemoveRange(users);
             await _db.SaveChangesAsync(cancellationToken);
         }
