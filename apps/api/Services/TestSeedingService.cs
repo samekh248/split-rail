@@ -189,21 +189,22 @@ public class TestSeedingService
         _db.EventArtists.Add(artist);
         await _db.SaveChangesAsync(cancellationToken);
 
-        var netShowRevenue = 9500.00m - 1800.00m;
         var grossRevenue = 9500.00m;
+        var totalDeductions = 0m;
+        var netShowRevenue = grossRevenue - totalDeductions;
         var dealMath = new DealMathEngine(new CustomFormulaEvaluator());
         var netPayout = dealMath.CalculateNetPayout(
             DealType.Guarantee,
             netShowRevenue,
             grossRevenue,
-            1800.00m,
+            totalDeductions,
             3000.00m,
             85.00m,
             0m,
             null);
 
         var fakeActual = 5100.00m;
-        var variance = fakeActual - 1800.00m;
+        var variance = fakeActual - expense.SettlementValue;
 
         return new LifecycleEventSeedResponseDto(
             evt.Id,
