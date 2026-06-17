@@ -1,10 +1,12 @@
 import { DashboardHome } from '@/pages/DashboardHome';
+import { CreateVenuePage } from '@/pages/CreateVenuePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { OrganizationCreateStep } from '@/components/onboarding/OrganizationCreateStep';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { useAuth } from '@/auth/useAuth';
 import { VenueProvider } from '@/venue/VenueContext';
+import { useDashboardRoute } from '@/lib/dashboardRoute';
 
 export default function App() {
   const {
@@ -18,6 +20,7 @@ export default function App() {
     createOrganization,
     dismissWelcome,
   } = useAuth();
+  const dashboardPath = useDashboardRoute();
 
   if (phase === 'resolving') {
     return (
@@ -49,7 +52,11 @@ export default function App() {
   return (
     <>
       <VenueProvider>
-        <DashboardHome organizationName={organizationName} />
+        {dashboardPath === '/venues/new' ? (
+          <CreateVenuePage />
+        ) : (
+          <DashboardHome organizationName={organizationName} />
+        )}
       </VenueProvider>
       {justOnboarded ? (
         <WelcomeModal organizationName={organizationName} onDismiss={dismissWelcome} />

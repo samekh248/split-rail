@@ -23,6 +23,7 @@ export interface VenueContextValue {
   isError: boolean;
   refetch: () => void;
   setActiveVenue: (id: string) => void;
+  activateVenueId: (id: string) => void;
 }
 
 export const VenueContext = createContext<VenueContextValue | null>(null);
@@ -57,16 +58,20 @@ export function VenueProvider({ children }: { children: ReactNode }) {
     setActiveVenueIdState(resolveActiveVenueId(venues));
   }, [venues, isLoading, isError]);
 
+  const activateVenueId = useCallback((id: string) => {
+    persistActiveVenueId(id);
+    setActiveVenueIdState(id);
+    void queryClient.invalidateQueries();
+  }, [queryClient]);
+
   const setActiveVenue = useCallback(
     (id: string) => {
       if (!venues.some((venue) => venue.id === id)) {
         return;
       }
-      persistActiveVenueId(id);
-      setActiveVenueIdState(id);
-      void queryClient.invalidateQueries();
+      activateVenueId(id);
     },
-    [venues, queryClient],
+    [venues, activateVenueId],
   );
 
   const activeVenue = useMemo(
@@ -83,8 +88,9 @@ export function VenueProvider({ children }: { children: ReactNode }) {
       isError,
       refetch: () => void refetch(),
       setActiveVenue,
+      activateVenueId,
     }),
-    [venues, activeVenueId, activeVenue, isLoading, isError, refetch, setActiveVenue],
+    [venues, activeVenueId, activeVenue, isLoading, isError, refetch, setActiveVenue, activateVenueId],
   );
 
   return <VenueContext.Provider value={value}>{children}</VenueContext.Provider>;

@@ -18,7 +18,7 @@ function profileWithOrg() {
     id: 'user-1',
     email: 'user@example.com',
     organization: { id: 'org-1', name: 'Acme' },
-    role: { roleName: 'Admin', permissions: {} },
+    role: { roleName: 'Admin', permissions: { canManagePermissions: true } },
     venueScopes: [],
   };
 }
