@@ -61,6 +61,7 @@ export function EventFormPanel({
         <FormField
           id="event-title"
           label="Event title"
+          type="text"
           value={values.title}
           onChange={(value) => setValues((current) => ({ ...current, title: value }))}
           error={fieldErrors.title}
@@ -78,6 +79,7 @@ export function EventFormPanel({
         <FormField
           id="event-qbo-tag"
           label="Accounting tag (optional)"
+          type="text"
           value={values.qboTagName}
           onChange={(value) => setValues((current) => ({ ...current, qboTagName: value }))}
           disabled={isPending}

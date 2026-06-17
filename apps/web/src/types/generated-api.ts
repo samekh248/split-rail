@@ -280,8 +280,8 @@ export interface paths {
             };
             requestBody?: never;
             responses: {
-                /** @description No Content */
-                204: {
+                /** @description OK */
+                200: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -324,6 +324,7 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/invitations": {
         parameters: {
             query?: never;
             header?: never;
@@ -2337,11 +2338,6 @@ export interface components {
             eventDate?: string | null;
             qboTagName?: string | null;
         };
-        UpdateEventRequest: {
-            title?: string | null;
-            eventDate?: string | null;
-            qboTagName?: string | null;
-        };
         CreateInvitationRequest: {
             email?: string | null;
             /** Format: uuid */
@@ -2695,6 +2691,11 @@ export interface components {
             taxWithholdingPercentage?: string;
             rowVersion?: string | null;
         };
+        UpdateEventRequest: {
+            title?: string | null;
+            eventDate?: string | null;
+            qboTagName?: string | null;
+        };
         UpdateLineItemRequest: {
             rowLabel?: string | null;
             /** Format: int32 */
@@ -2782,7 +2783,6 @@ export type ChangeRoleRequest = components['schemas']['ChangeRoleRequest'];
 export type ChangeRoleResponse = components['schemas']['ChangeRoleResponse'];
 export type CreateArtistRequest = components['schemas']['CreateArtistRequest'];
 export type CreateEventRequest = components['schemas']['CreateEventRequest'];
-export type UpdateEventRequest = components['schemas']['UpdateEventRequest'];
 export type CreateInvitationRequest = components['schemas']['CreateInvitationRequest'];
 export type CreateLineItemRequest = components['schemas']['CreateLineItemRequest'];
 export type CreateMappingRequest = components['schemas']['CreateMappingRequest'];
@@ -2828,6 +2828,7 @@ export type UnmappedCountDto = components['schemas']['UnmappedCountDto'];
 export type UnmappedTransactionDto = components['schemas']['UnmappedTransactionDto'];
 export type UnmappedTransactionsResponse = components['schemas']['UnmappedTransactionsResponse'];
 export type UpdateArtistRequest = components['schemas']['UpdateArtistRequest'];
+export type UpdateEventRequest = components['schemas']['UpdateEventRequest'];
 export type UpdateLineItemRequest = components['schemas']['UpdateLineItemRequest'];
 export type UpdateMappingRequest = components['schemas']['UpdateMappingRequest'];
 export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
