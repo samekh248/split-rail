@@ -10,7 +10,7 @@ import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from '@/api
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
 import { useCanManageEvents } from '@/hooks/useCanManageEvents';
-import { navigateToCreateVenue } from '@/lib/dashboardRoute';
+import { navigateToCreateVenue, navigateToSettings } from '@/lib/dashboardRoute';
 import { setActiveEventId } from '@/venue/activeEventStorage';
 import { resolveActiveEventId } from '@/venue/eventSelection';
 import type { EventResponse } from '@/types/generated-api';
@@ -154,6 +154,14 @@ export function DashboardHome({ organizationName }: DashboardHomeProps) {
                 }
               />
             ) : null}
+            <button
+              type="button"
+              className="app__settings"
+              data-testid="header-settings"
+              onClick={() => navigateToSettings()}
+            >
+              Settings
+            </button>
             <button type="button" className="app__logout" onClick={() => void logout()}>
               Sign out
             </button>

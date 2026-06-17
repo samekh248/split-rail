@@ -32,10 +32,32 @@ function createWrapper() {
   );
 }
 
+function mockAuthenticatedFetch() {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('/users/me')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(profileWithOrg()),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve([]),
+      });
+    }),
+  );
+}
+
 describe('App', () => {
   beforeEach(() => {
     localStorage.clear();
     window.history.pushState({}, '', '/');
+    vi.unstubAllGlobals();
   });
 
   it('shows login when unauthenticated', async () => {
@@ -49,25 +71,24 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
   });
 
+  it('shows accept invite page when unauthenticated on accept-invite route', async () => {
+    window.history.pushState({}, '', '/accept-invite?token=abc');
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Accept invitation' })).toBeInTheDocument();
+  });
+
   it('renders dashboard empty state when authenticated with no venues', async () => {
     localStorage.setItem('accessToken', 'token');
     localStorage.setItem('refreshToken', 'refresh');
     window.history.pushState({}, '', '/?venueId=ven-123&eventId=evt-456');
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn()
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(profileWithOrg()),
-        })
-        .mockResolvedValue({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve([]),
-        }),
-    );
+    mockAuthenticatedFetch();
 
     render(
       <AuthProvider>
@@ -77,5 +98,69 @@ describe('App', () => {
     );
 
     expect(await screen.findByRole('heading', { name: 'No venues yet' })).toBeInTheDocument();
+  });
+
+  it('renders settings landing when authenticated on /settings', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/settings');
+    mockAuthenticatedFetch();
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+  });
+
+  it('renders team settings when authenticated on /settings/team', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/settings/team');
+    mockAuthenticatedFetch();
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Team' })).toBeInTheDocument();
+  });
+
+  it('renders organization placeholder when authenticated on /settings/organization', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/settings/organization');
+    mockAuthenticatedFetch();
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Coming soon' })).toBeInTheDocument();
+  });
+
+  it('renders accept invite for authenticated user on accept-invite route', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/accept-invite?token=abc');
+    mockAuthenticatedFetch();
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByText(/Signed in as/)).toBeInTheDocument();
   });
 });

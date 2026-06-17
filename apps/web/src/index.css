@@ -761,3 +761,262 @@ body {
   outline: 2px solid #2563eb;
   outline-offset: 2px;
 }
+
+.app__settings {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.settings-layout {
+  min-height: 100vh;
+  background: #f6f7f9;
+}
+
+.settings-layout__header {
+  background: #1e293b;
+  color: #fff;
+  padding: 1rem 1.5rem;
+}
+
+.settings-layout__back {
+  background: transparent;
+  border: none;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.settings-layout__title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.settings-layout__body {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 1.5rem;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 1.5rem;
+}
+
+.settings-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.settings-nav__item {
+  text-align: left;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.625rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.9375rem;
+}
+
+.settings-nav__item--active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  font-weight: 600;
+}
+
+.settings-layout__content {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.25rem;
+}
+
+.settings-landing__intro {
+  margin-top: 0;
+  color: #64748b;
+}
+
+.settings-landing__cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.settings-landing__card {
+  text-align: left;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  cursor: pointer;
+}
+
+.settings-landing__card-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+}
+
+.settings-landing__card-text {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.settings-placeholder__title {
+  margin-top: 0;
+}
+
+.settings-placeholder__text {
+  color: #64748b;
+}
+
+.team-section {
+  margin-bottom: 2rem;
+}
+
+.team-section__title {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+}
+
+.team-section__empty {
+  color: #64748b;
+  margin: 0;
+}
+
+.team-section__banner {
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin: 0 0 1rem;
+}
+
+.team-section__banner--error {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+
+.team-section__banner--success {
+  background: #f0fdf4;
+  color: #15803d;
+}
+
+.invite-form__venues {
+  border: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.invite-form__venue-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.375rem;
+  font-size: 0.9375rem;
+}
+
+.invite-form__venues-hint {
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0;
+}
+
+.invite-form__submit {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.team-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.team-table th,
+.team-table td {
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.625rem 0.5rem;
+  text-align: left;
+}
+
+.team-table__actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.team-modal__subtitle {
+  margin: 0 0 1rem;
+  color: #64748b;
+}
+
+.team-modal__error {
+  color: #dc2626;
+  font-size: 0.875rem;
+}
+
+.team-modal__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.team-modal__save {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.team-confirm {
+  background: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 420px;
+  width: 100%;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+.team-confirm__heading {
+  margin: 0 0 0.75rem;
+}
+
+.team-confirm__text {
+  margin: 0 0 1rem;
+  color: #475569;
+}
+
+.team-confirm__error {
+  color: #dc2626;
+  font-size: 0.875rem;
+}
+
+.team-confirm__actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.team-confirm__danger {
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+@media (max-width: 768px) {
+  .settings-layout__body {
+    grid-template-columns: 1fr;
+  }
+}

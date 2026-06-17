@@ -9,7 +9,8 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { configureApiClient, resetSessionExpiredLatch } from '@/api/client';
 import { fetchUserProfile } from '@/api/user';
-import type { LoginRequest, UserProfileResponse } from '@/types/generated-api';
+import { navigateToDashboard } from '@/lib/appRoute';
+import type { AcceptInvitationRequest, LoginRequest, UserProfileResponse } from '@/types/generated-api';
 import { clearActiveVenueId } from '@/venue/activeVenueStorage';
 import { bootstrapAuthSession, routeProfile } from './authBootstrap';
 import * as authApi from './authApi';
@@ -40,6 +41,7 @@ export interface AuthContextValue {
   createOrganization: (name: string) => Promise<void>;
   logout: () => Promise<void>;
   dismissWelcome: () => void;
+  completeAcceptInvitation: (request: AcceptInvitationRequest) => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextValue | null>(null);
@@ -171,6 +173,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [pending],
   );
 
+  const completeAcceptInvitation = useCallback(
+    async (request: AcceptInvitationRequest) => {
+      if (pending) return;
+      setPending(true);
+      setError(null);
+      try {
+        await authApi.acceptInvitation(request);
+        const loadedProfile = await fetchUserProfile();
+        setProfile(loadedProfile);
+        setJustOnboarded(false);
+        setSessionExpired(false);
+        resetSessionExpiredLatch();
+        setPhase(routeProfile(loadedProfile));
+        navigateToDashboard();
+      } catch (err) {
+        setError(authApi.mapAuthError(err));
+        throw err;
+      } finally {
+        setPending(false);
+      }
+    },
+    [pending],
+  );
+
   const logout = useCallback(async () => {
     setPending(true);
     try {
@@ -205,6 +231,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       createOrganization,
       logout,
       dismissWelcome,
+      completeAcceptInvitation,
     }),
     [
       phase,
@@ -221,6 +248,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       createOrganization,
       logout,
       dismissWelcome,
+      completeAcceptInvitation,
     ],
   );
 
