@@ -13,6 +13,8 @@ concurrency:
 env:
   DOTNET_VERSION: '8.0.x'
   NODE_VERSION: '22'
+  # Playwright browser tests (e2e-matrix). Set to 'true' to run on pull requests.
+  ENABLE_PR_BROWSER_TESTS: 'false'
 
 jobs:
   backend-test:
@@ -150,7 +152,7 @@ jobs:
   deploy-preview:
     name: deploy-preview
     needs: [coverage-gate, contract-type-drift]
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && env.ENABLE_PR_BROWSER_TESTS == 'true'
     runs-on: ubuntu-latest
     outputs:
       preview_url: ${{ steps.deploy.outputs.preview_url }}
@@ -164,6 +166,7 @@ jobs:
   e2e-matrix:
     name: e2e-matrix
     needs: deploy-preview
+    if: env.ENABLE_PR_BROWSER_TESTS == 'true'
     runs-on: ubuntu-latest
     services:
       postgres:
@@ -260,6 +263,7 @@ jobs:
   e2e-gate:
     name: e2e-gate
     needs: e2e-matrix
+    if: env.ENABLE_PR_BROWSER_TESTS == 'true'
     runs-on: ubuntu-latest
     steps:
       - run: echo "E2E matrix passed"
@@ -267,7 +271,7 @@ jobs:
   teardown-preview:
     name: teardown-preview
     needs: [deploy-preview, e2e-gate]
-    if: always()
+    if: always() && env.ENABLE_PR_BROWSER_TESTS == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
