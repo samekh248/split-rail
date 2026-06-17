@@ -3,6 +3,8 @@ import {
   validateEmail,
   validateOrganizationName,
   validatePassword,
+  validateVenueName,
+  VENUE_NAME_MAX_LENGTH,
 } from '@/auth/validation';
 
 describe('validation', () => {
@@ -64,6 +66,22 @@ describe('validation', () => {
 
     it('accepts non-empty name', () => {
       expect(validateOrganizationName('Acme Venues')).toBeUndefined();
+    });
+  });
+
+  describe('validateVenueName', () => {
+    it('rejects empty name', () => {
+      expect(validateVenueName('   ')).toBe('Venue name is required.');
+    });
+
+    it('rejects over-length name', () => {
+      expect(validateVenueName('a'.repeat(VENUE_NAME_MAX_LENGTH + 1))).toBe(
+        `Venue name must be ${VENUE_NAME_MAX_LENGTH} characters or fewer.`,
+      );
+    });
+
+    it('accepts valid name', () => {
+      expect(validateVenueName('The Roxy')).toBeUndefined();
     });
   });
 });

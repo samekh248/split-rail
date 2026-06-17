@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { EventLedgerPage } from '@/pages/EventLedgerPage';
 import { VenueSwitcher } from '@/components/venue/VenueSwitcher';
 import { useAuth } from '@/auth/useAuth';
+import { useUserProfile } from '@/api/user';
 import { useActiveVenue } from '@/venue/useActiveVenue';
+import { useCanManageVenues } from '@/hooks/useCanManageVenues';
+import { navigateToCreateVenue } from '@/lib/dashboardRoute';
 import { DEFAULT_EVENT_ID } from '@/venue/defaults';
 
 export interface DashboardHomeProps {
@@ -11,6 +14,8 @@ export interface DashboardHomeProps {
 
 export function DashboardHome({ organizationName }: DashboardHomeProps) {
   const { logout } = useAuth();
+  const { isLoading: profileLoading } = useUserProfile();
+  const canManageVenues = useCanManageVenues();
   const { venues, activeVenueId, isLoading, isError, refetch } = useActiveVenue();
   const [eventId, setEventId] = useState(DEFAULT_EVENT_ID);
   const previousVenueIdRef = useRef<string | null>(activeVenueId);
@@ -35,6 +40,16 @@ export function DashboardHome({ organizationName }: DashboardHomeProps) {
             <p className="app__subtitle">{organizationName}</p>
           </div>
           <div className="app__header-actions">
+            {!profileLoading && canManageVenues ? (
+              <button
+                type="button"
+                className="app__add-venue"
+                data-testid="header-add-venue"
+                onClick={() => navigateToCreateVenue()}
+              >
+                Add venue
+              </button>
+            ) : null}
             <VenueSwitcher />
             <button type="button" className="app__logout" onClick={() => void logout()}>
               Sign out
@@ -64,8 +79,22 @@ export function DashboardHome({ organizationName }: DashboardHomeProps) {
             No venues yet
           </h2>
           <p className="dashboard-empty__text">
-            Your organization is set up. Add a venue to start managing events and ledgers.
+            {!profileLoading && canManageVenues
+              ? 'Your organization is set up. Add a venue to start managing events and ledgers.'
+              : !profileLoading
+                ? 'Your organization does not have any venues yet. Ask someone with venue management access to add one before you can begin.'
+                : 'Your organization is set up. Add a venue to start managing events and ledgers.'}
           </p>
+          {!profileLoading && canManageVenues ? (
+            <button
+              type="button"
+              className="dashboard-empty__cta"
+              data-testid="empty-state-add-venue"
+              onClick={() => navigateToCreateVenue()}
+            >
+              Add venue
+            </button>
+          ) : null}
         </section>
       ) : null}
 

@@ -8,6 +8,46 @@ import { AuthContext, type AuthContextValue } from '@/auth/AuthContext';
 import { VenueProvider } from '@/venue/VenueContext';
 import { DEFAULT_EVENT_ID } from '@/venue/defaults';
 import { getActiveVenueId, setActiveVenueId } from '@/venue/activeVenueStorage';
+import { getDashboardPath } from '@/lib/dashboardRoute';
+
+const ADMIN_PROFILE = {
+  role: { permissions: { canManagePermissions: true } },
+};
+
+const MEMBER_PROFILE = {
+  role: { permissions: { canManagePermissions: false } },
+};
+
+function mockFetchWithProfile(
+  venuesResponse: unknown,
+  profile: typeof ADMIN_PROFILE | typeof MEMBER_PROFILE = ADMIN_PROFILE,
+  options?: { ok?: boolean; status?: number },
+) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (input: RequestInfo) => {
+      const url = String(input);
+      if (url.includes('/users/me')) {
+        return {
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(profile),
+        };
+      }
+      if (url.includes('/api/venues')) {
+        return {
+          ok: options?.ok ?? true,
+          status: options?.status ?? 200,
+          json: () =>
+            options?.ok === false
+              ? Promise.resolve({ detail: 'Server error' })
+              : Promise.resolve(venuesResponse),
+        };
+      }
+      return { ok: true, status: 200, json: () => Promise.resolve({}) };
+    }),
+  );
+}
 
 vi.mock('@/pages/EventLedgerPage', () => ({
   EventLedgerPage: ({ venueId, eventId }: { venueId: string; eventId: string }) => (
@@ -73,31 +113,53 @@ describe('DashboardHome', () => {
   });
 
   it('shows empty state when no venues', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve([]),
-      }),
-    );
+    mockFetchWithProfile([]);
 
     render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
 
     expect(await screen.findByRole('heading', { name: 'No venues yet' })).toBeInTheDocument();
+    expect(screen.getByTestId('empty-state-add-venue')).toBeInTheDocument();
     expect(screen.queryByTestId('mock-ledger-page')).not.toBeInTheDocument();
     expect(screen.queryByTestId('venue-switcher')).not.toBeInTheDocument();
   });
 
+  it('navigates to create page from empty-state CTA', async () => {
+    mockFetchWithProfile([]);
+    const user = userEvent.setup();
+
+    render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
+
+    await user.click(await screen.findByTestId('empty-state-add-venue'));
+    expect(getDashboardPath()).toBe('/venues/new');
+  });
+
+  it('shows header Add venue when user can manage venues', async () => {
+    mockFetchWithProfile([VENUE_A, VENUE_B]);
+    const user = userEvent.setup();
+
+    render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
+
+    const headerButton = await screen.findByTestId('header-add-venue');
+    expect(headerButton).toBeInTheDocument();
+    await user.click(headerButton);
+    expect(getDashboardPath()).toBe('/venues/new');
+  });
+
+  it('hides create affordances for users without manage permission', async () => {
+    mockFetchWithProfile([], MEMBER_PROFILE);
+
+    render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
+
+    expect(await screen.findByRole('heading', { name: 'No venues yet' })).toBeInTheDocument();
+    expect(screen.queryByTestId('empty-state-add-venue')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('header-add-venue')).not.toBeInTheDocument();
+    expect(
+      screen.getByText(/Ask someone with venue management access/i),
+    ).toBeInTheDocument();
+  });
+
   it('renders VenueSwitcher and ledger with active venue (C6.1, C6.2)', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve([VENUE_A, VENUE_B]),
-      }),
-    );
+    mockFetchWithProfile([VENUE_A, VENUE_B]);
 
     render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
 
@@ -109,14 +171,7 @@ describe('DashboardHome', () => {
 
   it('resets event to default when venue switches (C6.3)', async () => {
     setActiveVenueId(VENUE_A.id);
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve([VENUE_A, VENUE_B]),
-      }),
-    );
+    mockFetchWithProfile([VENUE_A, VENUE_B]);
 
     const user = userEvent.setup();
     render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
@@ -134,21 +189,26 @@ describe('DashboardHome', () => {
   });
 
   it('preserves loading, empty, and error states (C6.4)', async () => {
-    vi.stubGlobal('fetch', vi.fn(() => new Promise(() => {})));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo) => {
+        const url = String(input);
+        if (url.includes('/users/me')) {
+          return {
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve(ADMIN_PROFILE),
+          };
+        }
+        return new Promise(() => {});
+      }),
+    );
 
     const { unmount } = render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
     expect(screen.getByRole('status')).toHaveTextContent('Loading workspace');
     unmount();
 
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: false,
-        status: 500,
-        statusText: 'Error',
-        json: () => Promise.resolve({ detail: 'Server error' }),
-      }),
-    );
+    mockFetchWithProfile([], ADMIN_PROFILE, { ok: false, status: 500 });
 
     render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
     await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
@@ -156,14 +216,7 @@ describe('DashboardHome', () => {
   });
 
   it('does not render ledger when activeVenueId is null (C6.5)', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve([]),
-      }),
-    );
+    mockFetchWithProfile([]);
 
     render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
 
@@ -173,14 +226,7 @@ describe('DashboardHome', () => {
 
   it('restores active venue after reload within session (FR-009)', async () => {
     setActiveVenueId(VENUE_B.id);
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue({
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve([VENUE_A, VENUE_B]),
-      }),
-    );
+    mockFetchWithProfile([VENUE_A, VENUE_B]);
 
     const { unmount } = render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
     await waitFor(() =>

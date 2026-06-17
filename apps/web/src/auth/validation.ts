@@ -35,3 +35,16 @@ export function validateOrganizationName(name: string): string | undefined {
   }
   return undefined;
 }
+
+/** Matches backend NameValidation.MaxLength for venues. */
+export const VENUE_NAME_MAX_LENGTH = 200;
+
+export function validateVenueName(name: string): string | undefined {
+  if (!name.trim()) {
+    return 'Venue name is required.';
+  }
+  if (name.trim().length > VENUE_NAME_MAX_LENGTH) {
+    return `Venue name must be ${VENUE_NAME_MAX_LENGTH} characters or fewer.`;
+  }
+  return undefined;
+}
