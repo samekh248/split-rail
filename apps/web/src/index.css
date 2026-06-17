@@ -431,6 +431,178 @@ body {
   font-size: 0.875rem;
 }
 
+.event-combobox {
+  position: relative;
+}
+
+.event-combobox__trigger,
+.event-combobox--single {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  padding: 0.375rem 0.75rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+}
+
+.event-combobox__trigger {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.event-combobox__label {
+  opacity: 0.85;
+  font-size: 0.75rem;
+}
+
+.event-combobox__current {
+  font-weight: 600;
+}
+
+.event-combobox__badge {
+  font-size: 0.75rem;
+  opacity: 0.85;
+}
+
+.event-combobox__panel {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  min-width: 18rem;
+  background: #fff;
+  color: #1a1a1a;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15);
+  z-index: 25;
+  padding: 0.5rem;
+}
+
+.event-combobox__filter {
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.event-combobox__create {
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0.5rem;
+  border: 1px dashed #94a3b8;
+  background: #f8fafc;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.event-combobox__menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 16rem;
+  overflow-y: auto;
+}
+
+.event-combobox__row {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.event-combobox__option {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.event-combobox__option--highlighted {
+  background: #f1f5f9;
+}
+
+.event-combobox__option-title {
+  font-weight: 600;
+  display: block;
+}
+
+.event-combobox__option-meta {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.event-combobox__actions {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 0.75rem 0.5rem;
+  font-size: 0.75rem;
+}
+
+.event-combobox__action {
+  border: none;
+  background: none;
+  color: #2563eb;
+  cursor: pointer;
+  padding: 0;
+}
+
+.event-combobox__action--danger {
+  color: #dc2626;
+}
+
+.event-combobox__hint {
+  color: #64748b;
+}
+
+.event-combobox__empty {
+  margin: 0.5rem;
+  color: #64748b;
+  font-size: 0.875rem;
+}
+
+.event-form-panel,
+.event-delete-confirm {
+  margin: 1rem;
+  padding: 1rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.event-form-panel__actions,
+.event-delete-confirm__actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.event-form-panel__submit,
+.event-delete-confirm__danger {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.event-delete-confirm__danger {
+  background: #dc2626;
+}
+
+.event-form-panel__error {
+  color: #dc2626;
+  font-size: 0.875rem;
+}
+
 @media (max-width: 640px) {
   .app__header-row {
     flex-direction: column;

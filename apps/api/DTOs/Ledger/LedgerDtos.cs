@@ -106,7 +106,12 @@ public record EventResponse(
 public record CreateEventRequest(
     string Title,
     string EventDate,
-    string QboTagName);
+    string? QboTagName);
+
+public record UpdateEventRequest(
+    string Title,
+    string EventDate,
+    string? QboTagName);
 
 public record CreateLineItemRequest(
     string BlockType,

@@ -268,10 +268,60 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        delete?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
-        patch?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateEventRequest"];
+                    "text/json": components["schemas"]["UpdateEventRequest"];
+                    "application/*+json": components["schemas"]["UpdateEventRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EventResponse"];
+                        "application/json": components["schemas"]["EventResponse"];
+                        "text/json": components["schemas"]["EventResponse"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
     "/api/invitations": {
@@ -2641,6 +2691,11 @@ export interface components {
             taxWithholdingPercentage?: string;
             rowVersion?: string | null;
         };
+        UpdateEventRequest: {
+            title?: string | null;
+            eventDate?: string | null;
+            qboTagName?: string | null;
+        };
         UpdateLineItemRequest: {
             rowLabel?: string | null;
             /** Format: int32 */
@@ -2773,6 +2828,7 @@ export type UnmappedCountDto = components['schemas']['UnmappedCountDto'];
 export type UnmappedTransactionDto = components['schemas']['UnmappedTransactionDto'];
 export type UnmappedTransactionsResponse = components['schemas']['UnmappedTransactionsResponse'];
 export type UpdateArtistRequest = components['schemas']['UpdateArtistRequest'];
+export type UpdateEventRequest = components['schemas']['UpdateEventRequest'];
 export type UpdateLineItemRequest = components['schemas']['UpdateLineItemRequest'];
 export type UpdateMappingRequest = components['schemas']['UpdateMappingRequest'];
 export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
