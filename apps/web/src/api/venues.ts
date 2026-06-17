@@ -25,12 +25,14 @@ export function useCreateVenue() {
     onSuccess: (created) => {
       queryClient.setQueryData<VenueResponse[]>(['venues'], (existing) => {
         const list = existing ?? [];
-        if (list.some((venue) => venue.id === created.id)) {
+        if (created.id && list.some((venue) => venue.id === created.id)) {
           return list;
         }
         return [...list, created];
       });
-      activateVenueId(created.id);
+      if (created.id) {
+        activateVenueId(created.id);
+      }
       void queryClient.invalidateQueries({ queryKey: ['venues'] });
     },
   });
