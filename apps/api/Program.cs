@@ -186,6 +186,7 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+    c.SchemaFilter<MoneyDecimalSchemaFilter>();
 });
 
 var app = builder.Build();
