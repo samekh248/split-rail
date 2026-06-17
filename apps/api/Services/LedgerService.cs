@@ -80,6 +80,7 @@ public class LedgerService
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
         AssertNotSettledOrReconciled(evt);
+        await ValidateLineItemStructuralEditAsync(evt, cancellationToken);
         ValidateBlockType(request.BlockType);
 
         var canEditSettlement = await HasPermissionAsync(r => r.CanEditSettlement, cancellationToken);
@@ -125,6 +126,7 @@ public class LedgerService
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
         AssertNotSettledOrReconciled(evt);
+        await ValidateLineItemStructuralEditAsync(evt, cancellationToken);
 
         var lineItem = await _db.FinancialLineItems
             .FirstOrDefaultAsync(li => li.Id == lineItemId && li.EventId == eventId, cancellationToken)
@@ -174,6 +176,7 @@ public class LedgerService
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
         AssertNotSettledOrReconciled(evt);
+        await ValidateLineItemStructuralEditAsync(evt, cancellationToken);
 
         var lineItem = await _db.FinancialLineItems
             .FirstOrDefaultAsync(li => li.Id == lineItemId && li.EventId == eventId, cancellationToken)
@@ -461,6 +464,24 @@ public class LedgerService
 
         if (!await _venueService.IsVenueAccessibleAsync(userId, venueId, cancellationToken))
             throw new NotFoundException("Venue not found.");
+    }
+
+    private async Task ValidateLineItemStructuralEditAsync(
+        Event evt,
+        CancellationToken cancellationToken)
+    {
+        if (evt.Status is not EventStatus.PreShow)
+            throw new LedgerStateException("Event is not in PRE_SHOW and cannot be modified.");
+
+        if (evt.IsBudgetLocked)
+        {
+            if (!await HasPermissionAsync(r => r.CanEditSettlement, cancellationToken))
+                throw new AuthorizationException("Missing permission to edit settlement values.");
+        }
+        else if (!await HasPermissionAsync(r => r.CanViewFinancials, cancellationToken))
+        {
+            throw new AuthorizationException("Missing permission to edit proforma values.");
+        }
     }
 
     private async Task ValidateLineItemColumnEditAsync(

@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import { LedgerGrid } from '@/components/ledger/LedgerGrid';
 import { LedgerRow } from '@/components/ledger/LedgerRow';
 import type { EditabilityDto, LineItemDto } from '@/types/generated-api';
@@ -90,5 +91,61 @@ describe('Editability', () => {
 
     render(<LedgerGrid ledger={lockedLedger} />);
     expect(screen.queryByTestId('lock-budget-btn')).not.toBeInTheDocument();
+  });
+
+  it('saves inline label edits on blur when structural editing is allowed', async () => {
+    const user = userEvent.setup();
+    const onLabelChange = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <LedgerRow
+            row={baseRow}
+            editability={{
+              proforma: 'editable',
+              settlement: 'locked',
+              qboActuals: 'locked',
+            }}
+            canEditStructure
+            onLabelChange={onLabelChange}
+          />
+        </tbody>
+      </table>,
+    );
+
+    const input = screen.getByTestId('label-edit-row-1');
+    await user.clear(input);
+    await user.type(input, 'Renamed row');
+    await user.tab();
+
+    expect(onLabelChange).toHaveBeenCalledWith('row-1', 'Renamed row');
+  });
+
+  it('toggles artist deduction flag on expense rows', async () => {
+    const user = userEvent.setup();
+    const onDeductionChange = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <LedgerRow
+            row={{ ...baseRow, isArtistDeduction: false }}
+            blockType="EXPENSES"
+            editability={{
+              proforma: 'editable',
+              settlement: 'locked',
+              qboActuals: 'locked',
+            }}
+            canEditStructure
+            onDeductionChange={onDeductionChange}
+          />
+        </tbody>
+      </table>,
+    );
+
+    await user.click(screen.getByTestId('deduction-row-1'));
+
+    expect(onDeductionChange).toHaveBeenCalledWith('row-1', true);
   });
 });
