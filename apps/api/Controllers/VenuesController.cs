@@ -36,6 +36,14 @@ public class VenuesController : ControllerBase
         return venue is null ? NotFound() : Ok(venue);
     }
 
+    [HttpPut("{venueId:guid}")]
+    [RequirePermission(PermissionNames.ManagePermissions)]
+    public async Task<ActionResult<VenueResponse>> Update(
+        Guid venueId,
+        UpdateVenueRequest request,
+        CancellationToken cancellationToken) =>
+        Ok(await _venueService.UpdateVenueAsync(venueId, request, cancellationToken));
+
     [HttpDelete("{venueId:guid}")]
     [RequirePermission(PermissionNames.ManagePermissions)]
     public async Task<IActionResult> Delete(Guid venueId, CancellationToken cancellationToken)
