@@ -268,13 +268,62 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        delete?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description No Content */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
-        patch?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateEventRequest"];
+                    "text/json": components["schemas"]["UpdateEventRequest"];
+                    "application/*+json": components["schemas"]["UpdateEventRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EventResponse"];
+                        "application/json": components["schemas"]["EventResponse"];
+                        "text/json": components["schemas"]["EventResponse"];
+                    };
+                };
+            };
+        };
         trace?: never;
     };
-    "/api/invitations": {
         parameters: {
             query?: never;
             header?: never;
@@ -2288,6 +2337,11 @@ export interface components {
             eventDate?: string | null;
             qboTagName?: string | null;
         };
+        UpdateEventRequest: {
+            title?: string | null;
+            eventDate?: string | null;
+            qboTagName?: string | null;
+        };
         CreateInvitationRequest: {
             email?: string | null;
             /** Format: uuid */
@@ -2728,6 +2782,7 @@ export type ChangeRoleRequest = components['schemas']['ChangeRoleRequest'];
 export type ChangeRoleResponse = components['schemas']['ChangeRoleResponse'];
 export type CreateArtistRequest = components['schemas']['CreateArtistRequest'];
 export type CreateEventRequest = components['schemas']['CreateEventRequest'];
+export type UpdateEventRequest = components['schemas']['UpdateEventRequest'];
 export type CreateInvitationRequest = components['schemas']['CreateInvitationRequest'];
 export type CreateLineItemRequest = components['schemas']['CreateLineItemRequest'];
 export type CreateMappingRequest = components['schemas']['CreateMappingRequest'];

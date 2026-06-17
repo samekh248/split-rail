@@ -1,7 +1,7 @@
 export interface FormFieldProps {
   id: string;
   label: string;
-  type: 'email' | 'password' | 'text';
+  type: 'email' | 'password' | 'text' | 'date';
   value: string;
   onChange: (value: string) => void;
   onBlur?: () => void;
