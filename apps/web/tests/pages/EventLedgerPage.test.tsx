@@ -1,6 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { EventLedgerPage } from '@/pages/EventLedgerPage';
 import type { LedgerGridResponse } from '@/types/generated-api';
@@ -57,15 +56,21 @@ vi.mock('@/api/ledger', () => ({
   useLedger: vi.fn(),
   useRecalculateLedger: vi.fn(() => ({ mutateAsync })),
   useUpdateLineItem: vi.fn(() => ({ mutateAsync })),
-  useCreateLineItem: vi.fn(() => ({ mutate })),
+  useCreateLineItem: vi.fn(() => ({ mutateAsync })),
+  useDeleteLineItem: vi.fn(() => ({ mutateAsync })),
   useLockBudget: vi.fn(() => ({ mutate, isPending: false })),
   useCreateArtist: vi.fn(() => ({ mutateAsync })),
   useDeleteArtist: vi.fn(() => ({ mutateAsync })),
 }));
 
+vi.mock('@/hooks/useCanEditLedgerStructure', () => ({
+  useCanEditLedgerStructure: vi.fn(() => true),
+}));
+
 vi.mock('@/api/user', () => ({
   useCanTriggerQboSync: vi.fn(() => false),
   useCanSignSettlement: vi.fn(() => true),
+  useUserProfile: vi.fn(() => ({ data: { role: { permissions: { canViewFinancials: true } } } })),
 }));
 
 vi.mock('@/api/qbo', () => ({
@@ -87,6 +92,7 @@ vi.mock('@/api/settlement', () => ({
 }));
 
 import { useLedger } from '@/api/ledger';
+import { useCanEditLedgerStructure } from '@/hooks/useCanEditLedgerStructure';
 
 function renderPage() {
   const queryClient = new QueryClient({
@@ -135,8 +141,7 @@ describe('EventLedgerPage', () => {
     expect(screen.getByTestId('ledger-grid')).toBeInTheDocument();
   });
 
-  it('creates a sample expense row from dev tools', async () => {
-    const user = userEvent.setup();
+  it('does not render the dev-only sample row button', () => {
     vi.mocked(useLedger).mockReturnValue({
       isLoading: false,
       error: null,
@@ -144,13 +149,32 @@ describe('EventLedgerPage', () => {
     } as ReturnType<typeof useLedger>);
 
     renderPage();
-    await user.click(screen.getByTestId('add-sample-row-btn'));
+    expect(screen.queryByTestId('add-sample-row-btn')).not.toBeInTheDocument();
+  });
 
-    expect(mutate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        blockType: 'EXPENSES',
-        rowLabel: 'New expense',
-      }),
-    );
+  it('shows add-row controls when structural editing is allowed', () => {
+    vi.mocked(useCanEditLedgerStructure).mockReturnValue(true);
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: mockLedger,
+    } as ReturnType<typeof useLedger>);
+
+    renderPage();
+    expect(screen.getByTestId('add-row-REVENUE')).toBeInTheDocument();
+    expect(screen.getByTestId('add-row-EXPENSES')).toBeInTheDocument();
+  });
+
+  it('hides structural controls when event is settled', () => {
+    vi.mocked(useCanEditLedgerStructure).mockReturnValue(false);
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: { ...mockLedger, status: 'SETTLED' },
+    } as ReturnType<typeof useLedger>);
+
+    renderPage();
+    expect(screen.queryByTestId('add-row-REVENUE')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('delete-row-row-1')).not.toBeInTheDocument();
   });
 });

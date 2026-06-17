@@ -3,6 +3,7 @@ import {
   useCreateArtist,
   useCreateLineItem,
   useDeleteArtist,
+  useDeleteLineItem,
   useLedger,
   useLockBudget,
   useRecalculateLedger,
@@ -12,7 +13,14 @@ import { ArtistDealPanel } from '@/components/artists/ArtistDealPanel';
 import { LedgerGrid } from '@/components/ledger/LedgerGrid';
 import { SyncNowButton } from '@/components/qbo/SyncNowButton';
 import { UnmappedBanner } from '@/components/qbo/UnmappedBanner';
-import type { EventStatus } from '@/types/generated-api';
+import { useCanEditLedgerStructure } from '@/hooks/useCanEditLedgerStructure';
+import { getReorderSwapPair } from '@/lib/reorderLineItems';
+import type { MoveDirection } from '@/lib/reorderLineItems';
+import type {
+  CreateLineItemRequest,
+  EventStatus,
+  LineItemDto,
+} from '@/types/generated-api';
 import { FinalizeSettlementPanel } from '@/components/settlement/FinalizeSettlementPanel';
 import { SettlementLockedBanner } from '@/components/settlement/SettlementLockedBanner';
 
@@ -21,15 +29,28 @@ interface EventLedgerPageProps {
   eventId: string;
 }
 
+function findRow(ledger: NonNullable<ReturnType<typeof useLedger>['data']>, id: string) {
+  return (ledger.blocks ?? [])
+    .flatMap((block) => block.rows ?? [])
+    .find((row) => row.id === id);
+}
+
 export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
-  const { data: ledger, isLoading, error } = useLedger(venueId, eventId);
+  const { data: ledger, isLoading, error, refetch } = useLedger(venueId, eventId);
   const recalculate = useRecalculateLedger(venueId, eventId);
   const updateLineItem = useUpdateLineItem(venueId, eventId);
   const createLineItem = useCreateLineItem(venueId, eventId);
+  const deleteLineItem = useDeleteLineItem(venueId, eventId);
   const lockBudget = useLockBudget(venueId, eventId);
   const createArtist = useCreateArtist(venueId, eventId);
   const deleteArtist = useDeleteArtist(venueId, eventId);
   const [formulaError, setFormulaError] = useState<string | null>(null);
+  const [structuralError, setStructuralError] = useState<string | null>(null);
+
+  const canEditStructure = useCanEditLedgerStructure(
+    ledger?.status,
+    ledger?.isBudgetLocked ?? false,
+  );
 
   const saveLineItemField = useCallback(
     async (
@@ -38,23 +59,136 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
       value: string,
     ) => {
       if (!ledger) return;
-      const row = (ledger.blocks ?? []).flatMap((b) => b.rows ?? []).find((r) => r.id === id);
+      const row = findRow(ledger, id);
       if (!row) return;
 
-      await updateLineItem.mutateAsync({
-        id,
-        rowLabel: row.rowLabel ?? '',
-        sortOrder: row.sortOrder ?? 0,
-        isArtistDeduction: row.isArtistDeduction ?? false,
-        proformaValue: field === 'proformaValue' ? value : row.proformaValue,
-        settlementValue: field === 'settlementValue' ? value : row.settlementValue,
-        notes: field === 'notes' ? value : row.notes ?? '',
-        isHiddenFromPromoter: row.isHiddenFromPromoter ?? false,
-        rowVersion: row.rowVersion ?? '',
-      });
-      await recalculate.mutateAsync();
+      setStructuralError(null);
+      try {
+        await updateLineItem.mutateAsync({
+          id,
+          rowLabel: row.rowLabel ?? '',
+          sortOrder: row.sortOrder ?? 0,
+          isArtistDeduction: row.isArtistDeduction ?? false,
+          proformaValue: field === 'proformaValue' ? value : row.proformaValue,
+          settlementValue: field === 'settlementValue' ? value : row.settlementValue,
+          notes: field === 'notes' ? value : row.notes ?? '',
+          isHiddenFromPromoter: row.isHiddenFromPromoter ?? false,
+          rowVersion: row.rowVersion ?? '',
+        });
+        await recalculate.mutateAsync();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to save line item';
+        setStructuralError(message);
+        void refetch();
+      }
     },
-    [ledger, updateLineItem, recalculate],
+    [ledger, updateLineItem, recalculate, refetch],
+  );
+
+  const saveLineItemRow = useCallback(
+    async (id: string, patch: Partial<LineItemDto>) => {
+      if (!ledger) return;
+      const row = findRow(ledger, id);
+      if (!row) return;
+
+      setStructuralError(null);
+      try {
+        await updateLineItem.mutateAsync({
+          id,
+          rowLabel: patch.rowLabel ?? row.rowLabel ?? '',
+          sortOrder: patch.sortOrder ?? row.sortOrder ?? 0,
+          isArtistDeduction: patch.isArtistDeduction ?? row.isArtistDeduction ?? false,
+          proformaValue: patch.proformaValue ?? row.proformaValue ?? '0.00',
+          settlementValue: patch.settlementValue ?? row.settlementValue ?? '0.00',
+          notes: patch.notes ?? row.notes ?? '',
+          isHiddenFromPromoter: patch.isHiddenFromPromoter ?? row.isHiddenFromPromoter ?? false,
+          rowVersion: patch.rowVersion ?? row.rowVersion ?? '',
+        });
+        await recalculate.mutateAsync();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to save line item';
+        setStructuralError(message);
+        void refetch();
+      }
+    },
+    [ledger, updateLineItem, recalculate, refetch],
+  );
+
+  const handleAddLineItem = useCallback(
+    async (request: CreateLineItemRequest) => {
+      setStructuralError(null);
+      try {
+        await createLineItem.mutateAsync(request);
+        await recalculate.mutateAsync();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to add line item';
+        setStructuralError(message);
+        void refetch();
+        throw err;
+      }
+    },
+    [createLineItem, recalculate, refetch],
+  );
+
+  const handleDeleteLineItem = useCallback(
+    async (id: string) => {
+      setStructuralError(null);
+      try {
+        await deleteLineItem.mutateAsync(id);
+        await recalculate.mutateAsync();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to delete line item';
+        setStructuralError(message);
+        void refetch();
+      }
+    },
+    [deleteLineItem, recalculate, refetch],
+  );
+
+  const handleMoveLineItem = useCallback(
+    async (id: string, direction: MoveDirection) => {
+      if (!ledger) return;
+
+      const block = (ledger.blocks ?? []).find((entry) =>
+        (entry.rows ?? []).some((row) => row.id === id),
+      );
+      if (!block?.rows) return;
+
+      const swap = getReorderSwapPair(block.rows, id, direction);
+      if (!swap?.current.id || !swap.neighbor.id) return;
+
+      setStructuralError(null);
+      try {
+        await updateLineItem.mutateAsync({
+          id: swap.current.id,
+          rowLabel: swap.current.rowLabel ?? '',
+          sortOrder: swap.neighbor.sortOrder ?? 0,
+          isArtistDeduction: swap.current.isArtistDeduction ?? false,
+          proformaValue: swap.current.proformaValue ?? '0.00',
+          settlementValue: swap.current.settlementValue ?? '0.00',
+          notes: swap.current.notes ?? '',
+          isHiddenFromPromoter: swap.current.isHiddenFromPromoter ?? false,
+          rowVersion: swap.current.rowVersion ?? '',
+        });
+        await updateLineItem.mutateAsync({
+          id: swap.neighbor.id,
+          rowLabel: swap.neighbor.rowLabel ?? '',
+          sortOrder: swap.current.sortOrder ?? 0,
+          isArtistDeduction: swap.neighbor.isArtistDeduction ?? false,
+          proformaValue: swap.neighbor.proformaValue ?? '0.00',
+          settlementValue: swap.neighbor.settlementValue ?? '0.00',
+          notes: swap.neighbor.notes ?? '',
+          isHiddenFromPromoter: swap.neighbor.isHiddenFromPromoter ?? false,
+          rowVersion: swap.neighbor.rowVersion ?? '',
+        });
+        await recalculate.mutateAsync();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to reorder line item';
+        setStructuralError(message);
+        void refetch();
+      }
+    },
+    [ledger, updateLineItem, recalculate, refetch],
   );
 
   if (isLoading) {
@@ -84,6 +218,12 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
         <SyncNowButton venueId={venueId} eventId={eventId} />
       </div>
 
+      {structuralError && (
+        <p role="alert" data-testid="structural-error" className="event-ledger-page__error">
+          {structuralError}
+        </p>
+      )}
+
       <UnmappedBanner
         venueId={venueId}
         eventId={eventId}
@@ -103,6 +243,7 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
 
       <LedgerGrid
         ledger={ledger}
+        canEditStructure={canEditStructure}
         lockBudgetPending={lockBudget.isPending}
         onLockBudget={() => lockBudget.mutate()}
         onProformaChange={(id, value) => void saveLineItemField(id, 'proformaValue', value)}
@@ -110,6 +251,13 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
           void saveLineItemField(id, 'settlementValue', value)
         }
         onNotesChange={(id, notes) => void saveLineItemField(id, 'notes', notes)}
+        onLabelChange={(id, label) => void saveLineItemRow(id, { rowLabel: label })}
+        onDeductionChange={(id, isArtistDeduction) =>
+          void saveLineItemRow(id, { isArtistDeduction })
+        }
+        onDeleteLineItem={(id) => void handleDeleteLineItem(id)}
+        onMoveLineItem={(id, direction) => void handleMoveLineItem(id, direction)}
+        onAddLineItem={handleAddLineItem}
       />
 
       <ArtistDealPanel
@@ -142,27 +290,6 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
           await recalculate.mutateAsync();
         }}
       />
-
-      <aside className="event-ledger-page__dev-tools">
-        <button
-          type="button"
-          data-testid="add-sample-row-btn"
-          onClick={() =>
-            createLineItem.mutate({
-              blockType: 'EXPENSES',
-              rowLabel: 'New expense',
-              sortOrder: 99,
-              isArtistDeduction: false,
-              proformaValue: '0.00',
-              settlementValue: '0.00',
-              notes: '',
-              isHiddenFromPromoter: false,
-            })
-          }
-        >
-          Add sample expense row
-        </button>
-      </aside>
     </main>
   );
 }
