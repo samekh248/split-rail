@@ -1,5 +1,5 @@
 import type { AppPath } from '@/lib/appRoute';
-import { getAppPath, navigateToDashboard } from '@/lib/appRoute';
+import { getAppPath, isEventWorkspacePath, navigateToDashboard } from '@/lib/appRoute';
 
 export type GlobalNavId = 'dashboard' | 'booking' | 'accounting';
 
@@ -32,13 +32,25 @@ export const GLOBAL_NAV_ITEMS: GlobalNavItemConfig[] = [
   },
 ];
 
-export function resolveActiveGlobalNavId(path: AppPath = getAppPath()): GlobalNavId | null {
-  if (path.startsWith('/settings')) {
+export function matchesDashboardNavPath(pathname: string): boolean {
+  if (pathname === '/' || pathname === '/venues/new') {
+    return true;
+  }
+  return isEventWorkspacePath(pathname);
+}
+
+export function resolveActiveGlobalNavId(path: AppPath | string = getAppPath()): GlobalNavId | null {
+  const pathname = String(path);
+  if (pathname.startsWith('/settings')) {
     return null;
   }
 
+  if (matchesDashboardNavPath(pathname)) {
+    return 'dashboard';
+  }
+
   for (const item of GLOBAL_NAV_ITEMS) {
-    if (item.matchPaths.includes(path)) {
+    if (item.matchPaths.includes(pathname as AppPath)) {
       return item.id;
     }
   }

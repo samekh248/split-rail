@@ -11,13 +11,53 @@ export type AppPath =
   | '/settings/integrations'
   | '/accept-invite';
 
-function pushPath(path: string): void {
+const WORKSPACE_PATH_PATTERN = /^\/venues\/([^/]+)\/events\/([^/]+)\/?$/;
+
+export function isEventWorkspacePath(pathname: string): boolean {
+  return WORKSPACE_PATH_PATTERN.test(pathname);
+}
+
+export function buildEventWorkspacePath(
+  venueId: string,
+  eventId: string,
+  focus?: string,
+): string {
+  const base = `/venues/${venueId}/events/${eventId}`;
+  if (!focus) {
+    return base;
+  }
+  return `${base}?focus=${encodeURIComponent(focus)}`;
+}
+
+export function parseEventWorkspacePath(
+  pathname: string,
+): { venueId: string; eventId: string } | null {
+  const match = pathname.match(WORKSPACE_PATH_PATTERN);
+  if (!match) {
+    return null;
+  }
+  return { venueId: match[1], eventId: match[2] };
+}
+
+export function getWorkspaceFocusFromUrl(): string | null {
+  return new URLSearchParams(window.location.search).get('focus');
+}
+
+export function pushPath(path: string): void {
   window.history.pushState(null, '', path);
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
-export function getAppPath(): AppPath {
+export function replacePath(path: string): void {
+  window.history.replaceState(null, '', path);
+  window.dispatchEvent(new PopStateEvent('popstate'));
+}
+
+export function getAppPath(): AppPath | string {
   const { pathname } = window.location;
+  if (isEventWorkspacePath(pathname)) {
+    return pathname;
+  }
   switch (pathname) {
     case '/venues/new':
       return '/venues/new';
@@ -37,7 +77,8 @@ export function getAppPath(): AppPath {
 }
 
 export function getDashboardPath(): DashboardPath {
-  return getAppPath() === '/venues/new' ? '/venues/new' : '/';
+  const path = getAppPath();
+  return path === '/venues/new' ? '/venues/new' : '/';
 }
 
 export function getInviteTokenFromUrl(): string | null {
@@ -80,8 +121,8 @@ export function navigateToAcceptInvite(token: string): void {
   pushPath(`/accept-invite?token=${encodeURIComponent(token)}`);
 }
 
-export function useAppRoute(): AppPath {
-  const [path, setPath] = useState<AppPath>(() => getAppPath());
+export function useAppRoute(): AppPath | string {
+  const [path, setPath] = useState<AppPath | string>(() => getAppPath());
 
   useEffect(() => {
     const onPopState = () => setPath(getAppPath());
@@ -95,4 +136,30 @@ export function useAppRoute(): AppPath {
 export function useDashboardRoute(): DashboardPath {
   const appPath = useAppRoute();
   return appPath === '/venues/new' ? '/venues/new' : '/';
+}
+
+export interface EventWorkspaceRouteParams {
+  venueId: string;
+  eventId: string;
+  focus: string | null;
+}
+
+export function useEventWorkspaceRoute(): EventWorkspaceRouteParams | null {
+  const [pathname, setPathname] = useState(() => window.location.pathname);
+
+  useEffect(() => {
+    const onPopState = () => setPathname(window.location.pathname);
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const params = parseEventWorkspacePath(pathname);
+  if (!params) {
+    return null;
+  }
+
+  return {
+    ...params,
+    focus: getWorkspaceFocusFromUrl(),
+  };
 }

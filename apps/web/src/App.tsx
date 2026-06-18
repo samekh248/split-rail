@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { DashboardHome } from '@/pages/DashboardHome';
+import { EventWorkspacePage } from '@/pages/EventWorkspacePage';
 import { CreateVenuePage } from '@/pages/CreateVenuePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
@@ -12,7 +13,7 @@ import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { AppShell } from '@/components/shell/AppShell';
 import { useAuth } from '@/auth/useAuth';
 import { VenueProvider } from '@/venue/VenueContext';
-import { useAppRoute } from '@/lib/appRoute';
+import { parseEventWorkspacePath, useAppRoute } from '@/lib/appRoute';
 
 function AuthenticatedShell({
   sidebarNavigation = 'global',
@@ -113,10 +114,19 @@ export default function App() {
     );
   }
 
+  const workspaceRoute =
+    typeof appPath === 'string' ? parseEventWorkspacePath(appPath) : null;
+
   return (
     <>
       <AuthenticatedShell>
-        {appPath === '/venues/new' ? <CreateVenuePage /> : <DashboardHome />}
+        {workspaceRoute ? (
+          <EventWorkspacePage />
+        ) : appPath === '/venues/new' ? (
+          <CreateVenuePage />
+        ) : (
+          <DashboardHome />
+        )}
       </AuthenticatedShell>
       {justOnboarded ? (
         <WelcomeModal organizationName={organizationName} onDismiss={dismissWelcome} />
