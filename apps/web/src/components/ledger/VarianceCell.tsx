@@ -1,13 +1,18 @@
-import { formatMoney, isNonZeroVariance } from '@/lib/money';
+import { formatMoney } from '@/lib/money';
+import { resolveVarianceDisplay } from '@/lib/ledgerVariance';
 
 interface VarianceCellProps {
-  variance: string | null | undefined;
-  varianceFlagged?: boolean;
+  qboActual: string | null | undefined;
+  settlement: string | null | undefined;
+  serverVariance: string | null | undefined;
 }
 
-export function VarianceCell({ variance, varianceFlagged }: VarianceCellProps) {
-  const normalizedVariance = variance ?? '0.00';
-  const flagged = varianceFlagged ?? isNonZeroVariance(normalizedVariance);
+export function VarianceCell({ qboActual, settlement, serverVariance }: VarianceCellProps) {
+  const { displayVariance, flagged } = resolveVarianceDisplay({
+    qboActual,
+    settlement,
+    serverVariance,
+  });
 
   return (
     <td
@@ -15,7 +20,7 @@ export function VarianceCell({ variance, varianceFlagged }: VarianceCellProps) {
       data-testid="variance-cell"
       data-flagged={flagged ? 'true' : 'false'}
     >
-      {formatMoney(normalizedVariance)}
+      {formatMoney(displayVariance)}
     </td>
   );
 }

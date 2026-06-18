@@ -146,7 +146,11 @@ export function LedgerRow({
       <td className="ledger-row__qbo" data-testid={`qbo-${row.id}`}>
         {formatMoney(row.qboActualValue)}
       </td>
-      <VarianceCell variance={row.variance} varianceFlagged={row.varianceFlagged} />
+      <VarianceCell
+        qboActual={row.qboActualValue}
+        settlement={row.settlementValue}
+        serverVariance={row.variance}
+      />
       <td className="ledger-row__notes">
         {proformaEditable || settlementEditable ? (
           <input

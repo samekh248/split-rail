@@ -13,14 +13,35 @@ const baseRow: LineItemDto = {
   proformaValue: '10000.00',
   settlementValue: '8500.00',
   qboActualValue: '0.00',
-  variance: '0.00',
-  varianceFlagged: false,
+  variance: '-8500.00',
+  varianceFlagged: true,
   notes: null,
   isHiddenFromPromoter: false,
   rowVersion: 'v1',
 };
 
 describe('Editability', () => {
+  it('derives variance cell from QBO actual minus settlement', () => {
+    render(
+      <table>
+        <tbody>
+          <LedgerRow
+            row={baseRow}
+            editability={{
+              proforma: 'read-only',
+              settlement: 'read-only',
+              qboActuals: 'locked',
+            }}
+          />
+        </tbody>
+      </table>,
+    );
+
+    const cell = screen.getByTestId('variance-cell');
+    expect(cell).toHaveTextContent('-$8,500.00');
+    expect(cell).toHaveAttribute('data-flagged', 'true');
+  });
+
   it('locks proforma after budget lock (read-only display)', () => {
     const editability: EditabilityDto = {
       proforma: 'read-only',
