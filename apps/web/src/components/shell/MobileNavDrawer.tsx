@@ -1,12 +1,16 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type RefObject } from 'react';
 import { GlobalNav } from './GlobalNav';
 import { ProfileBadge } from './ProfileBadge';
 import type { SidebarNavigationMode } from './SidebarRail';
 
+function refCurrent<T extends HTMLElement>(ref?: RefObject<T | null>): T | null {
+  return ref?.current ?? null;
+}
+
 export interface MobileNavDrawerProps {
   open: boolean;
   onClose: () => void;
-  triggerRef?: React.RefObject<HTMLButtonElement | null>;
+  triggerRef?: RefObject<HTMLButtonElement | null>;
   navigationMode?: SidebarNavigationMode;
   navigation?: React.ReactNode;
 }
@@ -55,7 +59,7 @@ export function MobileNavDrawer({
     document.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
-      (triggerRef?.current ?? previousFocusRef.current)?.focus();
+      (refCurrent(triggerRef) ?? previousFocusRef.current)?.focus();
     };
   }, [open, onClose, triggerRef]);
 

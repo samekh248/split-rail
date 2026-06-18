@@ -1,11 +1,11 @@
-import type { ReactNode, RefObject } from 'react';
+import type { ReactNode, Ref } from 'react';
 import { useUserProfile } from '@/api/user';
 
 export interface TopBarProps {
   contextualContent?: ReactNode;
   onOpenMobileNav?: () => void;
   showMobileMenu?: boolean;
-  mobileTriggerRef?: RefObject<HTMLButtonElement | null>;
+  mobileTriggerRef?: Ref<HTMLButtonElement>;
 }
 
 export function TopBar({
