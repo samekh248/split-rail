@@ -1,6 +1,6 @@
 # Feature Specification: Event Lifecycle & Card Label Utilities
 
-**Feature Branch**: `023-event-lifecycle-card-label`
+**Feature Branch**: `024-event-lifecycle-card-label`
 
 **Created**: 2026-06-18
 

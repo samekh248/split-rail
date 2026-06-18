@@ -1,8 +1,8 @@
 # Implementation Plan: Event Lifecycle & Card Label Utilities
 
-**Branch**: `023-event-lifecycle-card-label` | **Date**: 2026-06-18 | **Spec**: [spec.md](./spec.md)
+**Branch**: `024-event-lifecycle-card-label` | **Date**: 2026-06-18 | **Spec**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `/specs/023-event-lifecycle-card-label/spec.md` (Linear SPLR-64)
+**Input**: Feature specification from `/specs/024-event-lifecycle-card-label/spec.md` (Linear SPLR-64)
 
 ## Summary
 
@@ -51,7 +51,7 @@ Extract event lifecycle state-machine rules and human-readable card labels from 
 ### Documentation (this feature)
 
 ```text
-specs/023-event-lifecycle-card-label/
+specs/024-event-lifecycle-card-label/
 ├── plan.md              # This file
 ├── research.md          # Phase 0 output
 ├── data-model.md        # Phase 1 output

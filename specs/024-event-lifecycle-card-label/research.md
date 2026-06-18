@@ -1,6 +1,6 @@
 # Research: Event Lifecycle & Card Label Utilities
 
-**Feature**: 023-event-lifecycle-card-label | **Date**: 2026-06-18
+**Feature**: 024-event-lifecycle-card-label | **Date**: 2026-06-18
 
 ## R1 — Module split: lifecycle vs. labels
 

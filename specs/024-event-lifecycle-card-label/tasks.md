@@ -4,7 +4,7 @@ description: "Task list for event lifecycle and card label utilities (SPLR-64)"
 
 # Tasks: Event Lifecycle & Card Label Utilities
 
-**Input**: Design documents from `/specs/023-event-lifecycle-card-label/`
+**Input**: Design documents from `/specs/024-event-lifecycle-card-label/`
 
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/event-lifecycle-utilities.md, quickstart.md
 
@@ -31,7 +31,7 @@ description: "Task list for event lifecycle and card label utilities (SPLR-64)"
 **Purpose**: Confirm directory layout and contract reference before utility work.
 
 - [x] T001 [P] Verify `apps/web/src/venue/` exists and is the target colocation path per plan.md (alongside `eventSelection.ts`, `activeEventStorage.ts`)
-- [x] T002 [P] Add shared golden-matrix fixture constants (rows G1–G8 from `specs/023-event-lifecycle-card-label/contracts/event-lifecycle-utilities.md`) in `apps/web/tests/venue/eventLifecycle.test.ts` as exported `LIFECYCLE_GOLDEN_MATRIX` for reuse by `eventCardLabel.test.ts`
+- [x] T002 [P] Add shared golden-matrix fixture constants (rows G1–G8 from `specs/024-event-lifecycle-card-label/contracts/event-lifecycle-utilities.md`) in `apps/web/tests/venue/eventLifecycle.test.ts` as exported `LIFECYCLE_GOLDEN_MATRIX` for reuse by `eventCardLabel.test.ts`
 
 ---
 
@@ -42,7 +42,7 @@ description: "Task list for event lifecycle and card label utilities (SPLR-64)"
 **⚠️ CRITICAL**: No card-label or combobox migration work begins until this phase completes.
 
 - [x] T003 Add failing table-driven tests for `resolveLifecyclePhase`, `isPreShow`, `canEditEventMetadata`, `canDeleteEvent`, and `isEventFullyLocked` covering golden rows G1–G8 in `apps/web/tests/venue/eventLifecycle.test.ts`
-- [x] T004 Implement `EventLifecyclePhase` union and lifecycle helpers (`resolveLifecyclePhase`, `isPreShow`, `canEditEventMetadata`, `canDeleteEvent`, `isEventFullyLocked`) in `apps/web/src/venue/eventLifecycle.ts` per `specs/023-event-lifecycle-card-label/contracts/event-lifecycle-utilities.md`
+- [x] T004 Implement `EventLifecyclePhase` union and lifecycle helpers (`resolveLifecyclePhase`, `isPreShow`, `canEditEventMetadata`, `canDeleteEvent`, `isEventFullyLocked`) in `apps/web/src/venue/eventLifecycle.ts` per `specs/024-event-lifecycle-card-label/contracts/event-lifecycle-utilities.md`
 - [x] T005 Make all lifecycle golden-matrix tests pass in `apps/web/tests/venue/eventLifecycle.test.ts`
 
 **Checkpoint**: US2 lifecycle utilities green in isolation; `eventCardLabel.ts` may import `resolveLifecyclePhase`.
@@ -139,8 +139,8 @@ description: "Task list for event lifecycle and card label utilities (SPLR-64)"
 
 **Purpose**: Coverage gate, duplicate-logic audit, and quickstart validation.
 
-- [x] T020 [P] Verify no duplicate lifecycle/label logic: run Scenario F from `specs/023-event-lifecycle-card-label/quickstart.md` (`rg "formatEventStatus|canEditEvent|canDeleteEvent" apps/web/src/`)
-- [x] T021 Run quickstart validation scenarios A–E from `specs/023-event-lifecycle-card-label/quickstart.md` (`npm run test -- eventLifecycle eventCardLabel eventSelection EventCombobox`)
+- [x] T020 [P] Verify no duplicate lifecycle/label logic: run Scenario F from `specs/024-event-lifecycle-card-label/quickstart.md` (`rg "formatEventStatus|canEditEvent|canDeleteEvent" apps/web/src/`)
+- [x] T021 Run quickstart validation scenarios A–E from `specs/024-event-lifecycle-card-label/quickstart.md` (`npm run test -- eventLifecycle eventCardLabel eventSelection EventCombobox`)
 - [x] T022 Verify ≥80.0% line/branch coverage on touched frontend files via `cd apps/web && npm run test:coverage -- eventLifecycle eventCardLabel eventSelection EventCombobox` (Vitest → lcov); missing or unparseable reports FAIL; backend N/A
 
 ---

@@ -1,6 +1,6 @@
 # Contract: Event Lifecycle & Card Label Utilities
 
-**Feature**: 023-event-lifecycle-card-label | **Date**: 2026-06-18
+**Feature**: 024-event-lifecycle-card-label | **Date**: 2026-06-18
 
 Behavioral contract for frontend pure utilities. No REST API changes — documents function semantics both implementation and tests MUST satisfy.
 

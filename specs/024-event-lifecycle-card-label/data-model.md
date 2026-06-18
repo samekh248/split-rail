@@ -1,6 +1,6 @@
 # Data Model: Event Lifecycle & Card Label Utilities
 
-**Feature**: 023-event-lifecycle-card-label | **Date**: 2026-06-18
+**Feature**: 024-event-lifecycle-card-label | **Date**: 2026-06-18
 
 No new database tables or API entities. This document describes derived lifecycle phases, label mappings, and permission rules computed from existing event fields. Platform event entity: [002-financial-ledger-grid/data-model.md](../002-financial-ledger-grid/data-model.md).
 
