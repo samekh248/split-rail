@@ -2,42 +2,58 @@ import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { EventCombobox } from '@/components/event/EventCombobox';
-import type { EventResponse } from '@/types/generated-api';
-
-const EVENTS: EventResponse[] = [
-  {
-    eventId: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
-    title: 'Summer Show',
-    eventDate: '2026-08-01',
-    status: 'PRE_SHOW',
-    isBudgetLocked: false,
-  },
-  {
-    eventId: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
-    title: 'Winter Gala',
-    eventDate: '2026-12-01',
-    status: 'PRE_SHOW',
-    isBudgetLocked: false,
-  },
-];
+import { EVENT_A, EVENT_C } from '../../fixtures/events';
 
 describe('EventCombobox', () => {
+  it('renders provided events with title and date visible', async () => {
+    const user = userEvent.setup();
+
+    render(
+      <EventCombobox
+        events={[EVENT_A, EVENT_C]}
+        selectedEventId={EVENT_A.eventId!}
+        canManageEvents
+        onSelect={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByTestId('event-combobox-trigger'));
+    expect(screen.getByTestId(`event-option-${EVENT_A.eventId}`)).toHaveTextContent('Show A');
+    expect(screen.getByTestId(`event-option-${EVENT_A.eventId}`)).toHaveTextContent('2026-08-01');
+    expect(screen.getByTestId(`event-option-${EVENT_C.eventId}`)).toHaveTextContent('Show C');
+  });
+
+  it('only lists events passed in props without injecting extras', () => {
+    render(
+      <EventCombobox
+        events={[EVENT_A]}
+        selectedEventId={EVENT_A.eventId!}
+        canManageEvents={false}
+        onSelect={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('event-combobox-current')).toHaveTextContent('Show A');
+    expect(screen.queryByTestId(`event-option-${EVENT_C.eventId}`)).not.toBeInTheDocument();
+    expect(screen.queryByText('Show C')).not.toBeInTheDocument();
+  });
+
   it('selects an event from the menu', async () => {
     const onSelect = vi.fn();
     const user = userEvent.setup();
 
     render(
       <EventCombobox
-        events={EVENTS}
-        selectedEventId={EVENTS[0]!.eventId!}
+        events={[EVENT_A, EVENT_C]}
+        selectedEventId={EVENT_A.eventId!}
         canManageEvents
         onSelect={onSelect}
       />,
     );
 
     await user.click(screen.getByTestId('event-combobox-trigger'));
-    await user.click(screen.getByTestId(`event-option-${EVENTS[1]!.eventId}`));
-    expect(onSelect).toHaveBeenCalledWith(EVENTS[1]!.eventId);
+    await user.click(screen.getByTestId(`event-option-${EVENT_C.eventId}`));
+    expect(onSelect).toHaveBeenCalledWith(EVENT_C.eventId);
   });
 
   it('filters events and shows no results state', async () => {
@@ -45,8 +61,8 @@ describe('EventCombobox', () => {
 
     render(
       <EventCombobox
-        events={EVENTS}
-        selectedEventId={EVENTS[0]!.eventId!}
+        events={[EVENT_A, EVENT_C]}
+        selectedEventId={EVENT_A.eventId!}
         canManageEvents={false}
         onSelect={vi.fn()}
       />,
@@ -63,8 +79,8 @@ describe('EventCombobox', () => {
 
     render(
       <EventCombobox
-        events={EVENTS}
-        selectedEventId={EVENTS[0]!.eventId!}
+        events={[EVENT_A, EVENT_C]}
+        selectedEventId={EVENT_A.eventId!}
         canManageEvents
         onSelect={vi.fn()}
         onCreateClick={onCreateClick}

@@ -7,6 +7,12 @@ import { CreateVenuePage } from '@/pages/CreateVenuePage';
 import { VenueProvider } from '@/venue/VenueContext';
 import { getDashboardPath } from '@/lib/dashboardRoute';
 import { getActiveVenueId } from '@/venue/activeVenueStorage';
+import { VENUE_NAME_MAX_LENGTH } from '@/auth/validation';
+import {
+  mockWorkspaceFetch,
+  workspaceAdminProfile,
+  workspaceMemberProfile,
+} from '../utils/mockWorkspaceFetch';
 
 const CREATED_VENUE = {
   id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
@@ -14,68 +20,6 @@ const CREATED_VENUE = {
   organizationId: 'org-1',
   createdAt: '2026-06-17T00:00:00Z',
 };
-
-const ADMIN_PROFILE = {
-  role: { permissions: { canManagePermissions: true } },
-};
-
-const MEMBER_PROFILE = {
-  role: { permissions: { canManagePermissions: false } },
-};
-
-function mockApiFetch({
-  profile = ADMIN_PROFILE,
-  venues = [] as unknown[],
-  createStatus = 201,
-}: {
-  profile?: typeof ADMIN_PROFILE | typeof MEMBER_PROFILE;
-  venues?: unknown[];
-  createStatus?: number;
-} = {}) {
-  let venueList = [...venues];
-
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: RequestInfo, init?: RequestInit) => {
-      const url = String(input);
-      if (url.includes('/users/me')) {
-        return {
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(profile),
-        };
-      }
-      if (url.includes('/api/venues') && init?.method === 'POST') {
-        if (createStatus >= 400) {
-          return {
-            ok: false,
-            status: createStatus,
-            statusText: 'Error',
-            json: () => Promise.resolve({ detail: 'Server error' }),
-          };
-        }
-        venueList = [CREATED_VENUE];
-        return {
-          ok: true,
-          status: 201,
-          json: () => Promise.resolve(CREATED_VENUE),
-        };
-      }
-      if (url.includes('/api/venues')) {
-        return {
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(venueList),
-        };
-      }
-      return {
-        ok: true,
-        status: 200,
-        json: () => Promise.resolve({}),
-      };
-    }),
-  );
-}
 
 function createWrapper() {
   const queryClient = new QueryClient({
@@ -98,7 +42,7 @@ describe('CreateVenuePage', () => {
   });
 
   it('creates a venue and navigates to dashboard with active venue', async () => {
-    mockApiFetch();
+    mockWorkspaceFetch({ createdVenue: CREATED_VENUE });
     const user = userEvent.setup();
 
     render(<CreateVenuePage />, { wrapper: createWrapper() });
@@ -111,7 +55,7 @@ describe('CreateVenuePage', () => {
   });
 
   it('silently redirects when user lacks permission', async () => {
-    mockApiFetch({ profile: MEMBER_PROFILE });
+    mockWorkspaceFetch({ profile: workspaceMemberProfile });
 
     render(<CreateVenuePage />, { wrapper: createWrapper() });
 
@@ -120,7 +64,7 @@ describe('CreateVenuePage', () => {
   });
 
   it('shows inline validation for empty name without posting', async () => {
-    mockApiFetch();
+    mockWorkspaceFetch();
     const user = userEvent.setup();
     const fetchMock = vi.mocked(globalThis.fetch);
 
@@ -132,8 +76,24 @@ describe('CreateVenuePage', () => {
     expect(fetchMock.mock.calls.filter((call) => call[1]?.method === 'POST')).toHaveLength(0);
   });
 
+  it('shows inline validation for over-max-length name without posting', async () => {
+    mockWorkspaceFetch();
+    const user = userEvent.setup();
+    const fetchMock = vi.mocked(globalThis.fetch);
+    const overMaxName = 'x'.repeat(VENUE_NAME_MAX_LENGTH + 1);
+
+    render(<CreateVenuePage />, { wrapper: createWrapper() });
+
+    await user.type(await screen.findByLabelText('Venue name'), overMaxName);
+    await user.click(screen.getByRole('button', { name: 'Create venue' }));
+
+    expect(
+      await screen.findByText(`Venue name must be ${VENUE_NAME_MAX_LENGTH} characters or fewer.`),
+    ).toBeInTheDocument();
+    expect(fetchMock.mock.calls.filter((call) => call[1]?.method === 'POST')).toHaveLength(0);
+  });
+
   it('disables submit while request is pending', async () => {
-    mockApiFetch();
     const user = userEvent.setup();
 
     let resolvePost: (value: unknown) => void = () => {};
@@ -146,7 +106,7 @@ describe('CreateVenuePage', () => {
       vi.fn(async (input: RequestInfo, init?: RequestInit) => {
         const url = String(input);
         if (url.includes('/users/me')) {
-          return { ok: true, status: 200, json: () => Promise.resolve(ADMIN_PROFILE) };
+          return { ok: true, status: 200, json: () => Promise.resolve(workspaceAdminProfile) };
         }
         if (url.includes('/api/venues') && init?.method === 'POST') {
           return postPromise;
@@ -170,7 +130,7 @@ describe('CreateVenuePage', () => {
   });
 
   it('shows error banner on server failure and retains entered name', async () => {
-    mockApiFetch({ createStatus: 500 });
+    mockWorkspaceFetch({ createVenueStatus: 500 });
     const user = userEvent.setup();
 
     render(<CreateVenuePage />, { wrapper: createWrapper() });
@@ -183,7 +143,7 @@ describe('CreateVenuePage', () => {
   });
 
   it('cancel navigates to dashboard without creating', async () => {
-    mockApiFetch();
+    mockWorkspaceFetch();
     const user = userEvent.setup();
     const fetchMock = vi.mocked(globalThis.fetch);
 

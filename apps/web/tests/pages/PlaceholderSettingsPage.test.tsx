@@ -22,4 +22,10 @@ describe('PlaceholderSettingsPage', () => {
     expect(screen.getByRole('heading', { name: 'Coming soon' })).toBeInTheDocument();
     expect(screen.getByText(/Integrations settings are not available yet/)).toBeInTheDocument();
   });
+
+  it('renders organization placeholder copy', () => {
+    render(<PlaceholderSettingsPage title="Organization" />, { wrapper });
+
+    expect(screen.getByText(/Organization settings are not available yet/)).toBeInTheDocument();
+  });
 });

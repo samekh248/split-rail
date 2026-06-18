@@ -146,6 +146,24 @@ describe('App', () => {
     );
 
     expect(await screen.findByRole('heading', { name: 'Coming soon' })).toBeInTheDocument();
+    expect(screen.getByText(/Organization settings are not available yet/)).toBeInTheDocument();
+  });
+
+  it('renders integrations placeholder when authenticated on /settings/integrations', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/settings/integrations');
+    mockAuthenticatedFetch();
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Coming soon' })).toBeInTheDocument();
+    expect(screen.getByText(/Integrations settings are not available yet/)).toBeInTheDocument();
   });
 
   it('renders accept invite for authenticated user on accept-invite route', async () => {

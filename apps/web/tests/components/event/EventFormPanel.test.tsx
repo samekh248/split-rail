@@ -12,6 +12,7 @@ describe('EventFormPanel', () => {
 
     await user.click(screen.getByRole('button', { name: 'Create event' }));
     expect(screen.getByText('Event title is required.')).toBeInTheDocument();
+    expect(screen.getByText('Event date is required.')).toBeInTheDocument();
   });
 
   it('submits create form with valid values', async () => {
