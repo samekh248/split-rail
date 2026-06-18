@@ -1,11 +1,25 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { DashboardHome } from '@/pages/DashboardHome';
+import { EventWorkspacePage } from '@/pages/EventWorkspacePage';
+import { buildEventWorkspacePath } from '@/lib/appRoute';
+import { EVENT_A } from '../fixtures/events';
+import { VENUE_A } from '../fixtures/venues';
 import { createShellWrapper } from './shellTestUtils';
 
 vi.mock('@/pages/EventLedgerPage', () => ({
   EventLedgerPage: () => <div data-testid="mock-ledger-page">ledger</div>,
 }));
+
+function renderWorkspacePage() {
+  window.history.pushState(
+    {},
+    '',
+    buildEventWorkspacePath(VENUE_A.id, EVENT_A.eventId!),
+  );
+  return render(<EventWorkspacePage />, {
+    wrapper: createShellWrapper({}, { venues: [VENUE_A], eventsByVenue: { [VENUE_A.id]: [EVENT_A] } }),
+  });
+}
 
 describe('AppShell', () => {
   beforeEach(() => {
@@ -16,7 +30,7 @@ describe('AppShell', () => {
   });
 
   it('renders left rail, top bar, and main content regions', async () => {
-    render(<DashboardHome />, { wrapper: createShellWrapper() });
+    renderWorkspacePage();
 
     expect(await screen.findByTestId('app-shell')).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-rail')).toBeInTheDocument();
@@ -25,7 +39,7 @@ describe('AppShell', () => {
   });
 
   it('shows organization name in top bar', async () => {
-    render(<DashboardHome />, { wrapper: createShellWrapper() });
+    renderWorkspacePage();
 
     await waitFor(() => {
       expect(screen.getByTestId('top-bar-org-name')).toHaveTextContent('Acme Org');
@@ -33,7 +47,7 @@ describe('AppShell', () => {
   });
 
   it('does not show legacy Settings or Sign out in dashboard header', async () => {
-    render(<DashboardHome />, { wrapper: createShellWrapper() });
+    renderWorkspacePage();
 
     await screen.findByTestId('dashboard-workspace-bar');
     expect(screen.queryByTestId('header-settings')).not.toBeInTheDocument();

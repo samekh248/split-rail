@@ -7,24 +7,14 @@ import { DashboardHome } from '@/pages/DashboardHome';
 import { AuthContext, type AuthContextValue } from '@/auth/AuthContext';
 import { AppShell } from '@/components/shell/AppShell';
 import { VenueProvider } from '@/venue/VenueContext';
-import { getActiveVenueId, setActiveVenueId } from '@/venue/activeVenueStorage';
-import { getActiveEventId, setActiveEventId } from '@/venue/activeEventStorage';
+import { buildEventWorkspacePath } from '@/lib/appRoute';
 import { getDashboardPath } from '@/lib/dashboardRoute';
-import { EVENT_A, EVENT_B, EVENT_C, newlyCreatedEvent, noEvents } from '../fixtures/events';
-import { VENUE_A, VENUE_B } from '../fixtures/venues';
+import { EVENT_A, newlyCreatedEvent, noEvents } from '../fixtures/events';
+import { VENUE_A } from '../fixtures/venues';
 import {
   mockWorkspaceFetch,
-  workspaceAdminProfile,
   workspaceMemberProfile,
 } from '../utils/mockWorkspaceFetch';
-
-vi.mock('@/pages/EventLedgerPage', () => ({
-  EventLedgerPage: ({ venueId, eventId }: { venueId: string; eventId: string }) => (
-    <div data-testid="mock-ledger-page">
-      {venueId}:{eventId}
-    </div>
-  ),
-}));
 
 const mockLogout = vi.fn();
 
@@ -77,10 +67,10 @@ describe('DashboardHome', () => {
 
     expect(await screen.findByRole('heading', { name: 'No venues yet' })).toBeInTheDocument();
     expect(screen.getByTestId('empty-state-add-venue')).toBeInTheDocument();
-    expect(screen.queryByTestId('mock-ledger-page')).not.toBeInTheDocument();
+    expect(window.location.pathname).toBe('/');
   });
 
-  it('shows persistent shell add venue when venues exist for permitted user', async () => {
+  it('redirects to workspace URL when events exist', async () => {
     mockWorkspaceFetch({
       venues: [VENUE_A],
       eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
@@ -88,7 +78,37 @@ describe('DashboardHome', () => {
 
     render(<DashboardHome />, { wrapper: createWrapper() });
 
-    expect(await screen.findByTestId('header-add-venue')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(window.location.pathname).toBe(
+        buildEventWorkspacePath(VENUE_A.id, EVENT_A.eventId!),
+      ),
+    );
+  });
+
+  it('shows events empty state with create CTA at root', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: noEvents },
+    });
+
+    render(<DashboardHome />, { wrapper: createWrapper() });
+
+    expect(await screen.findByRole('heading', { name: 'No events yet' })).toBeInTheDocument();
+    expect(screen.getByTestId('empty-state-create-event')).toBeInTheDocument();
+    expect(window.location.pathname).toBe('/');
+  });
+
+  it('hides create affordances without financial permission at root', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceMemberProfile,
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: noEvents },
+    });
+
+    render(<DashboardHome />, { wrapper: createWrapper() });
+
+    expect(await screen.findByRole('heading', { name: 'No events yet' })).toBeInTheDocument();
+    expect(screen.queryByTestId('empty-state-create-event')).not.toBeInTheDocument();
   });
 
   it('hides empty-state add venue for restricted user with zero venues', async () => {
@@ -103,107 +123,17 @@ describe('DashboardHome', () => {
     expect(screen.queryByTestId('empty-state-add-venue')).not.toBeInTheDocument();
   });
 
-  it('hides shell add venue for restricted user with existing venues', async () => {
-    mockWorkspaceFetch({
-      profile: workspaceMemberProfile,
-      venues: [VENUE_A],
-      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
-    });
-
-    render(<DashboardHome />, { wrapper: createWrapper() });
-
-    await screen.findByTestId('mock-ledger-page');
-    expect(screen.queryByTestId('header-add-venue')).not.toBeInTheDocument();
-  });
-
-  it('renders ledger with resolved event id', async () => {
-    mockWorkspaceFetch({
-      venues: [VENUE_A],
-      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
-    });
-
-    render(<DashboardHome />, { wrapper: createWrapper() });
-
-    expect(await screen.findByTestId('mock-ledger-page')).toHaveTextContent(
-      `${VENUE_A.id}:${EVENT_A.eventId}`,
-    );
-  });
-
-  it('switches selected event from combobox', async () => {
-    mockWorkspaceFetch({
-      venues: [VENUE_A],
-      eventsByVenue: { [VENUE_A.id]: [EVENT_A, EVENT_C] },
-    });
-
+  it('navigates to create page from empty-state venue CTA', async () => {
+    mockWorkspaceFetch({ venues: [] });
     const user = userEvent.setup();
-    render(<DashboardHome />, { wrapper: createWrapper() });
-
-    await user.click(await screen.findByTestId('event-combobox-trigger'));
-    await user.click(screen.getByTestId(`event-option-${EVENT_C.eventId}`));
-
-    await waitFor(() =>
-      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(
-        `${VENUE_A.id}:${EVENT_C.eventId}`,
-      ),
-    );
-  });
-
-  it('resets event when venue switches', async () => {
-    setActiveVenueId(VENUE_A.id);
-    setActiveEventId(VENUE_A.id, EVENT_A.eventId!);
-
-    mockWorkspaceFetch({
-      venues: [VENUE_A, VENUE_B],
-      eventsByVenue: {
-        [VENUE_A.id]: [EVENT_A],
-        [VENUE_B.id]: [EVENT_B],
-      },
-    });
-
-    const user = userEvent.setup();
-    render(<DashboardHome />, { wrapper: createWrapper() });
-
-    await waitFor(() =>
-      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(EVENT_A.eventId!),
-    );
-
-    await user.click(screen.getByTestId('venue-switcher-trigger'));
-    await user.click(screen.getByTestId(`venue-option-${VENUE_B.id}`));
-
-    await waitFor(() =>
-      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(
-        `${VENUE_B.id}:${EVENT_B.eventId}`,
-      ),
-    );
-    expect(getActiveEventId(VENUE_A.id)).toBe(EVENT_A.eventId);
-  });
-
-  it('shows events empty state with create CTA', async () => {
-    mockWorkspaceFetch({
-      venues: [VENUE_A],
-      eventsByVenue: { [VENUE_A.id]: noEvents },
-    });
 
     render(<DashboardHome />, { wrapper: createWrapper() });
 
-    expect(await screen.findByRole('heading', { name: 'No events yet' })).toBeInTheDocument();
-    expect(screen.getByTestId('empty-state-create-event')).toBeInTheDocument();
+    await user.click(await screen.findByTestId('empty-state-add-venue'));
+    expect(getDashboardPath()).toBe('/venues/new');
   });
 
-  it('hides create affordances without financial permission', async () => {
-    mockWorkspaceFetch({
-      profile: workspaceMemberProfile,
-      venues: [VENUE_A],
-      eventsByVenue: { [VENUE_A.id]: noEvents },
-    });
-
-    render(<DashboardHome />, { wrapper: createWrapper() });
-
-    expect(await screen.findByRole('heading', { name: 'No events yet' })).toBeInTheDocument();
-    expect(screen.queryByTestId('empty-state-create-event')).not.toBeInTheDocument();
-  });
-
-  it('creates an event from empty state and shows the ledger', async () => {
+  it('creates an event from root empty state and redirects to workspace URL', async () => {
     mockWorkspaceFetch({
       venues: [VENUE_A],
       eventsByVenue: { [VENUE_A.id]: noEvents },
@@ -220,71 +150,9 @@ describe('DashboardHome', () => {
     await user.click(within(panel).getByRole('button', { name: 'Create event' }));
 
     await waitFor(() =>
-      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(
-        `${VENUE_A.id}:${newlyCreatedEvent.eventId}`,
+      expect(window.location.pathname).toBe(
+        buildEventWorkspacePath(VENUE_A.id, newlyCreatedEvent.eventId!),
       ),
     );
-  });
-
-  it('shows events error with retry', async () => {
-    mockWorkspaceFetch({
-      venues: [VENUE_A],
-      eventsByVenue: { [VENUE_A.id]: noEvents },
-      eventsError: true,
-    });
-
-    render(<DashboardHome />, { wrapper: createWrapper() });
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('Unable to load events');
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
-  });
-
-  it('navigates to create page from empty-state venue CTA', async () => {
-    mockWorkspaceFetch({ venues: [] });
-    const user = userEvent.setup();
-
-    render(<DashboardHome />, { wrapper: createWrapper() });
-
-    await user.click(await screen.findByTestId('empty-state-add-venue'));
-    expect(getDashboardPath()).toBe('/venues/new');
-  });
-
-  it('restores active venue after reload within session', async () => {
-    setActiveVenueId(VENUE_B.id);
-    mockWorkspaceFetch({
-      venues: [VENUE_A, VENUE_B],
-      eventsByVenue: {
-        [VENUE_A.id]: [EVENT_A],
-        [VENUE_B.id]: [EVENT_B],
-      },
-    });
-
-    const { unmount } = render(<DashboardHome />, { wrapper: createWrapper() });
-    await waitFor(() =>
-      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(`${VENUE_B.id}:`),
-    );
-    unmount();
-
-    render(<DashboardHome />, { wrapper: createWrapper() });
-    await waitFor(() =>
-      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(`${VENUE_B.id}:`),
-    );
-    expect(getActiveVenueId()).toBe(VENUE_B.id);
-  });
-
-  it('renders workspace controls in workspace bar above top bar', async () => {
-    mockWorkspaceFetch({
-      venues: [VENUE_A],
-      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
-    });
-
-    render(<DashboardHome />, { wrapper: createWrapper() });
-
-    const workspaceBar = await screen.findByTestId('workspace-bar');
-    expect(within(workspaceBar).getByTestId('dashboard-workspace-bar')).toBeInTheDocument();
-    expect(await within(workspaceBar).findByTestId('venue-switcher')).toBeInTheDocument();
-    expect(screen.getByTestId('top-bar')).toBeInTheDocument();
-    expect(screen.queryByTestId('sidebar-workspace')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('header-settings')).not.toBeInTheDocument();
   });
 });

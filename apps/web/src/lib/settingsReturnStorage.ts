@@ -1,21 +1,28 @@
-import type { AppPath, DashboardPath } from '@/lib/appRoute';
+import type { AppPath } from '@/lib/appRoute';
+import { isEventWorkspacePath } from '@/lib/appRoute';
 
 const STORAGE_KEY = 'split-rail:settings-return-path';
 
-export type SettingsReturnPath = DashboardPath;
+export type SettingsReturnPath = AppPath | string;
 
-export function isSettingsPath(path: AppPath): boolean {
-  return path.startsWith('/settings');
+export function isSettingsPath(path: AppPath | string): boolean {
+  return String(path).startsWith('/settings');
 }
 
 export function readSettingsReturnPath(): SettingsReturnPath {
   try {
     const stored = sessionStorage.getItem(STORAGE_KEY);
+    if (!stored) {
+      return '/';
+    }
     if (stored === '/venues/new') {
       return '/venues/new';
     }
     if (stored === '/') {
       return '/';
+    }
+    if (isEventWorkspacePath(stored)) {
+      return stored;
     }
   } catch {
     // ignore storage errors
@@ -31,8 +38,12 @@ export function writeSettingsReturnPath(path: SettingsReturnPath): void {
   }
 }
 
-export function captureSettingsReturnPath(currentPath: AppPath): void {
+export function captureSettingsReturnPath(currentPath: AppPath | string): void {
   if (isSettingsPath(currentPath)) {
+    return;
+  }
+  if (isEventWorkspacePath(String(currentPath))) {
+    writeSettingsReturnPath(String(currentPath));
     return;
   }
   writeSettingsReturnPath(currentPath === '/venues/new' ? '/venues/new' : '/');
