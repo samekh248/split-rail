@@ -247,13 +247,7 @@ function evaluateCustomFormula(
   }
 
   const payout = scaleToMoney(result);
-  const normalized = roundMoneyAwayFromZero(payout);
-  const cents = BigInt(normalized.replace('.', '').replace('-', ''));
-  if (normalized.startsWith('-') || cents === 0n) {
-    return '0.00';
-  }
-
-  return normalized;
+  return roundMoneyAwayFromZero(payout);
 }
 
 function applyTaxAndFloor(grossArtistPayout: string, taxWithholdingPercentage: string): string {
@@ -277,7 +271,9 @@ function calculateGuaranteeGross(
   baseGuarantee: string,
   backendPercentage: string,
 ): string {
-  const splitAmount = multiplyMoneyPercent(netShowRevenue, backendPercentage);
+  const splitAmount = roundMoneyAwayFromZero(
+    multiplyMoneyPercent(netShowRevenue, backendPercentage),
+  );
   return maxMoney(baseGuarantee, splitAmount);
 }
 
@@ -297,18 +293,21 @@ export function previewNetPayout(input: PreviewNetPayoutInput): PreviewNetPayout
         break;
       }
       case 'door_split': {
-        const gross = multiplyMoneyPercent(netShowRevenue, input.backendPercentage);
+        const gross = roundMoneyAwayFromZero(
+          multiplyMoneyPercent(netShowRevenue, input.backendPercentage),
+        );
         payout = applyTaxAndFloor(gross, input.taxWithholdingPercentage);
         break;
       }
       case 'custom': {
-        payout = evaluateCustomFormula(
+        const gross = evaluateCustomFormula(
           input.customFormulaExpression,
           input.grossRevenue,
           input.totalDeductions,
           input.baseGuarantee,
           input.backendPercentage,
         );
+        payout = applyTaxAndFloor(gross, input.taxWithholdingPercentage);
         break;
       }
       default:
