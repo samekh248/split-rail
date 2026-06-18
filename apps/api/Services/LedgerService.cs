@@ -204,6 +204,7 @@ public class LedgerService
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
         AssertArtistEditable(evt);
+        await ValidateArtistStructuralEditAsync(evt, cancellationToken);
 
         var dealType = ParseDealType(request.DealType);
         ValidateArtistDeal(dealType, request.CustomFormulaExpression);
@@ -248,6 +249,7 @@ public class LedgerService
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
         AssertArtistEditable(evt);
+        await ValidateArtistStructuralEditAsync(evt, cancellationToken);
 
         var artist = await _db.EventArtists
             .FirstOrDefaultAsync(a => a.Id == artistId && a.EventId == eventId, cancellationToken)
@@ -293,6 +295,7 @@ public class LedgerService
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
         AssertArtistEditable(evt);
+        await ValidateArtistStructuralEditAsync(evt, cancellationToken);
 
         var artist = await _db.EventArtists
             .FirstOrDefaultAsync(a => a.Id == artistId && a.EventId == eventId, cancellationToken)
@@ -483,6 +486,11 @@ public class LedgerService
             throw new AuthorizationException("Missing permission to edit proforma values.");
         }
     }
+
+    private Task ValidateArtistStructuralEditAsync(
+        Event evt,
+        CancellationToken cancellationToken) =>
+        ValidateLineItemStructuralEditAsync(evt, cancellationToken);
 
     private async Task ValidateLineItemColumnEditAsync(
         Event evt,

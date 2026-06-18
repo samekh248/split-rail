@@ -7,6 +7,7 @@ import {
   useLedger,
   useLockBudget,
   useRecalculateLedger,
+  useUpdateArtist,
   useUpdateLineItem,
 } from '@/api/ledger';
 import { ArtistDealPanel } from '@/components/artists/ArtistDealPanel';
@@ -14,6 +15,7 @@ import { LedgerGrid } from '@/components/ledger/LedgerGrid';
 import { SyncNowButton } from '@/components/qbo/SyncNowButton';
 import { UnmappedBanner } from '@/components/qbo/UnmappedBanner';
 import { useCanEditLedgerStructure } from '@/hooks/useCanEditLedgerStructure';
+import { getArtistReorderSwapPair } from '@/lib/reorderArtists';
 import { getReorderSwapPair } from '@/lib/reorderLineItems';
 import type { MoveDirection } from '@/lib/reorderLineItems';
 import type {
@@ -43,6 +45,7 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
   const deleteLineItem = useDeleteLineItem(venueId, eventId);
   const lockBudget = useLockBudget(venueId, eventId);
   const createArtist = useCreateArtist(venueId, eventId);
+  const updateArtist = useUpdateArtist(venueId, eventId);
   const deleteArtist = useDeleteArtist(venueId, eventId);
   const [formulaError, setFormulaError] = useState<string | null>(null);
   const [structuralError, setStructuralError] = useState<string | null>(null);
@@ -191,6 +194,47 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
     [ledger, updateLineItem, recalculate, refetch],
   );
 
+  const handleReorderArtist = useCallback(
+    async (id: string, direction: MoveDirection) => {
+      if (!ledger?.artists) return;
+
+      const swap = getArtistReorderSwapPair(ledger.artists, id, direction);
+      if (!swap?.current.id || !swap.neighbor.id) return;
+
+      setStructuralError(null);
+      try {
+        await updateArtist.mutateAsync({
+          id: swap.current.id,
+          artistName: swap.current.artistName ?? '',
+          performanceOrder: swap.neighbor.performanceOrder ?? 0,
+          dealType: swap.current.dealType ?? 'guarantee',
+          customFormulaExpression: swap.current.customFormulaExpression ?? null,
+          baseGuarantee: swap.current.baseGuarantee ?? '0.00',
+          backendPercentage: swap.current.backendPercentage ?? '0.00',
+          taxWithholdingPercentage: swap.current.taxWithholdingPercentage ?? '0.00',
+          rowVersion: swap.current.rowVersion ?? '',
+        });
+        await updateArtist.mutateAsync({
+          id: swap.neighbor.id,
+          artistName: swap.neighbor.artistName ?? '',
+          performanceOrder: swap.current.performanceOrder ?? 0,
+          dealType: swap.neighbor.dealType ?? 'guarantee',
+          customFormulaExpression: swap.neighbor.customFormulaExpression ?? null,
+          baseGuarantee: swap.neighbor.baseGuarantee ?? '0.00',
+          backendPercentage: swap.neighbor.backendPercentage ?? '0.00',
+          taxWithholdingPercentage: swap.neighbor.taxWithholdingPercentage ?? '0.00',
+          rowVersion: swap.neighbor.rowVersion ?? '',
+        });
+        await recalculate.mutateAsync();
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to reorder artist';
+        setStructuralError(message);
+        void refetch();
+      }
+    },
+    [ledger, updateArtist, recalculate, refetch],
+  );
+
   if (isLoading) {
     return <p data-testid="ledger-loading">Loading ledger…</p>;
   }
@@ -263,6 +307,9 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
       <ArtistDealPanel
         artists={ledger.artists ?? []}
         eventStatus={ledger.status as EventStatus}
+        canEditStructure={canEditStructure}
+        grossRevenue={ledger.summary?.grossRevenue ?? '0.00'}
+        totalDeductions={ledger.summary?.totalDeductions ?? '0.00'}
         formulaError={formulaError}
         onAddArtist={async (artist) => {
           setFormulaError(null);
@@ -285,6 +332,30 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
             throw err;
           }
         }}
+        onUpdateArtist={async (id, artist) => {
+          setFormulaError(null);
+          try {
+            await updateArtist.mutateAsync({
+              id,
+              artistName: artist.artistName,
+              performanceOrder: artist.performanceOrder,
+              dealType: artist.dealType,
+              customFormulaExpression: artist.customFormulaExpression ?? null,
+              baseGuarantee: artist.baseGuarantee,
+              backendPercentage: artist.backendPercentage,
+              taxWithholdingPercentage: artist.taxWithholdingPercentage,
+              rowVersion: artist.rowVersion,
+            });
+            await recalculate.mutateAsync();
+          } catch (err) {
+            const message = err instanceof Error ? err.message : 'Failed to update artist';
+            if (message.includes('422')) {
+              setFormulaError('Formula could not be evaluated. Check tokens and syntax.');
+            }
+            throw err;
+          }
+        }}
+        onReorderArtist={handleReorderArtist}
         onRemoveArtist={async (id) => {
           await deleteArtist.mutateAsync(id);
           await recalculate.mutateAsync();
