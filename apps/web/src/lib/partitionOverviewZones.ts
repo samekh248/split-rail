@@ -111,20 +111,24 @@ export function partitionUpcomingEvents(events: EventResponse[], now: Date = new
     .sort(compareEventDateAsc);
 }
 
-export function getPinnedEvents(events: EventResponse[], venueId: string): EventResponse[] {
+export function getPinnedEvents(events: EventResponse[]): EventResponse[] {
   return events
-    .filter((event) => event.eventId != null && isEventPinned(venueId, event.eventId))
+    .filter((event) => {
+      if (!event.eventId || !event.venueId) {
+        return false;
+      }
+      return isEventPinned(event.venueId, event.eventId);
+    })
     .sort(compareEventDateDesc);
 }
 
 export function partitionOverviewZones(
   events: EventResponse[],
-  venueId: string,
   now: Date = new Date(),
 ): OverviewZonePartition {
   return {
     tonight: filterTonightEvents(events, now),
-    pinned: getPinnedEvents(events, venueId),
+    pinned: getPinnedEvents(events),
     upcoming: partitionUpcomingEvents(events, now),
     recent: partitionRecentEvents(events, now),
   };

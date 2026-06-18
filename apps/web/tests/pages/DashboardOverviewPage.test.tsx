@@ -307,12 +307,29 @@ describe('DashboardOverviewPage', () => {
     render(<DashboardOverviewPage />, { wrapper: createWrapper() });
 
     expect(await screen.findByText('Venue A Show')).toBeInTheDocument();
+    expect(screen.getByText('Venue B Show')).toBeInTheDocument();
 
     await user.click(screen.getByTestId('venue-switcher-trigger'));
     await user.click(screen.getByTestId(`venue-option-${VENUE_B.id}`));
 
     expect(await screen.findByText('Venue B Show')).toBeInTheDocument();
     expect(screen.queryByText('Venue A Show')).not.toBeInTheDocument();
+  });
+
+  it('aggregates events from all venues by default', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A, VENUE_B],
+      eventsByVenue: {
+        [VENUE_A.id]: [eventOn(offsetDate(1), { title: 'Venue A Show' })],
+        [VENUE_B.id]: [eventOn(offsetDate(2), { eventId: EVENT_B.eventId, title: 'Venue B Show' })],
+      },
+    });
+
+    render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+    expect(await screen.findByText('Venue A Show')).toBeInTheDocument();
+    expect(screen.getByText('Venue B Show')).toBeInTheDocument();
+    expect(screen.getByTestId('venue-switcher-current')).toHaveTextContent('All Venues');
   });
 
   it('navigates to create page from empty-state venue CTA', async () => {

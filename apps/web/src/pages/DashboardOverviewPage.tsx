@@ -9,7 +9,7 @@ import {
 import type { WorkspaceFocus } from '@/components/dashboard/EventCard';
 import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
 import { useUserProfile } from '@/api/user';
-import { useEvents } from '@/api/events';
+import { useAllVenuesEvents, useEvents } from '@/api/events';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
 import { navigateToCreateVenue, navigateToEventWorkspace } from '@/lib/dashboardRoute';
@@ -22,24 +22,30 @@ const EMPTY_PERMISSIONS: PermissionsDto = {};
 export function DashboardOverviewPage() {
   const { isLoading: profileLoading, data: profile } = useUserProfile();
   const canManageVenues = useCanManageVenues();
-  const { venues, activeVenueId, isLoading, isError, refetch } = useActiveVenue();
+  const { venues, activeVenueId, isAllVenuesSelected, isLoading, isError, refetch } = useActiveVenue();
+  const venueIds = useMemo(() => venues.map((venue) => venue.id).filter(Boolean) as string[], [venues]);
+  const singleVenueEvents = useEvents(activeVenueId);
+  const allVenuesEvents = useAllVenuesEvents(isAllVenuesSelected ? venueIds : []);
+  const eventsQuery = isAllVenuesSelected ? allVenuesEvents : singleVenueEvents;
   const {
     data: events = [],
     isLoading: eventsLoading,
     isError: eventsError,
     refetch: refetchEvents,
-  } = useEvents(activeVenueId);
+  } = eventsQuery;
   const [pinnedRevision, setPinnedRevision] = useState(0);
 
   const permissions = profile?.role?.permissions ?? EMPTY_PERMISSIONS;
+  const hasVenues = venues.length > 0;
+  const showEventsContent = hasVenues && (isAllVenuesSelected || Boolean(activeVenueId));
 
   const partition = useMemo(() => {
-    if (!activeVenueId) {
+    if (!showEventsContent) {
       return { tonight: [], pinned: [], upcoming: [], recent: [] };
     }
     void pinnedRevision;
-    return partitionOverviewZones(events, activeVenueId);
-  }, [events, activeVenueId, pinnedRevision]);
+    return partitionOverviewZones(events);
+  }, [events, showEventsContent, pinnedRevision]);
 
   const workspaceBarContent = useMemo(
     () => (
@@ -62,26 +68,35 @@ export function DashboardOverviewPage() {
 
   useShellWorkspaceBar(workspaceBarContent);
 
+  const findEvent = (eventId: string) => events.find((event) => event.eventId === eventId);
+
   const handleQuickLink = (venueId: string, eventId: string, focus?: WorkspaceFocus) => {
     navigateToEventWorkspace(venueId, eventId, focus);
   };
 
   const handleCardActivate = (eventId: string) => {
-    if (activeVenueId) {
-      navigateToEventWorkspace(activeVenueId, eventId);
+    const event = findEvent(eventId);
+    const venueId = event?.venueId ?? activeVenueId;
+    if (venueId) {
+      navigateToEventWorkspace(venueId, eventId);
     }
   };
 
   const handlePinToggle = (eventId: string) => {
-    if (!activeVenueId) {
+    const event = findEvent(eventId);
+    const venueId = event?.venueId ?? activeVenueId;
+    if (!venueId) {
       return;
     }
-    toggleEventPinned(activeVenueId, eventId);
+    toggleEventPinned(venueId, eventId);
     setPinnedRevision((value) => value + 1);
   };
 
-  const checkPinned = (eventId: string) =>
-    activeVenueId ? isEventPinned(activeVenueId, eventId) : false;
+  const checkPinned = (eventId: string) => {
+    const event = findEvent(eventId);
+    const venueId = event?.venueId ?? activeVenueId;
+    return venueId ? isEventPinned(venueId, eventId) : false;
+  };
 
   const zoneProps = {
     venueId: activeVenueId ?? '',
@@ -94,7 +109,7 @@ export function DashboardOverviewPage() {
 
   return (
     <div className="dashboard-overview">
-      {isLoading || (activeVenueId && eventsLoading) ? (
+      {isLoading || (showEventsContent && eventsLoading) ? (
         <div className="dashboard-empty" role="status" aria-live="polite">
           Loading workspace…
         </div>
@@ -134,7 +149,7 @@ export function DashboardOverviewPage() {
         </section>
       ) : null}
 
-      {!isLoading && !isError && activeVenueId && eventsError ? (
+      {!isLoading && !isError && showEventsContent && eventsError ? (
         <div className="dashboard-empty dashboard-empty--error" role="alert">
           <p>Unable to load events. Please try again.</p>
           <button
@@ -149,7 +164,7 @@ export function DashboardOverviewPage() {
 
       {!isLoading &&
       !isError &&
-      activeVenueId &&
+      showEventsContent &&
       !eventsLoading &&
       !eventsError &&
       events.length === 0 ? (
@@ -158,14 +173,16 @@ export function DashboardOverviewPage() {
             No events yet
           </h2>
           <p className="dashboard-empty__text">
-            This venue does not have any events yet. Create events from the event management workspace.
+            {isAllVenuesSelected
+              ? 'There are no events across your venues yet. Create events from the event management workspace.'
+              : 'This venue does not have any events yet. Create events from the event management workspace.'}
           </p>
         </section>
       ) : null}
 
       {!isLoading &&
       !isError &&
-      activeVenueId &&
+      showEventsContent &&
       !eventsLoading &&
       !eventsError &&
       events.length > 0 ? (

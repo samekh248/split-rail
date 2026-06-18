@@ -42,7 +42,7 @@ describe('partitionOverviewZones', () => {
       event('11111111-1111-1111-1111-111111111111', '2026-07-19'),
     ];
 
-    const partition = partitionOverviewZones(events, VENUE_A.id, REF_NOW);
+    const partition = partitionOverviewZones(events, REF_NOW);
 
     expect(partition.tonight.map((e) => e.eventId)).toEqual([
       'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
@@ -81,9 +81,9 @@ describe('partitionOverviewZones', () => {
     setEventPinned(VENUE_A.id, pinnedUpcoming.eventId!, true);
     expect(isEventPinned(VENUE_A.id, pinnedUpcoming.eventId!)).toBe(true);
 
-    const partition = partitionOverviewZones([pinnedUpcoming], VENUE_A.id, REF_NOW);
+    const partition = partitionOverviewZones([pinnedUpcoming], REF_NOW);
 
-    expect(getPinnedEvents([pinnedUpcoming], VENUE_A.id).map((e) => e.eventId)).toEqual([
+    expect(getPinnedEvents([pinnedUpcoming]).map((e) => e.eventId)).toEqual([
       'dddddddd-dddd-dddd-dddd-dddddddddddd',
     ]);
     expect(partition.pinned.map((e) => e.eventId)).toEqual(['dddddddd-dddd-dddd-dddd-dddddddddddd']);
@@ -126,7 +126,7 @@ describe('partitionOverviewZones', () => {
     setEventPinned(VENUE_A.id, invalid.eventId!, true);
     expect(isEventPinned(VENUE_A.id, invalid.eventId!)).toBe(true);
 
-    const partition = partitionOverviewZones([invalid], VENUE_A.id, REF_NOW);
+    const partition = partitionOverviewZones([invalid], REF_NOW);
 
     expect(partition.tonight).toEqual([]);
     expect(partition.recent).toEqual([]);
