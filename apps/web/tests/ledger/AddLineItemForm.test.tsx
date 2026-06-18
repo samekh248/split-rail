@@ -104,4 +104,33 @@ describe('AddLineItemForm', () => {
       }),
     );
   });
+
+  it('submits isArtistDeduction when add-row deduction checkbox is checked', async () => {
+    const user = userEvent.setup();
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+
+    render(
+      <AddLineItemForm
+        blockType="EXPENSES"
+        isBudgetLocked={false}
+        sortOrder={5}
+        onSubmit={onSubmit}
+        onCancel={() => undefined}
+      />,
+    );
+
+    await user.type(screen.getByTestId('add-line-item-label'), 'Marketing');
+    await user.clear(screen.getByTestId('add-line-item-proforma'));
+    await user.type(screen.getByTestId('add-line-item-proforma'), '500.00');
+    await user.click(screen.getByTestId('add-line-item-deduction'));
+    await user.click(screen.getByTestId('add-line-item-submit'));
+
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        blockType: 'EXPENSES',
+        isArtistDeduction: true,
+        proformaValue: '500.00',
+      }),
+    );
+  });
 });
