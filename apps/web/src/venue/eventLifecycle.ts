@@ -31,7 +31,7 @@ export function isPreShow(status: EventStatus | string | null | undefined): bool
 
 export function canEditEventMetadata(
   statusOrEvent: EventStatus | string | null | undefined | LifecycleInput,
-  isBudgetLocked?: boolean,
+  _isBudgetLocked?: boolean,
 ): boolean {
   const status = typeof statusOrEvent === 'object' && statusOrEvent !== null
     ? statusOrEvent.status
