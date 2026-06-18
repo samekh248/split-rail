@@ -64,4 +64,11 @@
 - The Spec-Driven Development (SDD) lifecycle (`specify → plan → tasks → implement → verify`) is the mandatory workflow for all feature development.
 - Architecture Guard and CI Guard extensions enforce compliance automatically during the development loop.
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-13 | **Last Amended**: 2026-06-13
+### IX. UI Iconography (Font Awesome Free)
+
+- Frontend UI MUST use **Font Awesome Free** icons (`@fortawesome/free-solid-svg-icons`, `@fortawesome/react-fontawesome`) wherever a suitable standard icon exists.
+- STRICTLY prohibited from introducing hand-drawn SVG icons, Unicode symbol placeholders, or ad-hoc letter glyphs for navigation and common controls when a free Font Awesome equivalent is available.
+- Icon imports MUST be tree-shaken per-icon from free packages only; paid Pro icon packages require explicit approval.
+- See `.specify/memory/iconography.md` for setup, exceptions, and reference mappings (e.g. navigation pin/unpin → `faThumbtack` / `faThumbtackSlash`).
+
+**Version**: 1.1.0 | **Ratified**: 2026-06-13 | **Last Amended**: 2026-06-18

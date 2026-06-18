@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { DashboardHome } from '@/pages/DashboardHome';
 import { CreateVenuePage } from '@/pages/CreateVenuePage';
 import { LoginPage } from '@/pages/LoginPage';
@@ -8,9 +9,28 @@ import { TeamSettingsPage } from '@/pages/TeamSettingsPage';
 import { AcceptInvitePage } from '@/pages/AcceptInvitePage';
 import { OrganizationCreateStep } from '@/components/onboarding/OrganizationCreateStep';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
+import { AppShell } from '@/components/shell/AppShell';
 import { useAuth } from '@/auth/useAuth';
 import { VenueProvider } from '@/venue/VenueContext';
 import { useAppRoute } from '@/lib/appRoute';
+
+function AuthenticatedShell({
+  sidebarNavigation = 'global',
+  topBarContent,
+  children,
+}: {
+  sidebarNavigation?: 'global' | 'settings';
+  topBarContent?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <VenueProvider>
+      <AppShell sidebarNavigation={sidebarNavigation} topBarContent={topBarContent}>
+        {children}
+      </AppShell>
+    </VenueProvider>
+  );
+}
 
 export default function App() {
   const {
@@ -60,47 +80,44 @@ export default function App() {
     return <AcceptInvitePage />;
   }
 
+
   if (appPath === '/settings') {
     return (
-      <VenueProvider>
+      <AuthenticatedShell sidebarNavigation="settings">
         <SettingsLandingPage />
-      </VenueProvider>
+      </AuthenticatedShell>
     );
   }
 
   if (appPath === '/settings/team') {
     return (
-      <VenueProvider>
+      <AuthenticatedShell sidebarNavigation="settings">
         <TeamSettingsPage />
-      </VenueProvider>
+      </AuthenticatedShell>
     );
   }
 
   if (appPath === '/settings/organization') {
     return (
-      <VenueProvider>
+      <AuthenticatedShell sidebarNavigation="settings">
         <PlaceholderSettingsPage title="Organization" />
-      </VenueProvider>
+      </AuthenticatedShell>
     );
   }
 
   if (appPath === '/settings/integrations') {
     return (
-      <VenueProvider>
+      <AuthenticatedShell sidebarNavigation="settings">
         <PlaceholderSettingsPage title="Integrations" />
-      </VenueProvider>
+      </AuthenticatedShell>
     );
   }
 
   return (
     <>
-      <VenueProvider>
-        {appPath === '/venues/new' ? (
-          <CreateVenuePage />
-        ) : (
-          <DashboardHome organizationName={organizationName} />
-        )}
-      </VenueProvider>
+      <AuthenticatedShell>
+        {appPath === '/venues/new' ? <CreateVenuePage /> : <DashboardHome />}
+      </AuthenticatedShell>
       {justOnboarded ? (
         <WelcomeModal organizationName={organizationName} onDismiss={dismissWelcome} />
       ) : null}

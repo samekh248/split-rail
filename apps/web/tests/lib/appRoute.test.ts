@@ -4,6 +4,7 @@ import {
   getAppPath,
   getDashboardPath,
   getInviteTokenFromUrl,
+  navigateReturnToApp,
   navigateToAcceptInvite,
   navigateToCreateVenue,
   navigateToDashboard,
@@ -13,6 +14,7 @@ import {
   navigateToTeamSettings,
   useAppRoute,
 } from '@/lib/appRoute';
+import { readSettingsReturnPath } from '@/lib/settingsReturnStorage';
 
 describe('appRoute', () => {
   beforeEach(() => {
@@ -43,6 +45,16 @@ describe('appRoute', () => {
     const { result } = renderHook(() => useAppRoute());
     act(() => navigateToCreateVenue());
     expect(window.location.pathname).toBe('/venues/new');
+    expect(result.current).toBe('/venues/new');
+  });
+
+  it('navigateToSettings captures return path and navigateReturnToApp restores it', () => {
+    window.history.pushState({}, '', '/venues/new');
+    const { result } = renderHook(() => useAppRoute());
+    act(() => navigateToSettings());
+    expect(result.current).toBe('/settings');
+    expect(readSettingsReturnPath()).toBe('/venues/new');
+    act(() => navigateReturnToApp());
     expect(result.current).toBe('/venues/new');
   });
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { captureSettingsReturnPath, readSettingsReturnPath } from '@/lib/settingsReturnStorage';
 
 export type DashboardPath = '/' | '/venues/new';
 
@@ -55,7 +56,12 @@ export function navigateToDashboard(): void {
 }
 
 export function navigateToSettings(): void {
+  captureSettingsReturnPath(getAppPath());
   pushPath('/settings');
+}
+
+export function navigateReturnToApp(): void {
+  pushPath(readSettingsReturnPath());
 }
 
 export function navigateToTeamSettings(): void {

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { AuthLayout } from '@/components/auth/AuthLayout';
 import { FormField } from '@/components/auth/FormField';
 import { validateVenueName } from '@/auth/validation';
 import { useCreateVenue } from '@/api/venues';
@@ -60,10 +59,11 @@ export function CreateVenuePage() {
   }
 
   return (
-    <AuthLayout
-      title="Add venue"
-      subtitle="Create a venue to start managing events and ledgers."
-    >
+    <div className="create-venue-page">
+      <h1 className="create-venue-page__title">Add venue</h1>
+      <p className="create-venue-page__subtitle">
+        Create a venue to start managing events and ledgers.
+      </p>
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {submitError ? (
           <p id={errorId} className="auth-form__error" role="alert">
@@ -97,6 +97,6 @@ export function CreateVenuePage() {
           </button>
         </div>
       </form>
-    </AuthLayout>
+    </div>
   );
 }
