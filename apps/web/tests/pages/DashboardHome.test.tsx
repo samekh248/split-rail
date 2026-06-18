@@ -133,6 +133,7 @@ function createWrapper() {
     createOrganization: vi.fn(),
     logout: mockLogout,
     dismissWelcome: vi.fn(),
+    completeAcceptInvitation: vi.fn(),
     sessionExpired: false,
   } satisfies AuthContextValue;
 
@@ -295,5 +296,15 @@ describe('DashboardHome', () => {
       expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(`${VENUE_B.id}:`),
     );
     expect(getActiveVenueId()).toBe(VENUE_B.id);
+  });
+
+  it('shows Settings link for all authenticated users', async () => {
+    mockFetchWithProfile([VENUE_A], MEMBER_PROFILE, {
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
+
+    expect(await screen.findByTestId('header-settings')).toBeInTheDocument();
   });
 });

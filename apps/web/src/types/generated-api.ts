@@ -2421,6 +2421,7 @@ export interface components {
             expiresAt?: string;
             /** Format: date-time */
             createdAt?: string;
+            venueScopes?: components["schemas"]["VenueScopeDto"][] | null;
         };
         LedgerBlockDto: {
             blockType?: string | null;

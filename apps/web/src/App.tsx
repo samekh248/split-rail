@@ -2,11 +2,15 @@ import { DashboardHome } from '@/pages/DashboardHome';
 import { CreateVenuePage } from '@/pages/CreateVenuePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
+import { SettingsLandingPage } from '@/pages/SettingsLandingPage';
+import { PlaceholderSettingsPage } from '@/pages/PlaceholderSettingsPage';
+import { TeamSettingsPage } from '@/pages/TeamSettingsPage';
+import { AcceptInvitePage } from '@/pages/AcceptInvitePage';
 import { OrganizationCreateStep } from '@/components/onboarding/OrganizationCreateStep';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { useAuth } from '@/auth/useAuth';
 import { VenueProvider } from '@/venue/VenueContext';
-import { useDashboardRoute } from '@/lib/dashboardRoute';
+import { useAppRoute } from '@/lib/appRoute';
 
 export default function App() {
   const {
@@ -20,7 +24,7 @@ export default function App() {
     createOrganization,
     dismissWelcome,
   } = useAuth();
-  const dashboardPath = useDashboardRoute();
+  const appPath = useAppRoute();
 
   if (phase === 'resolving') {
     return (
@@ -31,6 +35,9 @@ export default function App() {
   }
 
   if (phase === 'unauthenticated') {
+    if (appPath === '/accept-invite') {
+      return <AcceptInvitePage />;
+    }
     if (authView === 'register') {
       return <RegisterPage onNavigateToLogin={() => setAuthView('login')} />;
     }
@@ -49,10 +56,46 @@ export default function App() {
 
   const organizationName = profile?.organization?.name ?? 'Your organization';
 
+  if (appPath === '/accept-invite') {
+    return <AcceptInvitePage />;
+  }
+
+  if (appPath === '/settings') {
+    return (
+      <VenueProvider>
+        <SettingsLandingPage />
+      </VenueProvider>
+    );
+  }
+
+  if (appPath === '/settings/team') {
+    return (
+      <VenueProvider>
+        <TeamSettingsPage />
+      </VenueProvider>
+    );
+  }
+
+  if (appPath === '/settings/organization') {
+    return (
+      <VenueProvider>
+        <PlaceholderSettingsPage title="Organization" />
+      </VenueProvider>
+    );
+  }
+
+  if (appPath === '/settings/integrations') {
+    return (
+      <VenueProvider>
+        <PlaceholderSettingsPage title="Integrations" />
+      </VenueProvider>
+    );
+  }
+
   return (
     <>
       <VenueProvider>
-        {dashboardPath === '/venues/new' ? (
+        {appPath === '/venues/new' ? (
           <CreateVenuePage />
         ) : (
           <DashboardHome organizationName={organizationName} />
