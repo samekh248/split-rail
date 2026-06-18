@@ -10,6 +10,7 @@ type ZoneProps = Omit<DashboardZoneEventsProps, 'title' | 'emptyMessage' | 'test
 export function PinnedEventsSection(props: ZoneProps) {
   return (
     <DashboardZoneEvents
+      className="dashboard-zone--pinned"
       title="Pinned events"
       emptyMessage="No pinned events"
       testId="dashboard-zone-pinned"

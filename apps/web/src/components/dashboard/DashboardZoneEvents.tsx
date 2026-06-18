@@ -5,6 +5,7 @@ export interface DashboardZoneEventsProps {
   title: string;
   emptyMessage: string;
   testId: string;
+  className?: string;
   events: EventResponse[];
   venueId: string;
   permissions: PermissionsDto;
@@ -18,6 +19,7 @@ export function DashboardZoneEvents({
   title,
   emptyMessage,
   testId,
+  className,
   events,
   venueId,
   permissions,
@@ -27,7 +29,10 @@ export function DashboardZoneEvents({
   onCardActivate,
 }: DashboardZoneEventsProps) {
   return (
-    <section className="dashboard-zone" data-testid={testId}>
+    <section
+      className={['dashboard-zone', className].filter(Boolean).join(' ')}
+      data-testid={testId}
+    >
       <h2 className="dashboard-zone__heading">{title}</h2>
       {events.length === 0 ? (
         <p className="dashboard-zone__empty">{emptyMessage}</p>

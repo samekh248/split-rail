@@ -1720,9 +1720,10 @@ body {
 }
 
 .dashboard-overview {
-  padding: 1.5rem;
-  max-width: 72rem;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
 }
 
 .dashboard-overview__zones {
@@ -1746,8 +1747,16 @@ body {
 
 .dashboard-zone__cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+  grid-template-columns: 1fr;
   gap: 1rem;
+}
+
+.dashboard-zone--pinned {
+  max-width: 72rem;
+}
+
+.dashboard-zone--pinned .dashboard-zone__cards {
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
 }
 
 .dashboard-zone--tonight {
