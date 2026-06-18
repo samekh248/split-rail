@@ -32,24 +32,3 @@ export function resolveActiveEventId(
   }
   return defaultId;
 }
-
-export function formatEventStatus(status: string | null | undefined): string {
-  switch (status) {
-    case 'PRE_SHOW':
-      return 'Planning';
-    case 'SETTLED':
-      return 'Settled';
-    case 'RECONCILED':
-      return 'Reconciled';
-    default:
-      return status ?? 'Unknown';
-  }
-}
-
-export function canEditEvent(event: EventResponse): boolean {
-  return event.status === 'PRE_SHOW';
-}
-
-export function canDeleteEvent(event: EventResponse): boolean {
-  return event.status === 'PRE_SHOW' && !event.isBudgetLocked;
-}

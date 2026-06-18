@@ -30,8 +30,8 @@ description: "Task list for event lifecycle and card label utilities (SPLR-64)"
 
 **Purpose**: Confirm directory layout and contract reference before utility work.
 
-- [ ] T001 [P] Verify `apps/web/src/venue/` exists and is the target colocation path per plan.md (alongside `eventSelection.ts`, `activeEventStorage.ts`)
-- [ ] T002 [P] Add shared golden-matrix fixture constants (rows G1–G8 from `specs/023-event-lifecycle-card-label/contracts/event-lifecycle-utilities.md`) in `apps/web/tests/venue/eventLifecycle.test.ts` as exported `LIFECYCLE_GOLDEN_MATRIX` for reuse by `eventCardLabel.test.ts`
+- [x] T001 [P] Verify `apps/web/src/venue/` exists and is the target colocation path per plan.md (alongside `eventSelection.ts`, `activeEventStorage.ts`)
+- [x] T002 [P] Add shared golden-matrix fixture constants (rows G1–G8 from `specs/023-event-lifecycle-card-label/contracts/event-lifecycle-utilities.md`) in `apps/web/tests/venue/eventLifecycle.test.ts` as exported `LIFECYCLE_GOLDEN_MATRIX` for reuse by `eventCardLabel.test.ts`
 
 ---
 
@@ -41,9 +41,9 @@ description: "Task list for event lifecycle and card label utilities (SPLR-64)"
 
 **⚠️ CRITICAL**: No card-label or combobox migration work begins until this phase completes.
 
-- [ ] T003 Add failing table-driven tests for `resolveLifecyclePhase`, `isPreShow`, `canEditEventMetadata`, `canDeleteEvent`, and `isEventFullyLocked` covering golden rows G1–G8 in `apps/web/tests/venue/eventLifecycle.test.ts`
-- [ ] T004 Implement `EventLifecyclePhase` union and lifecycle helpers (`resolveLifecyclePhase`, `isPreShow`, `canEditEventMetadata`, `canDeleteEvent`, `isEventFullyLocked`) in `apps/web/src/venue/eventLifecycle.ts` per `specs/023-event-lifecycle-card-label/contracts/event-lifecycle-utilities.md`
-- [ ] T005 Make all lifecycle golden-matrix tests pass in `apps/web/tests/venue/eventLifecycle.test.ts`
+- [x] T003 Add failing table-driven tests for `resolveLifecyclePhase`, `isPreShow`, `canEditEventMetadata`, `canDeleteEvent`, and `isEventFullyLocked` covering golden rows G1–G8 in `apps/web/tests/venue/eventLifecycle.test.ts`
+- [x] T004 Implement `EventLifecyclePhase` union and lifecycle helpers (`resolveLifecyclePhase`, `isPreShow`, `canEditEventMetadata`, `canDeleteEvent`, `isEventFullyLocked`) in `apps/web/src/venue/eventLifecycle.ts` per `specs/023-event-lifecycle-card-label/contracts/event-lifecycle-utilities.md`
+- [x] T005 Make all lifecycle golden-matrix tests pass in `apps/web/tests/venue/eventLifecycle.test.ts`
 
 **Checkpoint**: US2 lifecycle utilities green in isolation; `eventCardLabel.ts` may import `resolveLifecyclePhase`.
 
@@ -59,11 +59,11 @@ description: "Task list for event lifecycle and card label utilities (SPLR-64)"
 
 > **NOTE: Covered by T003/T005 in Foundational phase; extend here if edge-case gaps found**
 
-- [ ] T006 [P] [US2] Add explicit edge-case tests for null status, unrecognized status strings, and undefined `isBudgetLocked` on Pre-Show in `apps/web/tests/venue/eventLifecycle.test.ts`
+- [x] T006 [P] [US2] Add explicit edge-case tests for null status, unrecognized status strings, and undefined `isBudgetLocked` on Pre-Show in `apps/web/tests/venue/eventLifecycle.test.ts`
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] Add optional convenience overloads accepting `Pick<EventResponse, 'status' | 'isBudgetLocked'>` wrapping primitive signatures in `apps/web/src/venue/eventLifecycle.ts` for combobox ergonomics
+- [x] T007 [US2] Add optional convenience overloads accepting `Pick<EventResponse, 'status' | 'isBudgetLocked'>` wrapping primitive signatures in `apps/web/src/venue/eventLifecycle.ts` for combobox ergonomics
 
 **Checkpoint**: US2 complete; permission booleans match feature 015 rules (metadata edit on all Pre-Show; delete only on unlocked Pre-Show).
 
@@ -79,13 +79,13 @@ description: "Task list for event lifecycle and card label utilities (SPLR-64)"
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T008 [P] [US1] Add failing badge-label tests (golden matrix badge column G1–G8) in `apps/web/tests/venue/eventCardLabel.test.ts`
-- [ ] T009 [P] [US1] Add failing combobox test: Pre-Show + `isBudgetLocked: true` badge reads "Budget locked" (not "Planning") in `apps/web/tests/components/event/EventCombobox.test.tsx`
+- [x] T008 [P] [US1] Add failing badge-label tests (golden matrix badge column G1–G8) in `apps/web/tests/venue/eventCardLabel.test.ts`
+- [x] T009 [P] [US1] Add failing combobox test: Pre-Show + `isBudgetLocked: true` badge reads "Budget locked" (not "Planning") in `apps/web/tests/components/event/EventCombobox.test.tsx`
 
 ### Implementation for User Story 1
 
-- [ ] T010 [US1] Implement `formatStatusBadgeLabel(status, isBudgetLocked?)` in `apps/web/src/venue/eventCardLabel.ts` delegating to `resolveLifecyclePhase` from `apps/web/src/venue/eventLifecycle.ts`
-- [ ] T011 [US1] Replace `formatEventStatus(selectedEvent.status)` and list-row status formatting with `formatStatusBadgeLabel(event.status, event.isBudgetLocked)` in `apps/web/src/components/event/EventCombobox.tsx`
+- [x] T010 [US1] Implement `formatStatusBadgeLabel(status, isBudgetLocked?)` in `apps/web/src/venue/eventCardLabel.ts` delegating to `resolveLifecyclePhase` from `apps/web/src/venue/eventLifecycle.ts`
+- [x] T011 [US1] Replace `formatEventStatus(selectedEvent.status)` and list-row status formatting with `formatStatusBadgeLabel(event.status, event.isBudgetLocked)` in `apps/web/src/components/event/EventCombobox.tsx`
 
 **Checkpoint**: MVP — correct status badges in event combobox; US1 utility and component tests green.
 
@@ -101,12 +101,12 @@ description: "Task list for event lifecycle and card label utilities (SPLR-64)"
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T012 [P] [US3] Add failing action-hint tests (golden matrix `editHint` and `deleteHint` columns G1–G8) in `apps/web/tests/venue/eventCardLabel.test.ts`
+- [x] T012 [P] [US3] Add failing action-hint tests (golden matrix `editHint` and `deleteHint` columns G1–G8) in `apps/web/tests/venue/eventCardLabel.test.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T013 [US3] Implement `resolveEditActionHint(status, isBudgetLocked?)` and `resolveDeleteActionHint(status, isBudgetLocked?)` in `apps/web/src/venue/eventCardLabel.ts`
-- [ ] T014 [US3] Replace inline "Budget locked" / "Event locked" hint JSX in `apps/web/src/components/event/EventCombobox.tsx` with calls to hint utilities (render hint only when non-null)
+- [x] T013 [US3] Implement `resolveEditActionHint(status, isBudgetLocked?)` and `resolveDeleteActionHint(status, isBudgetLocked?)` in `apps/web/src/venue/eventCardLabel.ts`
+- [x] T014 [US3] Replace inline "Budget locked" / "Event locked" hint JSX in `apps/web/src/components/event/EventCombobox.tsx` with calls to hint utilities (render hint only when non-null)
 
 **Checkpoint**: US3 complete; combobox hints sourced from utilities, not hardcoded strings.
 
@@ -122,14 +122,14 @@ description: "Task list for event lifecycle and card label utilities (SPLR-64)"
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T015 [P] [US4] Extend `apps/web/tests/components/event/EventCombobox.test.tsx`: settled/reconciled events show "Event locked" hint and hide edit/delete; unlocked Pre-Show shows edit/delete when `canManageEvents`
-- [ ] T016 [P] [US4] Trim lifecycle gating assertions from `apps/web/tests/venue/eventSelection.test.ts` (retain filter/resolve tests only)
+- [x] T015 [P] [US4] Extend `apps/web/tests/components/event/EventCombobox.test.tsx`: settled/reconciled events show "Event locked" hint and hide edit/delete; unlocked Pre-Show shows edit/delete when `canManageEvents`
+- [x] T016 [P] [US4] Trim lifecycle gating assertions from `apps/web/tests/venue/eventSelection.test.ts` (retain filter/resolve tests only)
 
 ### Implementation for User Story 4
 
-- [ ] T017 [US4] Remove `formatEventStatus`, `canEditEvent`, and `canDeleteEvent` from `apps/web/src/venue/eventSelection.ts` (keep `filterEvents` and `resolveActiveEventId` only)
-- [ ] T018 [US4] Migrate edit/delete affordance checks in `apps/web/src/components/event/EventCombobox.tsx` to `canEditEventMetadata` and `canDeleteEvent` from `apps/web/src/venue/eventLifecycle.ts`
-- [ ] T019 [US4] Update any remaining imports of removed helpers across `apps/web/src/**` (if any beyond `EventCombobox.tsx`)
+- [x] T017 [US4] Remove `formatEventStatus`, `canEditEvent`, and `canDeleteEvent` from `apps/web/src/venue/eventSelection.ts` (keep `filterEvents` and `resolveActiveEventId` only)
+- [x] T018 [US4] Migrate edit/delete affordance checks in `apps/web/src/components/event/EventCombobox.tsx` to `canEditEventMetadata` and `canDeleteEvent` from `apps/web/src/venue/eventLifecycle.ts`
+- [x] T019 [US4] Update any remaining imports of removed helpers across `apps/web/src/**` (if any beyond `EventCombobox.tsx`)
 
 **Checkpoint**: Single source of truth for lifecycle rules and labels; no duplicate implementations (SC-004).
 
@@ -139,9 +139,9 @@ description: "Task list for event lifecycle and card label utilities (SPLR-64)"
 
 **Purpose**: Coverage gate, duplicate-logic audit, and quickstart validation.
 
-- [ ] T020 [P] Verify no duplicate lifecycle/label logic: run Scenario F from `specs/023-event-lifecycle-card-label/quickstart.md` (`rg "formatEventStatus|canEditEvent|canDeleteEvent" apps/web/src/`)
-- [ ] T021 Run quickstart validation scenarios A–E from `specs/023-event-lifecycle-card-label/quickstart.md` (`npm run test -- eventLifecycle eventCardLabel eventSelection EventCombobox`)
-- [ ] T022 Verify ≥80.0% line/branch coverage on touched frontend files via `cd apps/web && npm run test:coverage -- eventLifecycle eventCardLabel eventSelection EventCombobox` (Vitest → lcov); missing or unparseable reports FAIL; backend N/A
+- [x] T020 [P] Verify no duplicate lifecycle/label logic: run Scenario F from `specs/023-event-lifecycle-card-label/quickstart.md` (`rg "formatEventStatus|canEditEvent|canDeleteEvent" apps/web/src/`)
+- [x] T021 Run quickstart validation scenarios A–E from `specs/023-event-lifecycle-card-label/quickstart.md` (`npm run test -- eventLifecycle eventCardLabel eventSelection EventCombobox`)
+- [x] T022 Verify ≥80.0% line/branch coverage on touched frontend files via `cd apps/web && npm run test:coverage -- eventLifecycle eventCardLabel eventSelection EventCombobox` (Vitest → lcov); missing or unparseable reports FAIL; backend N/A
 
 ---
 

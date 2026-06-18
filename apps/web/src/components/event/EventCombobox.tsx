@@ -1,11 +1,15 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { EventResponse } from '@/types/generated-api';
 import {
+  formatStatusBadgeLabel,
+  resolveDeleteActionHint,
+  resolveEditActionHint,
+} from '@/venue/eventCardLabel';
+import {
   canDeleteEvent,
-  canEditEvent,
-  filterEvents,
-  formatEventStatus,
-} from '@/venue/eventSelection';
+  canEditEventMetadata,
+} from '@/venue/eventLifecycle';
+import { filterEvents } from '@/venue/eventSelection';
 
 export interface EventComboboxProps {
   events: EventResponse[];
@@ -110,7 +114,9 @@ export function EventCombobox({
         <span className="event-combobox__current" data-testid="event-combobox-current">
           {selectedEvent.title} · {selectedEvent.eventDate}
         </span>
-        <span className="event-combobox__badge">{formatEventStatus(selectedEvent.status)}</span>
+        <span className="event-combobox__badge">
+          {formatStatusBadgeLabel(selectedEvent.status, selectedEvent.isBudgetLocked)}
+        </span>
       </div>
     );
   }
@@ -174,6 +180,10 @@ export function EventCombobox({
               {filteredEvents.map((event, index) => {
                 const isActive = event.eventId === selectedEventId;
                 const isHighlighted = index === highlightIndex;
+                const metadataEditable = canEditEventMetadata(event);
+                const deletable = canDeleteEvent(event);
+                const editHint = resolveEditActionHint(event.status, event.isBudgetLocked);
+                const deleteHint = resolveDeleteActionHint(event.status, event.isBudgetLocked);
                 return (
                   <li key={event.eventId} role="presentation" className="event-combobox__row">
                     <button
@@ -193,7 +203,7 @@ export function EventCombobox({
                     >
                       <span className="event-combobox__option-title">{event.title}</span>
                       <span className="event-combobox__option-meta">
-                        {event.eventDate} · {formatEventStatus(event.status)}
+                        {event.eventDate} · {formatStatusBadgeLabel(event.status, event.isBudgetLocked)}
                       </span>
                       {isActive ? (
                         <span className="event-combobox__check" aria-hidden="true">
@@ -203,7 +213,7 @@ export function EventCombobox({
                     </button>
                     {canManageEvents ? (
                       <div className="event-combobox__actions">
-                        {canEditEvent(event) && onEditClick ? (
+                        {metadataEditable && onEditClick ? (
                           <button
                             type="button"
                             className="event-combobox__action"
@@ -213,7 +223,7 @@ export function EventCombobox({
                             Edit
                           </button>
                         ) : null}
-                        {canDeleteEvent(event) && onDeleteClick ? (
+                        {deletable && onDeleteClick ? (
                           <button
                             type="button"
                             className="event-combobox__action event-combobox__action--danger"
@@ -223,11 +233,11 @@ export function EventCombobox({
                             Delete
                           </button>
                         ) : null}
-                        {canEditEvent(event) && event.isBudgetLocked ? (
-                          <span className="event-combobox__hint">Budget locked</span>
+                        {!metadataEditable && editHint ? (
+                          <span className="event-combobox__hint">{editHint}</span>
                         ) : null}
-                        {!canEditEvent(event) ? (
-                          <span className="event-combobox__hint">Event locked</span>
+                        {metadataEditable && !deletable && deleteHint ? (
+                          <span className="event-combobox__hint">{deleteHint}</span>
                         ) : null}
                       </div>
                     ) : null}

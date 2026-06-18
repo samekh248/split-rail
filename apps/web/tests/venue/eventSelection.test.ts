@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import {
-  canDeleteEvent,
-  canEditEvent,
-  filterEvents,
-  resolveActiveEventId,
-} from '@/venue/eventSelection';
+import { filterEvents, resolveActiveEventId } from '@/venue/eventSelection';
 import type { EventResponse } from '@/types/generated-api';
 import { setActiveEventId } from '@/venue/activeEventStorage';
 
@@ -51,22 +46,5 @@ describe('eventSelection', () => {
 
   it('returns null for empty list', () => {
     expect(resolveActiveEventId([], VENUE_A)).toBeNull();
-  });
-
-  it('gates edit and delete by lifecycle', () => {
-    expect(canEditEvent(EVENTS[0]!)).toBe(true);
-    expect(canDeleteEvent(EVENTS[0]!)).toBe(true);
-    expect(canEditEvent(EVENTS[1]!)).toBe(false);
-    expect(canDeleteEvent(EVENTS[1]!)).toBe(false);
-  });
-
-  it('blocks delete when budget locked in planning', () => {
-    expect(
-      canDeleteEvent({
-        eventId: EVENT_A,
-        status: 'PRE_SHOW',
-        isBudgetLocked: true,
-      }),
-    ).toBe(false);
   });
 });
