@@ -99,7 +99,6 @@ export function DashboardOverviewPage() {
   };
 
   const zoneProps = {
-    venueId: activeVenueId ?? '',
     permissions,
     isEventPinned: checkPinned,
     onQuickLink: handleQuickLink,

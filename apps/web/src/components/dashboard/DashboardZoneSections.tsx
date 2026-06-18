@@ -43,7 +43,6 @@ export function RecentEventsSection(props: ZoneProps) {
 
 export interface TonightHeroBannerProps {
   events: EventResponse[];
-  venueId: string;
   permissions: PermissionsDto;
   isEventPinned: (eventId: string) => boolean;
   onQuickLink: DashboardZoneEventsProps['onQuickLink'];

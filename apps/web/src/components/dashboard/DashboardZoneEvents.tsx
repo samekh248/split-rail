@@ -7,7 +7,6 @@ export interface DashboardZoneEventsProps {
   testId: string;
   className?: string;
   events: EventResponse[];
-  venueId: string;
   permissions: PermissionsDto;
   isEventPinned: (eventId: string) => boolean;
   onQuickLink: (venueId: string, eventId: string, focus?: WorkspaceFocus) => void;
@@ -21,7 +20,6 @@ export function DashboardZoneEvents({
   testId,
   className,
   events,
-  venueId,
   permissions,
   isEventPinned,
   onQuickLink,
