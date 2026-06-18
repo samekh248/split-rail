@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { DashboardHome } from '@/pages/DashboardHome';
+import { DashboardOverviewPage } from '@/pages/DashboardOverviewPage';
 import { EventWorkspacePage } from '@/pages/EventWorkspacePage';
 import { CreateVenuePage } from '@/pages/CreateVenuePage';
 import { LoginPage } from '@/pages/LoginPage';
@@ -125,7 +125,7 @@ export default function App() {
         ) : appPath === '/venues/new' ? (
           <CreateVenuePage />
         ) : (
-          <DashboardHome />
+          <DashboardOverviewPage />
         )}
       </AuthenticatedShell>
       {justOnboarded ? (

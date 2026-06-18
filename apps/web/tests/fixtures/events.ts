@@ -1,6 +1,6 @@
 // ---------------------------------------------------------------------------
 // T005 — Coverage reconciliation of contracts/test-coverage.md (W1–W32):
-//   W1  venue empty-state CTA (admin) ...................... covered (DashboardHome)
+//   W1  venue empty-state CTA (admin) ...................... covered (DashboardOverviewPage)
 //   W2  persistent shell add-venue ....................... covered (T006)
 //   W3  zero-venue empty state hides CTA (restricted) ...... covered (T007)
 //   W4  shell add-venue hidden (restricted) ................ covered (T008)
@@ -9,11 +9,11 @@
 //   W7  successful create → dashboard + active venue ....... covered (CreateVenuePage)
 //   W8  unauthorized create-venue redirect ............... covered (CreateVenuePage)
 //   W9  event combobox venue-scoped list ................... covered (T012)
-//   W10 select event updates ledger ...................... covered (DashboardHome)
-//   W11 no-events CTA (permitted) ........................ covered (DashboardHome)
-//   W12 no-events CTA hidden (restricted) .................. covered (DashboardHome)
+//   W10 select event updates ledger ...................... covered (EventWorkspacePage)
+//   W11 no-events informational (no create CTA) ........ covered (DashboardOverviewPage)
+//   W12 no-events empty state at root .................... covered (DashboardOverviewPage)
 //   W13 inline create-event → ledger ....................... covered (T011)
-//   W14 venue switch clears event ........................ covered (DashboardHome)
+//   W14 venue switch clears event ........................ covered (EventWorkspacePage)
 //   W15 edit/delete out of scope (feature 015) ............. n/a
 //   W16 settings landing + nav ............................. covered (T015/T016)
 //   W17 Team card gating ................................... covered (SettingsLandingPage)
@@ -29,7 +29,7 @@
 //   W27 team page integration .............................. covered (TeamSettingsPage)
 //   W28 pending submit disabled ............................ covered (CreateVenuePage, InviteMemberForm T019)
 //   W29 server vs validation errors ........................ covered (CreateVenuePage, InviteMemberForm T019)
-//   W30 events load failure + retry ...................... covered (DashboardHome)
+//   W30 events load failure + retry ...................... covered (DashboardOverviewPage)
 //   W31 stale venue fallback ............................... covered (VenueContext, feature 010)
 //   W32 CI coverage gate ................................... verified (T027) — 86.11% stmts / 85.49% branches
 // ---------------------------------------------------------------------------

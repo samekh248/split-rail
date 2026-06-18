@@ -15,6 +15,7 @@ export interface EventCardProps {
   lineItems?: LineItemDto[];
   isPinned?: boolean;
   onPinToggle?: () => void;
+  onActivate?: () => void;
 }
 
 function formatEventDate(eventDate: string | null | undefined): string {
@@ -39,6 +40,7 @@ export function EventCard({
   lineItems,
   isPinned = false,
   onPinToggle,
+  onActivate,
 }: EventCardProps) {
   const eventId = event.eventId ?? 'unknown';
   const venueId = event.venueId ?? '';
@@ -50,7 +52,30 @@ export function EventCard({
   const bookingLabel = getBookingPreviewLabel(event.eventId);
 
   return (
-    <article className="event-card" data-testid={`event-card-${eventId}`}>
+    <article
+      className="event-card"
+      data-testid={`event-card-${eventId}`}
+      onClick={(e) => {
+        if (!onActivate) {
+          return;
+        }
+        if ((e.target as HTMLElement).closest('button')) {
+          return;
+        }
+        onActivate();
+      }}
+      onKeyDown={(e) => {
+        if (!onActivate || e.key !== 'Enter') {
+          return;
+        }
+        if ((e.target as HTMLElement).closest('button')) {
+          return;
+        }
+        onActivate();
+      }}
+      role={onActivate ? 'button' : undefined}
+      tabIndex={onActivate ? 0 : undefined}
+    >
       <header className="event-card__header">
         <h3 className="event-card__title">{title}</h3>
         {onPinToggle && (
