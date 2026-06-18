@@ -148,4 +148,26 @@ describe('Editability', () => {
 
     expect(onDeductionChange).toHaveBeenCalledWith('row-1', true);
   });
+
+  it('shows deduction badge when flagged and structural editing is disabled', () => {
+    render(
+      <table>
+        <tbody>
+          <LedgerRow
+            row={{ ...baseRow, id: 'exp-2', isArtistDeduction: true }}
+            blockType="EXPENSES"
+            editability={{
+              proforma: 'read-only',
+              settlement: 'read-only',
+              qboActuals: 'locked',
+            }}
+            canEditStructure={false}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.getByTestId('deduction-badge-exp-2')).toHaveTextContent('Deduction');
+    expect(screen.queryByTestId('deduction-exp-2')).not.toBeInTheDocument();
+  });
 });

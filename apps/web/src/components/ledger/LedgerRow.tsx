@@ -40,6 +40,8 @@ export function LedgerRow({
   const proformaEditable = isEditable(editability.proforma);
   const settlementEditable = isEditable(editability.settlement);
   const isExpense = blockType === 'EXPENSES';
+  const isDeduction = isExpense && (row.isArtistDeduction ?? false);
+  const showDeductionToggle = canEditStructure && isExpense;
 
   const handleMoneyBlur = (
     raw: string,
@@ -68,8 +70,10 @@ export function LedgerRow({
     }
   };
 
+  const rowClassName = isDeduction ? 'ledger-row ledger-row--deduction' : 'ledger-row';
+
   return (
-    <tr className="ledger-row" data-row-id={row.id}>
+    <tr className={rowClassName} data-row-id={row.id}>
       <td className="ledger-row__label">
         {canEditStructure ? (
           <input
@@ -83,18 +87,27 @@ export function LedgerRow({
         ) : (
           row.rowLabel
         )}
-        {canEditStructure && isExpense && (
+        {isDeduction && (
+          <span
+            className="ledger-row__deduction-badge"
+            data-testid={`deduction-badge-${row.id}`}
+          >
+            Deduction
+          </span>
+        )}
+        {showDeductionToggle && (
           <label className="ledger-row__deduction">
             <input
               type="checkbox"
-              defaultChecked={row.isArtistDeduction ?? false}
+              key={`${row.id}-${row.rowVersion ?? ''}`}
+              checked={row.isArtistDeduction ?? false}
               aria-label={`Artist deduction ${row.rowLabel}`}
               data-testid={`deduction-${row.id}`}
               onChange={(event) =>
                 row.id && onDeductionChange?.(row.id, event.target.checked)
               }
             />
-            Deduction
+            Flag as deduction
           </label>
         )}
       </td>

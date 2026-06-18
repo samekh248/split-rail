@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { EventLedgerPage } from '@/pages/EventLedgerPage';
 import type { LedgerGridResponse } from '@/types/generated-api';
 
@@ -38,7 +39,22 @@ const mockLedger: LedgerGridResponse = {
       ],
       blockTotals: { proforma: '10000.00', settlement: '0.00', qboActual: '0.00' },
     },
-    { blockType: 'EXPENSES', rows: [], blockTotals: {} },
+    { blockType: 'EXPENSES', rows: [
+        {
+          id: 'exp-1',
+          rowLabel: 'Production',
+          sortOrder: 0,
+          isArtistDeduction: false,
+          proformaValue: '2000.00',
+          settlementValue: '0.00',
+          qboActualValue: '0.00',
+          variance: '0.00',
+          varianceFlagged: false,
+          notes: null,
+          isHiddenFromPromoter: false,
+          rowVersion: 'v1',
+        },
+      ], blockTotals: { proforma: '2000.00' } },
     { blockType: 'DEAL_MATH', rows: [], blockTotals: {} },
   ],
   artists: [],
@@ -107,6 +123,11 @@ function renderPage() {
 }
 
 describe('EventLedgerPage', () => {
+  beforeEach(() => {
+    mutateAsync.mockReset();
+    mutateAsync.mockResolvedValue(mockLedger);
+  });
+
   it('shows loading state', () => {
     vi.mocked(useLedger).mockReturnValue({
       isLoading: true,
@@ -176,5 +197,30 @@ describe('EventLedgerPage', () => {
     renderPage();
     expect(screen.queryByTestId('add-row-REVENUE')).not.toBeInTheDocument();
     expect(screen.queryByTestId('delete-row-row-1')).not.toBeInTheDocument();
+  });
+
+  it('shows structural error when deduction toggle save fails', async () => {
+    const user = userEvent.setup();
+    const refetch = vi.fn();
+
+    mutateAsync.mockRejectedValueOnce(new Error('409: Conflict'));
+
+    vi.mocked(useCanEditLedgerStructure).mockReturnValue(true);
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: mockLedger,
+      refetch,
+    } as ReturnType<typeof useLedger>);
+
+    renderPage();
+
+    await user.click(screen.getByTestId('deduction-exp-1'));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('structural-error')).toHaveTextContent('409: Conflict');
+    });
+    expect(refetch).toHaveBeenCalled();
+    expect(screen.getByTestId('deduction-exp-1')).not.toBeChecked();
   });
 });
