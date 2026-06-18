@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -9,100 +9,13 @@ import { VenueProvider } from '@/venue/VenueContext';
 import { getActiveVenueId, setActiveVenueId } from '@/venue/activeVenueStorage';
 import { getActiveEventId, setActiveEventId } from '@/venue/activeEventStorage';
 import { getDashboardPath } from '@/lib/dashboardRoute';
-
-const ADMIN_PROFILE = {
-  role: { permissions: { canManagePermissions: true, canViewFinancials: true } },
-};
-
-const MEMBER_PROFILE = {
-  role: { permissions: { canManagePermissions: false, canViewFinancials: false } },
-};
-
-const VENUE_A = {
-  id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
-  name: 'Hall A',
-  organizationId: 'org-1',
-  createdAt: '2026-01-01T00:00:00Z',
-};
-
-const VENUE_B = {
-  id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
-  name: 'Hall B',
-  organizationId: 'org-1',
-  createdAt: '2026-01-01T00:00:00Z',
-};
-
-const EVENT_A = {
-  eventId: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
-  venueId: VENUE_A.id,
-  title: 'Show A',
-  eventDate: '2026-08-01',
-  status: 'PRE_SHOW',
-  isBudgetLocked: false,
-  qboTagName: '',
-};
-
-const EVENT_B = {
-  eventId: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
-  venueId: VENUE_B.id,
-  title: 'Show B',
-  eventDate: '2026-09-01',
-  status: 'PRE_SHOW',
-  isBudgetLocked: false,
-  qboTagName: '',
-};
-
-function mockFetchWithProfile(
-  venuesResponse: unknown,
-  profile: typeof ADMIN_PROFILE | typeof MEMBER_PROFILE = ADMIN_PROFILE,
-  options?: {
-    ok?: boolean;
-    status?: number;
-    eventsByVenue?: Record<string, unknown[]>;
-    eventsError?: boolean;
-  },
-) {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (input: RequestInfo) => {
-      const url = String(input);
-      if (url.includes('/users/me')) {
-        return {
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(profile),
-        };
-      }
-      if (url.includes('/api/venues') && url.includes('/events')) {
-        if (options?.eventsError) {
-          return {
-            ok: false,
-            status: 500,
-            json: () => Promise.resolve({ detail: 'Server error' }),
-          };
-        }
-        const venueId = url.match(/\/venues\/([^/]+)\/events/)?.[1];
-        const events = venueId ? options?.eventsByVenue?.[venueId] ?? [] : [];
-        return {
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(events),
-        };
-      }
-      if (url.includes('/api/venues')) {
-        return {
-          ok: options?.ok ?? true,
-          status: options?.status ?? 200,
-          json: () =>
-            options?.ok === false
-              ? Promise.resolve({ detail: 'Server error' })
-              : Promise.resolve(venuesResponse),
-        };
-      }
-      return { ok: true, status: 200, json: () => Promise.resolve({}) };
-    }),
-  );
-}
+import { EVENT_A, EVENT_B, EVENT_C, newlyCreatedEvent, noEvents } from '../fixtures/events';
+import { VENUE_A, VENUE_B } from '../fixtures/venues';
+import {
+  mockWorkspaceFetch,
+  workspaceAdminProfile,
+  workspaceMemberProfile,
+} from '../utils/mockWorkspaceFetch';
 
 vi.mock('@/pages/EventLedgerPage', () => ({
   EventLedgerPage: ({ venueId, eventId }: { venueId: string; eventId: string }) => (
@@ -155,7 +68,7 @@ describe('DashboardHome', () => {
   });
 
   it('shows empty state when no venues', async () => {
-    mockFetchWithProfile([]);
+    mockWorkspaceFetch({ venues: [] });
 
     render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
 
@@ -164,8 +77,45 @@ describe('DashboardHome', () => {
     expect(screen.queryByTestId('mock-ledger-page')).not.toBeInTheDocument();
   });
 
+  it('shows persistent shell add venue when venues exist for permitted user', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
+
+    expect(await screen.findByTestId('header-add-venue')).toBeInTheDocument();
+  });
+
+  it('hides empty-state add venue for restricted user with zero venues', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceMemberProfile,
+      venues: [],
+    });
+
+    render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
+
+    expect(await screen.findByRole('heading', { name: 'No venues yet' })).toBeInTheDocument();
+    expect(screen.queryByTestId('empty-state-add-venue')).not.toBeInTheDocument();
+  });
+
+  it('hides shell add venue for restricted user with existing venues', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceMemberProfile,
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
+
+    await screen.findByTestId('mock-ledger-page');
+    expect(screen.queryByTestId('header-add-venue')).not.toBeInTheDocument();
+  });
+
   it('renders ledger with resolved event id', async () => {
-    mockFetchWithProfile([VENUE_A], ADMIN_PROFILE, {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
       eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
     });
 
@@ -177,28 +127,20 @@ describe('DashboardHome', () => {
   });
 
   it('switches selected event from combobox', async () => {
-    const events = [
-      EVENT_A,
-      {
-        ...EVENT_A,
-        eventId: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
-        title: 'Show C',
-        eventDate: '2026-10-01',
-      },
-    ];
-    mockFetchWithProfile([VENUE_A], ADMIN_PROFILE, {
-      eventsByVenue: { [VENUE_A.id]: events },
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A, EVENT_C] },
     });
 
     const user = userEvent.setup();
     render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
 
     await user.click(await screen.findByTestId('event-combobox-trigger'));
-    await user.click(screen.getByTestId('event-option-eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee'));
+    await user.click(screen.getByTestId(`event-option-${EVENT_C.eventId}`));
 
     await waitFor(() =>
       expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(
-        `${VENUE_A.id}:eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee`,
+        `${VENUE_A.id}:${EVENT_C.eventId}`,
       ),
     );
   });
@@ -207,7 +149,8 @@ describe('DashboardHome', () => {
     setActiveVenueId(VENUE_A.id);
     setActiveEventId(VENUE_A.id, EVENT_A.eventId!);
 
-    mockFetchWithProfile([VENUE_A, VENUE_B], ADMIN_PROFILE, {
+    mockWorkspaceFetch({
+      venues: [VENUE_A, VENUE_B],
       eventsByVenue: {
         [VENUE_A.id]: [EVENT_A],
         [VENUE_B.id]: [EVENT_B],
@@ -233,8 +176,9 @@ describe('DashboardHome', () => {
   });
 
   it('shows events empty state with create CTA', async () => {
-    mockFetchWithProfile([VENUE_A], ADMIN_PROFILE, {
-      eventsByVenue: { [VENUE_A.id]: [] },
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: noEvents },
     });
 
     render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
@@ -244,8 +188,10 @@ describe('DashboardHome', () => {
   });
 
   it('hides create affordances without financial permission', async () => {
-    mockFetchWithProfile([VENUE_A], MEMBER_PROFILE, {
-      eventsByVenue: { [VENUE_A.id]: [] },
+    mockWorkspaceFetch({
+      profile: workspaceMemberProfile,
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: noEvents },
     });
 
     render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
@@ -254,9 +200,33 @@ describe('DashboardHome', () => {
     expect(screen.queryByTestId('empty-state-create-event')).not.toBeInTheDocument();
   });
 
+  it('creates an event from empty state and shows the ledger', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: noEvents },
+      createdEvent: newlyCreatedEvent,
+    });
+
+    const user = userEvent.setup();
+    render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
+
+    await user.click(await screen.findByTestId('empty-state-create-event'));
+    await user.type(screen.getByLabelText('Event title'), newlyCreatedEvent.title!);
+    await user.type(screen.getByLabelText('Event date'), newlyCreatedEvent.eventDate!);
+    const panel = screen.getByTestId('event-form-panel');
+    await user.click(within(panel).getByRole('button', { name: 'Create event' }));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(
+        `${VENUE_A.id}:${newlyCreatedEvent.eventId}`,
+      ),
+    );
+  });
+
   it('shows events error with retry', async () => {
-    mockFetchWithProfile([VENUE_A], ADMIN_PROFILE, {
-      eventsByVenue: { [VENUE_A.id]: [] },
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: noEvents },
       eventsError: true,
     });
 
@@ -267,7 +237,7 @@ describe('DashboardHome', () => {
   });
 
   it('navigates to create page from empty-state venue CTA', async () => {
-    mockFetchWithProfile([]);
+    mockWorkspaceFetch({ venues: [] });
     const user = userEvent.setup();
 
     render(<DashboardHome organizationName="Acme" />, { wrapper: createWrapper() });
@@ -278,7 +248,8 @@ describe('DashboardHome', () => {
 
   it('restores active venue after reload within session', async () => {
     setActiveVenueId(VENUE_B.id);
-    mockFetchWithProfile([VENUE_A, VENUE_B], ADMIN_PROFILE, {
+    mockWorkspaceFetch({
+      venues: [VENUE_A, VENUE_B],
       eventsByVenue: {
         [VENUE_A.id]: [EVENT_A],
         [VENUE_B.id]: [EVENT_B],
@@ -299,7 +270,9 @@ describe('DashboardHome', () => {
   });
 
   it('shows Settings link for all authenticated users', async () => {
-    mockFetchWithProfile([VENUE_A], MEMBER_PROFILE, {
+    mockWorkspaceFetch({
+      profile: workspaceMemberProfile,
+      venues: [VENUE_A],
       eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
     });
 

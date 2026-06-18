@@ -72,6 +72,111 @@ describe('InviteMemberForm', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Email is required.');
   });
 
+  it('validates malformed email before submit', async () => {
+    mockFetch();
+    const user = userEvent.setup();
+    render(<InviteMemberForm />, { wrapper: createWrapper() });
+
+    await user.type(screen.getByLabelText('Email'), 'not-an-email');
+    await user.click(screen.getByTestId('invite-member-submit'));
+    expect(await screen.findByText('Enter a valid email address.')).toBeInTheDocument();
+  });
+
+  it('disables submit while invitation request is pending', async () => {
+    const user = userEvent.setup();
+    let resolvePost: (value: unknown) => void = () => {};
+    const postPromise = new Promise((resolve) => {
+      resolvePost = resolve;
+    });
+
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/api/roles')) {
+          return {
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve([{ id: 'role-1', roleName: 'Promoter' }]),
+          };
+        }
+        if (url.includes('/api/venues')) {
+          return {
+            ok: true,
+            status: 200,
+            json: () =>
+              Promise.resolve([{ id: 'ven-1', name: 'Hall A', organizationId: 'org-1' }]),
+          };
+        }
+        if (url.includes('/api/invitations') && init?.method === 'POST') {
+          return postPromise;
+        }
+        return { ok: true, status: 200, json: () => Promise.resolve([]) };
+      }),
+    );
+
+    render(<InviteMemberForm />, { wrapper: createWrapper() });
+    await user.type(screen.getByLabelText('Email'), 'new@example.com');
+    await user.click(screen.getByTestId('invite-member-submit'));
+
+    expect(screen.getByTestId('invite-member-submit')).toBeDisabled();
+
+    resolvePost({
+      ok: true,
+      status: 201,
+      json: () =>
+        Promise.resolve({
+          id: 'inv-1',
+          email: 'new@example.com',
+          roleName: 'Promoter',
+          status: 'pending',
+          venueScopes: [],
+        }),
+    });
+  });
+
+  it('shows banner error on server failure distinct from email validation', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: RequestInfo, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes('/api/roles')) {
+          return {
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve([{ id: 'role-1', roleName: 'Promoter' }]),
+          };
+        }
+        if (url.includes('/api/venues')) {
+          return {
+            ok: true,
+            status: 200,
+            json: () =>
+              Promise.resolve([{ id: 'ven-1', name: 'Hall A', organizationId: 'org-1' }]),
+          };
+        }
+        if (url.includes('/api/invitations') && init?.method === 'POST') {
+          return {
+            ok: false,
+            status: 500,
+            statusText: 'Error',
+            json: () => Promise.resolve({ detail: 'Server error' }),
+          };
+        }
+        return { ok: true, status: 200, json: () => Promise.resolve([]) };
+      }),
+    );
+
+    const user = userEvent.setup();
+    render(<InviteMemberForm />, { wrapper: createWrapper() });
+
+    await user.type(screen.getByLabelText('Email'), 'new@example.com');
+    await user.click(screen.getByTestId('invite-member-submit'));
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('Unable to send invitation');
+    expect(screen.queryByText('Email is required.')).not.toBeInTheDocument();
+  });
+
   it('submits invitation with selected role', async () => {
     mockFetch();
     const user = userEvent.setup();

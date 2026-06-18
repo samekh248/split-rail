@@ -108,10 +108,12 @@ describe('TeamSettingsPage', () => {
     } as ReturnType<typeof useUserProfile>);
   });
 
-  it('redirects non-admins to settings', async () => {
+  it('redirects non-admins to settings without an error message', async () => {
     vi.mocked(useCanManageTeam).mockReturnValue(false);
     render(<TeamSettingsPage />, { wrapper: createWrapper() });
     await waitFor(() => expect(getAppPath()).toBe('/settings'));
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Invite member' })).not.toBeInTheDocument();
   });
 
   it('renders invite form and pending invitations for admins', async () => {
