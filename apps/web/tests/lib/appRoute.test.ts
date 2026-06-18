@@ -1,9 +1,11 @@
 import { renderHook, act } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+  buildEventWorkspacePath,
   getAppPath,
   getDashboardPath,
   getInviteTokenFromUrl,
+  isEventWorkspacePath,
   navigateReturnToApp,
   navigateToAcceptInvite,
   navigateToCreateVenue,
@@ -12,9 +14,15 @@ import {
   navigateToOrganizationSettings,
   navigateToSettings,
   navigateToTeamSettings,
+  parseEventWorkspacePath,
   useAppRoute,
+  useEventWorkspaceRoute,
 } from '@/lib/appRoute';
 import { readSettingsReturnPath } from '@/lib/settingsReturnStorage';
+
+const VENUE_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+const EVENT_ID = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+const WORKSPACE_PATH = `/venues/${VENUE_ID}/events/${EVENT_ID}`;
 
 describe('appRoute', () => {
   beforeEach(() => {
@@ -29,6 +37,51 @@ describe('appRoute', () => {
   it('getAppPath returns settings paths', () => {
     window.history.pushState({}, '', '/settings/team');
     expect(getAppPath()).toBe('/settings/team');
+  });
+
+  it('getAppPath returns workspace pathname for event workspace routes', () => {
+    window.history.pushState({}, '', WORKSPACE_PATH);
+    expect(getAppPath()).toBe(WORKSPACE_PATH);
+    expect(isEventWorkspacePath(WORKSPACE_PATH)).toBe(true);
+  });
+
+  it('buildEventWorkspacePath and parseEventWorkspacePath round-trip', () => {
+    expect(buildEventWorkspacePath(VENUE_ID, EVENT_ID)).toBe(WORKSPACE_PATH);
+    expect(parseEventWorkspacePath(WORKSPACE_PATH)).toEqual({
+      venueId: VENUE_ID,
+      eventId: EVENT_ID,
+    });
+    expect(parseEventWorkspacePath('/venues/a/events')).toBeNull();
+  });
+
+  it('buildEventWorkspacePath appends optional focus query', () => {
+    expect(buildEventWorkspacePath(VENUE_ID, EVENT_ID, 'artists')).toBe(
+      `${WORKSPACE_PATH}?focus=artists`,
+    );
+  });
+
+  it('useEventWorkspaceRoute returns params on workspace path', () => {
+    window.history.pushState({}, '', WORKSPACE_PATH);
+    const { result } = renderHook(() => useEventWorkspaceRoute());
+    expect(result.current).toEqual({
+      venueId: VENUE_ID,
+      eventId: EVENT_ID,
+      focus: null,
+    });
+  });
+
+  it('useEventWorkspaceRoute returns null off workspace path', () => {
+    const { result } = renderHook(() => useEventWorkspaceRoute());
+    expect(result.current).toBeNull();
+  });
+
+  it('useAppRoute updates on popstate for workspace paths', () => {
+    const { result } = renderHook(() => useAppRoute());
+    act(() => {
+      window.history.pushState({}, '', WORKSPACE_PATH);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+    expect(result.current).toBe(WORKSPACE_PATH);
   });
 
   it('getInviteTokenFromUrl parses token on accept-invite', () => {

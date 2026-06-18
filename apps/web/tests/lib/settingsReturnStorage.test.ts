@@ -42,6 +42,13 @@ describe('settingsReturnStorage', () => {
     expect(readSettingsReturnPath()).toBe('/venues/new');
   });
 
+  it('captures workspace return path when entering settings from app', () => {
+    const workspacePath =
+      '/venues/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/events/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+    captureSettingsReturnPath(workspacePath);
+    expect(readSettingsReturnPath()).toBe(workspacePath);
+  });
+
   it('defaults to dashboard when no return path is stored', () => {
     expect(readSettingsReturnPath()).toBe('/');
   });

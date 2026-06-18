@@ -1,21 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { EventLedgerPage } from '@/pages/EventLedgerPage';
-import { VenueSwitcher } from '@/components/venue/VenueSwitcher';
-import { EventCombobox } from '@/components/event/EventCombobox';
+import { useEffect, useState } from 'react';
 import { EventFormPanel } from '@/components/event/EventFormPanel';
-import { EventDeleteConfirm } from '@/components/event/EventDeleteConfirm';
-import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
 import { useUserProfile } from '@/api/user';
-import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from '@/api/events';
+import { useEvents, useCreateEvent } from '@/api/events';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
 import { useCanManageEvents } from '@/hooks/useCanManageEvents';
-import { navigateToCreateVenue } from '@/lib/dashboardRoute';
-import { setActiveEventId } from '@/venue/activeEventStorage';
+import { navigateToCreateVenue, navigateToEventWorkspace } from '@/lib/dashboardRoute';
 import { resolveActiveEventId } from '@/venue/eventSelection';
 import type { EventResponse } from '@/types/generated-api';
-
-type PanelMode = 'closed' | 'create' | 'edit';
 
 export function DashboardHome() {
   const { isLoading: profileLoading } = useUserProfile();
@@ -28,139 +20,33 @@ export function DashboardHome() {
     isError: eventsError,
     refetch: refetchEvents,
   } = useEvents(activeVenueId);
-
-  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
-  const [panelMode, setPanelMode] = useState<PanelMode>('closed');
-  const [editingEvent, setEditingEvent] = useState<EventResponse | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<EventResponse | null>(null);
-  const previousVenueIdRef = useRef<string | null>(activeVenueId);
-
+  const [showCreatePanel, setShowCreatePanel] = useState(false);
   const createEvent = useCreateEvent(activeVenueId);
-  const updateEvent = useUpdateEvent(activeVenueId, editingEvent?.eventId ?? null);
-  const deleteEvent = useDeleteEvent(activeVenueId);
 
   useEffect(() => {
-    if (!activeVenueId || eventsLoading) {
+    if (isLoading || isError || !activeVenueId || eventsLoading || eventsError || showCreatePanel) {
+      return;
+    }
+    if (events.length === 0) {
       return;
     }
 
-    const venueChanged =
-      previousVenueIdRef.current !== null &&
-      previousVenueIdRef.current !== activeVenueId;
-
-    if (venueChanged) {
-      previousVenueIdRef.current = activeVenueId;
-      setPanelMode('closed');
-      setEditingEvent(null);
-      setDeleteTarget(null);
-      setSelectedEventId(resolveActiveEventId(events, activeVenueId));
-      return;
+    const eventId = resolveActiveEventId(events, activeVenueId);
+    if (eventId) {
+      navigateToEventWorkspace(activeVenueId, eventId);
     }
-
-    previousVenueIdRef.current = activeVenueId;
-
-    if (selectedEventId && events.some((event) => event.eventId === selectedEventId)) {
-      return;
-    }
-
-    setSelectedEventId(resolveActiveEventId(events, activeVenueId));
-  }, [activeVenueId, events, eventsLoading, selectedEventId]);
-
-  const handleSelectEvent = (eventId: string) => {
-    if (activeVenueId) {
-      setActiveEventId(activeVenueId, eventId);
-    }
-    setSelectedEventId(eventId);
-  };
+  }, [isLoading, isError, activeVenueId, events, eventsLoading, eventsError, showCreatePanel]);
 
   const handleCreateSuccess = (created: EventResponse) => {
+    setShowCreatePanel(false);
     if (created.eventId && activeVenueId) {
-      setActiveEventId(activeVenueId, created.eventId);
-      setSelectedEventId(created.eventId);
+      navigateToEventWorkspace(activeVenueId, created.eventId);
     }
-    setPanelMode('closed');
   };
-
-  const showEventWorkspace = !isLoading && !isError && Boolean(activeVenueId);
-  const showEventsEmpty =
-    showEventWorkspace && !eventsLoading && !eventsError && events.length === 0;
-  const showEventPanel = panelMode !== 'closed' && canManageEvents;
-  const showLedger =
-    showEventWorkspace &&
-    !eventsLoading &&
-    !eventsError &&
-    events.length > 0 &&
-    Boolean(selectedEventId) &&
-    panelMode === 'closed' &&
-    !deleteTarget;
-
-  const workspaceBarContent = useMemo(
-    () => (
-      <div className="dashboard-workspace-bar" data-testid="dashboard-workspace-bar">
-        {!profileLoading && canManageVenues ? (
-          <button
-            type="button"
-            className="app__add-venue"
-            data-testid="header-add-venue"
-            onClick={() => navigateToCreateVenue()}
-          >
-            Add venue
-          </button>
-        ) : null}
-        <VenueSwitcher />
-        {showEventWorkspace && !eventsLoading && events.length > 0 ? (
-          <EventCombobox
-            events={events}
-            selectedEventId={selectedEventId}
-            canManageEvents={canManageEvents}
-            onSelect={handleSelectEvent}
-            onCreateClick={
-              canManageEvents
-                ? () => {
-                    setEditingEvent(null);
-                    setPanelMode('create');
-                    setDeleteTarget(null);
-                  }
-                : undefined
-            }
-            onEditClick={
-              canManageEvents
-                ? (event) => {
-                    setEditingEvent(event);
-                    setPanelMode('edit');
-                    setDeleteTarget(null);
-                  }
-                : undefined
-            }
-            onDeleteClick={
-              canManageEvents
-                ? (event) => {
-                    setDeleteTarget(event);
-                    setPanelMode('closed');
-                    setEditingEvent(null);
-                  }
-                : undefined
-            }
-          />
-        ) : null}
-      </div>
-    ),
-    [
-      profileLoading,
-      canManageVenues,
-      showEventWorkspace,
-      eventsLoading,
-      events,
-      selectedEventId,
-      canManageEvents,
-    ],
-  );
-
-  useShellWorkspaceBar(workspaceBarContent);
 
   return (
     <div className="dashboard-home">
-      {isLoading ? (
+      {isLoading || (activeVenueId && eventsLoading) ? (
         <div className="dashboard-empty" role="status" aria-live="polite">
           Loading workspace…
         </div>
@@ -200,13 +86,7 @@ export function DashboardHome() {
         </section>
       ) : null}
 
-      {showEventWorkspace && eventsLoading ? (
-        <div className="dashboard-empty" role="status" aria-live="polite">
-          Loading events…
-        </div>
-      ) : null}
-
-      {showEventWorkspace && eventsError ? (
+      {!isLoading && !isError && activeVenueId && eventsError ? (
         <div className="dashboard-empty dashboard-empty--error" role="alert">
           <p>Unable to load events. Please try again.</p>
           <button
@@ -219,7 +99,12 @@ export function DashboardHome() {
         </div>
       ) : null}
 
-      {showEventsEmpty ? (
+      {!isLoading &&
+      !isError &&
+      activeVenueId &&
+      !eventsLoading &&
+      !eventsError &&
+      events.length === 0 ? (
         <section className="dashboard-empty" aria-labelledby="events-empty-heading">
           <h2 id="events-empty-heading" className="dashboard-empty__heading">
             No events yet
@@ -234,10 +119,7 @@ export function DashboardHome() {
               type="button"
               className="dashboard-empty__cta"
               data-testid="empty-state-create-event"
-              onClick={() => {
-                setEditingEvent(null);
-                setPanelMode('create');
-              }}
+              onClick={() => setShowCreatePanel(true)}
             >
               Create event
             </button>
@@ -245,11 +127,11 @@ export function DashboardHome() {
         </section>
       ) : null}
 
-      {showEventPanel && panelMode === 'create' ? (
+      {showCreatePanel && canManageEvents ? (
         <EventFormPanel
           mode="create"
           isPending={createEvent.isPending}
-          onCancel={() => setPanelMode('closed')}
+          onCancel={() => setShowCreatePanel(false)}
           onSubmit={async (values) => {
             const created = await createEvent.mutateAsync({
               title: values.title,
@@ -259,81 +141,6 @@ export function DashboardHome() {
             handleCreateSuccess(created);
           }}
         />
-      ) : null}
-
-      {showEventPanel && panelMode === 'edit' && editingEvent ? (
-        <EventFormPanel
-          key={editingEvent.eventId}
-          mode="edit"
-          isPending={updateEvent.isPending}
-          initialValues={{
-            title: editingEvent.title ?? '',
-            eventDate: editingEvent.eventDate ?? '',
-            qboTagName: editingEvent.qboTagName ?? '',
-          }}
-          onCancel={() => {
-            setPanelMode('closed');
-            setEditingEvent(null);
-          }}
-          onSubmit={async (values) => {
-            await updateEvent.mutateAsync({
-              title: values.title,
-              eventDate: values.eventDate,
-              qboTagName: values.qboTagName || null,
-            });
-            setPanelMode('closed');
-            setEditingEvent(null);
-          }}
-        />
-      ) : null}
-
-      {deleteTarget ? (
-        <EventDeleteConfirm
-          eventTitle={deleteTarget.title ?? 'Event'}
-          isPending={deleteEvent.isPending}
-          onCancel={() => setDeleteTarget(null)}
-          onConfirm={() => {
-            if (!deleteTarget.eventId) {
-              return;
-            }
-            const deletedId = deleteTarget.eventId;
-            void deleteEvent.mutateAsync(deletedId).then(() => {
-              setDeleteTarget(null);
-              if (!activeVenueId) {
-                return;
-              }
-              const remaining = events.filter((event) => event.eventId !== deletedId);
-              setSelectedEventId(resolveActiveEventId(remaining, activeVenueId));
-            });
-          }}
-        />
-      ) : null}
-
-      {showLedger && selectedEventId ? (
-        <EventLedgerPage venueId={activeVenueId!} eventId={selectedEventId} />
-      ) : null}
-
-      {showEventWorkspace &&
-      !eventsLoading &&
-      !eventsError &&
-      events.length > 0 &&
-      !selectedEventId &&
-      panelMode === 'closed' &&
-      !deleteTarget ? (
-        <div className="dashboard-empty dashboard-empty--error" role="alert">
-          <p>Unable to load the selected event.</p>
-          <button
-            type="button"
-            className="dashboard-empty__retry"
-            onClick={() => {
-              if (activeVenueId) {
-                setSelectedEventId(resolveActiveEventId(events, activeVenueId));
-              }
-            }}
-          >
-            Retry
-          </button>
-        </div>
       ) : null}
     </div>
   );

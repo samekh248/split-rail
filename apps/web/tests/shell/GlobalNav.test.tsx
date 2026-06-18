@@ -10,6 +10,17 @@ describe('GlobalNav', () => {
   });
 
   it('highlights dashboard on workspace routes', () => {
+    window.history.pushState(
+      {},
+      '',
+      '/venues/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/events/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
+    );
+    render(<GlobalNav />);
+    expect(screen.getByTestId('global-nav-dashboard')).toHaveClass('global-nav__item--active');
+  });
+
+  it('highlights dashboard on root route', () => {
+    window.history.pushState({}, '', '/');
     render(<GlobalNav />);
     expect(screen.getByTestId('global-nav-dashboard')).toHaveClass('global-nav__item--active');
   });
