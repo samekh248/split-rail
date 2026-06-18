@@ -4,6 +4,8 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreateVenuePage } from '@/pages/CreateVenuePage';
+import { AppShell } from '@/components/shell/AppShell';
+import { AuthContext, type AuthContextValue } from '@/auth/AuthContext';
 import { VenueProvider } from '@/venue/VenueContext';
 import { getDashboardPath } from '@/lib/dashboardRoute';
 import { getActiveVenueId } from '@/venue/activeVenueStorage';
@@ -25,10 +27,32 @@ function createWrapper() {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
+  const authValue = {
+    phase: 'authenticated',
+    profile: null,
+    justOnboarded: false,
+    authView: 'login',
+    setAuthView: vi.fn(),
+    pending: false,
+    error: null,
+    clearError: vi.fn(),
+    login: vi.fn(),
+    onboard: vi.fn(),
+    register: vi.fn(),
+    createOrganization: vi.fn(),
+    logout: vi.fn(),
+    dismissWelcome: vi.fn(),
+    completeAcceptInvitation: vi.fn(),
+    sessionExpired: false,
+  } satisfies AuthContextValue;
 
   return ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <VenueProvider>{children}</VenueProvider>
+      <AuthContext.Provider value={authValue}>
+        <VenueProvider>
+          <AppShell>{children}</AppShell>
+        </VenueProvider>
+      </AuthContext.Provider>
     </QueryClientProvider>
   );
 }
@@ -39,6 +63,14 @@ describe('CreateVenuePage', () => {
     sessionStorage.clear();
     window.history.pushState({}, '', '/venues/new');
     vi.unstubAllGlobals();
+  });
+
+  it('renders inside AppShell with organization name in top bar', async () => {
+    mockWorkspaceFetch();
+    render(<CreateVenuePage />, { wrapper: createWrapper() });
+
+    expect(await screen.findByTestId('app-shell')).toBeInTheDocument();
+    expect(await screen.findByTestId('top-bar-org-name')).toHaveTextContent('Acme Org');
   });
 
   it('creates a venue and navigates to dashboard with active venue', async () => {

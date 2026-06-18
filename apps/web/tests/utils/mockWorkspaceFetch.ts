@@ -8,6 +8,8 @@ import { fullAccessProfile, restrictedProfile } from '../fixtures/auth';
  * - canViewFinancials → useCanManageEvents (event create CTA / inline panel)
  */
 export const workspaceAdminProfile = {
+  email: 'admin@example.com',
+  organization: { id: 'org-1', name: 'Acme Org' },
   role: { permissions: fullAccessProfile.role!.permissions! },
 };
 

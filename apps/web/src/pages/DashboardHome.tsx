@@ -1,28 +1,23 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { EventLedgerPage } from '@/pages/EventLedgerPage';
 import { VenueSwitcher } from '@/components/venue/VenueSwitcher';
 import { EventCombobox } from '@/components/event/EventCombobox';
 import { EventFormPanel } from '@/components/event/EventFormPanel';
 import { EventDeleteConfirm } from '@/components/event/EventDeleteConfirm';
-import { useAuth } from '@/auth/useAuth';
+import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
 import { useUserProfile } from '@/api/user';
 import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from '@/api/events';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
 import { useCanManageEvents } from '@/hooks/useCanManageEvents';
-import { navigateToCreateVenue, navigateToSettings } from '@/lib/dashboardRoute';
+import { navigateToCreateVenue } from '@/lib/dashboardRoute';
 import { setActiveEventId } from '@/venue/activeEventStorage';
 import { resolveActiveEventId } from '@/venue/eventSelection';
 import type { EventResponse } from '@/types/generated-api';
 
-export interface DashboardHomeProps {
-  organizationName: string;
-}
-
 type PanelMode = 'closed' | 'create' | 'edit';
 
-export function DashboardHome({ organizationName }: DashboardHomeProps) {
-  const { logout } = useAuth();
+export function DashboardHome() {
   const { isLoading: profileLoading } = useUserProfile();
   const canManageVenues = useCanManageVenues();
   const canManageEvents = useCanManageEvents();
@@ -99,76 +94,72 @@ export function DashboardHome({ organizationName }: DashboardHomeProps) {
     panelMode === 'closed' &&
     !deleteTarget;
 
-  return (
-    <div className="app">
-      <header className="app__header">
-        <div className="app__header-row">
-          <div>
-            <h1>Split Rail</h1>
-            <p className="app__subtitle">{organizationName}</p>
-          </div>
-          <div className="app__header-actions">
-            {!profileLoading && canManageVenues ? (
-              <button
-                type="button"
-                className="app__add-venue"
-                data-testid="header-add-venue"
-                onClick={() => navigateToCreateVenue()}
-              >
-                Add venue
-              </button>
-            ) : null}
-            <VenueSwitcher />
-            {showEventWorkspace && !eventsLoading && events.length > 0 ? (
-              <EventCombobox
-                events={events}
-                selectedEventId={selectedEventId}
-                canManageEvents={canManageEvents}
-                onSelect={handleSelectEvent}
-                onCreateClick={
-                  canManageEvents
-                    ? () => {
-                        setEditingEvent(null);
-                        setPanelMode('create');
-                        setDeleteTarget(null);
-                      }
-                    : undefined
-                }
-                onEditClick={
-                  canManageEvents
-                    ? (event) => {
-                        setEditingEvent(event);
-                        setPanelMode('edit');
-                        setDeleteTarget(null);
-                      }
-                    : undefined
-                }
-                onDeleteClick={
-                  canManageEvents
-                    ? (event) => {
-                        setDeleteTarget(event);
-                        setPanelMode('closed');
-                        setEditingEvent(null);
-                      }
-                    : undefined
-                }
-              />
-            ) : null}
-            <button
-              type="button"
-              className="app__settings"
-              data-testid="header-settings"
-              onClick={() => navigateToSettings()}
-            >
-              Settings
-            </button>
-            <button type="button" className="app__logout" onClick={() => void logout()}>
-              Sign out
-            </button>
-          </div>
-        </div>
-      </header>
+  const workspaceBarContent = useMemo(
+    () => (
+      <div className="dashboard-workspace-bar" data-testid="dashboard-workspace-bar">
+        {!profileLoading && canManageVenues ? (
+          <button
+            type="button"
+            className="app__add-venue"
+            data-testid="header-add-venue"
+            onClick={() => navigateToCreateVenue()}
+          >
+            Add venue
+          </button>
+        ) : null}
+        <VenueSwitcher />
+        {showEventWorkspace && !eventsLoading && events.length > 0 ? (
+          <EventCombobox
+            events={events}
+            selectedEventId={selectedEventId}
+            canManageEvents={canManageEvents}
+            onSelect={handleSelectEvent}
+            onCreateClick={
+              canManageEvents
+                ? () => {
+                    setEditingEvent(null);
+                    setPanelMode('create');
+                    setDeleteTarget(null);
+                  }
+                : undefined
+            }
+            onEditClick={
+              canManageEvents
+                ? (event) => {
+                    setEditingEvent(event);
+                    setPanelMode('edit');
+                    setDeleteTarget(null);
+                  }
+                : undefined
+            }
+            onDeleteClick={
+              canManageEvents
+                ? (event) => {
+                    setDeleteTarget(event);
+                    setPanelMode('closed');
+                    setEditingEvent(null);
+                  }
+                : undefined
+            }
+          />
+        ) : null}
+      </div>
+    ),
+    [
+      profileLoading,
+      canManageVenues,
+      showEventWorkspace,
+      eventsLoading,
+      events,
+      selectedEventId,
+      canManageEvents,
+    ],
+  );
 
+  useShellWorkspaceBar(workspaceBarContent);
+
+  return (
+    <div className="dashboard-home">
       {isLoading ? (
         <div className="dashboard-empty" role="status" aria-live="polite">
           Loading workspace…
