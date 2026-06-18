@@ -1,4 +1,5 @@
 import { formatMoney } from '@/lib/money';
+import { resolveVarianceDisplay } from '@/lib/ledgerVariance';
 import type { CreateLineItemRequest, LedgerGridResponse } from '@/types/generated-api';
 import type { MoveDirection } from '@/lib/reorderLineItems';
 import { BlockSection } from './BlockSection';
@@ -39,7 +40,13 @@ export function LedgerGrid({
   const summary = ledger.summary;
   const status = ledger.status ?? 'PRE_SHOW';
   const hasVarianceAlerts = blocks.some((block) =>
-    (block.rows ?? []).some((row) => row.varianceFlagged),
+    (block.rows ?? []).some((row) =>
+      resolveVarianceDisplay({
+        qboActual: row.qboActualValue,
+        settlement: row.settlementValue,
+        serverVariance: row.variance,
+      }).flagged,
+    ),
   );
   const isReconciled = status === 'RECONCILED';
   const editability = ledger.editability ?? {
