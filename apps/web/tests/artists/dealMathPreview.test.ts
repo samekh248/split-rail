@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { previewNetPayout } from '@/lib/dealMathPreview';
+import { previewNetPayout, type PreviewNetPayoutInput } from '@/lib/dealMathPreview';
 
 describe('dealMathPreview', () => {
   it('calculates guarantee payout with tax withholding', () => {
@@ -97,5 +97,172 @@ describe('dealMathPreview', () => {
     });
 
     expect(result).toHaveProperty('error');
+  });
+
+  it('rounds fractional door split to 333.30 (contract V1)', () => {
+    const result = previewNetPayout({
+      dealType: 'door_split',
+      baseGuarantee: '0.00',
+      backendPercentage: '33.33',
+      taxWithholdingPercentage: '0.00',
+      grossRevenue: '1000.00',
+      totalDeductions: '0.00',
+    });
+
+    expect(result).toEqual({ payout: '333.30' });
+  });
+
+  it('applies tax midpoint rounding (contract V2)', () => {
+    const result = previewNetPayout({
+      dealType: 'door_split',
+      baseGuarantee: '0.00',
+      backendPercentage: '100.00',
+      taxWithholdingPercentage: '10.00',
+      grossRevenue: '100.05',
+      totalDeductions: '0.00',
+    });
+
+    expect(result).toEqual({ payout: '90.04' });
+  });
+
+  it('applies tax to custom formula gross (contract V3)', () => {
+    const result = previewNetPayout({
+      dealType: 'custom',
+      baseGuarantee: '0.00',
+      backendPercentage: '0.00',
+      taxWithholdingPercentage: '10.00',
+      customFormulaExpression: 'GrossRevenue',
+      grossRevenue: '1000.00',
+      totalDeductions: '0.00',
+    });
+
+    expect(result).toEqual({ payout: '900.00' });
+  });
+
+  it('produces equivalent net payout across deal types (contract V4)', () => {
+    const guarantee = previewNetPayout({
+      dealType: 'guarantee',
+      baseGuarantee: '5000.00',
+      backendPercentage: '40.00',
+      taxWithholdingPercentage: '10.00',
+      grossRevenue: '10000.00',
+      totalDeductions: '0.00',
+    });
+    const doorSplit = previewNetPayout({
+      dealType: 'door_split',
+      baseGuarantee: '0.00',
+      backendPercentage: '50.00',
+      taxWithholdingPercentage: '10.00',
+      grossRevenue: '10000.00',
+      totalDeductions: '0.00',
+    });
+    const custom = previewNetPayout({
+      dealType: 'custom',
+      baseGuarantee: '0.00',
+      backendPercentage: '0.00',
+      taxWithholdingPercentage: '10.00',
+      customFormulaExpression: 'GrossRevenue',
+      grossRevenue: '5000.00',
+      totalDeductions: '0.00',
+    });
+
+    expect(guarantee).toEqual({ payout: '4500.00' });
+    expect(doorSplit).toEqual({ payout: '4500.00' });
+    expect(custom).toEqual({ payout: '4500.00' });
+  });
+
+  it('floors zero net revenue payout at zero (contract V5)', () => {
+    const result = previewNetPayout({
+      dealType: 'door_split',
+      baseGuarantee: '0.00',
+      backendPercentage: '50.00',
+      taxWithholdingPercentage: '10.00',
+      grossRevenue: '100.00',
+      totalDeductions: '100.00',
+    });
+
+    expect(result).toEqual({ payout: '0.00' });
+  });
+
+  it('floors negative custom formula at zero (contract V6)', () => {
+    const result = previewNetPayout({
+      dealType: 'custom',
+      baseGuarantee: '0.00',
+      backendPercentage: '0.00',
+      taxWithholdingPercentage: '10.00',
+      customFormulaExpression: '0 - GrossRevenue',
+      grossRevenue: '1000.00',
+      totalDeductions: '0.00',
+    });
+
+    expect(result).toEqual({ payout: '0.00' });
+  });
+
+  it('rounds guarantee split before compare', () => {
+    const result = previewNetPayout({
+      dealType: 'guarantee',
+      baseGuarantee: '333.00',
+      backendPercentage: '33.33',
+      taxWithholdingPercentage: '0.00',
+      grossRevenue: '1000.00',
+      totalDeductions: '0.00',
+    });
+
+    expect(result).toEqual({ payout: '333.30' });
+  });
+
+  it('returns error for unsupported deal type', () => {
+    const result = previewNetPayout({
+      dealType: 'invalid_type' as PreviewNetPayoutInput['dealType'],
+      baseGuarantee: '0.00',
+      backendPercentage: '0.00',
+      taxWithholdingPercentage: '0.00',
+      grossRevenue: '100.00',
+      totalDeductions: '0.00',
+    });
+
+    expect(result).toEqual({ error: 'Unsupported deal type' });
+  });
+
+  it('returns error when custom formula is empty', () => {
+    const result = previewNetPayout({
+      dealType: 'custom',
+      baseGuarantee: '0.00',
+      backendPercentage: '0.00',
+      taxWithholdingPercentage: '0.00',
+      customFormulaExpression: '   ',
+      grossRevenue: '100.00',
+      totalDeductions: '0.00',
+    });
+
+    expect(result).toEqual({ error: 'Custom formula expression is required.' });
+  });
+
+  it('returns error when custom formula sanitizes to empty', () => {
+    const result = previewNetPayout({
+      dealType: 'custom',
+      baseGuarantee: '0.00',
+      backendPercentage: '0.00',
+      taxWithholdingPercentage: '0.00',
+      customFormulaExpression: '@@@',
+      grossRevenue: '100.00',
+      totalDeductions: '0.00',
+    });
+
+    expect(result).toEqual({ error: 'Custom formula expression is invalid after sanitization.' });
+  });
+
+  it('returns error for divide by zero in custom formula', () => {
+    const result = previewNetPayout({
+      dealType: 'custom',
+      baseGuarantee: '0.00',
+      backendPercentage: '0.00',
+      taxWithholdingPercentage: '0.00',
+      customFormulaExpression: 'GrossRevenue / 0',
+      grossRevenue: '100.00',
+      totalDeductions: '0.00',
+    });
+
+    expect(result).toEqual({ error: 'Division by zero' });
   });
 });
