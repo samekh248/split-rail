@@ -154,11 +154,50 @@ body {
 }
 
 .formula-editor__tokens li {
+  margin: 0;
+}
+
+.formula-editor__token-btn {
   background: #f1f5f9;
-  padding: 0.125rem 0.5rem;
+  border: 1px solid #cbd5e1;
   border-radius: 4px;
+  padding: 0.125rem 0.5rem;
   font-family: ui-monospace, monospace;
   font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.formula-editor__token-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.artist-deal-panel__actions {
+  display: inline-flex;
+  gap: 0.5rem;
+  margin-left: 0.75rem;
+}
+
+.artist-deal-panel__preview {
+  margin: 0.75rem 0;
+  font-weight: 600;
+}
+
+.artist-deal-panel__form-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .formula-editor__error {

@@ -76,6 +76,7 @@ vi.mock('@/api/ledger', () => ({
   useDeleteLineItem: vi.fn(() => ({ mutateAsync })),
   useLockBudget: vi.fn(() => ({ mutate, isPending: false })),
   useCreateArtist: vi.fn(() => ({ mutateAsync })),
+  useUpdateArtist: vi.fn(() => ({ mutateAsync })),
   useDeleteArtist: vi.fn(() => ({ mutateAsync })),
 }));
 
@@ -222,5 +223,39 @@ describe('EventLedgerPage', () => {
     });
     expect(refetch).toHaveBeenCalled();
     expect(screen.getByTestId('deduction-exp-1')).not.toBeChecked();
+  });
+
+  it('updates an artist via useUpdateArtist and recalculates', async () => {
+    const user = userEvent.setup();
+    const artist = {
+      id: 'artist-1',
+      artistName: 'Headliner',
+      performanceOrder: 1,
+      dealType: 'guarantee' as const,
+      customFormulaExpression: null,
+      baseGuarantee: '5000.00',
+      backendPercentage: '70.00',
+      taxWithholdingPercentage: '0.00',
+      calculatedNetPayout: '7000.00',
+      rowVersion: 'v1',
+    };
+
+    vi.mocked(useCanEditLedgerStructure).mockReturnValue(true);
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: { ...mockLedger, artists: [artist] },
+    } as ReturnType<typeof useLedger>);
+
+    renderPage();
+
+    await user.click(screen.getByTestId('edit-artist-artist-1'));
+    await user.clear(screen.getByTestId('base-guarantee-input'));
+    await user.type(screen.getByTestId('base-guarantee-input'), '6000.00');
+    await user.click(screen.getByTestId('save-artist-btn'));
+
+    await waitFor(() => {
+      expect(mutateAsync).toHaveBeenCalled();
+    });
   });
 });
