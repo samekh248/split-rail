@@ -35,6 +35,8 @@ export interface MockWorkspaceFetchOptions {
   venuesStatus?: number;
   eventsByVenue?: Record<string, EventResponse[]>;
   dashboardByVenue?: Record<string, DashboardResponse>;
+  venueQboStatusByVenue?: Record<string, { venueId: string; qboConnected: boolean; lastSyncedAt: string | null }>;
+  venueSyncResultByVenue?: Record<string, unknown>;
   eventsError?: boolean;
   dashboardError?: boolean;
   pinError?: boolean;
@@ -143,6 +145,8 @@ export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
     createdEvent,
     createdVenue = DEFAULT_CREATED_VENUE,
     createVenueStatus = 201,
+    venueQboStatusByVenue = {},
+    venueSyncResultByVenue = {},
   } = options;
 
   let venueList = [...venues];
@@ -219,6 +223,37 @@ export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
           ok: true,
           status: 200,
           json: () => Promise.resolve(resolveDashboard(venueId)),
+        };
+      }
+
+      const qboStatusMatch = url.match(/\/venues\/([^/]+)\/qbo\/status$/);
+      if (qboStatusMatch && method === 'GET') {
+        const venueId = qboStatusMatch[1]!;
+        const status = venueQboStatusByVenue[venueId] ?? {
+          venueId,
+          qboConnected: false,
+          lastSyncedAt: null,
+        };
+        return {
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(status),
+        };
+      }
+
+      const venueSyncMatch = url.match(/\/venues\/([^/]+)\/sync$/);
+      if (venueSyncMatch && method === 'POST' && !url.includes('/events/')) {
+        const venueId = venueSyncMatch[1]!;
+        const result = venueSyncResultByVenue[venueId] ?? {
+          venueId,
+          attemptedCount: 0,
+          succeededCount: 0,
+          results: [],
+        };
+        return {
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(result),
         };
       }
 
@@ -307,7 +342,7 @@ export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
         };
       }
 
-      if (url.includes('/venues') && !url.includes('/events') && method === 'GET') {
+      if (url.includes('/venues') && !url.includes('/events') && !url.includes('/qbo/') && !url.endsWith('/sync') && method === 'GET') {
         return {
           ok: venuesOk,
           status: venuesStatus,

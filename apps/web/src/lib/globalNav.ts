@@ -1,5 +1,6 @@
 import type { AppPath } from '@/lib/appRoute';
-import { getAppPath, isEventWorkspacePath, navigateToDashboard } from '@/lib/appRoute';
+import { getActiveVenueId } from '@/venue/activeVenueStorage';
+import { getAppPath, isEventWorkspacePath, navigateToAccounting, navigateToDashboard } from '@/lib/appRoute';
 
 export type GlobalNavId = 'dashboard' | 'booking' | 'accounting';
 
@@ -9,6 +10,20 @@ export interface GlobalNavItemConfig {
   disabled?: boolean;
   navigate?: () => void;
   matchPaths: AppPath[];
+}
+
+export function navigateToAccountingWithVenueScope(
+  isAllVenuesSelected: boolean,
+  venues: { id?: string | null }[],
+  activateVenueId: (id: string) => void,
+): void {
+  if (isAllVenuesSelected) {
+    const targetVenueId = getActiveVenueId() ?? venues[0]?.id;
+    if (targetVenueId) {
+      activateVenueId(targetVenueId);
+    }
+  }
+  navigateToAccounting();
 }
 
 export const GLOBAL_NAV_ITEMS: GlobalNavItemConfig[] = [
@@ -27,8 +42,8 @@ export const GLOBAL_NAV_ITEMS: GlobalNavItemConfig[] = [
   {
     id: 'accounting',
     label: 'Settlements / Accounting Sync',
-    disabled: true,
-    matchPaths: [],
+    navigate: navigateToAccounting,
+    matchPaths: ['/accounting'],
   },
 ];
 

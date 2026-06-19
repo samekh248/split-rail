@@ -58,8 +58,11 @@ export function createShellWrapper(
   };
 }
 
-export function createSidebarTestWrapper(authOverrides: Partial<AuthContextValue> = {}) {
-  mockWorkspaceFetch({ venues: [] });
+export function createSidebarTestWrapper(
+  authOverrides: Partial<AuthContextValue> = {},
+  workspaceOptions: MockWorkspaceFetchOptions = { venues: [] },
+) {
+  mockWorkspaceFetch(workspaceOptions);
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
@@ -68,7 +71,7 @@ export function createSidebarTestWrapper(authOverrides: Partial<AuthContextValue
     return (
       <QueryClientProvider client={queryClient}>
         <AuthContext.Provider value={buildAuthValue(authOverrides)}>
-          {children}
+          <VenueProvider>{children}</VenueProvider>
         </AuthContext.Provider>
       </QueryClientProvider>
     );

@@ -2045,3 +2045,64 @@ body {
 .unassigned-drawer__transaction:last-child {
   border-bottom: none;
 }
+
+.accounting-overview {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1.5rem;
+}
+
+.accounting-overview__header {
+  margin: 0;
+}
+
+.accounting-overview__title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.venue-qbo-status-card {
+  padding: 1rem 1.25rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+
+.venue-qbo-status-card__title {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.accounting-workload-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.accounting-workload-list__title {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.accounting-workload-list__items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.accounting-workload-list__item {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+}
+
+.sync-all-button-wrap {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sync-all-button__result {
+  margin: 0;
+  color: #334155;
+}

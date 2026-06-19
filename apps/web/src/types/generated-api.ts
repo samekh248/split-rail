@@ -1148,6 +1148,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/venues/{venueId}/qbo/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["VenueQboStatusDto"];
+                        "application/json": components["schemas"]["VenueQboStatusDto"];
+                        "text/json": components["schemas"]["VenueQboStatusDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["VenueSyncResultDto"];
+                        "application/json": components["schemas"]["VenueSyncResultDto"];
+                        "text/json": components["schemas"]["VenueSyncResultDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/venues/{venueId}/mappings": {
         parameters: {
             query?: never;
@@ -2947,6 +3025,13 @@ export interface components {
             role?: components["schemas"]["RoleDetailDto"];
             venueScopes?: components["schemas"]["VenueScopeDto"][] | null;
         };
+        VenueQboStatusDto: {
+            /** Format: uuid */
+            venueId?: string;
+            qboConnected?: boolean;
+            /** Format: date-time */
+            lastSyncedAt?: string | null;
+        };
         VenueResponse: {
             /** Format: uuid */
             id?: string;
@@ -2960,6 +3045,22 @@ export interface components {
             /** Format: uuid */
             venueId?: string;
             venueName?: string | null;
+        };
+        VenueSyncEventResultDto: {
+            /** Format: uuid */
+            eventId?: string;
+            title?: string | null;
+            success?: boolean;
+            errorMessage?: string | null;
+        };
+        VenueSyncResultDto: {
+            /** Format: uuid */
+            venueId?: string;
+            /** Format: int32 */
+            attemptedCount?: number;
+            /** Format: int32 */
+            succeededCount?: number;
+            results?: components["schemas"]["VenueSyncEventResultDto"][] | null;
         };
     };
     responses: never;
@@ -3039,7 +3140,10 @@ export type UpdateVenueScopesRequest = components['schemas']['UpdateVenueScopesR
 export type UpdateVenueScopesResponse = components['schemas']['UpdateVenueScopesResponse'];
 export type UserListResponse = components['schemas']['UserListResponse'];
 export type UserProfileResponse = components['schemas']['UserProfileResponse'];
+export type VenueQboStatusDto = components['schemas']['VenueQboStatusDto'];
 export type VenueResponse = components['schemas']['VenueResponse'];
 export type VenueScopeDto = components['schemas']['VenueScopeDto'];
+export type VenueSyncEventResultDto = components['schemas']['VenueSyncEventResultDto'];
+export type VenueSyncResultDto = components['schemas']['VenueSyncResultDto'];
 export type DealType = 'guarantee' | 'door_split' | 'custom';
 export type EventStatus = 'PRE_SHOW' | 'SETTLED' | 'RECONCILED';
