@@ -67,7 +67,7 @@ test.describe('Venue switching (UI)', () => {
     await expect(page.getByTestId('venue-switcher-trigger')).toHaveCount(0);
   });
 
-  test('selecting a venue updates ledger and sends X-Active-Venue-Id (E3)', async ({ page }) => {
+  test('selecting a venue sends X-Active-Venue-Id from overview (E3)', async ({ page }) => {
     const seed = await resetSeed();
     const tokens = await login('alpha-admin@e2e.test', 'E2eTestPass1');
 

@@ -98,6 +98,8 @@ describe('DashboardOverviewPage', () => {
 
     expect(await screen.findByTestId('dashboard-overview')).toBeInTheDocument();
     expect(screen.getByTestId('dashboard-workspace-bar')).toBeInTheDocument();
+    expect(screen.queryByTestId('event-ledger-page')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('mock-ledger-page')).not.toBeInTheDocument();
     expect(window.location.pathname).toBe('/');
     expect(eventWorkspaceRoute.navigateToEventWorkspace).not.toHaveBeenCalled();
   });
