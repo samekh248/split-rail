@@ -7,7 +7,7 @@ import {
   type QueryClient,
 } from '@tanstack/react-query';
 import { apiFetch } from './client';
-import type { DashboardResponse, EventCardDto } from '@/types/generated-api';
+import type { ActionCenterDto, DashboardResponse, EventCardDto, UnmappedEventSummaryDto } from '@/types/generated-api';
 
 export function dashboardQueryKey(venueId: string) {
   return ['dashboard', venueId] as const;
@@ -106,6 +106,27 @@ export function normalizeDashboardPartitions(
   };
 }
 
+function sortUnmappedEvents(events: UnmappedEventSummaryDto[]): UnmappedEventSummaryDto[] {
+  return [...events].sort((a, b) => {
+    const countDiff = (b.unmappedCount ?? 0) - (a.unmappedCount ?? 0);
+    if (countDiff !== 0) {
+      return countDiff;
+    }
+    return (a.eventDate ?? '').localeCompare(b.eventDate ?? '');
+  });
+}
+
+export function mergeActionCenter(dashboards: DashboardResponse[]): ActionCenterDto {
+  const eventsWithUnmapped = sortUnmappedEvents(
+    dashboards.flatMap((dashboard) => dashboard.actionCenter?.eventsWithUnmapped ?? []),
+  );
+  const totalUnmappedCount = dashboards.reduce(
+    (sum, dashboard) => sum + (dashboard.actionCenter?.totalUnmappedCount ?? 0),
+    0,
+  );
+  return { totalUnmappedCount, eventsWithUnmapped };
+}
+
 export function useDashboard(venueId: string | null) {
   return useQuery({
     queryKey: dashboardQueryKey(venueId ?? ''),
@@ -148,8 +169,28 @@ export function useAllVenuesDashboard(venueIds: string[]) {
     };
   }, [results, venueIds]);
 
+  const actionCenter = useMemo((): ActionCenterDto | undefined => {
+    if (venueIds.length === 0) {
+      return undefined;
+    }
+    if (results.some((result) => result.isLoading)) {
+      return undefined;
+    }
+    if (results.some((result) => result.isError)) {
+      return undefined;
+    }
+    const dashboards = results
+      .map((result) => result.data)
+      .filter((dashboard): dashboard is DashboardResponse => dashboard != null);
+    if (dashboards.length !== venueIds.length) {
+      return { totalUnmappedCount: 0, eventsWithUnmapped: [] };
+    }
+    return mergeActionCenter(dashboards);
+  }, [results, venueIds]);
+
   return {
     data,
+    actionCenter,
     isLoading: venueIds.length > 0 && results.some((result) => result.isLoading),
     isError: results.some((result) => result.isError),
     refetch: () => Promise.all(results.map((result) => result.refetch())),

@@ -5,6 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   applyPinOptimisticUpdate,
   dashboardQueryKey,
+  mergeActionCenter,
   useDashboard,
   usePinEvent,
   useUnpinEvent,
@@ -30,6 +31,10 @@ const mockDashboard: DashboardResponse = {
     },
   ],
   recentEvents: [],
+  actionCenter: {
+    totalUnmappedCount: 0,
+    eventsWithUnmapped: [],
+  },
 };
 
 function createWrapper(queryClient: QueryClient) {
@@ -160,5 +165,56 @@ describe('dashboard api hooks', () => {
     await waitFor(() => expect(result.current.isError).toBe(true));
     const restored = queryClient.getQueryData<DashboardResponse>(dashboardQueryKey(VENUE_A.id));
     expect(restored?.pinnedEvents?.[0]?.isPinned).toBe(true);
+  });
+
+  it('mergeActionCenter sums totals and sorts events by count desc then date asc', () => {
+    const merged = mergeActionCenter([
+      {
+        ...mockDashboard,
+        venueId: VENUE_A.id,
+        actionCenter: {
+          totalUnmappedCount: 3,
+          eventsWithUnmapped: [
+            {
+              eventId: 'evt-a',
+              venueId: VENUE_A.id,
+              title: 'A',
+              eventDate: '2026-06-25',
+              unmappedCount: 1,
+            },
+          ],
+        },
+      },
+      {
+        ...mockDashboard,
+        venueId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+        actionCenter: {
+          totalUnmappedCount: 5,
+          eventsWithUnmapped: [
+            {
+              eventId: 'evt-b',
+              venueId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+              title: 'B',
+              eventDate: '2026-06-20',
+              unmappedCount: 5,
+            },
+            {
+              eventId: 'evt-c',
+              venueId: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+              title: 'C',
+              eventDate: '2026-06-18',
+              unmappedCount: 5,
+            },
+          ],
+        },
+      },
+    ]);
+
+    expect(merged.totalUnmappedCount).toBe(8);
+    expect(merged.eventsWithUnmapped?.map((event) => event.eventId)).toEqual([
+      'evt-c',
+      'evt-b',
+      'evt-a',
+    ]);
   });
 });
