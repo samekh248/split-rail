@@ -917,4 +917,68 @@ describe('DashboardOverviewPage', () => {
       expect(screen.queryByTestId('financial-health-widget')).not.toBeInTheDocument();
     });
   });
+
+  describe('upcoming events calendar view', () => {
+    it('toggles upcoming zone to mini-calendar without refetching dashboard', async () => {
+      const user = userEvent.setup();
+      mockWorkspaceFetch({
+        venues: [VENUE_A],
+        dashboardByVenue: {
+          [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+            upcomingEvents: [
+              cardOn(offsetDate(2), {
+                eventId: '22222222-2222-2222-2222-222222222222',
+                title: 'Upcoming Show',
+              }),
+            ],
+          }),
+        },
+      });
+
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+      await screen.findByTestId('dashboard-zone-upcoming');
+      const fetchMock = vi.mocked(globalThis.fetch);
+      const dashboardCallsBefore = fetchMock.mock.calls.filter(([url]) =>
+        String(url).includes('/dashboard'),
+      ).length;
+
+      await user.click(screen.getByTestId('upcoming-view-calendar'));
+      expect(screen.getByTestId('upcoming-mini-calendar')).toBeInTheDocument();
+      const dashboardCallsAfterToggle = fetchMock.mock.calls.filter(([url]) =>
+        String(url).includes('/dashboard'),
+      ).length;
+      expect(dashboardCallsAfterToggle).toBe(dashboardCallsBefore);
+
+      await user.click(screen.getByTestId('upcoming-view-list'));
+      expect(screen.getByTestId('event-card-22222222-2222-2222-2222-222222222222')).toBeInTheDocument();
+    });
+
+    it('preserves calendar view mode after remount within session', async () => {
+      const user = userEvent.setup();
+      mockWorkspaceFetch({
+        venues: [VENUE_A],
+        dashboardByVenue: {
+          [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+            upcomingEvents: [
+              cardOn(offsetDate(2), {
+                eventId: '22222222-2222-2222-2222-222222222222',
+                title: 'Upcoming Show',
+              }),
+            ],
+          }),
+        },
+      });
+
+      const { unmount } = render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+      await screen.findByTestId('dashboard-zone-upcoming');
+      await user.click(screen.getByTestId('upcoming-view-calendar'));
+      unmount();
+
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+      await screen.findByTestId('dashboard-zone-upcoming');
+      expect(screen.getByTestId('upcoming-view-calendar')).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('upcoming-mini-calendar')).toBeInTheDocument();
+    });
+  });
 });
