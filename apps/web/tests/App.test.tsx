@@ -4,8 +4,42 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '@/App';
 import { AuthProvider } from '@/auth/AuthContext';
+import {
+  filterTonightEvents,
+  partitionRecentEvents,
+  partitionUpcomingEvents,
+} from '@/lib/partitionOverviewZones';
+import type { DashboardResponse, EventCardDto, EventResponse } from '@/types/generated-api';
 import { EVENT_A } from './fixtures/events';
 import { VENUE_A } from './fixtures/venues';
+
+function toEventCardDto(event: EventResponse): EventCardDto {
+  return {
+    eventId: event.eventId,
+    venueId: event.venueId,
+    title: event.title,
+    eventDate: event.eventDate,
+    status: event.status,
+    isBudgetLocked: event.isBudgetLocked,
+    qboTagName: event.qboTagName,
+    settledAt: event.settledAt,
+    settlementPdfAvailable: event.settlementPdfAvailable ?? false,
+    isPinned: false,
+    hasVarianceConcern: false,
+    unmappedCount: 0,
+    lastSyncedAt: null,
+  };
+}
+
+function buildDashboard(venueId: string, events: EventResponse[]): DashboardResponse {
+  return {
+    venueId,
+    tonightEvents: filterTonightEvents(events).map(toEventCardDto),
+    pinnedEvents: [],
+    upcomingEvents: partitionUpcomingEvents(events).map(toEventCardDto),
+    recentEvents: partitionRecentEvents(events).map(toEventCardDto),
+  };
+}
 
 vi.mock('@/pages/EventLedgerPage', () => ({
   EventLedgerPage: ({ venueId, eventId }: { venueId: string; eventId: string }) => (
@@ -50,6 +84,16 @@ function mockAuthenticatedFetch(options?: {
           ok: true,
           status: 200,
           json: () => Promise.resolve(profileWithOrg()),
+        });
+      }
+      const dashboardMatch = url.match(/\/venues\/([^/]+)\/dashboard$/);
+      if (dashboardMatch) {
+        const venueId = dashboardMatch[1]!;
+        const venueEvents = events.filter((event) => event.venueId === venueId);
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(buildDashboard(venueId, venueEvents)),
         });
       }
       if (url.includes('/venues') && !url.includes('/events')) {
@@ -129,9 +173,15 @@ describe('App', () => {
     localStorage.setItem('accessToken', 'token');
     localStorage.setItem('refreshToken', 'refresh');
     window.history.pushState({}, '', '/');
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const upcomingEvent = {
+      ...EVENT_A,
+      eventDate: tomorrow.toISOString().slice(0, 10),
+    };
     mockAuthenticatedFetch({
       venues: [VENUE_A],
-      events: [EVENT_A],
+      events: [upcomingEvent],
     });
 
     render(

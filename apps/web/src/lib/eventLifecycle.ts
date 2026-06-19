@@ -2,7 +2,11 @@ import type { EventResponse } from '@/types/generated-api';
 
 export type DashboardLifecyclePhase = 'PreShow' | 'NightOf' | 'PostShow' | 'Unknown';
 
-export type BottleneckAlertKind = 'MISSING_SIGNATURE' | 'SETTLED_NOT_SYNCED' | 'VARIANCE_REVIEW';
+export type BottleneckAlertKind =
+  | 'MISSING_SIGNATURE'
+  | 'SETTLED_NOT_SYNCED'
+  | 'VARIANCE_REVIEW'
+  | 'UNMAPPED_QBO';
 
 export interface BottleneckAlert {
   kind: BottleneckAlertKind;

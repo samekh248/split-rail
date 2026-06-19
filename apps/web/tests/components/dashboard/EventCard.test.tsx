@@ -91,6 +91,18 @@ describe('EventCard', () => {
       );
     });
 
+    it('renders phase quick links via deriveLifecyclePhase fallback', () => {
+      renderCard({
+        ...EVENT_A,
+        status: 'PRE_SHOW',
+        isBudgetLocked: false,
+        eventDate: futureDate(),
+        hasVarianceConcern: false,
+        unmappedCount: 0,
+      });
+      expect(screen.getByTestId(`event-card-link-deal-${EVENT_A.eventId}`)).toBeInTheDocument();
+    });
+
     it('shows Night Of quick links', () => {
       renderCard({
         ...EVENT_A,
@@ -173,6 +185,26 @@ describe('EventCard', () => {
     it('hides variance badge when lineItems omitted', () => {
       renderCard(EVENT_A);
       expect(screen.queryByTestId(`event-card-variance-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+    });
+
+    it('shows variance badge when hasVarianceConcern true', () => {
+      renderCard({
+        ...EVENT_A,
+        hasVarianceConcern: true,
+        unmappedCount: 0,
+      });
+      expect(screen.getByTestId(`event-card-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
+    });
+
+    it('shows unmapped bottleneck when unmappedCount > 0', () => {
+      renderCard({
+        ...EVENT_A,
+        unmappedCount: 2,
+        hasVarianceConcern: false,
+      });
+      expect(
+        screen.getByTestId(`event-card-alert-UNMAPPED_QBO-${EVENT_A.eventId}`),
+      ).toHaveTextContent('2 unmapped accounts');
     });
 
     it('shows bottleneck alert chips', () => {

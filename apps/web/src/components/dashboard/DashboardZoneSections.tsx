@@ -3,7 +3,7 @@ import {
   DashboardZoneEvents,
   type DashboardZoneEventsProps,
 } from '@/components/dashboard/DashboardZoneEvents';
-import type { EventResponse, PermissionsDto } from '@/types/generated-api';
+import type { EventCardDto, PermissionsDto } from '@/types/generated-api';
 
 type ZoneProps = Omit<DashboardZoneEventsProps, 'title' | 'emptyMessage' | 'testId'>;
 
@@ -42,18 +42,16 @@ export function RecentEventsSection(props: ZoneProps) {
 }
 
 export interface TonightHeroBannerProps {
-  events: EventResponse[];
+  events: EventCardDto[];
   permissions: PermissionsDto;
-  isEventPinned: (eventId: string) => boolean;
   onQuickLink: DashboardZoneEventsProps['onQuickLink'];
-  onPinToggle: (eventId: string) => void;
-  onCardActivate: (eventId: string) => void;
+  onPinToggle: DashboardZoneEventsProps['onPinToggle'];
+  onCardActivate: DashboardZoneEventsProps['onCardActivate'];
 }
 
 export function TonightHeroBanner({
   events,
   permissions,
-  isEventPinned,
   onQuickLink,
   onPinToggle,
   onCardActivate,
@@ -68,15 +66,16 @@ export function TonightHeroBanner({
       <div className="dashboard-zone__cards">
         {events.map((event) => {
           const eventId = event.eventId ?? '';
+          const venueId = event.venueId ?? '';
           return (
             <EventCard
               key={eventId}
               event={event}
               permissions={permissions}
               onQuickLink={onQuickLink}
-              isPinned={isEventPinned(eventId)}
-              onPinToggle={() => onPinToggle(eventId)}
-              onActivate={() => onCardActivate(eventId)}
+              isPinned={event.isPinned === true}
+              onPinToggle={() => onPinToggle(venueId, eventId, event.isPinned === true)}
+              onActivate={() => onCardActivate(venueId, eventId)}
             />
           );
         })}

@@ -1,5 +1,16 @@
 import { vi } from 'vitest';
-import type { EventResponse, PermissionsDto, VenueResponse } from '@/types/generated-api';
+import {
+  filterTonightEvents,
+  partitionRecentEvents,
+  partitionUpcomingEvents,
+} from '@/lib/partitionOverviewZones';
+import type {
+  DashboardResponse,
+  EventCardDto,
+  EventResponse,
+  PermissionsDto,
+  VenueResponse,
+} from '@/types/generated-api';
 import { fullAccessProfile, restrictedProfile } from '../fixtures/auth';
 
 /**
@@ -23,7 +34,10 @@ export interface MockWorkspaceFetchOptions {
   venuesOk?: boolean;
   venuesStatus?: number;
   eventsByVenue?: Record<string, EventResponse[]>;
+  dashboardByVenue?: Record<string, DashboardResponse>;
   eventsError?: boolean;
+  dashboardError?: boolean;
+  pinError?: boolean;
   createdEvent?: EventResponse;
   createdVenue?: VenueResponse;
   createVenueStatus?: number;
@@ -36,6 +50,85 @@ const DEFAULT_CREATED_VENUE: VenueResponse = {
   createdAt: '2026-06-17T00:00:00Z',
 };
 
+function toEventCardDto(event: EventResponse, isPinned = false): EventCardDto {
+  return {
+    eventId: event.eventId,
+    venueId: event.venueId,
+    title: event.title,
+    eventDate: event.eventDate,
+    status: event.status,
+    isBudgetLocked: event.isBudgetLocked,
+    qboTagName: event.qboTagName,
+    settledAt: event.settledAt,
+    settlementPdfAvailable: event.settlementPdfAvailable ?? false,
+    isPinned,
+    hasVarianceConcern: false,
+    unmappedCount: 0,
+    lastSyncedAt: null,
+  };
+}
+
+function buildDashboardFromEvents(
+  venueId: string,
+  events: EventResponse[],
+  pinnedKeys: Set<string>,
+): DashboardResponse {
+  const cards = events.map((event) =>
+    toEventCardDto(event, pinnedKeys.has(`${venueId}:${event.eventId}`)),
+  );
+  const tonightEvents = filterTonightEvents(events).map((event) =>
+    toEventCardDto(event, pinnedKeys.has(`${venueId}:${event.eventId}`)),
+  );
+  const upcomingEvents = partitionUpcomingEvents(events).map((event) =>
+    toEventCardDto(event, pinnedKeys.has(`${venueId}:${event.eventId}`)),
+  );
+  const recentEvents = partitionRecentEvents(events).map((event) =>
+    toEventCardDto(event, pinnedKeys.has(`${venueId}:${event.eventId}`)),
+  );
+  const pinnedEvents = cards.filter((event) => event.isPinned);
+
+  return {
+    venueId,
+    tonightEvents,
+    pinnedEvents,
+    upcomingEvents,
+    recentEvents,
+  };
+}
+
+function updateDashboardPinState(
+  dashboard: DashboardResponse,
+  eventId: string,
+  pinned: boolean,
+): DashboardResponse {
+  const updateCard = (event: EventCardDto): EventCardDto =>
+    event.eventId === eventId ? { ...event, isPinned: pinned } : event;
+
+  let pinnedEvents = (dashboard.pinnedEvents ?? []).map(updateCard);
+  const allEvents = [
+    ...(dashboard.tonightEvents ?? []),
+    ...(dashboard.upcomingEvents ?? []),
+    ...(dashboard.recentEvents ?? []),
+    ...pinnedEvents,
+  ];
+  const target = allEvents.find((event) => event.eventId === eventId);
+
+  if (pinned && target && !pinnedEvents.some((event) => event.eventId === eventId)) {
+    pinnedEvents = [...pinnedEvents, { ...target, isPinned: true }];
+  }
+  if (!pinned) {
+    pinnedEvents = pinnedEvents.filter((event) => event.eventId !== eventId);
+  }
+
+  return {
+    ...dashboard,
+    tonightEvents: (dashboard.tonightEvents ?? []).map(updateCard),
+    upcomingEvents: (dashboard.upcomingEvents ?? []).map(updateCard),
+    recentEvents: (dashboard.recentEvents ?? []).map(updateCard),
+    pinnedEvents,
+  };
+}
+
 export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
   const {
     profile = workspaceAdminProfile,
@@ -43,7 +136,10 @@ export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
     venuesOk = true,
     venuesStatus = 200,
     eventsByVenue = {},
+    dashboardByVenue = {},
     eventsError = false,
+    dashboardError = false,
+    pinError = false,
     createdEvent,
     createdVenue = DEFAULT_CREATED_VENUE,
     createVenueStatus = 201,
@@ -51,6 +147,25 @@ export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
 
   let venueList = [...venues];
   const eventLists: Record<string, EventResponse[]> = { ...eventsByVenue };
+  const dashboardLists: Record<string, DashboardResponse> = { ...dashboardByVenue };
+  const pinnedKeys = new Set<string>();
+
+  for (const [venueId, dashboard] of Object.entries(dashboardLists)) {
+    for (const event of dashboard.pinnedEvents ?? []) {
+      if (event.eventId) {
+        pinnedKeys.add(`${venueId}:${event.eventId}`);
+      }
+    }
+  }
+
+  const pinRequests: Array<{ method: string; venueId: string; eventId: string }> = [];
+
+  const resolveDashboard = (venueId: string): DashboardResponse => {
+    if (dashboardLists[venueId]) {
+      return dashboardLists[venueId]!;
+    }
+    return buildDashboardFromEvents(venueId, eventLists[venueId] ?? [], pinnedKeys);
+  };
 
   vi.stubGlobal(
     'fetch',
@@ -63,6 +178,47 @@ export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
           ok: true,
           status: 200,
           json: () => Promise.resolve(profile),
+        };
+      }
+
+      const pinMatch = url.match(/\/venues\/([^/]+)\/events\/([^/]+)\/pin$/);
+      if (pinMatch && (method === 'PUT' || method === 'DELETE')) {
+        if (pinError) {
+          return {
+            ok: false,
+            status: 500,
+            json: () => Promise.resolve({ detail: 'Pin failed' }),
+          };
+        }
+        const venueId = pinMatch[1]!;
+        const eventId = pinMatch[2]!;
+        pinRequests.push({ method, venueId, eventId });
+        const pinned = method === 'PUT';
+        const key = `${venueId}:${eventId}`;
+        if (pinned) {
+          pinnedKeys.add(key);
+        } else {
+          pinnedKeys.delete(key);
+        }
+        const current = resolveDashboard(venueId);
+        dashboardLists[venueId] = updateDashboardPinState(current, eventId, pinned);
+        return { ok: true, status: 204, json: () => Promise.resolve(undefined) };
+      }
+
+      const dashboardGetMatch = url.match(/\/venues\/([^/]+)\/dashboard$/);
+      if (dashboardGetMatch && method === 'GET') {
+        if (dashboardError || eventsError) {
+          return {
+            ok: false,
+            status: 500,
+            json: () => Promise.resolve({ detail: 'Server error' }),
+          };
+        }
+        const venueId = dashboardGetMatch[1]!;
+        return {
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(resolveDashboard(venueId)),
         };
       }
 
@@ -165,6 +321,15 @@ export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
       return { ok: true, status: 200, json: () => Promise.resolve({}) };
     }),
   );
+
+  return {
+    get pinRequests() {
+      return [...pinRequests];
+    },
+    getDashboard(venueId: string) {
+      return resolveDashboard(venueId);
+    },
+  };
 }
 
 export function mockTeamApiFetch() {

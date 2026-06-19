@@ -1,21 +1,31 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faThumbtack, faThumbtackSlash } from '@fortawesome/free-solid-svg-icons';
 import { deriveBottleneckAlerts, deriveLifecyclePhase } from '@/lib/eventLifecycle';
+import {
+  deriveBottleneckAlertsFromSummary,
+  mergeBottleneckAlerts,
+} from '@/lib/eventCardSummary';
 import { BOOKING_PREVIEW_TOOLTIP, getBookingPreviewLabel } from '@/lib/eventCardLabels';
 import { resolveQuickLinks, type WorkspaceFocus } from '@/lib/eventCardQuickLinks';
 import { eventHasNegativeVariance } from '@/lib/eventCardVariance';
-import type { EventResponse, LineItemDto, PermissionsDto } from '@/types/generated-api';
+import type { EventCardDto, EventResponse, LineItemDto, PermissionsDto } from '@/types/generated-api';
 
 export type { WorkspaceFocus };
 
+export type EventCardEvent = EventResponse | EventCardDto;
+
 export interface EventCardProps {
-  event: EventResponse;
+  event: EventCardEvent;
   permissions: PermissionsDto;
   onQuickLink: (venueId: string, eventId: string, focus?: WorkspaceFocus) => void;
   lineItems?: LineItemDto[];
   isPinned?: boolean;
   onPinToggle?: () => void;
   onActivate?: () => void;
+}
+
+function isEventCardDto(event: EventCardEvent): event is EventCardDto {
+  return 'hasVarianceConcern' in event || 'unmappedCount' in event || 'isPinned' in event;
 }
 
 function formatEventDate(eventDate: string | null | undefined): string {
@@ -38,7 +48,7 @@ export function EventCard({
   permissions,
   onQuickLink,
   lineItems,
-  isPinned = false,
+  isPinned,
   onPinToggle,
   onActivate,
 }: EventCardProps) {
@@ -47,8 +57,12 @@ export function EventCard({
   const title = event.title?.trim() || 'Untitled event';
   const phase = deriveLifecyclePhase(event);
   const quickLinks = resolveQuickLinks(phase, permissions);
-  const bottleneckAlerts = deriveBottleneckAlerts(event);
-  const showVariance = lineItems != null && eventHasNegativeVariance(lineItems);
+  const summaryAlerts = isEventCardDto(event) ? deriveBottleneckAlertsFromSummary(event) : [];
+  const bottleneckAlerts = mergeBottleneckAlerts(summaryAlerts, deriveBottleneckAlerts(event));
+  const showVariance =
+    (isEventCardDto(event) && event.hasVarianceConcern === true)
+    || (lineItems != null && eventHasNegativeVariance(lineItems));
+  const pinnedState = isPinned ?? (isEventCardDto(event) ? event.isPinned === true : false);
   const bookingLabel = getBookingPreviewLabel(event.eventId);
 
   return (
@@ -82,12 +96,12 @@ export function EventCard({
           <button
             type="button"
             className="event-card__pin"
-            aria-label={isPinned ? 'Unpin event' : 'Pin event'}
+            aria-label={pinnedState ? 'Unpin event' : 'Pin event'}
             data-testid={`event-card-pin-${eventId}`}
             onClick={onPinToggle}
           >
             <FontAwesomeIcon
-              icon={isPinned ? faThumbtackSlash : faThumbtack}
+              icon={pinnedState ? faThumbtackSlash : faThumbtack}
               className="event-card__pin-icon"
               aria-hidden="true"
             />
