@@ -511,7 +511,8 @@ public class DashboardControllerTests : IntegrationTestBase
             Amount = 50m,
             TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
             SyncBatchId = Guid.NewGuid(),
-            SyncedAt = syncedAt
+            SyncedAt = syncedAt,
+            EntryType = QboSyncLedgerEntryType.Original
         });
         await db.SaveChangesAsync();
     }

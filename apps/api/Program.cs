@@ -143,6 +143,7 @@ else
 }
 
 builder.Services.AddScoped<TestSeedingService>();
+builder.Services.AddScoped<QboSyncCorrectionService>();
 builder.Services.AddScoped<QboSyncService>();
 builder.Services.AddScoped<QboMappingService>();
 builder.Services.AddScoped<SplitRail.Api.Services.SignatureValidator>();

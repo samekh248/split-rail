@@ -40,7 +40,15 @@ public class LedgerService
     {
         var evt = await LoadEventForReadAsync(venueId, eventId, cancellationToken);
         var hidePromoterRows = await IsPromoterRoleAsync(cancellationToken);
-        return BuildLedgerGrid(evt, hidePromoterRows);
+        var correctionLineItemIds = await _db.QboSyncLedgers
+            .AsNoTracking()
+            .Where(l => l.EventId == eventId
+                && l.EntryType == QboSyncLedgerEntryType.OffsetCorrection
+                && l.MappedLineItemId != null)
+            .Select(l => l.MappedLineItemId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        return BuildLedgerGrid(evt, hidePromoterRows, correctionLineItemIds.ToHashSet());
     }
 
     public async Task<LedgerGridResponse> RecalculateAsync(
@@ -51,7 +59,15 @@ public class LedgerService
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
         await RecalculateAndPersistAsync(evt, cancellationToken);
         var hidePromoterRows = await IsPromoterRoleAsync(cancellationToken);
-        return BuildLedgerGrid(evt, hidePromoterRows);
+        var correctionLineItemIds = await _db.QboSyncLedgers
+            .AsNoTracking()
+            .Where(l => l.EventId == eventId
+                && l.EntryType == QboSyncLedgerEntryType.OffsetCorrection
+                && l.MappedLineItemId != null)
+            .Select(l => l.MappedLineItemId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        return BuildLedgerGrid(evt, hidePromoterRows, correctionLineItemIds.ToHashSet());
     }
 
     public async Task<EventResponse> LockBudgetAsync(
@@ -403,7 +419,10 @@ public class LedgerService
         return (grossRevenue, totalDeductions, netShowRevenue);
     }
 
-    private LedgerGridResponse BuildLedgerGrid(Event evt, bool hidePromoterRows)
+    private LedgerGridResponse BuildLedgerGrid(
+        Event evt,
+        bool hidePromoterRows,
+        IReadOnlySet<Guid> correctionLineItemIds)
     {
         var lineItems = hidePromoterRows
             ? evt.LineItems.Where(li => !li.IsHiddenFromPromoter).ToList()
@@ -415,7 +434,7 @@ public class LedgerService
             var rows = lineItems
                 .Where(li => li.BlockType == blockType.ToStorage())
                 .OrderBy(li => li.SortOrder)
-                .Select(ToLineItemDto)
+                .Select(li => ToLineItemDto(li, correctionLineItemIds.Contains(li.Id)))
                 .ToList();
 
             var blockTotals = new BlockTotalsDto(
@@ -572,7 +591,7 @@ public class LedgerService
         return roleName == RoleNames.Promoter;
     }
 
-    private static LineItemDto ToLineItemDto(FinancialLineItem li)
+    private static LineItemDto ToLineItemDto(FinancialLineItem li, bool hasQboCorrection = false)
     {
         var variance = li.QboActualValue - li.SettlementValue;
         return new LineItemDto(
@@ -587,7 +606,8 @@ public class LedgerService
             Math.Abs(variance) > 0m,
             li.Notes,
             li.IsHiddenFromPromoter,
-            RowVersionFormat.ToRowVersion(li.Xmin));
+            RowVersionFormat.ToRowVersion(li.Xmin),
+            hasQboCorrection);
     }
 
     private static EventArtistDto ToArtistDto(EventArtist artist) =>

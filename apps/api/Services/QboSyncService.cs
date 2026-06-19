@@ -5,6 +5,8 @@ using SplitRail.Api.DTOs.Qbo;
 using SplitRail.Api.Exceptions;
 using SplitRail.Api.Models;
 
+using SplitRail.Api.Models.Enums;
+
 namespace SplitRail.Api.Services;
 
 public class QboSyncService
@@ -14,6 +16,7 @@ public class QboSyncService
     private readonly IQboTransactionClient _transactionClient;
     private readonly VenueService _venueService;
     private readonly ITenantContext _tenantContext;
+    private readonly QboSyncCorrectionService _correctionService;
     private readonly ILogger<QboSyncService> _logger;
 
     public QboSyncService(
@@ -22,6 +25,7 @@ public class QboSyncService
         IQboTransactionClient transactionClient,
         VenueService venueService,
         ITenantContext tenantContext,
+        QboSyncCorrectionService correctionService,
         ILogger<QboSyncService> logger)
     {
         _db = db;
@@ -29,6 +33,7 @@ public class QboSyncService
         _transactionClient = transactionClient;
         _venueService = venueService;
         _tenantContext = tenantContext;
+        _correctionService = correctionService;
         _logger = logger;
     }
 
@@ -264,7 +269,8 @@ public class QboSyncService
                     TransactionDate = txn.TransactionDate,
                     MappedLineItemId = mapping.MappedLineItemId,
                     SyncBatchId = syncBatchId,
-                    SyncedAt = syncedAt
+                    SyncedAt = syncedAt,
+                    EntryType = QboSyncLedgerEntryType.Original
                 });
                 mapped++;
             }
@@ -287,16 +293,28 @@ public class QboSyncService
         }
 
         await _db.SaveChangesAsync(cancellationToken);
+        var offsetsCreated = await _correctionService.ApplyCorrectionsAsync(
+            evt.Id,
+            transactions,
+            syncBatchId,
+            syncedAt,
+            cancellationToken);
+        if (offsetsCreated > 0)
+            await _db.SaveChangesAsync(cancellationToken);
+
+        // Constitution V exception: QBO actuals aggregate may update on SETTLED/RECONCILED events.
         await RecomputeActualsForEventAsync(evt.Id, cancellationToken);
         await _db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
-            "QBO sync completed for event {EventId}: processed={Processed}, mapped={Mapped}, unmapped={Unmapped}",
+            "QBO sync completed for event {EventId}: processed={Processed}, mapped={Mapped}, unmapped={Unmapped}, offsetsCreated={OffsetsCreated}, syncBatchId={SyncBatchId}",
             evt.Id,
             processed,
             mapped,
-            unmapped);
+            unmapped,
+            offsetsCreated,
+            syncBatchId);
 
         return new SyncResultDto(
             evt.Id,

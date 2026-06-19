@@ -52,7 +52,8 @@ public record LineItemDto(
     bool VarianceFlagged,
     string? Notes,
     bool IsHiddenFromPromoter,
-    string RowVersion);
+    string RowVersion,
+    bool HasQboCorrection = false);
 
 public record EventArtistDto(
     Guid Id,
