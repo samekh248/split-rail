@@ -19,10 +19,11 @@ export interface VenueContextValue {
   venues: VenueResponse[];
   activeVenueId: string | null;
   activeVenue: VenueResponse | null;
+  isAllVenuesSelected: boolean;
   isLoading: boolean;
   isError: boolean;
   refetch: () => void;
-  setActiveVenue: (id: string) => void;
+  setActiveVenue: (id: string | null) => void;
   activateVenueId: (id: string) => void;
 }
 
@@ -39,11 +40,11 @@ export function resolveActiveVenueId(venues: VenueResponse[]): string | null {
     return remembered;
   }
 
-  const defaultId = venues[0]?.id ?? null;
-  if (defaultId) {
-    persistActiveVenueId(defaultId);
+  if (remembered) {
+    clearActiveVenueId();
   }
-  return defaultId;
+
+  return null;
 }
 
 export function VenueProvider({ children }: { children: ReactNode }) {
@@ -65,13 +66,19 @@ export function VenueProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const setActiveVenue = useCallback(
-    (id: string) => {
+    (id: string | null) => {
+      if (id === null) {
+        clearActiveVenueId();
+        setActiveVenueIdState(null);
+        void queryClient.invalidateQueries();
+        return;
+      }
       if (!venues.some((venue) => venue.id === id)) {
         return;
       }
       activateVenueId(id);
     },
-    [venues, activateVenueId],
+    [venues, activateVenueId, queryClient],
   );
 
   const activeVenue = useMemo(
@@ -79,18 +86,31 @@ export function VenueProvider({ children }: { children: ReactNode }) {
     [venues, activeVenueId],
   );
 
+  const isAllVenuesSelected = activeVenueId === null && venues.length > 0;
+
   const value = useMemo(
     () => ({
       venues,
       activeVenueId,
       activeVenue,
+      isAllVenuesSelected,
       isLoading,
       isError,
       refetch: () => void refetch(),
       setActiveVenue,
       activateVenueId,
     }),
-    [venues, activeVenueId, activeVenue, isLoading, isError, refetch, setActiveVenue, activateVenueId],
+    [
+      venues,
+      activeVenueId,
+      activeVenue,
+      isAllVenuesSelected,
+      isLoading,
+      isError,
+      refetch,
+      setActiveVenue,
+      activateVenueId,
+    ],
   );
 
   return <VenueContext.Provider value={value}>{children}</VenueContext.Provider>;

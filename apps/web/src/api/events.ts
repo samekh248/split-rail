@@ -1,4 +1,5 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo } from 'react';
+import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
 import type {
   CreateEventRequest,
@@ -17,6 +18,28 @@ export function useEvents(venueId: string | null) {
     enabled: Boolean(venueId),
     staleTime: 30_000,
   });
+}
+
+export function useAllVenuesEvents(venueIds: string[]) {
+  const results = useQueries({
+    queries: venueIds.map((venueId) => ({
+      queryKey: eventsQueryKey(venueId),
+      queryFn: () => apiFetch<EventResponse[]>(`/venues/${venueId}/events`),
+      staleTime: 30_000,
+    })),
+  });
+
+  const data = useMemo(
+    () => results.flatMap((result) => result.data ?? []),
+    [results],
+  );
+
+  return {
+    data,
+    isLoading: venueIds.length > 0 && results.some((result) => result.isLoading),
+    isError: results.some((result) => result.isError),
+    refetch: () => Promise.all(results.map((result) => result.refetch())),
+  };
 }
 
 export function useCreateEvent(venueId: string | null) {

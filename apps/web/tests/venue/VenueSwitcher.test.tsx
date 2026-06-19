@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { VenueSwitcher } from '@/components/venue/VenueSwitcher';
+import { ALL_VENUES_LABEL, VenueSwitcher } from '@/components/venue/VenueSwitcher';
 import { VenueProvider } from '@/venue/VenueContext';
 import { setActiveVenueId } from '@/venue/activeVenueStorage';
 
@@ -39,7 +39,32 @@ describe('VenueSwitcher', () => {
     vi.unstubAllGlobals();
   });
 
-  it('lists venues by name and indicates the active venue (C5.1, C5.2)', async () => {
+  it('defaults to All Venues when no venue is selected', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve([VENUE_A, VENUE_B]),
+      }),
+    );
+
+    const user = userEvent.setup();
+    render(<VenueSwitcher />, { wrapper: createWrapper() });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('venue-switcher-current')).toHaveTextContent(ALL_VENUES_LABEL),
+    );
+    await user.click(screen.getByTestId('venue-switcher-trigger'));
+
+    expect(screen.getByRole('option', { name: ALL_VENUES_LABEL })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    expect(screen.getByRole('option', { name: /Hall A/ })).toHaveAttribute('aria-selected', 'false');
+  });
+
+  it('lists All Venues and venues by name and indicates the active venue (C5.1, C5.2)', async () => {
     setActiveVenueId(VENUE_A.id);
     vi.stubGlobal(
       'fetch',
@@ -56,6 +81,10 @@ describe('VenueSwitcher', () => {
     await waitFor(() => expect(screen.getByTestId('venue-switcher-current')).toHaveTextContent('Hall A'));
     await user.click(screen.getByTestId('venue-switcher-trigger'));
 
+    expect(screen.getByRole('option', { name: ALL_VENUES_LABEL })).toHaveAttribute(
+      'aria-selected',
+      'false',
+    );
     expect(screen.getByRole('option', { name: /Hall A/ })).toHaveAttribute('aria-selected', 'true');
     expect(screen.getByRole('option', { name: /Hall B/ })).toHaveAttribute('aria-selected', 'false');
   });
@@ -79,6 +108,29 @@ describe('VenueSwitcher', () => {
     await user.click(screen.getByTestId(`venue-option-${VENUE_B.id}`));
 
     await waitFor(() => expect(screen.getByTestId('venue-switcher-current')).toHaveTextContent('Hall B'));
+  });
+
+  it('selects All Venues and clears active venue', async () => {
+    setActiveVenueId(VENUE_A.id);
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve([VENUE_A, VENUE_B]),
+      }),
+    );
+
+    const user = userEvent.setup();
+    render(<VenueSwitcher />, { wrapper: createWrapper() });
+
+    await waitFor(() => expect(screen.getByTestId('venue-switcher-current')).toHaveTextContent('Hall A'));
+    await user.click(screen.getByTestId('venue-switcher-trigger'));
+    await user.click(screen.getByTestId('venue-option-all'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('venue-switcher-current')).toHaveTextContent(ALL_VENUES_LABEL),
+    );
   });
 
   it('is keyboard operable with accessible name and current selection (C5.4, FR-013)', async () => {
@@ -119,11 +171,14 @@ describe('VenueSwitcher', () => {
       }),
     );
 
+    const user = userEvent.setup();
     render(<VenueSwitcher />, { wrapper: createWrapper() });
 
-    await waitFor(() => expect(screen.getByTestId('venue-switcher-current')).toHaveTextContent('Hall B'));
-    expect(screen.queryByTestId('venue-switcher-trigger')).not.toBeInTheDocument();
-    expect(screen.getByTestId('venue-switcher')).toHaveClass('venue-switcher--single');
+    await waitFor(() =>
+      expect(screen.getByTestId('venue-switcher-current')).toHaveTextContent(ALL_VENUES_LABEL),
+    );
+    await user.click(screen.getByTestId('venue-switcher-trigger'));
+    expect(screen.getByRole('option', { name: /Hall B/ })).toBeInTheDocument();
   });
 
   it('renders nothing when no venues are accessible (C5.6)', async () => {
@@ -141,7 +196,7 @@ describe('VenueSwitcher', () => {
     await waitFor(() => expect(screen.queryByTestId('venue-switcher')).not.toBeInTheDocument());
   });
 
-  it('shows single-venue state with active venue only (C5.5)', async () => {
+  it('shows dropdown with All Venues for a single venue', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn().mockResolvedValue({
@@ -151,9 +206,14 @@ describe('VenueSwitcher', () => {
       }),
     );
 
+    const user = userEvent.setup();
     render(<VenueSwitcher />, { wrapper: createWrapper() });
 
-    await waitFor(() => expect(screen.getByTestId('venue-switcher-current')).toHaveTextContent('Hall A'));
-    expect(screen.getByTestId('venue-switcher')).toHaveClass('venue-switcher--single');
+    await waitFor(() =>
+      expect(screen.getByTestId('venue-switcher-current')).toHaveTextContent(ALL_VENUES_LABEL),
+    );
+    await user.click(screen.getByTestId('venue-switcher-trigger'));
+    expect(screen.getByRole('option', { name: ALL_VENUES_LABEL })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: /Hall A/ })).toBeInTheDocument();
   });
 });

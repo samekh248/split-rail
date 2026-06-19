@@ -1719,6 +1719,57 @@ body {
   height: 0.875rem;
 }
 
+.dashboard-overview {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dashboard-overview__zones {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.dashboard-zone__heading {
+  margin: 0 0 1rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.dashboard-zone__empty {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9375rem;
+}
+
+.dashboard-zone__cards {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.dashboard-zone--pinned {
+  max-width: 72rem;
+}
+
+.dashboard-zone--pinned .dashboard-zone__cards {
+  grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+}
+
+.dashboard-zone--tonight {
+  padding: 1.25rem;
+  border-radius: 0.75rem;
+  background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%);
+  border: 1px solid #bfdbfe;
+}
+
+.dashboard-zone--tonight .dashboard-zone__heading {
+  color: #1d4ed8;
+}
+
 @media (max-width: 767px) {
   .app-shell__main {
     margin-left: 0;

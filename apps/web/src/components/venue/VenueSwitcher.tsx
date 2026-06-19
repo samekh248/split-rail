@@ -1,13 +1,39 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { isEventWorkspacePath, navigateToDashboard } from '@/lib/appRoute';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 
+export const ALL_VENUES_LABEL = 'All Venues';
+
+type VenueOption =
+  | { kind: 'all'; id: null; label: typeof ALL_VENUES_LABEL }
+  | { kind: 'venue'; id: string; label: string };
+
 export function VenueSwitcher() {
-  const { venues, activeVenueId, activeVenue, setActiveVenue, isLoading } = useActiveVenue();
+  const { venues, activeVenueId, setActiveVenue, isLoading } = useActiveVenue();
   const [open, setOpen] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const labelId = useId();
   const listboxId = useId();
+
+  const options = useMemo<VenueOption[]>(
+    () => [
+      { kind: 'all', id: null, label: ALL_VENUES_LABEL },
+      ...venues.map((venue) => ({
+        kind: 'venue' as const,
+        id: venue.id ?? '',
+        label: venue.name ?? 'Venue',
+      })),
+    ],
+    [venues],
+  );
+
+  const currentLabel = useMemo(() => {
+    if (activeVenueId === null) {
+      return ALL_VENUES_LABEL;
+    }
+    return venues.find((venue) => venue.id === activeVenueId)?.name ?? 'Select venue';
+  }, [activeVenueId, venues]);
 
   useEffect(() => {
     if (!open) {
@@ -23,36 +49,27 @@ export function VenueSwitcher() {
   }, [open]);
 
   useEffect(() => {
-    const index = venues.findIndex((venue) => venue.id === activeVenueId);
+    if (activeVenueId === null) {
+      setHighlightIndex(0);
+      return;
+    }
+    const index = options.findIndex((option) => option.id === activeVenueId);
     setHighlightIndex(index >= 0 ? index : 0);
-  }, [venues, activeVenueId, open]);
+  }, [options, activeVenueId, open]);
 
   if (isLoading || venues.length === 0) {
     return null;
   }
 
-  if (venues.length === 1) {
-    return (
-      <div
-        className="venue-switcher venue-switcher--single"
-        data-testid="venue-switcher"
-      >
-        <span className="venue-switcher__label" id={labelId}>
-          Venue
-        </span>
-        <span
-          className="venue-switcher__current"
-          aria-labelledby={labelId}
-          data-testid="venue-switcher-current"
-        >
-          {activeVenue?.name ?? 'Venue'}
-        </span>
-      </div>
-    );
-  }
-
-  const selectVenue = (id: string) => {
-    setActiveVenue(id);
+  const selectOption = (option: VenueOption) => {
+    if (option.kind === 'all') {
+      setActiveVenue(null);
+      if (isEventWorkspacePath(window.location.pathname)) {
+        navigateToDashboard();
+      }
+    } else if (option.id) {
+      setActiveVenue(option.id);
+    }
     setOpen(false);
   };
 
@@ -72,19 +89,19 @@ export function VenueSwitcher() {
     }
     if (event.key === 'ArrowDown') {
       event.preventDefault();
-      setHighlightIndex((index) => (index + 1) % venues.length);
+      setHighlightIndex((index) => (index + 1) % options.length);
       return;
     }
     if (event.key === 'ArrowUp') {
       event.preventDefault();
-      setHighlightIndex((index) => (index - 1 + venues.length) % venues.length);
+      setHighlightIndex((index) => (index - 1 + options.length) % options.length);
       return;
     }
     if (event.key === 'Enter') {
       event.preventDefault();
-      const venue = venues[highlightIndex];
-      if (venue?.id) {
-        selectVenue(venue.id);
+      const option = options[highlightIndex];
+      if (option) {
+        selectOption(option);
       }
     }
   };
@@ -106,7 +123,7 @@ export function VenueSwitcher() {
           Venue
         </span>
         <span className="venue-switcher__current" data-testid="venue-switcher-current">
-          {activeVenue?.name ?? 'Select venue'}
+          {currentLabel}
         </span>
         <span className="venue-switcher__chevron" aria-hidden="true">
           ▾
@@ -120,11 +137,16 @@ export function VenueSwitcher() {
           className="venue-switcher__menu"
           data-testid="venue-switcher-menu"
         >
-          {venues.map((venue, index) => {
-            const isActive = venue.id === activeVenueId;
+          {options.map((option, index) => {
+            const isActive =
+              option.kind === 'all' ? activeVenueId === null : option.id === activeVenueId;
             const isHighlighted = index === highlightIndex;
+            const testId =
+              option.kind === 'all'
+                ? 'venue-option-all'
+                : `venue-option-${option.id}`;
             return (
-              <li key={venue.id} role="presentation">
+              <li key={option.kind === 'all' ? 'all' : option.id} role="presentation">
                 <button
                   type="button"
                   role="option"
@@ -136,11 +158,11 @@ export function VenueSwitcher() {
                   ]
                     .filter(Boolean)
                     .join(' ')}
-                  data-testid={`venue-option-${venue.id}`}
+                  data-testid={testId}
                   onMouseEnter={() => setHighlightIndex(index)}
-                  onClick={() => venue.id && selectVenue(venue.id)}
+                  onClick={() => selectOption(option)}
                 >
-                  <span>{venue.name}</span>
+                  <span>{option.label}</span>
                   {isActive ? (
                     <span className="venue-switcher__check" aria-hidden="true">
                       ✓
