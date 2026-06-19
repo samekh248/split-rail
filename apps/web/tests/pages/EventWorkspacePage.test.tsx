@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor, within, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -19,8 +19,16 @@ import {
 } from '../utils/mockWorkspaceFetch';
 
 vi.mock('@/pages/EventLedgerPage', () => ({
-  EventLedgerPage: ({ venueId, eventId }: { venueId: string; eventId: string }) => (
-    <div data-testid="mock-ledger-page">
+  EventLedgerPage: ({
+    venueId,
+    eventId,
+    focus,
+  }: {
+    venueId: string;
+    eventId: string;
+    focus?: string | null;
+  }) => (
+    <div data-testid="mock-ledger-page" data-focus={focus ?? ''}>
       {venueId}:{eventId}
     </div>
   ),
@@ -183,7 +191,9 @@ describe('EventWorkspacePage', () => {
 
     await waitFor(() => {
       expect(window.location.pathname).toBe(workspacePath(VENUE_A.id, EVENT_C.eventId!));
+      expect(window.location.search).toBe('');
       expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(EVENT_C.eventId!);
+      expect(screen.getByTestId('mock-ledger-page')).toHaveAttribute('data-focus', '');
     });
   });
 
@@ -211,6 +221,7 @@ describe('EventWorkspacePage', () => {
 
     await waitFor(() => {
       expect(window.location.pathname).toBe(workspacePath(VENUE_B.id, EVENT_B.eventId!));
+      expect(window.location.search).toBe('');
       expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(
         `${VENUE_B.id}:${EVENT_B.eventId}`,
       );
@@ -348,5 +359,65 @@ describe('EventWorkspacePage', () => {
     expect(screen.getByTestId('top-bar')).toBeInTheDocument();
     expect(screen.queryByTestId('sidebar-workspace')).not.toBeInTheDocument();
     expect(screen.queryByTestId('header-settings')).not.toBeInTheDocument();
+  });
+
+  it('passes recognized focus from URL to EventLedgerPage', async () => {
+    window.history.pushState(
+      {},
+      '',
+      buildEventWorkspacePath(VENUE_A.id, EVENT_A.eventId!, 'deal'),
+    );
+
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    const ledger = await screen.findByTestId('mock-ledger-page');
+    expect(ledger).toHaveAttribute('data-focus', 'deal');
+  });
+
+  it('passes empty focus for unrecognized query values', async () => {
+    window.history.pushState(
+      {},
+      '',
+      buildEventWorkspacePath(VENUE_A.id, EVENT_A.eventId!, 'invalid'),
+    );
+
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    const ledger = await screen.findByTestId('mock-ledger-page');
+    expect(ledger).toHaveAttribute('data-focus', '');
+  });
+
+  it('re-applies focus when query changes on the same event', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    expect(await screen.findByTestId('mock-ledger-page')).toHaveAttribute('data-focus', '');
+
+    act(() => {
+      window.history.pushState(
+        {},
+        '',
+        buildEventWorkspacePath(VENUE_A.id, EVENT_A.eventId!, 'settlement'),
+      );
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-ledger-page')).toHaveAttribute('data-focus', 'settlement');
+    });
   });
 });
