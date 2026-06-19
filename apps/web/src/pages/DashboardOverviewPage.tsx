@@ -8,44 +8,67 @@ import {
 } from '@/components/dashboard/DashboardZoneSections';
 import type { WorkspaceFocus } from '@/components/dashboard/EventCard';
 import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
+import {
+  useAllVenuesDashboard,
+  useDashboard,
+  usePinEvent,
+  useUnpinEvent,
+  normalizeDashboardPartitions,
+  type MergedDashboardPartitions,
+} from '@/api/dashboard';
 import { useUserProfile } from '@/api/user';
-import { useAllVenuesEvents, useEvents } from '@/api/events';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
 import { navigateToCreateVenue, navigateToEventWorkspace } from '@/lib/dashboardRoute';
-import { partitionOverviewZones } from '@/lib/partitionOverviewZones';
-import { isEventPinned, toggleEventPinned } from '@/lib/pinnedEventStorage';
 import type { PermissionsDto } from '@/types/generated-api';
 
 const EMPTY_PERMISSIONS: PermissionsDto = {};
+
+const EMPTY_PARTITIONS: MergedDashboardPartitions = {
+  pinnedEvents: [],
+  tonightEvents: [],
+  upcomingEvents: [],
+  recentEvents: [],
+};
+
+function hasAnyDashboardEvents(partitions: MergedDashboardPartitions): boolean {
+  return (
+    partitions.pinnedEvents.length > 0
+    || partitions.tonightEvents.length > 0
+    || partitions.upcomingEvents.length > 0
+    || partitions.recentEvents.length > 0
+  );
+}
 
 export function DashboardOverviewPage() {
   const { isLoading: profileLoading, data: profile } = useUserProfile();
   const canManageVenues = useCanManageVenues();
   const { venues, activeVenueId, isAllVenuesSelected, isLoading, isError, refetch } = useActiveVenue();
   const venueIds = useMemo(() => venues.map((venue) => venue.id).filter(Boolean) as string[], [venues]);
-  const singleVenueEvents = useEvents(activeVenueId);
-  const allVenuesEvents = useAllVenuesEvents(isAllVenuesSelected ? venueIds : []);
-  const eventsQuery = isAllVenuesSelected ? allVenuesEvents : singleVenueEvents;
+  const singleVenueDashboard = useDashboard(isAllVenuesSelected ? null : activeVenueId);
+  const allVenuesDashboard = useAllVenuesDashboard(isAllVenuesSelected ? venueIds : []);
+  const dashboardQuery = isAllVenuesSelected ? allVenuesDashboard : singleVenueDashboard;
+  const pinEvent = usePinEvent();
+  const unpinEvent = useUnpinEvent();
+  const [pinError, setPinError] = useState<string | null>(null);
+
   const {
-    data: events = [],
-    isLoading: eventsLoading,
-    isError: eventsError,
-    refetch: refetchEvents,
-  } = eventsQuery;
-  const [pinnedRevision, setPinnedRevision] = useState(0);
+    data: dashboardData,
+    isLoading: dashboardLoading,
+    isError: dashboardError,
+    refetch: refetchDashboard,
+  } = dashboardQuery;
 
   const permissions = profile?.role?.permissions ?? EMPTY_PERMISSIONS;
   const hasVenues = venues.length > 0;
   const showEventsContent = hasVenues && (isAllVenuesSelected || Boolean(activeVenueId));
 
-  const partition = useMemo(() => {
-    if (!showEventsContent) {
-      return { tonight: [], pinned: [], upcoming: [], recent: [] };
+  const partitions = useMemo((): MergedDashboardPartitions => {
+    if (!showEventsContent || !dashboardData) {
+      return EMPTY_PARTITIONS;
     }
-    void pinnedRevision;
-    return partitionOverviewZones(events);
-  }, [events, showEventsContent, pinnedRevision]);
+    return normalizeDashboardPartitions(dashboardData);
+  }, [dashboardData, showEventsContent]);
 
   const workspaceBarContent = useMemo(
     () => (
@@ -68,39 +91,32 @@ export function DashboardOverviewPage() {
 
   useShellWorkspaceBar(workspaceBarContent);
 
-  const findEvent = (eventId: string) => events.find((event) => event.eventId === eventId);
-
   const handleQuickLink = (venueId: string, eventId: string, focus?: WorkspaceFocus) => {
     navigateToEventWorkspace(venueId, eventId, focus);
   };
 
-  const handleCardActivate = (eventId: string) => {
-    const event = findEvent(eventId);
-    const venueId = event?.venueId ?? activeVenueId;
-    if (venueId) {
-      navigateToEventWorkspace(venueId, eventId);
-    }
+  const handleCardActivate = (venueId: string, eventId: string) => {
+    navigateToEventWorkspace(venueId, eventId);
   };
 
-  const handlePinToggle = (eventId: string) => {
-    const event = findEvent(eventId);
-    const venueId = event?.venueId ?? activeVenueId;
-    if (!venueId) {
+  const handlePinToggle = (venueId: string, eventId: string, currentlyPinned: boolean) => {
+    if (!venueId || !eventId) {
       return;
     }
-    toggleEventPinned(venueId, eventId);
-    setPinnedRevision((value) => value + 1);
-  };
-
-  const checkPinned = (eventId: string) => {
-    const event = findEvent(eventId);
-    const venueId = event?.venueId ?? activeVenueId;
-    return venueId ? isEventPinned(venueId, eventId) : false;
+    setPinError(null);
+    const mutation = currentlyPinned ? unpinEvent : pinEvent;
+    mutation.mutate(
+      { venueId, eventId },
+      {
+        onError: (error) => {
+          setPinError(error instanceof Error ? error.message : 'Unable to update pin. Please try again.');
+        },
+      },
+    );
   };
 
   const zoneProps = {
     permissions,
-    isEventPinned: checkPinned,
     onQuickLink: handleQuickLink,
     onPinToggle: handlePinToggle,
     onCardActivate: handleCardActivate,
@@ -108,7 +124,7 @@ export function DashboardOverviewPage() {
 
   return (
     <div className="dashboard-overview">
-      {isLoading || (showEventsContent && eventsLoading) ? (
+      {isLoading || (showEventsContent && dashboardLoading) ? (
         <div className="dashboard-empty" role="status" aria-live="polite">
           Loading workspace…
         </div>
@@ -148,25 +164,31 @@ export function DashboardOverviewPage() {
         </section>
       ) : null}
 
-      {!isLoading && !isError && showEventsContent && eventsError ? (
+      {!isLoading && !isError && showEventsContent && dashboardError ? (
         <div className="dashboard-empty dashboard-empty--error" role="alert">
           <p>Unable to load events. Please try again.</p>
           <button
             type="button"
             className="dashboard-empty__retry"
-            onClick={() => void refetchEvents()}
+            onClick={() => void refetchDashboard()}
           >
             Retry
           </button>
         </div>
       ) : null}
 
+      {pinError ? (
+        <div className="dashboard-empty dashboard-empty--error" role="alert" data-testid="dashboard-pin-error">
+          <p>{pinError}</p>
+        </div>
+      ) : null}
+
       {!isLoading &&
       !isError &&
       showEventsContent &&
-      !eventsLoading &&
-      !eventsError &&
-      events.length === 0 ? (
+      !dashboardLoading &&
+      !dashboardError &&
+      !hasAnyDashboardEvents(partitions) ? (
         <section className="dashboard-empty" data-testid="dashboard-no-events" aria-labelledby="events-empty-heading">
           <h2 id="events-empty-heading" className="dashboard-empty__heading">
             No events yet
@@ -182,14 +204,14 @@ export function DashboardOverviewPage() {
       {!isLoading &&
       !isError &&
       showEventsContent &&
-      !eventsLoading &&
-      !eventsError &&
-      events.length > 0 ? (
+      !dashboardLoading &&
+      !dashboardError &&
+      hasAnyDashboardEvents(partitions) ? (
         <div className="dashboard-overview__zones" data-testid="dashboard-overview">
-          <PinnedEventsSection events={partition.pinned} {...zoneProps} />
-          <TonightHeroBanner events={partition.tonight} {...zoneProps} />
-          <UpcomingEventsSection events={partition.upcoming} {...zoneProps} />
-          <RecentEventsSection events={partition.recent} {...zoneProps} />
+          <PinnedEventsSection events={partitions.pinnedEvents} {...zoneProps} />
+          <TonightHeroBanner events={partitions.tonightEvents} {...zoneProps} />
+          <UpcomingEventsSection events={partitions.upcomingEvents} {...zoneProps} />
+          <RecentEventsSection events={partitions.recentEvents} {...zoneProps} />
         </div>
       ) : null}
     </div>

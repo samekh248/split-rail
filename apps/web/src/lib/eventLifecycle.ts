@@ -2,7 +2,11 @@ import type { EventResponse } from '@/types/generated-api';
 
 export type DashboardLifecyclePhase = 'PreShow' | 'NightOf' | 'PostShow' | 'Unknown';
 
-export type BottleneckAlertKind = 'MISSING_SIGNATURE' | 'SETTLED_NOT_SYNCED' | 'VARIANCE_REVIEW';
+export type BottleneckAlertKind =
+  | 'MISSING_SIGNATURE'
+  | 'SETTLED_NOT_SYNCED'
+  | 'VARIANCE_REVIEW'
+  | 'UNMAPPED_QBO';
 
 export interface BottleneckAlert {
   kind: BottleneckAlertKind;
@@ -13,6 +17,7 @@ const BOTTLENECK_LABELS: Record<BottleneckAlertKind, string> = {
   MISSING_SIGNATURE: 'Missing signature',
   SETTLED_NOT_SYNCED: 'Not synced to QBO',
   VARIANCE_REVIEW: 'Variance review needed',
+  UNMAPPED_QBO: 'Unmapped QBO accounts',
 };
 
 function parseEventDate(eventDate: string | null | undefined): Date | null {
