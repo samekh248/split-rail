@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { VenueSwitcher } from '@/components/venue/VenueSwitcher';
 import {
   PinnedEventsSection,
@@ -6,6 +6,8 @@ import {
   TonightHeroBanner,
   UpcomingEventsSection,
 } from '@/components/dashboard/DashboardZoneSections';
+import { BottleneckFilter } from '@/components/dashboard/BottleneckFilter';
+import { FinancialHealthWidget } from '@/components/dashboard/FinancialHealthWidget';
 import { UnassignedTransactionsBanner } from '@/components/dashboard/UnassignedTransactionsBanner';
 import type { WorkspaceFocus } from '@/components/dashboard/EventCard';
 import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
@@ -18,6 +20,10 @@ import {
   type MergedDashboardPartitions,
 } from '@/api/dashboard';
 import { useUserProfile } from '@/api/user';
+import {
+  eventHasBottleneckAlerts,
+  filterRecentEventsByBottleneck,
+} from '@/lib/eventCardSummary';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
 import { navigateToCreateVenue, navigateToEventWorkspace } from '@/lib/dashboardRoute';
@@ -52,6 +58,7 @@ export function DashboardOverviewPage() {
   const pinEvent = usePinEvent();
   const unpinEvent = useUnpinEvent();
   const [pinError, setPinError] = useState<string | null>(null);
+  const [bottleneckFilterActive, setBottleneckFilterActive] = useState(false);
 
   const {
     data: dashboardData,
@@ -75,7 +82,33 @@ export function DashboardOverviewPage() {
     ? allVenuesDashboard.actionCenter
     : singleVenueDashboard.data?.actionCenter;
 
+  const financialHealth = isAllVenuesSelected
+    ? undefined
+    : singleVenueDashboard.data?.financialHealth;
+
   const venueScopeKey = isAllVenuesSelected ? 'all' : (activeVenueId ?? 'none');
+
+  useEffect(() => {
+    setBottleneckFilterActive(false);
+  }, [venueScopeKey]);
+
+  const recentAlertCount = useMemo(
+    () => partitions.recentEvents.filter(eventHasBottleneckAlerts).length,
+    [partitions.recentEvents],
+  );
+
+  const displayedRecentEvents = useMemo(
+    () => filterRecentEventsByBottleneck(partitions.recentEvents, bottleneckFilterActive),
+    [partitions.recentEvents, bottleneckFilterActive],
+  );
+
+  const recentEmptyMessage = bottleneckFilterActive
+    && partitions.recentEvents.length > 0
+    && displayedRecentEvents.length === 0
+    ? 'No events need attention'
+    : 'No recent events';
+
+  const showDashboardWidgets = showEventsContent && !dashboardLoading && !dashboardError;
 
   const workspaceBarContent = useMemo(
     () => (
@@ -128,6 +161,30 @@ export function DashboardOverviewPage() {
     onPinToggle: handlePinToggle,
     onCardActivate: handleCardActivate,
   };
+
+  const dashboardActionWidgets = showDashboardWidgets ? (
+    <>
+      <UnassignedTransactionsBanner
+        actionCenter={actionCenter}
+        venues={venues}
+        isAllVenuesView={isAllVenuesSelected}
+        isLoading={dashboardLoading}
+        venueScopeKey={venueScopeKey}
+        onRetryDashboard={() => void refetchDashboard()}
+      />
+      {!isAllVenuesSelected ? (
+        <FinancialHealthWidget financialHealth={financialHealth} isLoading={dashboardLoading} />
+      ) : null}
+    </>
+  ) : null;
+
+  const recentFilterSlot = showDashboardWidgets ? (
+    <BottleneckFilter
+      active={bottleneckFilterActive}
+      onToggle={() => setBottleneckFilterActive((active) => !active)}
+      alertedCount={recentAlertCount}
+    />
+  ) : null;
 
   return (
     <div className="dashboard-overview">
@@ -193,41 +250,40 @@ export function DashboardOverviewPage() {
       {!isLoading &&
       !isError &&
       showEventsContent &&
-      !dashboardLoading &&
-      !dashboardError &&
+      showDashboardWidgets &&
       !hasAnyDashboardEvents(partitions) ? (
-        <section className="dashboard-empty" data-testid="dashboard-no-events" aria-labelledby="events-empty-heading">
-          <h2 id="events-empty-heading" className="dashboard-empty__heading">
-            No events yet
-          </h2>
-          <p className="dashboard-empty__text">
-            {isAllVenuesSelected
-              ? 'There are no events across your venues yet. Create events from the event management workspace.'
-              : 'This venue does not have any events yet. Create events from the event management workspace.'}
-          </p>
-        </section>
+        <>
+          {dashboardActionWidgets}
+          <section className="dashboard-empty" data-testid="dashboard-no-events" aria-labelledby="events-empty-heading">
+            <h2 id="events-empty-heading" className="dashboard-empty__heading">
+              No events yet
+            </h2>
+            <p className="dashboard-empty__text">
+              {isAllVenuesSelected
+                ? 'There are no events across your venues yet. Create events from the event management workspace.'
+                : 'This venue does not have any events yet. Create events from the event management workspace.'}
+            </p>
+          </section>
+        </>
       ) : null}
 
       {!isLoading &&
       !isError &&
       showEventsContent &&
-      !dashboardLoading &&
-      !dashboardError &&
+      showDashboardWidgets &&
       hasAnyDashboardEvents(partitions) ? (
         <>
-          <UnassignedTransactionsBanner
-            actionCenter={actionCenter}
-            venues={venues}
-            isAllVenuesView={isAllVenuesSelected}
-            isLoading={dashboardLoading}
-            venueScopeKey={venueScopeKey}
-            onRetryDashboard={() => void refetchDashboard()}
-          />
+          {dashboardActionWidgets}
           <div className="dashboard-overview__zones" data-testid="dashboard-overview">
             <PinnedEventsSection events={partitions.pinnedEvents} {...zoneProps} />
             <TonightHeroBanner events={partitions.tonightEvents} {...zoneProps} />
             <UpcomingEventsSection events={partitions.upcomingEvents} {...zoneProps} />
-            <RecentEventsSection events={partitions.recentEvents} {...zoneProps} />
+            <RecentEventsSection
+              events={displayedRecentEvents}
+              emptyMessage={recentEmptyMessage}
+              filterSlot={recentFilterSlot}
+              {...zoneProps}
+            />
           </div>
         </>
       ) : null}
