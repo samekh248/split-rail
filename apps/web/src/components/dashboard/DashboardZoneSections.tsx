@@ -1,9 +1,17 @@
+import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { EventCard } from '@/components/dashboard/EventCard';
 import {
   DashboardZoneEvents,
   type DashboardZoneEventsProps,
 } from '@/components/dashboard/DashboardZoneEvents';
+import { UpcomingEventsMiniCalendar } from '@/components/dashboard/UpcomingEventsMiniCalendar';
+import { UpcomingEventsViewToggle } from '@/components/dashboard/UpcomingEventsViewToggle';
+import {
+  readUpcomingViewMode,
+  writeUpcomingViewMode,
+  type UpcomingViewMode,
+} from '@/lib/upcomingEventsViewStorage';
 import type { EventCardDto, PermissionsDto } from '@/types/generated-api';
 
 type ZoneProps = Omit<DashboardZoneEventsProps, 'title' | 'emptyMessage' | 'testId'>;
@@ -21,13 +29,44 @@ export function PinnedEventsSection(props: ZoneProps) {
 }
 
 export function UpcomingEventsSection(props: ZoneProps) {
+  const [viewMode, setViewMode] = useState<UpcomingViewMode>(() => readUpcomingViewMode());
+
+  const handleViewChange = (mode: UpcomingViewMode) => {
+    setViewMode(mode);
+    writeUpcomingViewMode(mode);
+  };
+
+  const viewToggle = (
+    <UpcomingEventsViewToggle mode={viewMode} onChange={handleViewChange} />
+  );
+
+  if (viewMode === 'list') {
+    return (
+      <DashboardZoneEvents
+        title="Upcoming events"
+        emptyMessage="No upcoming events"
+        testId="dashboard-zone-upcoming"
+        filterSlot={viewToggle}
+        {...props}
+      />
+    );
+  }
+
   return (
-    <DashboardZoneEvents
-      title="Upcoming events"
-      emptyMessage="No upcoming events"
-      testId="dashboard-zone-upcoming"
-      {...props}
-    />
+    <section className="dashboard-zone" data-testid="dashboard-zone-upcoming">
+      <div className="dashboard-zone__header">
+        <h2 className="dashboard-zone__heading">Upcoming events</h2>
+        {viewToggle}
+      </div>
+      {props.events.length === 0 ? (
+        <p className="dashboard-zone__empty">No upcoming events</p>
+      ) : (
+        <UpcomingEventsMiniCalendar
+          events={props.events}
+          onEventActivate={props.onCardActivate}
+        />
+      )}
+    </section>
   );
 }
 
