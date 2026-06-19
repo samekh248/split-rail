@@ -457,6 +457,8 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.SettledAt).HasColumnName("settled_at");
             entity.Property(e => e.SettledByUserId).HasColumnName("settled_by_user_id");
+            entity.Property(e => e.ReconciledAt).HasColumnName("reconciled_at");
+            entity.Property(e => e.ReconciledByUserId).HasColumnName("reconciled_by_user_id");
 
             entity.Property(e => e.ArtistSignatureData)
                 .HasColumnName("artist_signature_data");
@@ -484,6 +486,11 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.SettledByUser)
                 .WithMany()
                 .HasForeignKey(e => e.SettledByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ReconciledByUser)
+                .WithMany()
+                .HasForeignKey(e => e.ReconciledByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
     }

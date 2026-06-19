@@ -101,7 +101,9 @@ public record EventResponse(
     string QboTagName,
     EditabilityDto Editability,
     DateTimeOffset? SettledAt = null,
-    bool SettlementPdfAvailable = false);
+    bool SettlementPdfAvailable = false,
+    DateTimeOffset? ReconciledAt = null,
+    Guid? ReconciledByUserId = null);
 
 public record CreateEventRequest(
     string Title,

@@ -187,5 +187,7 @@ public class EventService
             evt.QboTagName,
             LedgerService.GetEditability(evt.Status, evt.IsBudgetLocked),
             evt.SettledAt,
-            !string.IsNullOrWhiteSpace(evt.SettlementPdfUrl));
+            !string.IsNullOrWhiteSpace(evt.SettlementPdfUrl),
+            evt.ReconciledAt,
+            evt.ReconciledByUserId);
 }

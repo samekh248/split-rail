@@ -99,6 +99,8 @@ public class DashboardService
             evt.QboTagName,
             evt.SettledAt,
             !string.IsNullOrWhiteSpace(evt.SettlementPdfUrl),
+            evt.ReconciledAt,
+            evt.ReconciledByUserId,
             isPinned,
             LedgerVarianceHelper.HasVarianceConcern(evt.LineItems),
             evt.UnmappedQboTransactions.Count,
