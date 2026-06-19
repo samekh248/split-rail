@@ -4,9 +4,10 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 using SplitRail.Api.Data;
 using SplitRail.Api.DTOs.Auth;
 using SplitRail.Api.DTOs.Invitations;
@@ -16,6 +17,7 @@ using SplitRail.Api.DTOs.Venues;
 using SplitRail.Api.Models;
 using SplitRail.Api.Models.Enums;
 using SplitRail.Api.Services;
+using SplitRail.Api.Tests.TestSupport;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -33,8 +35,10 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected WebApplicationFactory<Program> Factory = null!;
     protected HttpClient Client = null!;
     protected InMemorySettlementArchiveStore ArchiveStore { get; } = new();
+    protected TestLogCollector? LogCollector { get; private set; }
 
     protected virtual bool ReplaceSettlementArchiveStore => true;
+    protected virtual bool EnableLogCapture => false;
 
     protected virtual void AddAppConfiguration(Dictionary<string, string?> config)
     {
@@ -84,8 +88,21 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                 config.AddInMemoryCollection(settings);
             });
 
+            if (EnableLogCapture)
+            {
+                LogCollector = new TestLogCollector();
+            }
+
             builder.ConfigureServices(services =>
-                ConfigureTestServices(services, connectionString));
+            {
+                ConfigureTestServices(services, connectionString);
+
+                if (LogCollector is not null)
+                {
+                    services.AddSingleton(LogCollector);
+                    services.AddSingleton<ILoggerProvider>(sp => sp.GetRequiredService<TestLogCollector>());
+                }
+            });
         });
 
         Client = Factory.CreateClient();

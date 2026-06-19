@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using SplitRail.Api.Configuration;
 using SplitRail.Api.Data;
@@ -148,11 +149,13 @@ public class TestSeedingServiceTests
         var db = new ApplicationDbContext(options, tenantContext);
         var previewOptions = Options.Create(new PreviewOptions { EnableTestSeeding = enableSeeding });
         var dataProtection = new EphemeralDataProtectionProvider();
+        var auditor = new FrozenEventMutationAuditor(NullLogger<FrozenEventMutationAuditor>.Instance);
         var service = new TestSeedingService(
             db,
             previewOptions,
             archiveStore ?? new InMemorySettlementArchiveStore(),
-            dataProtection);
+            dataProtection,
+            auditor);
         return (service, db);
     }
 

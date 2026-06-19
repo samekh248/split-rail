@@ -14,6 +14,7 @@ public class LedgerService
     private readonly ITenantContext _tenantContext;
     private readonly VenueService _venueService;
     private readonly DealMathEngine _dealMathEngine;
+    private readonly FrozenEventMutationAuditor _frozenEventAuditor;
     private readonly ILogger<LedgerService> _logger;
 
     public LedgerService(
@@ -21,12 +22,14 @@ public class LedgerService
         ITenantContext tenantContext,
         VenueService venueService,
         DealMathEngine dealMathEngine,
+        FrozenEventMutationAuditor frozenEventAuditor,
         ILogger<LedgerService> logger)
     {
         _db = db;
         _tenantContext = tenantContext;
         _venueService = venueService;
         _dealMathEngine = dealMathEngine;
+        _frozenEventAuditor = frozenEventAuditor;
         _logger = logger;
     }
 
@@ -58,8 +61,12 @@ public class LedgerService
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
 
-        if (evt.Status is EventStatus.Settled or EventStatus.Reconciled)
-            throw new LedgerStateException("Cannot lock budget when event is settled or reconciled.");
+        _frozenEventAuditor.RejectIfFrozen(
+            evt,
+            venueId,
+            _tenantContext.UserId,
+            FrozenEventMutationOperation.LockBudget,
+            "Cannot lock budget when event is settled or reconciled.");
 
         if (evt.IsBudgetLocked)
             return EventService.ToEventResponse(evt);
@@ -79,7 +86,7 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
-        AssertNotSettledOrReconciled(evt);
+        AssertNotSettledOrReconciled(evt, venueId, FrozenEventMutationOperation.CreateLineItem);
         await ValidateLineItemStructuralEditAsync(evt, cancellationToken);
         ValidateBlockType(request.BlockType);
 
@@ -125,7 +132,7 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
-        AssertNotSettledOrReconciled(evt);
+        AssertNotSettledOrReconciled(evt, venueId, FrozenEventMutationOperation.UpdateLineItem);
         await ValidateLineItemStructuralEditAsync(evt, cancellationToken);
 
         var lineItem = await _db.FinancialLineItems
@@ -175,7 +182,7 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
-        AssertNotSettledOrReconciled(evt);
+        AssertNotSettledOrReconciled(evt, venueId, FrozenEventMutationOperation.DeleteLineItem);
         await ValidateLineItemStructuralEditAsync(evt, cancellationToken);
 
         var lineItem = await _db.FinancialLineItems
@@ -203,7 +210,7 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
-        AssertArtistEditable(evt);
+        AssertArtistEditable(evt, venueId, FrozenEventMutationOperation.CreateArtist);
         await ValidateArtistStructuralEditAsync(evt, cancellationToken);
 
         var dealType = ParseDealType(request.DealType);
@@ -248,7 +255,7 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
-        AssertArtistEditable(evt);
+        AssertArtistEditable(evt, venueId, FrozenEventMutationOperation.UpdateArtist);
         await ValidateArtistStructuralEditAsync(evt, cancellationToken);
 
         var artist = await _db.EventArtists
@@ -294,7 +301,7 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
-        AssertArtistEditable(evt);
+        AssertArtistEditable(evt, venueId, FrozenEventMutationOperation.DeleteArtist);
         await ValidateArtistStructuralEditAsync(evt, cancellationToken);
 
         var artist = await _db.EventArtists
@@ -325,16 +332,26 @@ public class LedgerService
             _ => new EditabilityDto("locked", "locked", "locked")
         };
 
-    public static void AssertNotSettledOrReconciled(Event evt)
-    {
-        if (evt.Status is EventStatus.Settled or EventStatus.Reconciled)
-            throw new LedgerStateException("Event is settled or reconciled and cannot be modified.");
-    }
+    private void AssertNotSettledOrReconciled(Event evt, Guid venueId, string operation) =>
+        _frozenEventAuditor.RejectIfFrozen(evt, venueId, _tenantContext.UserId, operation);
 
-    public static void AssertArtistEditable(Event evt)
+    private void AssertArtistEditable(Event evt, Guid venueId, string operation)
     {
-        if (evt.Status is not EventStatus.PreShow)
-            throw new LedgerStateException("Artist configuration is only permitted while event is in PRE_SHOW status.");
+        if (evt.Status is EventStatus.PreShow)
+            return;
+
+        if (evt.Status is EventStatus.Settled or EventStatus.Reconciled)
+        {
+            _frozenEventAuditor.RejectIfFrozen(
+                evt,
+                venueId,
+                _tenantContext.UserId,
+                operation,
+                "Artist configuration is only permitted while event is in PRE_SHOW status.");
+        }
+
+        throw new LedgerStateException(
+            "Artist configuration is only permitted while event is in PRE_SHOW status.");
     }
 
     private async Task RecalculateAndPersistAsync(Event evt, CancellationToken cancellationToken)

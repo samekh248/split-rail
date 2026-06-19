@@ -13,17 +13,20 @@ public class EventService
     private readonly ApplicationDbContext _db;
     private readonly ITenantContext _tenantContext;
     private readonly VenueService _venueService;
+    private readonly FrozenEventMutationAuditor _frozenEventAuditor;
     private readonly ILogger<EventService> _logger;
 
     public EventService(
         ApplicationDbContext db,
         ITenantContext tenantContext,
         VenueService venueService,
+        FrozenEventMutationAuditor frozenEventAuditor,
         ILogger<EventService> logger)
     {
         _db = db;
         _tenantContext = tenantContext;
         _venueService = venueService;
+        _frozenEventAuditor = frozenEventAuditor;
         _logger = logger;
     }
 
@@ -110,8 +113,11 @@ public class EventService
         if (evt is null)
             throw new NotFoundException("Event not found.");
 
-        if (evt.Status is EventStatus.Settled or EventStatus.Reconciled)
-            throw new LedgerStateException("Event is settled or reconciled and cannot be modified.");
+        _frozenEventAuditor.RejectIfFrozen(
+            evt,
+            venueId,
+            userId,
+            FrozenEventMutationOperation.UpdateEventMetadata);
 
         var qboTagName = string.IsNullOrWhiteSpace(request.QboTagName)
             ? string.Empty
@@ -145,8 +151,12 @@ public class EventService
         if (evt is null)
             throw new NotFoundException("Event not found.");
 
-        if (evt.Status is EventStatus.Settled or EventStatus.Reconciled)
-            throw new LedgerStateException("Event is settled or reconciled and cannot be deleted.");
+        _frozenEventAuditor.RejectIfFrozen(
+            evt,
+            venueId,
+            userId,
+            FrozenEventMutationOperation.DeleteEvent,
+            "Event is settled or reconciled and cannot be deleted.");
 
         if (evt.IsBudgetLocked)
             throw new LedgerStateException("Event budget is locked and cannot be deleted.");
