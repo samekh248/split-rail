@@ -23,9 +23,17 @@ describe('eventWorkspaceRoute', () => {
   });
 
   it('navigateToEventWorkspace appends optional focus query', () => {
-    navigateToEventWorkspace(VENUE_ID, EVENT_ID, 'artists');
+    navigateToEventWorkspace(VENUE_ID, EVENT_ID, 'deal');
 
     expect(window.location.pathname).toBe(`/venues/${VENUE_ID}/events/${EVENT_ID}`);
-    expect(window.location.search).toBe('?focus=artists');
+    expect(window.location.search).toBe('?focus=deal');
+  });
+
+  it('navigateToEventWorkspace supports settlement and sync focus values', () => {
+    navigateToEventWorkspace(VENUE_ID, EVENT_ID, 'settlement');
+    expect(window.location.search).toBe('?focus=settlement');
+
+    navigateToEventWorkspace(VENUE_ID, EVENT_ID, 'sync');
+    expect(window.location.search).toBe('?focus=sync');
   });
 });

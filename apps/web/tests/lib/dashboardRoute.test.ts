@@ -4,6 +4,7 @@ import {
   getDashboardPath,
   navigateToCreateVenue,
   navigateToDashboard,
+  navigateToEventWorkspace,
   useDashboardRoute,
 } from '@/lib/dashboardRoute';
 
@@ -37,5 +38,15 @@ describe('dashboardRoute', () => {
     act(() => navigateToDashboard());
     expect(window.location.pathname).toBe('/');
     expect(result.current).toBe('/');
+  });
+
+  it('re-exports navigateToEventWorkspace from the dashboard route barrel', () => {
+    const venueId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+    const eventId = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee';
+
+    navigateToEventWorkspace(venueId, eventId, 'deal');
+
+    expect(window.location.pathname).toBe(`/venues/${venueId}/events/${eventId}`);
+    expect(window.location.search).toBe('?focus=deal');
   });
 });

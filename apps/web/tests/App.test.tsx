@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '@/App';
 import { AuthProvider } from '@/auth/AuthContext';
+import { EVENT_A } from './fixtures/events';
+import { VENUE_A } from './fixtures/venues';
 
 vi.mock('@/pages/EventLedgerPage', () => ({
   EventLedgerPage: ({ venueId, eventId }: { venueId: string; eventId: string }) => (
@@ -32,7 +34,13 @@ function createWrapper() {
   );
 }
 
-function mockAuthenticatedFetch() {
+function mockAuthenticatedFetch(options?: {
+  venues?: typeof VENUE_A[];
+  events?: typeof EVENT_A[];
+}) {
+  const venues = options?.venues ?? [];
+  const events = options?.events ?? [];
+
   vi.stubGlobal(
     'fetch',
     vi.fn((input: RequestInfo | URL) => {
@@ -42,6 +50,23 @@ function mockAuthenticatedFetch() {
           ok: true,
           status: 200,
           json: () => Promise.resolve(profileWithOrg()),
+        });
+      }
+      if (url.includes('/venues') && !url.includes('/events')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(venues),
+        });
+      }
+      const eventsMatch = url.match(/\/venues\/([^/]+)\/events$/);
+      if (eventsMatch) {
+        const venueId = eventsMatch[1]!;
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve(events.filter((event) => event.venueId === venueId)),
         });
       }
       return Promise.resolve({
@@ -87,7 +112,7 @@ describe('App', () => {
   it('renders dashboard empty state when authenticated with no venues', async () => {
     localStorage.setItem('accessToken', 'token');
     localStorage.setItem('refreshToken', 'refresh');
-    window.history.pushState({}, '', '/?venueId=ven-123&eventId=evt-456');
+    window.history.pushState({}, '', '/');
     mockAuthenticatedFetch();
 
     render(
@@ -98,6 +123,52 @@ describe('App', () => {
     );
 
     expect(await screen.findByRole('heading', { name: 'No venues yet' })).toBeInTheDocument();
+  });
+
+  it('renders dashboard overview at root when authenticated with events', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/');
+    mockAuthenticatedFetch({
+      venues: [VENUE_A],
+      events: [EVENT_A],
+    });
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByTestId('dashboard-overview')).toBeInTheDocument();
+    expect(screen.queryByTestId('mock-ledger-page')).not.toBeInTheDocument();
+  });
+
+  it('renders event workspace route with ledger host', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState(
+      {},
+      '',
+      `/venues/${VENUE_A.id}/events/${EVENT_A.eventId}`,
+    );
+    mockAuthenticatedFetch({
+      venues: [VENUE_A],
+      events: [EVENT_A],
+    });
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByTestId('mock-ledger-page')).toHaveTextContent(
+      `${VENUE_A.id}:${EVENT_A.eventId}`,
+    );
+    expect(screen.queryByTestId('dashboard-overview')).not.toBeInTheDocument();
   });
 
   it('renders settings landing when authenticated on /settings', async () => {
