@@ -6,6 +6,7 @@ import {
   TonightHeroBanner,
   UpcomingEventsSection,
 } from '@/components/dashboard/DashboardZoneSections';
+import { UnassignedTransactionsBanner } from '@/components/dashboard/UnassignedTransactionsBanner';
 import type { WorkspaceFocus } from '@/components/dashboard/EventCard';
 import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
 import {
@@ -69,6 +70,12 @@ export function DashboardOverviewPage() {
     }
     return normalizeDashboardPartitions(dashboardData);
   }, [dashboardData, showEventsContent]);
+
+  const actionCenter = isAllVenuesSelected
+    ? allVenuesDashboard.actionCenter
+    : singleVenueDashboard.data?.actionCenter;
+
+  const venueScopeKey = isAllVenuesSelected ? 'all' : (activeVenueId ?? 'none');
 
   const workspaceBarContent = useMemo(
     () => (
@@ -207,12 +214,22 @@ export function DashboardOverviewPage() {
       !dashboardLoading &&
       !dashboardError &&
       hasAnyDashboardEvents(partitions) ? (
-        <div className="dashboard-overview__zones" data-testid="dashboard-overview">
-          <PinnedEventsSection events={partitions.pinnedEvents} {...zoneProps} />
-          <TonightHeroBanner events={partitions.tonightEvents} {...zoneProps} />
-          <UpcomingEventsSection events={partitions.upcomingEvents} {...zoneProps} />
-          <RecentEventsSection events={partitions.recentEvents} {...zoneProps} />
-        </div>
+        <>
+          <UnassignedTransactionsBanner
+            actionCenter={actionCenter}
+            venues={venues}
+            isAllVenuesView={isAllVenuesSelected}
+            isLoading={dashboardLoading}
+            venueScopeKey={venueScopeKey}
+            onRetryDashboard={() => void refetchDashboard()}
+          />
+          <div className="dashboard-overview__zones" data-testid="dashboard-overview">
+            <PinnedEventsSection events={partitions.pinnedEvents} {...zoneProps} />
+            <TonightHeroBanner events={partitions.tonightEvents} {...zoneProps} />
+            <UpcomingEventsSection events={partitions.upcomingEvents} {...zoneProps} />
+            <RecentEventsSection events={partitions.recentEvents} {...zoneProps} />
+          </div>
+        </>
       ) : null}
     </div>
   );

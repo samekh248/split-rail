@@ -105,6 +105,10 @@ function dashboardForVenue(
     pinnedEvents: partitions.pinnedEvents ?? [],
     upcomingEvents: partitions.upcomingEvents ?? [],
     recentEvents: partitions.recentEvents ?? [],
+    actionCenter: partitions.actionCenter ?? {
+      totalUnmappedCount: 0,
+      eventsWithUnmapped: [],
+    },
   };
 }
 
@@ -151,6 +155,35 @@ describe('DashboardOverviewPage', () => {
     expect(screen.getByText('Pinned Show')).toBeInTheDocument();
     expect(screen.getByText('Upcoming Show')).toBeInTheDocument();
     expect(screen.getByText('Recent Show')).toBeInTheDocument();
+  });
+
+  it('renders unassigned transactions banner when action center count > 0', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      dashboardByVenue: {
+        [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+          upcomingEvents: [cardOn(offsetDate(2), { title: 'Mapped Show' })],
+          actionCenter: {
+            totalUnmappedCount: 2,
+            eventsWithUnmapped: [
+              {
+                eventId: '22222222-2222-2222-2222-222222222222',
+                venueId: VENUE_A.id,
+                title: 'Mapped Show',
+                eventDate: offsetDate(2),
+                unmappedCount: 2,
+              },
+            ],
+          },
+        }),
+      },
+    });
+
+    render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+    expect(await screen.findByTestId('unassigned-transactions-banner')).toHaveTextContent(
+      '2 unassigned transactions detected',
+    );
   });
 
   it('shows empty state when no venues', async () => {

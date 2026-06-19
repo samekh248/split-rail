@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useCreateMapping } from '@/api/qbo';
+import { dashboardQueryKey } from '@/api/dashboard';
 import { useQueryClient } from '@tanstack/react-query';
 import { ledgerKeys } from '@/api/ledger';
 import { qboKeys } from '@/api/qbo';
@@ -43,6 +44,7 @@ export function InlineMappingDropdown({
     );
 
     void queryClient.invalidateQueries({ queryKey: ledgerKeys.grid(venueId, eventId) });
+    void queryClient.invalidateQueries({ queryKey: dashboardQueryKey(venueId) });
   };
 
   return (
