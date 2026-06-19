@@ -166,6 +166,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/venues/{venueId}/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DashboardResponse"];
+                        "application/json": components["schemas"]["DashboardResponse"];
+                        "text/json": components["schemas"]["DashboardResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/venues/{venueId}/events": {
         parameters: {
             query?: never;
@@ -2424,6 +2463,14 @@ export interface components {
         CreateVenueRequest: {
             name?: string | null;
         };
+        DashboardResponse: {
+            /** Format: uuid */
+            venueId?: string;
+            tonightEvents?: components["schemas"]["EventCardDto"][] | null;
+            pinnedEvents?: components["schemas"]["EventCardDto"][] | null;
+            recentEvents?: components["schemas"]["EventCardDto"][] | null;
+            upcomingEvents?: components["schemas"]["EventCardDto"][] | null;
+        };
         EditabilityDto: {
             proforma?: string | null;
             settlement?: string | null;
@@ -2442,6 +2489,26 @@ export interface components {
             taxWithholdingPercentage?: string;
             calculatedNetPayout?: string;
             rowVersion?: string | null;
+        };
+        EventCardDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            venueId?: string;
+            title?: string | null;
+            eventDate?: string | null;
+            status?: string | null;
+            isBudgetLocked?: boolean;
+            qboTagName?: string | null;
+            /** Format: date-time */
+            settledAt?: string | null;
+            settlementPdfAvailable?: boolean;
+            isPinned?: boolean;
+            hasVarianceConcern?: boolean;
+            /** Format: int32 */
+            unmappedCount?: number;
+            /** Format: date-time */
+            lastSyncedAt?: string | null;
         };
         EventResponse: {
             /** Format: uuid */
@@ -2845,8 +2912,10 @@ export type CreateLineItemRequest = components['schemas']['CreateLineItemRequest
 export type CreateMappingRequest = components['schemas']['CreateMappingRequest'];
 export type CreateOrganizationRequest = components['schemas']['CreateOrganizationRequest'];
 export type CreateVenueRequest = components['schemas']['CreateVenueRequest'];
+export type DashboardResponse = components['schemas']['DashboardResponse'];
 export type EditabilityDto = components['schemas']['EditabilityDto'];
 export type EventArtistDto = components['schemas']['EventArtistDto'];
+export type EventCardDto = components['schemas']['EventCardDto'];
 export type EventResponse = components['schemas']['EventResponse'];
 export type ExpectedSettlementDto = components['schemas']['ExpectedSettlementDto'];
 export type FinalizeSettlementRequest = components['schemas']['FinalizeSettlementRequest'];
