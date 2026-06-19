@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowUpRightFromSquare,
-  faTriangleExclamation,
   faXmark,
 } from '@fortawesome/free-solid-svg-icons';
 import { useLedger } from '@/api/ledger';
