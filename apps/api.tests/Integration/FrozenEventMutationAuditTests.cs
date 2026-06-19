@@ -123,7 +123,7 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
         var (eventId, _, userId) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
         LogCollector!.Clear();
 
-        var response = await client.PutAsJsonAsync(
+        var response = await client.PatchAsJsonAsync(
             $"/api/venues/{venueId}/events/{eventId}",
             new UpdateEventRequest("Renamed Show", "2026-08-01", "TAG-NEW"));
 

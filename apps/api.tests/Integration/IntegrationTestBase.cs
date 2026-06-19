@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -79,7 +80,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         await _postgres.StartAsync();
 
         var connectionString = _postgres.GetConnectionString();
-        Factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+
+        Action<IWebHostBuilder> configureWebHost = builder =>
         {
             builder.ConfigureAppConfiguration((_, config) =>
             {
@@ -88,22 +90,19 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                 config.AddInMemoryCollection(settings);
             });
 
-            if (EnableLogCapture)
-            {
-                LogCollector = new TestLogCollector();
-            }
-
             builder.ConfigureServices(services =>
-            {
-                ConfigureTestServices(services, connectionString);
+                ConfigureTestServices(services, connectionString));
+        };
 
-                if (LogCollector is not null)
-                {
-                    services.AddSingleton(LogCollector);
-                    services.AddSingleton<ILoggerProvider>(sp => sp.GetRequiredService<TestLogCollector>());
-                }
-            });
-        });
+        if (EnableLogCapture)
+        {
+            LogCollector = new TestLogCollector();
+            Factory = new LogCapturingWebApplicationFactory(LogCollector, configureWebHost);
+        }
+        else
+        {
+            Factory = new WebApplicationFactory<Program>().WithWebHostBuilder(configureWebHost);
+        }
 
         Client = Factory.CreateClient();
 
