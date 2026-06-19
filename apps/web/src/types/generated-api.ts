@@ -2436,6 +2436,11 @@ export interface components {
             /** Format: uuid */
             organizationId?: string;
         };
+        ActionCenterDto: {
+            /** Format: int32 */
+            totalUnmappedCount?: number;
+            eventsWithUnmapped?: components["schemas"]["UnmappedEventSummaryDto"][] | null;
+        };
         AuthResponse: {
             accessToken?: string | null;
             refreshToken?: string | null;
@@ -2510,6 +2515,8 @@ export interface components {
             pinnedEvents?: components["schemas"]["EventCardDto"][] | null;
             recentEvents?: components["schemas"]["EventCardDto"][] | null;
             upcomingEvents?: components["schemas"]["EventCardDto"][] | null;
+            actionCenter?: components["schemas"]["ActionCenterDto"];
+            financialHealth?: components["schemas"]["FinancialHealthDto"];
         };
         EditabilityDto: {
             proforma?: string | null;
@@ -2581,6 +2588,13 @@ export interface components {
         FinalizeSettlementRequest: {
             signatureData?: string | null;
             confirmed?: boolean;
+        };
+        FinancialHealthDto: {
+            weekStart?: string | null;
+            weekEnd?: string | null;
+            projectedNetGross?: string;
+            actualQboDeposits?: string;
+            variance?: string;
         };
         InvitationResponse: {
             /** Format: uuid */
@@ -2831,6 +2845,16 @@ export interface components {
             /** Format: int32 */
             unmappedCount?: number;
         };
+        UnmappedEventSummaryDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            venueId?: string;
+            title?: string | null;
+            eventDate?: string | null;
+            /** Format: int32 */
+            unmappedCount?: number;
+        };
         UnmappedTransactionDto: {
             /** Format: uuid */
             id?: string;
@@ -2949,6 +2973,7 @@ export type operations = Record<string, never>;
 
 export type AcceptInvitationRequest = components['schemas']['AcceptInvitationRequest'];
 export type AcceptInvitationResponse = components['schemas']['AcceptInvitationResponse'];
+export type ActionCenterDto = components['schemas']['ActionCenterDto'];
 export type AuthResponse = components['schemas']['AuthResponse'];
 export type BlockTotalsDto = components['schemas']['BlockTotalsDto'];
 export type ChangeRoleRequest = components['schemas']['ChangeRoleRequest'];
@@ -2967,6 +2992,7 @@ export type EventCardDto = components['schemas']['EventCardDto'];
 export type EventResponse = components['schemas']['EventResponse'];
 export type ExpectedSettlementDto = components['schemas']['ExpectedSettlementDto'];
 export type FinalizeSettlementRequest = components['schemas']['FinalizeSettlementRequest'];
+export type FinancialHealthDto = components['schemas']['FinancialHealthDto'];
 export type InvitationResponse = components['schemas']['InvitationResponse'];
 export type LedgerBlockDto = components['schemas']['LedgerBlockDto'];
 export type LedgerGridResponse = components['schemas']['LedgerGridResponse'];
@@ -2999,6 +3025,7 @@ export type SettlementResultDto = components['schemas']['SettlementResultDto'];
 export type SyncResultDto = components['schemas']['SyncResultDto'];
 export type SyncStatusDto = components['schemas']['SyncStatusDto'];
 export type UnmappedCountDto = components['schemas']['UnmappedCountDto'];
+export type UnmappedEventSummaryDto = components['schemas']['UnmappedEventSummaryDto'];
 export type UnmappedTransactionDto = components['schemas']['UnmappedTransactionDto'];
 export type UnmappedTransactionsResponse = components['schemas']['UnmappedTransactionsResponse'];
 export type UpdateArtistRequest = components['schemas']['UpdateArtistRequest'];
