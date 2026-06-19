@@ -126,6 +126,7 @@ builder.Services.AddScoped<VenueService>();
 builder.Services.AddScoped<InvitationService>();
 builder.Services.AddScoped<EventService>();
 builder.Services.AddScoped<EventPinService>();
+builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<LedgerService>();
 builder.Services.AddScoped<DealMathEngine>();
 builder.Services.AddScoped<CustomFormulaEvaluator>();
