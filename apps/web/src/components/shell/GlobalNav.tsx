@@ -1,5 +1,15 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowsRotate, faCalendarDays, faGauge } from '@fortawesome/free-solid-svg-icons';
 import { getAppPath } from '@/lib/appRoute';
-import { GLOBAL_NAV_ITEMS, resolveActiveGlobalNavId } from '@/lib/globalNav';
+import { GLOBAL_NAV_ITEMS, navigateToAccountingWithVenueScope, resolveActiveGlobalNavId, type GlobalNavId } from '@/lib/globalNav';
+import { useCanManageEvents } from '@/hooks/useCanManageEvents';
+import { useActiveVenue } from '@/venue/useActiveVenue';
+
+const NAV_ICONS: Record<GlobalNavId, typeof faGauge> = {
+  dashboard: faGauge,
+  booking: faCalendarDays,
+  accounting: faArrowsRotate,
+};
 
 export interface GlobalNavProps {
   onNavigate?: () => void;
@@ -7,13 +17,31 @@ export interface GlobalNavProps {
 }
 
 export function GlobalNav({ onNavigate, className }: GlobalNavProps) {
+  const canViewFinancials = useCanManageEvents();
+  const { isAllVenuesSelected, venues, activateVenueId } = useActiveVenue();
   const currentPath = getAppPath();
   const activeId = resolveActiveGlobalNavId(currentPath);
+
+  const visibleItems = GLOBAL_NAV_ITEMS.filter(
+    (item) => item.id !== 'accounting' || canViewFinancials,
+  );
+
+  const handleNavigate = (itemId: GlobalNavId, navigate?: () => void) => {
+    if (!navigate) {
+      return;
+    }
+    if (itemId === 'accounting') {
+      navigateToAccountingWithVenueScope(isAllVenuesSelected, venues, activateVenueId);
+    } else {
+      navigate();
+    }
+    onNavigate?.();
+  };
 
   return (
     <nav className={className ?? 'global-nav'} aria-label="Global">
       <ul className="global-nav__list">
-        {GLOBAL_NAV_ITEMS.map((item) => {
+        {visibleItems.map((item) => {
           const isActive = activeId === item.id;
           const isDisabled = Boolean(item.disabled);
 
@@ -30,15 +58,14 @@ export function GlobalNav({ onNavigate, className }: GlobalNavProps) {
                 tabIndex={isDisabled ? -1 : undefined}
                 data-testid={`global-nav-${item.id}`}
                 onClick={() => {
-                  if (isDisabled || !item.navigate) {
+                  if (isDisabled) {
                     return;
                   }
-                  item.navigate();
-                  onNavigate?.();
+                  handleNavigate(item.id, item.navigate);
                 }}
               >
                 <span className="global-nav__icon" aria-hidden="true">
-                  {item.label.charAt(0)}
+                  <FontAwesomeIcon icon={NAV_ICONS[item.id]} />
                 </span>
                 <span className="global-nav__label">
                   {item.label}

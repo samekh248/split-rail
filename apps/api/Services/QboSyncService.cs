@@ -126,6 +126,61 @@ public class QboSyncService
             connected);
     }
 
+    public async Task<VenueQboStatusDto> GetVenueQboStatusAsync(
+        Guid venueId,
+        CancellationToken cancellationToken = default)
+    {
+        if (_tenantContext.UserId is Guid userId &&
+            !await _venueService.IsVenueAccessibleAsync(userId, venueId, cancellationToken))
+            throw new NotFoundException("Venue not found.");
+
+        var connected = await _tokenService.IsConnectedAsync(venueId, cancellationToken);
+
+        var lastSyncedAt = await _db.QboSyncLedgers
+            .AsNoTracking()
+            .Where(l => l.Event.VenueId == venueId)
+            .OrderByDescending(l => l.SyncedAt)
+            .Select(l => (DateTimeOffset?)l.SyncedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return new VenueQboStatusDto(venueId, connected, lastSyncedAt);
+    }
+
+    public async Task<VenueSyncResultDto> SyncVenueEventsAsync(
+        Guid venueId,
+        CancellationToken cancellationToken = default)
+    {
+        if (_tenantContext.UserId is Guid userId &&
+            !await _venueService.IsVenueAccessibleAsync(userId, venueId, cancellationToken))
+            throw new NotFoundException("Venue not found.");
+
+        var events = await _db.Events
+            .AsNoTracking()
+            .Where(e => e.VenueId == venueId && e.QboTagName != "")
+            .Select(e => new { e.Id, e.Title })
+            .ToListAsync(cancellationToken);
+
+        var results = new List<VenueSyncEventResultDto>();
+        var succeeded = 0;
+
+        foreach (var evt in events)
+        {
+            try
+            {
+                await SyncEventAsync(venueId, evt.Id, cancellationToken);
+                results.Add(new VenueSyncEventResultDto(evt.Id, evt.Title, true, null));
+                succeeded++;
+            }
+            catch (ApiException ex)
+            {
+                _logger.LogWarning(ex, "Venue sync failed for event {EventId} at venue {VenueId}", evt.Id, venueId);
+                results.Add(new VenueSyncEventResultDto(evt.Id, evt.Title, false, ex.Message));
+            }
+        }
+
+        return new VenueSyncResultDto(venueId, events.Count, succeeded, results);
+    }
+
     public async Task<int> SyncAllEligibleEventsAsync(CancellationToken cancellationToken = default)
     {
         var venueIds = await _db.QboVenueCredentials

@@ -61,8 +61,27 @@ public class QboSyncController : ControllerBase
 public class QboMappingController : ControllerBase
 {
     private readonly QboMappingService _mappingService;
+    private readonly QboSyncService _syncService;
 
-    public QboMappingController(QboMappingService mappingService) => _mappingService = mappingService;
+    public QboMappingController(QboMappingService mappingService, QboSyncService syncService)
+    {
+        _mappingService = mappingService;
+        _syncService = syncService;
+    }
+
+    [HttpGet("qbo/status")]
+    [RequirePermission(PermissionNames.ViewFinancials)]
+    public async Task<ActionResult<VenueQboStatusDto>> GetVenueQboStatus(
+        Guid venueId,
+        CancellationToken cancellationToken) =>
+        Ok(await _syncService.GetVenueQboStatusAsync(venueId, cancellationToken));
+
+    [HttpPost("sync")]
+    [RequirePermission(PermissionNames.TriggerQboSync)]
+    public async Task<ActionResult<VenueSyncResultDto>> SyncVenue(
+        Guid venueId,
+        CancellationToken cancellationToken) =>
+        Ok(await _syncService.SyncVenueEventsAsync(venueId, cancellationToken));
 
     [HttpGet("mappings")]
     [RequirePermission(PermissionNames.ViewFinancials)]

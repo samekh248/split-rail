@@ -5,6 +5,7 @@ export type DashboardPath = '/' | '/venues/new';
 
 export type AppPath =
   | DashboardPath
+  | '/accounting'
   | '/settings'
   | '/settings/team'
   | '/settings/organization'
@@ -71,6 +72,8 @@ export function getAppPath(): AppPath | string {
       return '/settings/integrations';
     case '/accept-invite':
       return '/accept-invite';
+    case '/accounting':
+      return '/accounting';
     default:
       return '/';
   }
@@ -94,6 +97,10 @@ export function navigateToCreateVenue(): void {
 
 export function navigateToDashboard(): void {
   pushPath('/');
+}
+
+export function navigateToAccounting(): void {
+  pushPath('/accounting');
 }
 
 export function navigateToSettings(): void {

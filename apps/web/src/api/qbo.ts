@@ -11,6 +11,8 @@ import type {
   QboAccountMappingsResponse,
   SyncResultDto,
   SyncStatusDto,
+  VenueQboStatusDto,
+  VenueSyncResultDto,
   UnmappedCountDto,
   UnmappedTransactionsResponse,
   UpdateMappingRequest,
@@ -25,6 +27,7 @@ export const qboKeys = {
   unmappedList: (venueId: string, eventId: string) =>
     [...qboKeys.all, 'unmapped-list', venueId, eventId] as const,
   mappings: (venueId: string) => [...qboKeys.all, 'mappings', venueId] as const,
+  venueStatus: (venueId: string) => [...qboKeys.all, 'venue-status', venueId] as const,
 };
 
 export function useSyncStatus(
@@ -76,6 +79,32 @@ export function useVenueMappings(venueId: string) {
     queryKey: qboKeys.mappings(venueId),
     queryFn: () => apiFetch<QboAccountMappingsResponse>(`/venues/${venueId}/mappings`),
     enabled: Boolean(venueId),
+  });
+}
+
+export function useVenueQboStatus(
+  venueId: string,
+  options?: Omit<UseQueryOptions<VenueQboStatusDto>, 'queryKey' | 'queryFn'>,
+) {
+  return useQuery({
+    queryKey: qboKeys.venueStatus(venueId),
+    queryFn: () => apiFetch<VenueQboStatusDto>(`/venues/${venueId}/qbo/status`),
+    enabled: Boolean(venueId),
+    ...options,
+  });
+}
+
+export function useVenueSync(venueId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<VenueSyncResultDto>(`/venues/${venueId}/sync`, {
+        method: 'POST',
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: qboKeys.venueStatus(venueId) });
+      void queryClient.invalidateQueries({ queryKey: qboKeys.all });
+    },
   });
 }
 

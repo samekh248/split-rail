@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { DashboardOverviewPage } from '@/pages/DashboardOverviewPage';
+import { AccountingOverviewPage } from '@/pages/AccountingOverviewPage';
 import { EventWorkspacePage } from '@/pages/EventWorkspacePage';
 import { CreateVenuePage } from '@/pages/CreateVenuePage';
 import { LoginPage } from '@/pages/LoginPage';
@@ -124,6 +125,8 @@ export default function App() {
           <EventWorkspacePage />
         ) : appPath === '/venues/new' ? (
           <CreateVenuePage />
+        ) : appPath === '/accounting' ? (
+          <AccountingOverviewPage />
         ) : (
           <DashboardOverviewPage />
         )}

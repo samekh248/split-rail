@@ -2837,7 +2837,29 @@ export interface components {
             totalMappedTransactions?: number;
             /** Format: int32 */
             totalUnmappedTransactions?: number;
+        };
+        VenueQboStatusDto: {
+            /** Format: uuid */
+            venueId?: string;
             qboConnected?: boolean;
+            /** Format: date-time */
+            lastSyncedAt?: string | null;
+        };
+        VenueSyncEventResultDto: {
+            /** Format: uuid */
+            eventId?: string;
+            title?: string | null;
+            success?: boolean;
+            errorMessage?: string | null;
+        };
+        VenueSyncResultDto: {
+            /** Format: uuid */
+            venueId?: string;
+            /** Format: int32 */
+            attemptedCount?: number;
+            /** Format: int32 */
+            succeededCount?: number;
+            results?: components["schemas"]["VenueSyncEventResultDto"][] | null;
         };
         UnmappedCountDto: {
             /** Format: uuid */
@@ -3024,6 +3046,9 @@ export type SettlementPdfLinkDto = components['schemas']['SettlementPdfLinkDto']
 export type SettlementResultDto = components['schemas']['SettlementResultDto'];
 export type SyncResultDto = components['schemas']['SyncResultDto'];
 export type SyncStatusDto = components['schemas']['SyncStatusDto'];
+export type VenueQboStatusDto = components['schemas']['VenueQboStatusDto'];
+export type VenueSyncEventResultDto = components['schemas']['VenueSyncEventResultDto'];
+export type VenueSyncResultDto = components['schemas']['VenueSyncResultDto'];
 export type UnmappedCountDto = components['schemas']['UnmappedCountDto'];
 export type UnmappedEventSummaryDto = components['schemas']['UnmappedEventSummaryDto'];
 export type UnmappedTransactionDto = components['schemas']['UnmappedTransactionDto'];
