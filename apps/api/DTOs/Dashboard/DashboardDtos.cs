@@ -10,6 +10,8 @@ public record EventCardDto(
     string QboTagName,
     DateTimeOffset? SettledAt,
     bool SettlementPdfAvailable,
+    DateTimeOffset? ReconciledAt,
+    Guid? ReconciledByUserId,
     bool IsPinned,
     bool HasVarianceConcern,
     int UnmappedCount,

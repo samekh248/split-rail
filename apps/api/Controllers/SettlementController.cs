@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SplitRail.Api.Authorization;
+using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.DTOs.Settlement;
 using SplitRail.Api.Services;
 
@@ -41,4 +42,12 @@ public class SettlementController : ControllerBase
         Guid eventId,
         CancellationToken cancellationToken) =>
         Ok(await _settlementService.GetPdfLinkAsync(venueId, eventId, cancellationToken));
+
+    [HttpPost("reconcile")]
+    [RequirePermission(PermissionNames.TriggerQboSync)]
+    public async Task<ActionResult<EventResponse>> Reconcile(
+        Guid venueId,
+        Guid eventId,
+        CancellationToken cancellationToken) =>
+        Ok(await _settlementService.ReconcileAsync(venueId, eventId, cancellationToken));
 }

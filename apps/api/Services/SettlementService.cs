@@ -171,6 +171,42 @@ public class SettlementService
         return new SettlementPdfLinkDto(url, expiresAt);
     }
 
+    public async Task<EventResponse> ReconcileAsync(
+        Guid venueId,
+        Guid eventId,
+        CancellationToken cancellationToken = default)
+    {
+        if (_tenantContext.UserId is not Guid userId)
+            throw new AuthenticationException();
+
+        try
+        {
+            var evt = await LoadEventForReconcileWithLockAsync(venueId, eventId, cancellationToken);
+
+            if (evt.Status is not EventStatus.Settled)
+                throw new SettlementStateException("Event must be in SETTLED status to reconcile.");
+
+            var reconciledAt = DateTimeOffset.UtcNow;
+            evt.Status = EventStatus.Reconciled;
+            evt.ReconciledAt = reconciledAt;
+            evt.ReconciledByUserId = userId;
+
+            await _db.SaveChangesAsync(cancellationToken);
+
+            _logger.LogInformation(
+                "Event reconciled for event {EventId} at venue {VenueId} by user {UserId}",
+                eventId,
+                venueId,
+                userId);
+
+            return EventService.ToEventResponse(evt);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new ConcurrencyConflictException();
+        }
+    }
+
     internal static SettlementSnapshotDto BuildSnapshot(Event evt)
     {
         var useSettlement = evt.IsBudgetLocked;
@@ -252,6 +288,30 @@ public class SettlementService
 
         if (!await _venueService.IsVenueAccessibleAsync(userId, venueId, cancellationToken))
             throw new NotFoundException("Event not found.");
+
+        var evt = await _db.Events
+            .Include(e => e.Venue)
+            .FirstOrDefaultAsync(e => e.Id == eventId && e.VenueId == venueId, cancellationToken)
+            ?? throw new NotFoundException("Event not found.");
+
+        return evt;
+    }
+
+    private async Task<Event> LoadEventForReconcileWithLockAsync(
+        Guid venueId,
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        if (!await _venueService.IsVenueAccessibleAsync(_tenantContext.UserId!.Value, venueId, cancellationToken))
+            throw new NotFoundException("Event not found.");
+
+        await _db.Database.ExecuteSqlInterpolatedAsync(
+            $"""
+             SELECT 1 FROM events
+             WHERE id = {eventId} AND venue_id = {venueId}
+             FOR UPDATE
+             """,
+            cancellationToken);
 
         var evt = await _db.Events
             .Include(e => e.Venue)

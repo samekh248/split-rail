@@ -1763,6 +1763,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/venues/{venueId}/events/{eventId}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EventResponse"];
+                        "application/json": components["schemas"]["EventResponse"];
+                        "text/json": components["schemas"]["EventResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -2503,6 +2543,10 @@ export interface components {
             /** Format: date-time */
             settledAt?: string | null;
             settlementPdfAvailable?: boolean;
+            /** Format: date-time */
+            reconciledAt?: string | null;
+            /** Format: uuid */
+            reconciledByUserId?: string | null;
             isPinned?: boolean;
             hasVarianceConcern?: boolean;
             /** Format: int32 */
@@ -2524,6 +2568,10 @@ export interface components {
             /** Format: date-time */
             settledAt?: string | null;
             settlementPdfAvailable?: boolean;
+            /** Format: date-time */
+            reconciledAt?: string | null;
+            /** Format: uuid */
+            reconciledByUserId?: string | null;
         };
         ExpectedSettlementDto: {
             computedNetPayout?: string | null;
