@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { EventCard } from '@/components/dashboard/EventCard';
 import {
   DashboardZoneEvents,
@@ -30,13 +31,17 @@ export function UpcomingEventsSection(props: ZoneProps) {
   );
 }
 
-export function RecentEventsSection(props: ZoneProps) {
+export function RecentEventsSection(
+  props: ZoneProps & { filterSlot?: ReactNode; emptyMessage?: string },
+) {
+  const { filterSlot, emptyMessage, ...zoneProps } = props;
   return (
     <DashboardZoneEvents
       title="Recent events"
-      emptyMessage="No recent events"
+      emptyMessage={emptyMessage ?? 'No recent events'}
       testId="dashboard-zone-recent"
-      {...props}
+      filterSlot={filterSlot}
+      {...zoneProps}
     />
   );
 }

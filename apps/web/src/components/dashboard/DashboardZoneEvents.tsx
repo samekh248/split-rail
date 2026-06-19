@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { EventCardDto, PermissionsDto } from '@/types/generated-api';
 import { EventCard, type WorkspaceFocus } from '@/components/dashboard/EventCard';
 
@@ -6,6 +7,7 @@ export interface DashboardZoneEventsProps {
   emptyMessage: string;
   testId: string;
   className?: string;
+  filterSlot?: ReactNode;
   events: EventCardDto[];
   permissions: PermissionsDto;
   onQuickLink: (venueId: string, eventId: string, focus?: WorkspaceFocus) => void;
@@ -18,6 +20,7 @@ export function DashboardZoneEvents({
   emptyMessage,
   testId,
   className,
+  filterSlot,
   events,
   permissions,
   onQuickLink,
@@ -29,7 +32,10 @@ export function DashboardZoneEvents({
       className={['dashboard-zone', className].filter(Boolean).join(' ')}
       data-testid={testId}
     >
-      <h2 className="dashboard-zone__heading">{title}</h2>
+      <div className="dashboard-zone__header">
+        <h2 className="dashboard-zone__heading">{title}</h2>
+        {filterSlot}
+      </div>
       {events.length === 0 ? (
         <p className="dashboard-zone__empty">{emptyMessage}</p>
       ) : (

@@ -196,6 +196,42 @@ describe('EventCard', () => {
       expect(screen.getByTestId(`event-card-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
     });
 
+    it('shows variance badge for SETTLED event when hasVarianceConcern true', () => {
+      renderCard({
+        ...EVENT_A,
+        status: 'SETTLED',
+        isBudgetLocked: true,
+        eventDate: pastDate(),
+        hasVarianceConcern: true,
+        unmappedCount: 0,
+      });
+      expect(screen.getByTestId(`event-card-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
+    });
+
+    it('hides variance badge for SETTLED event when hasVarianceConcern false', () => {
+      renderCard({
+        ...EVENT_A,
+        status: 'SETTLED',
+        isBudgetLocked: true,
+        eventDate: pastDate(),
+        hasVarianceConcern: false,
+        unmappedCount: 0,
+      });
+      expect(screen.queryByTestId(`event-card-variance-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+    });
+
+    it('shows variance badge for RECONCILED event when hasVarianceConcern true', () => {
+      renderCard({
+        ...EVENT_A,
+        status: 'RECONCILED',
+        isBudgetLocked: true,
+        eventDate: pastDate(),
+        hasVarianceConcern: true,
+        unmappedCount: 0,
+      });
+      expect(screen.getByTestId(`event-card-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
+    });
+
     it('shows unmapped bottleneck when unmappedCount > 0', () => {
       renderCard({
         ...EVENT_A,

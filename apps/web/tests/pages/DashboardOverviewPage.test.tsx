@@ -10,13 +10,14 @@ import { VenueProvider } from '@/venue/VenueContext';
 import { buildEventWorkspacePath } from '@/lib/appRoute';
 import { getDashboardPath } from '@/lib/dashboardRoute';
 import * as eventWorkspaceRoute from '@/lib/eventWorkspaceRoute';
-import type { DashboardResponse, EventCardDto, EventResponse } from '@/types/generated-api';
+import type { DashboardResponse, EventCardDto, EventResponse, FinancialHealthDto } from '@/types/generated-api';
 import { EVENT_A, EVENT_B } from '../fixtures/events';
 import { VENUE_A, VENUE_B } from '../fixtures/venues';
 import {
   mockWorkspaceFetch,
   workspaceMemberProfile,
 } from '../utils/mockWorkspaceFetch';
+import { setActiveVenueId } from '@/venue/activeVenueStorage';
 
 const mockLogout = vi.fn();
 
@@ -95,6 +96,17 @@ function cardOn(date: string, overrides: Partial<EventCardDto> = {}): EventCardD
   };
 }
 
+function defaultFinancialHealth(overrides: Partial<FinancialHealthDto> = {}): FinancialHealthDto {
+  return {
+    weekStart: '2026-06-16',
+    weekEnd: '2026-06-22',
+    projectedNetGross: '5000.00',
+    actualQboDeposits: '4200.00',
+    variance: '800.00',
+    ...overrides,
+  };
+}
+
 function dashboardForVenue(
   venueId: string,
   partitions: Partial<Omit<DashboardResponse, 'venueId'>>,
@@ -109,6 +121,7 @@ function dashboardForVenue(
       totalUnmappedCount: 0,
       eventsWithUnmapped: [],
     },
+    financialHealth: partitions.financialHealth ?? defaultFinancialHealth(),
   };
 }
 
@@ -613,5 +626,295 @@ describe('DashboardOverviewPage', () => {
 
     await user.click(await screen.findByTestId('empty-state-add-venue'));
     expect(getDashboardPath()).toBe('/venues/new');
+  });
+
+  describe('financial health widget', () => {
+    it('renders financial health widget for single-venue dashboard', async () => {
+      setActiveVenueId(VENUE_A.id!);
+      mockWorkspaceFetch({
+        venues: [VENUE_A],
+        dashboardByVenue: {
+          [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+            upcomingEvents: [cardOn(offsetDate(1), { title: 'Upcoming Show' })],
+          }),
+        },
+      });
+
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+      expect(await screen.findByTestId('financial-health-widget')).toBeInTheDocument();
+      expect(screen.getByTestId('financial-health-projected')).toHaveTextContent('$5,000.00');
+    });
+
+    it('hides financial health widget in all-venues view', async () => {
+      mockWorkspaceFetch({
+        venues: [VENUE_A, VENUE_B],
+        dashboardByVenue: {
+          [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+            upcomingEvents: [cardOn(offsetDate(1), { title: 'Venue A Show' })],
+          }),
+          [VENUE_B.id]: dashboardForVenue(VENUE_B.id, {
+            upcomingEvents: [
+              cardOn(offsetDate(2), {
+                eventId: EVENT_B.eventId,
+                venueId: VENUE_B.id,
+                title: 'Venue B Show',
+              }),
+            ],
+          }),
+        },
+      });
+
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+      await screen.findByTestId('dashboard-overview');
+      expect(screen.queryByTestId('financial-health-widget')).not.toBeInTheDocument();
+    });
+
+    it('shows financial health widget in zero-events single-venue branch', async () => {
+      setActiveVenueId(VENUE_A.id!);
+      mockWorkspaceFetch({
+        venues: [VENUE_A],
+        dashboardByVenue: {
+          [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {}),
+        },
+      });
+
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+      expect(await screen.findByTestId('financial-health-widget')).toBeInTheDocument();
+      expect(screen.getByTestId('dashboard-no-events')).toBeInTheDocument();
+    });
+
+    it('hides financial health widget while dashboard loading', () => {
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(() => new Promise(() => {})),
+      );
+
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+      expect(screen.queryByTestId('financial-health-widget')).not.toBeInTheDocument();
+    });
+
+    it('places banner before financial health widget before zones', async () => {
+      setActiveVenueId(VENUE_A.id!);
+      mockWorkspaceFetch({
+        venues: [VENUE_A],
+        dashboardByVenue: {
+          [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+            upcomingEvents: [cardOn(offsetDate(1), { title: 'Upcoming Show' })],
+            actionCenter: {
+              totalUnmappedCount: 1,
+              eventsWithUnmapped: [
+                {
+                  eventId: '22222222-2222-2222-2222-222222222222',
+                  venueId: VENUE_A.id,
+                  title: 'Upcoming Show',
+                  eventDate: offsetDate(1),
+                  unmappedCount: 1,
+                },
+              ],
+            },
+          }),
+        },
+      });
+
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+      const banner = await screen.findByTestId('unassigned-transactions-banner');
+      const widget = screen.getByTestId('financial-health-widget');
+      const zones = screen.getByTestId('dashboard-overview');
+
+      expect(banner.compareDocumentPosition(widget) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(widget.compareDocumentPosition(zones) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+  });
+
+  describe('bottleneck filter', () => {
+    it('shows only recent events with bottleneck alerts when filter active', async () => {
+      mockWorkspaceFetch({
+        venues: [VENUE_A],
+        dashboardByVenue: {
+          [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+            recentEvents: [
+              cardOn(offsetDate(-2), {
+                eventId: '33333333-3333-3333-3333-333333333333',
+                title: 'Clean Recent',
+              }),
+              cardOn(offsetDate(-3), {
+                eventId: '44444444-4444-4444-4444-444444444444',
+                title: 'Alerted Recent',
+                unmappedCount: 2,
+              }),
+            ],
+          }),
+        },
+      });
+
+      const user = userEvent.setup();
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+      const recentZone = await screen.findByTestId('dashboard-zone-recent');
+      expect(within(recentZone).getByText('Clean Recent')).toBeInTheDocument();
+      expect(within(recentZone).getByText('Alerted Recent')).toBeInTheDocument();
+
+      await user.click(screen.getByTestId('bottleneck-filter-toggle'));
+
+      expect(within(recentZone).queryByText('Clean Recent')).not.toBeInTheDocument();
+      expect(within(recentZone).getByText('Alerted Recent')).toBeInTheDocument();
+    });
+
+    it('restores full recent list when filter deactivated', async () => {
+      mockWorkspaceFetch({
+        venues: [VENUE_A],
+        dashboardByVenue: {
+          [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+            recentEvents: [
+              cardOn(offsetDate(-2), {
+                eventId: '33333333-3333-3333-3333-333333333333',
+                title: 'Clean Recent',
+              }),
+              cardOn(offsetDate(-3), {
+                eventId: '44444444-4444-4444-4444-444444444444',
+                title: 'Alerted Recent',
+                unmappedCount: 1,
+              }),
+            ],
+          }),
+        },
+      });
+
+      const user = userEvent.setup();
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+      await screen.findByTestId('dashboard-zone-recent');
+      await user.click(screen.getByTestId('bottleneck-filter-toggle'));
+      await user.click(screen.getByTestId('bottleneck-filter-toggle'));
+
+      const recentZone = screen.getByTestId('dashboard-zone-recent');
+      expect(within(recentZone).getByText('Clean Recent')).toBeInTheDocument();
+      expect(within(recentZone).getByText('Alerted Recent')).toBeInTheDocument();
+    });
+
+    it('shows filtered empty message when no recent events need attention', async () => {
+      mockWorkspaceFetch({
+        venues: [VENUE_A],
+        dashboardByVenue: {
+          [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+            recentEvents: [
+              cardOn(offsetDate(-2), {
+                eventId: '33333333-3333-3333-3333-333333333333',
+                title: 'Clean Recent',
+              }),
+            ],
+          }),
+        },
+      });
+
+      const user = userEvent.setup();
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+      await screen.findByTestId('dashboard-zone-recent');
+      await user.click(screen.getByTestId('bottleneck-filter-toggle'));
+
+      expect(screen.getByText('No events need attention')).toBeInTheDocument();
+    });
+
+    it('resets filter when venue changes', async () => {
+      mockWorkspaceFetch({
+        venues: [VENUE_A, VENUE_B],
+        dashboardByVenue: {
+          [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+            recentEvents: [
+              cardOn(offsetDate(-2), {
+                eventId: '33333333-3333-3333-3333-333333333333',
+                title: 'Venue A Alerted',
+                unmappedCount: 1,
+              }),
+            ],
+          }),
+          [VENUE_B.id]: dashboardForVenue(VENUE_B.id, {
+            recentEvents: [
+              cardOn(offsetDate(-2), {
+                eventId: EVENT_B.eventId,
+                venueId: VENUE_B.id,
+                title: 'Venue B Clean',
+              }),
+            ],
+          }),
+        },
+      });
+
+      const user = userEvent.setup();
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+      await screen.findByText('Venue A Alerted');
+      await user.click(screen.getByTestId('bottleneck-filter-toggle'));
+      expect(screen.getByTestId('bottleneck-filter-toggle')).toHaveAttribute('aria-pressed', 'true');
+
+      await user.click(screen.getByTestId('venue-switcher-trigger'));
+      await user.click(screen.getByTestId(`venue-option-${VENUE_B.id}`));
+
+      await screen.findByText('Venue B Clean');
+      expect(screen.getByTestId('bottleneck-filter-toggle')).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('does not filter pinned or upcoming zones when recent filter active', async () => {
+      mockWorkspaceFetch({
+        venues: [VENUE_A],
+        dashboardByVenue: {
+          [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+            pinnedEvents: [
+              cardOn(offsetDate(1), {
+                eventId: '11111111-1111-1111-1111-111111111111',
+                title: 'Pinned Show',
+              }),
+            ],
+            upcomingEvents: [
+              cardOn(offsetDate(2), {
+                eventId: '22222222-2222-2222-2222-222222222222',
+                title: 'Upcoming Show',
+              }),
+            ],
+            recentEvents: [
+              cardOn(offsetDate(-2), {
+                eventId: '33333333-3333-3333-3333-333333333333',
+                title: 'Clean Recent',
+              }),
+              cardOn(offsetDate(-3), {
+                eventId: '44444444-4444-4444-4444-444444444444',
+                title: 'Alerted Recent',
+                unmappedCount: 1,
+              }),
+            ],
+          }),
+        },
+      });
+
+      const user = userEvent.setup();
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+      await screen.findByTestId('dashboard-overview');
+      await user.click(screen.getByTestId('bottleneck-filter-toggle'));
+
+      expect(screen.getByText('Pinned Show')).toBeInTheDocument();
+      expect(screen.getByText('Upcoming Show')).toBeInTheDocument();
+    });
+  });
+
+  describe('loading and error states', () => {
+    it('hides bottleneck filter during dashboard error state', async () => {
+      mockWorkspaceFetch({
+        venues: [VENUE_A],
+        dashboardError: true,
+      });
+
+      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+      expect(await screen.findByText('Unable to load events. Please try again.')).toBeInTheDocument();
+      expect(screen.queryByTestId('bottleneck-filter-toggle')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('financial-health-widget')).not.toBeInTheDocument();
+    });
   });
 });

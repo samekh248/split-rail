@@ -1,4 +1,4 @@
-import type { BottleneckAlert } from '@/lib/eventLifecycle';
+import { deriveBottleneckAlerts, type BottleneckAlert } from '@/lib/eventLifecycle';
 import type { EventCardDto } from '@/types/generated-api';
 
 /** Server-summary bottleneck chips for dashboard overview cards. */
@@ -43,4 +43,21 @@ export function mergeBottleneckAlerts(
     merged.push(alert);
   }
   return merged;
+}
+
+/** True when merged server + fallback bottleneck rules produce at least one alert. */
+export function eventHasBottleneckAlerts(event: EventCardDto): boolean {
+  const summaryAlerts = deriveBottleneckAlertsFromSummary(event);
+  const merged = mergeBottleneckAlerts(summaryAlerts, deriveBottleneckAlerts(event));
+  return merged.length > 0;
+}
+
+export function filterRecentEventsByBottleneck(
+  events: EventCardDto[],
+  filterActive: boolean,
+): EventCardDto[] {
+  if (!filterActive) {
+    return events;
+  }
+  return events.filter(eventHasBottleneckAlerts);
 }
