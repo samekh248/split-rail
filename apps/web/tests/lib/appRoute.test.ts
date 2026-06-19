@@ -70,6 +70,23 @@ describe('appRoute', () => {
     });
   });
 
+  it('useEventWorkspaceRoute updates focus when only query string changes', () => {
+    window.history.pushState({}, '', WORKSPACE_PATH);
+    const { result } = renderHook(() => useEventWorkspaceRoute());
+    expect(result.current?.focus).toBeNull();
+
+    act(() => {
+      window.history.pushState({}, '', `${WORKSPACE_PATH}?focus=deal`);
+      window.dispatchEvent(new PopStateEvent('popstate'));
+    });
+
+    expect(result.current).toEqual({
+      venueId: VENUE_ID,
+      eventId: EVENT_ID,
+      focus: 'deal',
+    });
+  });
+
   it('useEventWorkspaceRoute returns null off workspace path', () => {
     const { result } = renderHook(() => useEventWorkspaceRoute());
     expect(result.current).toBeNull();

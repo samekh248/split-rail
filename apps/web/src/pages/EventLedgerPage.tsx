@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   useCreateArtist,
   useCreateLineItem,
@@ -25,10 +25,13 @@ import type {
 } from '@/types/generated-api';
 import { FinalizeSettlementPanel } from '@/components/settlement/FinalizeSettlementPanel';
 import { SettlementLockedBanner } from '@/components/settlement/SettlementLockedBanner';
+import type { WorkspaceFocus } from '@/lib/eventCardQuickLinks';
+import { scrollToWorkspaceFocus } from '@/lib/workspaceFocusScroll';
 
 interface EventLedgerPageProps {
   venueId: string;
   eventId: string;
+  focus?: WorkspaceFocus | null;
 }
 
 function findRow(ledger: NonNullable<ReturnType<typeof useLedger>['data']>, id: string) {
@@ -37,7 +40,7 @@ function findRow(ledger: NonNullable<ReturnType<typeof useLedger>['data']>, id: 
     .find((row) => row.id === id);
 }
 
-export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
+export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProps) {
   const { data: ledger, isLoading, error, refetch } = useLedger(venueId, eventId);
   const recalculate = useRecalculateLedger(venueId, eventId);
   const updateLineItem = useUpdateLineItem(venueId, eventId);
@@ -54,6 +57,13 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
     ledger?.status,
     ledger?.isBudgetLocked ?? false,
   );
+
+  useEffect(() => {
+    if (!focus || isLoading || error || !ledger) {
+      return;
+    }
+    scrollToWorkspaceFocus(focus);
+  }, [focus, eventId, ledger, isLoading, error]);
 
   const saveLineItemField = useCallback(
     async (
@@ -258,8 +268,16 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
 
   return (
     <main className="event-ledger-page" data-testid="event-ledger-page">
-      <div className="event-ledger-page__toolbar">
-        <SyncNowButton venueId={venueId} eventId={eventId} />
+      <div data-testid="workspace-focus-sync">
+        <div className="event-ledger-page__toolbar">
+          <SyncNowButton venueId={venueId} eventId={eventId} />
+        </div>
+
+        <UnmappedBanner
+          venueId={venueId}
+          eventId={eventId}
+          lineItemOptions={lineItemOptions}
+        />
       </div>
 
       {structuralError && (
@@ -267,12 +285,6 @@ export function EventLedgerPage({ venueId, eventId }: EventLedgerPageProps) {
           {structuralError}
         </p>
       )}
-
-      <UnmappedBanner
-        venueId={venueId}
-        eventId={eventId}
-        lineItemOptions={lineItemOptions}
-      />
 
       <SettlementLockedBanner
         venueId={venueId}

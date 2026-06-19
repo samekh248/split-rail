@@ -4,6 +4,18 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { EventLedgerPage } from '@/pages/EventLedgerPage';
 import type { LedgerGridResponse } from '@/types/generated-api';
+import type { WorkspaceFocus } from '@/lib/eventCardQuickLinks';
+
+const scrollToWorkspaceFocusMock = vi.fn(() => true);
+
+vi.mock('@/lib/workspaceFocusScroll', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/lib/workspaceFocusScroll')>();
+  return {
+    ...actual,
+    scrollToWorkspaceFocus: (...args: Parameters<typeof actual.scrollToWorkspaceFocus>) =>
+      scrollToWorkspaceFocusMock(...args),
+  };
+});
 
 const mockLedger: LedgerGridResponse = {
   eventId: 'evt-1',
@@ -111,14 +123,14 @@ vi.mock('@/api/settlement', () => ({
 import { useLedger } from '@/api/ledger';
 import { useCanEditLedgerStructure } from '@/hooks/useCanEditLedgerStructure';
 
-function renderPage() {
+function renderPage(focus?: WorkspaceFocus | null) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
   });
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <EventLedgerPage venueId="ven-1" eventId="evt-1" />
+      <EventLedgerPage venueId="ven-1" eventId="evt-1" focus={focus} />
     </QueryClientProvider>,
   );
 }
@@ -127,6 +139,7 @@ describe('EventLedgerPage', () => {
   beforeEach(() => {
     mutateAsync.mockReset();
     mutateAsync.mockResolvedValue(mockLedger);
+    scrollToWorkspaceFocusMock.mockClear();
   });
 
   it('shows loading state', () => {
@@ -257,5 +270,103 @@ describe('EventLedgerPage', () => {
     await waitFor(() => {
       expect(mutateAsync).toHaveBeenCalled();
     });
+  });
+
+  it('scrolls to deal focus after ledger loads', async () => {
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: mockLedger,
+    } as ReturnType<typeof useLedger>);
+
+    renderPage('deal');
+
+    await waitFor(() => {
+      expect(scrollToWorkspaceFocusMock).toHaveBeenCalledWith('deal');
+    });
+  });
+
+  it('scrolls to settlement focus after ledger loads', async () => {
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: mockLedger,
+    } as ReturnType<typeof useLedger>);
+
+    renderPage('settlement');
+
+    await waitFor(() => {
+      expect(scrollToWorkspaceFocusMock).toHaveBeenCalledWith('settlement');
+    });
+  });
+
+  it('scrolls to signature focus when finalize panel is rendered', async () => {
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: { ...mockLedger, isBudgetLocked: true, status: 'PRE_SHOW' },
+    } as ReturnType<typeof useLedger>);
+
+    renderPage('signature');
+
+    await waitFor(() => {
+      expect(scrollToWorkspaceFocusMock).toHaveBeenCalledWith('signature');
+    });
+  });
+
+  it('scrolls to variance focus without error when banner is absent', async () => {
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: mockLedger,
+    } as ReturnType<typeof useLedger>);
+
+    renderPage('variance');
+
+    await waitFor(() => {
+      expect(scrollToWorkspaceFocusMock).toHaveBeenCalledWith('variance');
+    });
+    expect(screen.getByTestId('event-ledger-page')).toBeInTheDocument();
+  });
+
+  it('scrolls to sync focus after ledger loads', async () => {
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: mockLedger,
+    } as ReturnType<typeof useLedger>);
+
+    renderPage('sync');
+
+    await waitFor(() => {
+      expect(scrollToWorkspaceFocusMock).toHaveBeenCalledWith('sync');
+    });
+    expect(screen.getByTestId('workspace-focus-sync')).toBeInTheDocument();
+  });
+
+  it('does not scroll when focus is null or invalid', async () => {
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: mockLedger,
+    } as ReturnType<typeof useLedger>);
+
+    renderPage(null);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('event-ledger-page')).toBeInTheDocument();
+    });
+    expect(scrollToWorkspaceFocusMock).not.toHaveBeenCalled();
+  });
+
+  it('does not scroll while ledger is loading even with focus', () => {
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: true,
+      error: null,
+      data: undefined,
+    } as ReturnType<typeof useLedger>);
+
+    renderPage('deal');
+    expect(scrollToWorkspaceFocusMock).not.toHaveBeenCalled();
   });
 });

@@ -18,6 +18,7 @@ import {
 } from '@/lib/appRoute';
 import { navigateToCreateVenue } from '@/lib/dashboardRoute';
 import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
+import { isRecognizedWorkspaceFocus } from '@/lib/workspaceFocusScroll';
 import { setActiveEventId } from '@/venue/activeEventStorage';
 import { resolveActiveEventId } from '@/venue/eventSelection';
 import type { EventResponse } from '@/types/generated-api';
@@ -28,6 +29,9 @@ export function EventWorkspacePage() {
   const workspaceRoute = useEventWorkspaceRoute();
   const urlVenueId = workspaceRoute?.venueId ?? null;
   const urlEventId = workspaceRoute?.eventId ?? null;
+  const ledgerFocus = isRecognizedWorkspaceFocus(workspaceRoute?.focus)
+    ? workspaceRoute.focus
+    : null;
 
   const { isLoading: profileLoading } = useUserProfile();
   const canManageVenues = useCanManageVenues();
@@ -332,7 +336,7 @@ export function EventWorkspacePage() {
       ) : null}
 
       {showLedger && selectedEventId && activeVenueId ? (
-        <EventLedgerPage venueId={activeVenueId} eventId={selectedEventId} />
+        <EventLedgerPage venueId={activeVenueId} eventId={selectedEventId} focus={ledgerFocus} />
       ) : null}
 
       {showEventWorkspace &&

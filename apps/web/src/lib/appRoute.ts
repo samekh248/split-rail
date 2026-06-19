@@ -145,15 +145,15 @@ export interface EventWorkspaceRouteParams {
 }
 
 export function useEventWorkspaceRoute(): EventWorkspaceRouteParams | null {
-  const [pathname, setPathname] = useState(() => window.location.pathname);
+  const [, setRouteRevision] = useState(0);
 
   useEffect(() => {
-    const onPopState = () => setPathname(window.location.pathname);
+    const onPopState = () => setRouteRevision((revision) => revision + 1);
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
-  const params = parseEventWorkspacePath(pathname);
+  const params = parseEventWorkspacePath(window.location.pathname);
   if (!params) {
     return null;
   }
