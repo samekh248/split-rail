@@ -95,6 +95,17 @@ export function applyPinOptimisticUpdate(
   return previous;
 }
 
+export function normalizeDashboardPartitions(
+  data: DashboardResponse | MergedDashboardPartitions,
+): MergedDashboardPartitions {
+  return {
+    pinnedEvents: data.pinnedEvents ?? [],
+    tonightEvents: data.tonightEvents ?? [],
+    upcomingEvents: data.upcomingEvents ?? [],
+    recentEvents: data.recentEvents ?? [],
+  };
+}
+
 export function useDashboard(venueId: string | null) {
   return useQuery({
     queryKey: dashboardQueryKey(venueId ?? ''),

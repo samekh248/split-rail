@@ -17,6 +17,7 @@ const BOTTLENECK_LABELS: Record<BottleneckAlertKind, string> = {
   MISSING_SIGNATURE: 'Missing signature',
   SETTLED_NOT_SYNCED: 'Not synced to QBO',
   VARIANCE_REVIEW: 'Variance review needed',
+  UNMAPPED_QBO: 'Unmapped QBO accounts',
 };
 
 function parseEventDate(eventDate: string | null | undefined): Date | null {

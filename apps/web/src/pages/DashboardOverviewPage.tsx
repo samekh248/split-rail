@@ -13,23 +13,25 @@ import {
   useDashboard,
   usePinEvent,
   useUnpinEvent,
+  normalizeDashboardPartitions,
+  type MergedDashboardPartitions,
 } from '@/api/dashboard';
 import { useUserProfile } from '@/api/user';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
 import { navigateToCreateVenue, navigateToEventWorkspace } from '@/lib/dashboardRoute';
-import type { EventCardDto, PermissionsDto } from '@/types/generated-api';
+import type { PermissionsDto } from '@/types/generated-api';
 
 const EMPTY_PERMISSIONS: PermissionsDto = {};
 
-const EMPTY_PARTITIONS = {
-  pinnedEvents: [] as EventCardDto[],
-  tonightEvents: [] as EventCardDto[],
-  upcomingEvents: [] as EventCardDto[],
-  recentEvents: [] as EventCardDto[],
+const EMPTY_PARTITIONS: MergedDashboardPartitions = {
+  pinnedEvents: [],
+  tonightEvents: [],
+  upcomingEvents: [],
+  recentEvents: [],
 };
 
-function hasAnyDashboardEvents(partitions: typeof EMPTY_PARTITIONS): boolean {
+function hasAnyDashboardEvents(partitions: MergedDashboardPartitions): boolean {
   return (
     partitions.pinnedEvents.length > 0
     || partitions.tonightEvents.length > 0
@@ -61,19 +63,11 @@ export function DashboardOverviewPage() {
   const hasVenues = venues.length > 0;
   const showEventsContent = hasVenues && (isAllVenuesSelected || Boolean(activeVenueId));
 
-  const partitions = useMemo(() => {
+  const partitions = useMemo((): MergedDashboardPartitions => {
     if (!showEventsContent || !dashboardData) {
       return EMPTY_PARTITIONS;
     }
-    if ('venueId' in dashboardData) {
-      return {
-        pinnedEvents: dashboardData.pinnedEvents ?? [],
-        tonightEvents: dashboardData.tonightEvents ?? [],
-        upcomingEvents: dashboardData.upcomingEvents ?? [],
-        recentEvents: dashboardData.recentEvents ?? [],
-      };
-    }
-    return dashboardData;
+    return normalizeDashboardPartitions(dashboardData);
   }, [dashboardData, showEventsContent]);
 
   const workspaceBarContent = useMemo(
