@@ -33,6 +33,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<QboSyncLedger> QboSyncLedgers => Set<QboSyncLedger>();
     public DbSet<UnmappedQboTransaction> UnmappedQboTransactions => Set<UnmappedQboTransaction>();
     public DbSet<SettlementReversal> SettlementReversals => Set<SettlementReversal>();
+    public DbSet<UserEventPin> UserEventPins => Set<UserEventPin>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,6 +56,7 @@ public class ApplicationDbContext : DbContext
         ConfigureQboSyncLedger(modelBuilder);
         ConfigureUnmappedQboTransaction(modelBuilder);
         ConfigureSettlementReversal(modelBuilder);
+        ConfigureUserEventPin(modelBuilder);
 
         ApplyTenantQueryFilters(modelBuilder);
     }
@@ -114,6 +116,10 @@ public class ApplicationDbContext : DbContext
             e.Venue.OrganizationId == _tenantContext.OrganizationId);
 
         modelBuilder.Entity<SettlementReversal>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<UserEventPin>().HasQueryFilter(e =>
             _tenantContext.OrganizationId == null ||
             e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
     }
@@ -867,6 +873,33 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.ReversedByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    private static void ConfigureUserEventPin(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<UserEventPin>(entity =>
+        {
+            entity.ToTable("user_event_pins");
+
+            entity.HasKey(e => new { e.UserId, e.EventId });
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+
+            entity.Property(e => e.PinnedAt)
+                .HasColumnName("pinned_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.EventPins)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.UserEventPins)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

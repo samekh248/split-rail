@@ -25,4 +25,5 @@ public class Event
     public ICollection<SettlementReversal> Reversals { get; set; } = [];
     public ICollection<QboSyncLedger> QboSyncLedgerEntries { get; set; } = [];
     public ICollection<UnmappedQboTransaction> UnmappedQboTransactions { get; set; } = [];
+    public ICollection<UserEventPin> UserEventPins { get; set; } = [];
 }
