@@ -20,19 +20,15 @@ public sealed class LogCapturingWebApplicationFactory : WebApplicationFactory<Pr
 
     public TestLogCollector LogCollector { get; }
 
-    protected override IHost CreateHost(IHostBuilder builder)
+    protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureLogging(logging =>
         {
-            logging.AddProvider(LogCollector);
+            logging.ClearProviders();
+            logging.Services.AddSingleton<ILoggerProvider>(LogCollector);
             logging.SetMinimumLevel(LogLevel.Trace);
         });
 
-        return base.CreateHost(builder);
-    }
-
-    protected override void ConfigureWebHost(IWebHostBuilder builder)
-    {
         _configureWebHost(builder);
         base.ConfigureWebHost(builder);
     }

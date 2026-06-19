@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using SplitRail.Api.DTOs.Ledger;
-using SplitRail.Api.DTOs.Settlement;
+using SplitRail.Api.Models.Enums;
 using SplitRail.Api.Services;
 using SplitRail.Api.Tests.TestSupport;
 using Xunit;
@@ -17,8 +17,6 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
     [Fact]
     public async Task SettledEvent_LineItemUpdate_Returns400_AndLogsAudit()
     {
-        if (!IsQuestPdfSupported()) return;
-
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (eventId, lineItem, userId) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
         LogCollector!.Clear();
@@ -34,14 +32,9 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
     [Fact]
     public async Task ReconciledEvent_LineItemUpdate_Returns400_AndLogsAudit()
     {
-        if (!IsQuestPdfSupported()) return;
-
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (eventId, lineItem, userId) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
-
-        var reconcileResponse = await client.PostAsync(
-            $"/api/venues/{venueId}/events/{eventId}/reconcile", null);
-        reconcileResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        await SetEventStatusDirectAsync(token, eventId, EventStatus.Reconciled);
         LogCollector!.Clear();
 
         var response = await client.PutAsJsonAsync(
@@ -70,8 +63,6 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
     [Fact]
     public async Task SettledEvent_MutationWithLargePayload_NoSensitiveDataInLog()
     {
-        if (!IsQuestPdfSupported()) return;
-
         const string distinctiveNotes = "DISTINCTIVE_NOTES_SHOULD_NOT_LOG";
         const decimal distinctiveAmount = 424242.42m;
 
@@ -95,8 +86,6 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
     [Fact]
     public async Task SettledEvent_AuditLog_UserIdOnlyNotEmail()
     {
-        if (!IsQuestPdfSupported()) return;
-
         const string email = "audit-user@example.com";
         var (client, venueId, token) = await SetupFinancialAdminAsync(email);
         var (userId, _) = ParseTokenClaims(token);
@@ -117,8 +106,6 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
     [Fact]
     public async Task SettledEvent_UpdateMetadata_Returns400_AndLogsUpdateEventMetadata()
     {
-        if (!IsQuestPdfSupported()) return;
-
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (eventId, _, userId) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
         LogCollector!.Clear();
@@ -134,44 +121,25 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
     [Fact]
     public async Task SettledEvent_UpdateArtist_Returns400_AndLogsUpdateArtist()
     {
-        if (!IsQuestPdfSupported()) return;
-
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (userId, _) = ParseTokenClaims(token);
-        var evt = await SeedSettlementReadyEventAsync(client, venueId, token);
-
-        await client.PostAsJsonAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/line-items",
-            new CreateLineItemRequest("REVENUE", "Control Row", 1, false, 100m, 100m, null));
-
-        var createArtistResponse = await client.PostAsJsonAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/artists",
-            new CreateArtistRequest("Headliner", 1, "guarantee", null, 5000m, 0m, 0m));
-        createArtistResponse.StatusCode.Should().Be(HttpStatusCode.Created);
-        var artist = await createArtistResponse.Content.ReadFromJsonAsync<EventArtistDto>();
-
-        await client.PostAsJsonAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/settle",
-            new FinalizeSettlementRequest(ValidSignatureBase64(), true));
-
+        var (eventId, artist) = await SeedSettledEventWithArtistAsync(client, venueId, token);
         LogCollector!.Clear();
 
         var response = await client.PutAsJsonAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/artists/{artist!.Id}",
+            $"/api/venues/{venueId}/events/{eventId}/artists/{artist.Id}",
             new UpdateArtistRequest("Renamed", 1, "guarantee", null, 5000m, 0m, 0m, artist.RowVersion));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
         var body = await response.Content.ReadAsStringAsync();
         body.Should().Contain("PRE_SHOW");
 
-        AssertFrozenAuditLog(evt.EventId, venueId, userId, FrozenEventMutationOperation.UpdateArtist, "SETTLED");
+        AssertFrozenAuditLog(eventId, venueId, userId, FrozenEventMutationOperation.UpdateArtist, "SETTLED");
     }
 
     [Fact]
     public async Task SettledEvent_LockBudget_Returns400_AndLogsLockBudget()
     {
-        if (!IsQuestPdfSupported()) return;
-
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (eventId, _, userId) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
         LogCollector!.Clear();
@@ -186,8 +154,6 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
     [Fact]
     public async Task SettledEvent_AuditEmittedBeforeMiddlewareGenericLog()
     {
-        if (!IsQuestPdfSupported()) return;
-
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (eventId, lineItem, userId) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
         LogCollector!.Clear();
@@ -206,8 +172,6 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
     [Fact]
     public async Task SettledEvent_CreateLineItem_Returns400_AndLogsCreateLineItem()
     {
-        if (!IsQuestPdfSupported()) return;
-
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (eventId, _, userId) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
         LogCollector!.Clear();
@@ -223,8 +187,6 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
     [Fact]
     public async Task SettledEvent_DeleteLineItem_Returns400_AndLogsDeleteLineItem()
     {
-        if (!IsQuestPdfSupported()) return;
-
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (eventId, lineItem, userId) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
         LogCollector!.Clear();
@@ -239,8 +201,6 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
     [Fact]
     public async Task SettledEvent_DeleteEvent_Returns400_AndLogsDeleteEvent()
     {
-        if (!IsQuestPdfSupported()) return;
-
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (eventId, _, userId) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
         LogCollector!.Clear();
@@ -254,8 +214,6 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
     [Fact]
     public async Task SettledEvent_CreateArtist_Returns400_AndLogsCreateArtist()
     {
-        if (!IsQuestPdfSupported()) return;
-
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (eventId, _, userId) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
         LogCollector!.Clear();
@@ -271,65 +229,33 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
     [Fact]
     public async Task SettledEvent_DeleteArtist_Returns400_AndLogsDeleteArtist()
     {
-        if (!IsQuestPdfSupported()) return;
-
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (userId, _) = ParseTokenClaims(token);
-        var evt = await SeedSettlementReadyEventAsync(client, venueId, token);
-
-        await client.PostAsJsonAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/line-items",
-            new CreateLineItemRequest("REVENUE", "Control Row", 1, false, 100m, 100m, null));
-
-        var createArtistResponse = await client.PostAsJsonAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/artists",
-            new CreateArtistRequest("Headliner", 1, "guarantee", null, 5000m, 0m, 0m));
-        var artist = await createArtistResponse.Content.ReadFromJsonAsync<EventArtistDto>();
-
-        await client.PostAsJsonAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/settle",
-            new FinalizeSettlementRequest(ValidSignatureBase64(), true));
-
+        var (eventId, artist) = await SeedSettledEventWithArtistAsync(client, venueId, token);
         LogCollector!.Clear();
 
         var response = await client.DeleteAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/artists/{artist!.Id}");
+            $"/api/venues/{venueId}/events/{eventId}/artists/{artist.Id}");
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        AssertFrozenAuditLog(evt.EventId, venueId, userId, FrozenEventMutationOperation.DeleteArtist, "SETTLED");
+        AssertFrozenAuditLog(eventId, venueId, userId, FrozenEventMutationOperation.DeleteArtist, "SETTLED");
     }
 
     [Fact]
     public async Task ReconciledEvent_UpdateArtist_Returns400_AndLogsAudit()
     {
-        if (!IsQuestPdfSupported()) return;
-
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (userId, _) = ParseTokenClaims(token);
-        var evt = await SeedSettlementReadyEventAsync(client, venueId, token);
-
-        await client.PostAsJsonAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/line-items",
-            new CreateLineItemRequest("REVENUE", "Control Row", 1, false, 100m, 100m, null));
-
-        var createArtistResponse = await client.PostAsJsonAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/artists",
-            new CreateArtistRequest("Headliner", 1, "guarantee", null, 5000m, 0m, 0m));
-        var artist = await createArtistResponse.Content.ReadFromJsonAsync<EventArtistDto>();
-
-        await client.PostAsJsonAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/settle",
-            new FinalizeSettlementRequest(ValidSignatureBase64(), true));
-        await client.PostAsync($"/api/venues/{venueId}/events/{evt.EventId}/reconcile", null);
-
+        var (eventId, artist) = await SeedSettledEventWithArtistAsync(client, venueId, token);
+        await SetEventStatusDirectAsync(token, eventId, EventStatus.Reconciled);
         LogCollector!.Clear();
 
         var response = await client.PutAsJsonAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/artists/{artist!.Id}",
+            $"/api/venues/{venueId}/events/{eventId}/artists/{artist.Id}",
             new UpdateArtistRequest("Renamed", 1, "guarantee", null, 5000m, 0m, 0m, artist.RowVersion));
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-        AssertFrozenAuditLog(evt.EventId, venueId, userId, FrozenEventMutationOperation.UpdateArtist, "RECONCILED");
+        AssertFrozenAuditLog(eventId, venueId, userId, FrozenEventMutationOperation.UpdateArtist, "RECONCILED");
     }
 
     private async Task<(Guid EventId, LineItemDto LineItem, Guid UserId)> SeedSettledEventWithLineItemAsync(
@@ -338,18 +264,54 @@ public class FrozenEventMutationAuditTests : IntegrationTestBase
         string token)
     {
         var (userId, _) = ParseTokenClaims(token);
-        var evt = await SeedSettlementReadyEventAsync(client, venueId, token);
+        var evt = await CreateEventViaApiAsync(client, venueId);
 
         var createResponse = await client.PostAsJsonAsync(
             $"/api/venues/{venueId}/events/{evt.EventId}/line-items",
-            new CreateLineItemRequest("REVENUE", "Control Row", 1, false, 100m, 100m, null));
+            new CreateLineItemRequest("REVENUE", "Control Row", 1, false, 100m, 0m, null));
+        createResponse.EnsureSuccessStatusCode();
         var lineItem = (await createResponse.Content.ReadFromJsonAsync<LineItemDto>())!;
 
-        await client.PostAsJsonAsync(
-            $"/api/venues/{venueId}/events/{evt.EventId}/settle",
-            new FinalizeSettlementRequest(ValidSignatureBase64(), true));
+        var lockResponse = await client.PostAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/lock-budget", null);
+        lockResponse.EnsureSuccessStatusCode();
+
+        var updateResponse = await client.PutAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/line-items/{lineItem.Id}",
+            new UpdateLineItemRequest("Control Row", 1, false, 100m, 100m, null, false, lineItem.RowVersion));
+        updateResponse.EnsureSuccessStatusCode();
+        lineItem = (await updateResponse.Content.ReadFromJsonAsync<LineItemDto>())!;
+
+        await SetEventStatusDirectAsync(token, evt.EventId, EventStatus.Settled);
 
         return (evt.EventId, lineItem, userId);
+    }
+
+    private async Task<(Guid EventId, EventArtistDto Artist)> SeedSettledEventWithArtistAsync(
+        HttpClient client,
+        Guid venueId,
+        string token)
+    {
+        var evt = await CreateEventViaApiAsync(client, venueId);
+
+        var createLineItemResponse = await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/line-items",
+            new CreateLineItemRequest("REVENUE", "Control Row", 1, false, 100m, 0m, null));
+        createLineItemResponse.EnsureSuccessStatusCode();
+
+        var lockResponse = await client.PostAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/lock-budget", null);
+        lockResponse.EnsureSuccessStatusCode();
+
+        var createArtistResponse = await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/artists",
+            new CreateArtistRequest("Headliner", 1, "guarantee", null, 5000m, 0m, 0m));
+        createArtistResponse.EnsureSuccessStatusCode();
+        var artist = (await createArtistResponse.Content.ReadFromJsonAsync<EventArtistDto>())!;
+
+        await SetEventStatusDirectAsync(token, evt.EventId, EventStatus.Settled);
+
+        return (evt.EventId, artist);
     }
 
     private IEnumerable<TestLogCollector.LogEntry> GetFrozenAuditLogs() =>
