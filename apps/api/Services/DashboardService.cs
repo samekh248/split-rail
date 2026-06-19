@@ -72,14 +72,36 @@ public class DashboardService
             .ToList();
 
         _logger.LogInformation(
-            "Dashboard loaded for venue {VenueId}: tonight={Tonight}, pinned={Pinned}, recent={Recent}, upcoming={Upcoming}",
+            "Dashboard loaded for venue {VenueId}: tonight={Tonight}, pinned={Pinned}, recent={Recent}, upcoming={Upcoming}, unmapped={Unmapped}",
             venueId,
             tonight.Count,
             pinned.Count,
             recent.Count,
-            upcoming.Count);
+            upcoming.Count,
+            cards.Sum(c => c.UnmappedCount));
 
-        return new DashboardResponse(venueId, tonight, pinned, recent, upcoming);
+        var actionCenter = BuildActionCenter(cards);
+        var financialHealth = DashboardFinancialHealthHelper.BuildFinancialHealthDto(events, today);
+
+        return new DashboardResponse(venueId, tonight, pinned, recent, upcoming, actionCenter, financialHealth);
+    }
+
+    private static ActionCenterDto BuildActionCenter(IReadOnlyList<EventCardDto> cards)
+    {
+        var totalUnmapped = cards.Sum(c => c.UnmappedCount);
+        var eventsWithUnmapped = cards
+            .Where(c => c.UnmappedCount > 0)
+            .OrderByDescending(c => c.UnmappedCount)
+            .ThenBy(c => c.EventDate)
+            .Select(c => new UnmappedEventSummaryDto(
+                c.EventId,
+                c.VenueId,
+                c.Title,
+                c.EventDate,
+                c.UnmappedCount))
+            .ToList();
+
+        return new ActionCenterDto(totalUnmapped, eventsWithUnmapped);
     }
 
     private static EventCardDto ToEventCardDto(Event evt)

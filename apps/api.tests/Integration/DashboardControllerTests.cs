@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,6 +10,7 @@ using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.DTOs.Roles;
 using SplitRail.Api.DTOs.Venues;
 using SplitRail.Api.Models;
+using SplitRail.Api.Models.Enums;
 using SplitRail.Api.Services;
 using Xunit;
 
@@ -70,6 +72,11 @@ public class DashboardControllerTests : IntegrationTestBase
         dashboard.PinnedEvents.Should().BeEmpty();
         dashboard.RecentEvents.Should().BeEmpty();
         dashboard.UpcomingEvents.Should().BeEmpty();
+        dashboard.ActionCenter.TotalUnmappedCount.Should().Be(0);
+        dashboard.ActionCenter.EventsWithUnmapped.Should().BeEmpty();
+        dashboard.FinancialHealth.ProjectedNetGross.Should().Be(0m);
+        dashboard.FinancialHealth.ActualQboDeposits.Should().Be(0m);
+        dashboard.FinancialHealth.Variance.Should().Be(0m);
     }
 
     [Fact]
@@ -217,6 +224,178 @@ public class DashboardControllerTests : IntegrationTestBase
         userBDashboard.TonightEvents.Single(e => e.EventId == evt.EventId).IsPinned.Should().BeFalse();
     }
 
+    [Fact]
+    public async Task GetDashboard_ActionCenter_TotalMatchesSumOfCardCounts()
+    {
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var evtA = await CreateEventViaApiAsync(client, venueId, "Unmapped A", today.ToString("yyyy-MM-dd"));
+        var evtB = await CreateEventViaApiAsync(client, venueId, "Unmapped B", today.AddDays(1).ToString("yyyy-MM-dd"));
+        var evtC = await CreateEventViaApiAsync(client, venueId, "Clean", today.AddDays(2).ToString("yyyy-MM-dd"));
+
+        await SeedUnmappedTransactionDirectAsync(token, evtA.EventId, venueId, "txn-a1");
+        await SeedUnmappedTransactionDirectAsync(token, evtA.EventId, venueId, "txn-a2");
+        await SeedUnmappedTransactionDirectAsync(token, evtA.EventId, venueId, "txn-a3");
+        await SeedUnmappedTransactionDirectAsync(token, evtB.EventId, venueId, "txn-b1");
+
+        var dashboard = await GetDashboardAsync(client, venueId);
+        var cardSum = AllEventCards(dashboard).Sum(c => c.UnmappedCount);
+
+        dashboard.ActionCenter.TotalUnmappedCount.Should().Be(4);
+        dashboard.ActionCenter.TotalUnmappedCount.Should().Be(cardSum);
+    }
+
+    [Fact]
+    public async Task GetDashboard_ActionCenter_ListsOnlyEventsWithUnmappedSorted()
+    {
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+
+        var evtHigh = await CreateEventViaApiAsync(client, venueId, "High", today.AddDays(5).ToString("yyyy-MM-dd"));
+        var evtLowSoon = await CreateEventViaApiAsync(client, venueId, "Low Soon", today.AddDays(1).ToString("yyyy-MM-dd"));
+        var evtLowLater = await CreateEventViaApiAsync(client, venueId, "Low Later", today.AddDays(10).ToString("yyyy-MM-dd"));
+        await CreateEventViaApiAsync(client, venueId, "Zero", today.AddDays(2).ToString("yyyy-MM-dd"));
+
+        await SeedUnmappedTransactionDirectAsync(token, evtHigh.EventId, venueId, "txn-h1");
+        await SeedUnmappedTransactionDirectAsync(token, evtHigh.EventId, venueId, "txn-h2");
+        await SeedUnmappedTransactionDirectAsync(token, evtLowSoon.EventId, venueId, "txn-ls");
+        await SeedUnmappedTransactionDirectAsync(token, evtLowLater.EventId, venueId, "txn-ll");
+
+        var dashboard = await GetDashboardAsync(client, venueId);
+        var listed = dashboard.ActionCenter.EventsWithUnmapped;
+
+        listed.Should().HaveCount(3);
+        listed.Select(e => e.EventId).Should().NotContain(
+            AllEventCards(dashboard).Single(c => c.Title == "Zero").EventId);
+        listed[0].EventId.Should().Be(evtHigh.EventId);
+        listed[0].UnmappedCount.Should().Be(2);
+        listed[1].EventId.Should().Be(evtLowSoon.EventId);
+        listed[2].EventId.Should().Be(evtLowLater.EventId);
+    }
+
+    [Fact]
+    public async Task GetDashboard_ActionCenter_ZeroUnmapped_ReturnsEmptyListAndZeroTotal()
+    {
+        var (client, venueId, _) = await SetupFinancialAdminAsync();
+        await CreateEventViaApiAsync(client, venueId, "Clean Show", DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd"));
+
+        var dashboard = await GetDashboardAsync(client, venueId);
+
+        dashboard.ActionCenter.TotalUnmappedCount.Should().Be(0);
+        dashboard.ActionCenter.EventsWithUnmapped.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task GetDashboard_FinancialHealth_WeekFilterAndTotals()
+    {
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var (weekStart, weekEnd) = DashboardFinancialHealthHelper.GetCalendarWeek(today);
+
+        var inWeekSettled = await CreateEventViaApiAsync(
+            client, venueId, "In Week Settled", weekStart.ToString("yyyy-MM-dd"));
+        await SetEventStatusDirectAsync(token, inWeekSettled.EventId, EventStatus.Settled);
+        await SeedLineItemWithValuesDirectAsync(
+            token, inWeekSettled.EventId,
+            proformaValue: 1000m, settlementValue: 3000m, qboActualValue: 2500m);
+
+        var outOfWeek = await CreateEventViaApiAsync(
+            client, venueId, "Out Of Week", weekStart.AddDays(-7).ToString("yyyy-MM-dd"));
+        await SeedLineItemWithValuesDirectAsync(
+            token, outOfWeek.EventId,
+            proformaValue: 9999m, settlementValue: 9999m, qboActualValue: 8888m);
+
+        var dashboard = await GetDashboardAsync(client, venueId);
+
+        dashboard.FinancialHealth.WeekStart.Should().Be(weekStart.ToString("yyyy-MM-dd"));
+        dashboard.FinancialHealth.WeekEnd.Should().Be(weekEnd.ToString("yyyy-MM-dd"));
+        dashboard.FinancialHealth.ProjectedNetGross.Should().Be(3000m);
+        dashboard.FinancialHealth.ActualQboDeposits.Should().Be(2500m);
+        dashboard.FinancialHealth.Variance.Should().Be(500m);
+    }
+
+    [Fact]
+    public async Task GetDashboard_FinancialHealth_BudgetLockedPreShowUsesProforma()
+    {
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var (weekStart, _) = DashboardFinancialHealthHelper.GetCalendarWeek(today);
+
+        var evt = await CreateEventViaApiAsync(
+            client, venueId, "Locked PreShow", weekStart.ToString("yyyy-MM-dd"));
+        await SetEventStatusDirectAsync(token, evt.EventId, EventStatus.PreShow, isBudgetLocked: true);
+        await SeedLineItemWithValuesDirectAsync(
+            token, evt.EventId,
+            proformaValue: 1000m, settlementValue: 9000m, qboActualValue: 0m);
+
+        var dashboard = await GetDashboardAsync(client, venueId);
+
+        dashboard.FinancialHealth.ProjectedNetGross.Should().Be(1000m);
+    }
+
+    [Fact]
+    public async Task GetDashboard_FinancialHealth_NoInWeekEvents_ReturnsZeroTotals()
+    {
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var (_, weekEnd) = DashboardFinancialHealthHelper.GetCalendarWeek(today);
+        var farFuture = weekEnd.AddDays(14);
+
+        var evt = await CreateEventViaApiAsync(
+            client, venueId, "Future Show", farFuture.ToString("yyyy-MM-dd"));
+        await SeedLineItemWithValuesDirectAsync(
+            token, evt.EventId,
+            proformaValue: 5000m, settlementValue: 5000m, qboActualValue: 4000m);
+
+        var dashboard = await GetDashboardAsync(client, venueId);
+
+        dashboard.FinancialHealth.ProjectedNetGross.Should().Be(0m);
+        dashboard.FinancialHealth.ActualQboDeposits.Should().Be(0m);
+        dashboard.FinancialHealth.Variance.Should().Be(0m);
+    }
+
+    [Fact]
+    public async Task GetDashboard_ResponseIncludesActionCenterAndFinancialHealthBlocks()
+    {
+        var (client, venueId, _) = await SetupFinancialAdminAsync();
+        await CreateEventViaApiAsync(client, venueId);
+
+        var dashboard = await GetDashboardAsync(client, venueId);
+
+        dashboard.ActionCenter.Should().NotBeNull();
+        dashboard.FinancialHealth.Should().NotBeNull();
+        dashboard.FinancialHealth.WeekStart.Should().NotBeNullOrEmpty();
+        dashboard.FinancialHealth.WeekEnd.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task GetDashboard_FinancialHealth_MoneyFieldsAreJsonStrings()
+    {
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var (weekStart, _) = DashboardFinancialHealthHelper.GetCalendarWeek(today);
+        var evt = await CreateEventViaApiAsync(
+            client, venueId, "Money Test", weekStart.ToString("yyyy-MM-dd"));
+        await SeedLineItemWithValuesDirectAsync(
+            token, evt.EventId,
+            proformaValue: 100m, settlementValue: 0m, qboActualValue: 0m);
+
+        var response = await client.GetAsync($"/api/venues/{venueId}/dashboard");
+        response.EnsureSuccessStatusCode();
+        using var doc = JsonDocument.Parse(await response.Content.ReadAsStringAsync());
+        var health = doc.RootElement.GetProperty("financialHealth");
+
+        health.GetProperty("projectedNetGross").ValueKind.Should().Be(JsonValueKind.String);
+        health.GetProperty("actualQboDeposits").ValueKind.Should().Be(JsonValueKind.String);
+        health.GetProperty("variance").ValueKind.Should().Be(JsonValueKind.String);
+    }
+
+    private static IEnumerable<EventCardDto> AllEventCards(DashboardResponse dashboard) =>
+        dashboard.TonightEvents
+            .Concat(dashboard.PinnedEvents)
+            .Concat(dashboard.RecentEvents)
+            .Concat(dashboard.UpcomingEvents);
+
     private static IEnumerable<Guid> AllEventIds(DashboardResponse dashboard) =>
         dashboard.TonightEvents
             .Concat(dashboard.PinnedEvents)
@@ -278,6 +457,35 @@ public class DashboardControllerTests : IntegrationTestBase
             Amount = 100m,
             TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
             SyncedAt = DateTimeOffset.UtcNow
+        });
+        await db.SaveChangesAsync();
+    }
+
+    private async Task SeedLineItemWithValuesDirectAsync(
+        string accessToken,
+        Guid eventId,
+        decimal proformaValue,
+        decimal settlementValue,
+        decimal qboActualValue,
+        string blockType = "REVENUE",
+        bool isArtistDeduction = false)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        var (userId, orgId) = ParseTokenClaims(accessToken);
+        tenantContext.SetContext(userId, orgId);
+
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.FinancialLineItems.Add(new FinancialLineItem
+        {
+            EventId = eventId,
+            BlockType = blockType,
+            RowLabel = "Seeded Row",
+            SortOrder = 0,
+            IsArtistDeduction = isArtistDeduction,
+            ProformaValue = proformaValue,
+            SettlementValue = settlementValue,
+            QboActualValue = qboActualValue
         });
         await db.SaveChangesAsync();
     }
