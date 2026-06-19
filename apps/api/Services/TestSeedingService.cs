@@ -31,17 +31,20 @@ public class TestSeedingService
     private readonly PreviewOptions _previewOptions;
     private readonly ISettlementArchiveStore _archiveStore;
     private readonly IDataProtector _tokenProtector;
+    private readonly FrozenEventMutationAuditor _frozenEventAuditor;
 
     public TestSeedingService(
         ApplicationDbContext db,
         IOptions<PreviewOptions> previewOptions,
         ISettlementArchiveStore archiveStore,
-        IDataProtectionProvider dataProtectionProvider)
+        IDataProtectionProvider dataProtectionProvider,
+        FrozenEventMutationAuditor frozenEventAuditor)
     {
         _db = db;
         _previewOptions = previewOptions.Value;
         _archiveStore = archiveStore;
         _tokenProtector = dataProtectionProvider.CreateProtector("QboOAuthTokens");
+        _frozenEventAuditor = frozenEventAuditor;
     }
 
     public void EnsureEnabled()
@@ -256,7 +259,11 @@ public class TestSeedingService
         {
             try
             {
-                LedgerService.AssertNotSettledOrReconciled(lineItem.Event);
+                _frozenEventAuditor.RejectIfFrozen(
+                    lineItem.Event,
+                    lineItem.Event.VenueId,
+                    null,
+                    FrozenEventMutationOperation.UpdateLineItem);
             }
             catch (LedgerStateException ex)
             {
