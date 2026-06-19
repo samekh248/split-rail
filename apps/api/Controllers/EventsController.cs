@@ -12,8 +12,13 @@ namespace SplitRail.Api.Controllers;
 public class EventsController : ControllerBase
 {
     private readonly EventService _eventService;
+    private readonly EventPinService _eventPinService;
 
-    public EventsController(EventService eventService) => _eventService = eventService;
+    public EventsController(EventService eventService, EventPinService eventPinService)
+    {
+        _eventService = eventService;
+        _eventPinService = eventPinService;
+    }
 
     [HttpPost]
     [RequirePermission(PermissionNames.ViewFinancials)]
@@ -64,6 +69,28 @@ public class EventsController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _eventService.DeleteEventAsync(venueId, eventId, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPut("{eventId:guid}/pin")]
+    [RequirePermission(PermissionNames.ViewFinancials)]
+    public async Task<IActionResult> Pin(
+        Guid venueId,
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        await _eventPinService.PinEventAsync(venueId, eventId, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpDelete("{eventId:guid}/pin")]
+    [RequirePermission(PermissionNames.ViewFinancials)]
+    public async Task<IActionResult> Unpin(
+        Guid venueId,
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        await _eventPinService.UnpinEventAsync(venueId, eventId, cancellationToken);
         return NoContent();
     }
 }
