@@ -37,6 +37,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected WebApplicationFactory<Program> Factory = null!;
     protected HttpClient Client = null!;
     protected InMemorySettlementArchiveStore ArchiveStore { get; } = new();
+    protected ThrowingSettlementPdfRenderer ThrowingPdfRenderer { get; } = new();
+    protected SaveChangesFailureInterceptor SaveChangesFailure { get; } = new();
     protected TestLogCollector? LogCollector { get; private set; }
 
     protected virtual bool ReplaceSettlementArchiveStore => true;
@@ -50,8 +52,11 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         config["QboSync:RedirectUri"] = "http://localhost/api/qbo/callback";
         config["QboSync:InternalTriggerKey"] = "test-internal-key";
         config["SettlementArchive:BucketName"] = "test-settlements-bucket";
+        config["SettlementArchive:StagingBucketName"] = "test-settlements-staging";
         config["SettlementArchive:SignedUrlTtlMinutes"] = "15";
     }
+
+    protected virtual void ConfigureAdditionalTestServices(IServiceCollection services) { }
 
     protected virtual void ConfigureTestServices(IServiceCollection services, string connectionString)
     {
@@ -60,14 +65,30 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         if (descriptor is not null)
             services.Remove(descriptor);
 
+        services.AddSingleton(SaveChangesFailure);
+
         services.AddDbContext<ApplicationDbContext>((sp, options) =>
         {
             options.UseNpgsql(connectionString);
-            options.AddInterceptors(sp.GetRequiredService<FrozenEventImmutabilityInterceptor>());
+            options.AddInterceptors(
+                sp.GetRequiredService<FrozenEventImmutabilityInterceptor>(),
+                sp.GetRequiredService<SaveChangesFailureInterceptor>());
         });
 
+        var pdfRendererDescriptor = services.SingleOrDefault(d =>
+            d.ServiceType == typeof(ISettlementPdfRenderer));
+        if (pdfRendererDescriptor is not null)
+            services.Remove(pdfRendererDescriptor);
+
+        services.AddSingleton(ThrowingPdfRenderer);
+        services.AddSingleton<ISettlementPdfRenderer>(sp =>
+            sp.GetRequiredService<ThrowingSettlementPdfRenderer>());
+
         if (!ReplaceSettlementArchiveStore)
+        {
+            ConfigureAdditionalTestServices(services);
             return;
+        }
 
         var archiveDescriptor = services.SingleOrDefault(d =>
             d.ServiceType == typeof(ISettlementArchiveStore));
@@ -77,6 +98,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         services.AddSingleton(ArchiveStore);
         services.AddSingleton<ISettlementArchiveStore>(sp =>
             sp.GetRequiredService<InMemorySettlementArchiveStore>());
+
+        ConfigureAdditionalTestServices(services);
     }
 
     public async Task InitializeAsync()

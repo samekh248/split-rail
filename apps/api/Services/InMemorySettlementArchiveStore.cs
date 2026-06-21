@@ -3,10 +3,33 @@ namespace SplitRail.Api.Services;
 public class InMemorySettlementArchiveStore : ISettlementArchiveStore
 {
     private readonly Dictionary<string, byte[]> _objects = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, byte[]> _stagedObjects = new(StringComparer.Ordinal);
 
     public Task UploadAsync(string objectPath, byte[] pdfBytes, CancellationToken cancellationToken = default)
     {
         _objects[objectPath] = pdfBytes.ToArray();
+        return Task.CompletedTask;
+    }
+
+    public Task StageAsync(string stagingPath, byte[] pdfBytes, CancellationToken cancellationToken = default)
+    {
+        _stagedObjects[stagingPath] = pdfBytes.ToArray();
+        return Task.CompletedTask;
+    }
+
+    public Task PromoteAsync(string stagingPath, string finalPath, CancellationToken cancellationToken = default)
+    {
+        if (!_stagedObjects.TryGetValue(stagingPath, out var bytes))
+            throw new Exceptions.SettlementArchiveException("Staged settlement document not found.");
+
+        _objects[finalPath] = bytes.ToArray();
+        _stagedObjects.Remove(stagingPath);
+        return Task.CompletedTask;
+    }
+
+    public Task DeleteStagedAsync(string stagingPath, CancellationToken cancellationToken = default)
+    {
+        _stagedObjects.Remove(stagingPath);
         return Task.CompletedTask;
     }
 
