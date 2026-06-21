@@ -234,10 +234,28 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         tenantContext.SetContext(userId, orgId);
 
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var saveContext = scope.ServiceProvider.GetRequiredService<IFrozenEventSaveContext>();
         var evt = await db.Events.FirstAsync(e => e.Id == eventId);
+        var originalStatus = evt.Status;
         evt.Status = status;
         evt.IsBudgetLocked = isBudgetLocked;
+
+        using var authorize = ResolveFrozenEventSaveAuthorization(saveContext, originalStatus, status);
         await db.SaveChangesAsync();
+    }
+
+    private static IDisposable? ResolveFrozenEventSaveAuthorization(
+        IFrozenEventSaveContext saveContext,
+        EventStatus originalStatus,
+        EventStatus targetStatus)
+    {
+        if (originalStatus == EventStatus.Settled && targetStatus == EventStatus.Reconciled)
+            return saveContext.Authorize(FrozenEventSaveReason.EventReconciliation);
+
+        if (originalStatus == EventStatus.Settled && targetStatus == EventStatus.PreShow)
+            return saveContext.Authorize(FrozenEventSaveReason.SettlementReversal);
+
+        return null;
     }
 
     protected async Task<Guid> SeedLineItemDirectAsync(
