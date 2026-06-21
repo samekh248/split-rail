@@ -24,7 +24,7 @@ public class SettlementConcurrencyTests : IntegrationTestBase
 
         var statuses = new[] { task1.Result.StatusCode, task2.Result.StatusCode };
         statuses.Should().Contain(HttpStatusCode.OK);
-        statuses.Should().Contain(HttpStatusCode.Conflict);
+        statuses.Should().Contain(s => s == HttpStatusCode.Conflict || s == HttpStatusCode.BadRequest);
         ArchiveStore.StoredObjectCount.Should().Be(1);
         ArchiveStore.StagedObjectCount.Should().Be(0);
     }

@@ -9,6 +9,8 @@ namespace SplitRail.Api.Tests.Integration;
 
 public class LedgerControllerTests : IntegrationTestBase
 {
+    protected override bool EnableLogCapture => true;
+
     [Fact]
     public async Task CreateLineItem_AndGetLedger_ReturnsGroupedBlocksAndTotals()
     {
@@ -154,10 +156,12 @@ public class LedgerControllerTests : IntegrationTestBase
     {
         var (client, venueId, _) = await SetupFinancialAdminAsync();
         var evt = await CreateEventViaApiAsync(client, venueId);
+        LogCollector!.Clear();
 
         var recalcResponse = await client.PostAsync(
             $"/api/venues/{venueId}/events/{evt.EventId}/recalculate", null);
         recalcResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        GetFrozenAuditLogs().Should().BeEmpty();
     }
 
     [Fact]
