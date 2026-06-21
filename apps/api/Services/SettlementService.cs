@@ -13,11 +13,13 @@ namespace SplitRail.Api.Services;
 
 public class SettlementService
 {
+    private const int PromoteMaxAttempts = 3;
+
     private readonly ApplicationDbContext _db;
     private readonly ITenantContext _tenantContext;
     private readonly VenueService _venueService;
     private readonly SignatureValidator _signatureValidator;
-    private readonly SettlementPdfRenderer _pdfRenderer;
+    private readonly ISettlementPdfRenderer _pdfRenderer;
     private readonly ISettlementArchiveStore _archiveStore;
     private readonly SettlementArchiveOptions _archiveOptions;
     private readonly IFrozenEventSaveContext _saveContext;
@@ -28,7 +30,7 @@ public class SettlementService
         ITenantContext tenantContext,
         VenueService venueService,
         SignatureValidator signatureValidator,
-        SettlementPdfRenderer pdfRenderer,
+        ISettlementPdfRenderer pdfRenderer,
         ISettlementArchiveStore archiveStore,
         IOptions<SettlementArchiveOptions> archiveOptions,
         IFrozenEventSaveContext saveContext,
@@ -59,35 +61,64 @@ public class SettlementService
 
         var strokes = _signatureValidator.ValidateAndParse(request.SignatureData);
 
-        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+        string? stagingPath = null;
         try
         {
-            var evt = await LoadEventForFinalizeWithLockAsync(venueId, eventId, cancellationToken);
+            // Phase A — validate, snapshot, render, stage (no DB transaction)
+            var previewEvent = await LoadEventForFinalizeReadAsync(venueId, eventId, cancellationToken);
+            ValidateFinalizePreconditions(previewEvent);
 
-            if (evt.Status is EventStatus.Settled or EventStatus.Reconciled)
-                throw new ConcurrencyConflictException();
-
-            ValidateFinalizePreconditions(evt);
-
-            var snapshot = BuildSnapshot(evt);
+            var snapshot = BuildSnapshot(previewEvent);
             var pdfBytes = _pdfRenderer.Render(snapshot, strokes);
 
             var settlementId = Guid.NewGuid();
-            var objectPath = BuildObjectPath(evt, settlementId);
+            stagingPath = BuildStagingPath(previewEvent, settlementId);
+            var finalPath = BuildObjectPath(previewEvent, settlementId);
 
-            await _archiveStore.UploadAsync(objectPath, pdfBytes, cancellationToken);
+            await _archiveStore.StageAsync(stagingPath, pdfBytes, cancellationToken);
 
-            var settledAt = DateTimeOffset.UtcNow;
-            var objectReference = BuildObjectReference(objectPath);
+            // Phase B — short DB transaction for state mutation
+            Event evt;
+            await using (var transaction = await _db.Database.BeginTransactionAsync(cancellationToken))
+            {
+                try
+                {
+                    evt = await LoadEventForFinalizeWithLockAsync(venueId, eventId, cancellationToken);
 
-            evt.ArtistSignatureData = request.SignatureData.Trim();
-            evt.SettledAt = settledAt;
-            evt.SettledByUserId = userId;
-            evt.SettlementPdfUrl = objectReference;
-            evt.Status = EventStatus.Settled;
+                    if (evt.Status is EventStatus.Settled or EventStatus.Reconciled)
+                        throw new ConcurrencyConflictException();
 
-            await _db.SaveChangesAsync(cancellationToken);
-            await transaction.CommitAsync(cancellationToken);
+                    ValidateFinalizePreconditions(evt);
+
+                    var settledAt = DateTimeOffset.UtcNow;
+                    evt.ArtistSignatureData = request.SignatureData.Trim();
+                    evt.SettledAt = settledAt;
+                    evt.SettledByUserId = userId;
+                    evt.SettlementPdfUrl = BuildObjectReference(finalPath);
+                    evt.Status = EventStatus.Settled;
+
+                    await _db.SaveChangesAsync(cancellationToken);
+                    await transaction.CommitAsync(cancellationToken);
+                }
+                catch (DbUpdateConcurrencyException)
+                {
+                    throw new ConcurrencyConflictException();
+                }
+            }
+
+            // Phase C — promote to WORM archive, delete staging
+            try
+            {
+                await PromoteWithRetriesAsync(stagingPath, finalPath, cancellationToken);
+            }
+            catch (SettlementArchiveException)
+            {
+                await CompensateFailedPromoteAsync(evt, cancellationToken);
+                throw;
+            }
+
+            await _archiveStore.DeleteStagedAsync(stagingPath, cancellationToken);
+            stagingPath = null;
 
             _logger.LogInformation(
                 "Settlement finalized for event {EventId} at venue {VenueId} by user {UserId}",
@@ -97,9 +128,27 @@ public class SettlementService
 
             return ToResultDto(evt);
         }
-        catch (DbUpdateConcurrencyException)
+        catch (ConcurrencyConflictException)
         {
-            throw new ConcurrencyConflictException();
+            throw;
+        }
+        finally
+        {
+            if (stagingPath is not null)
+            {
+                try
+                {
+                    await _archiveStore.DeleteStagedAsync(stagingPath, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Failed to delete staged settlement PDF for event {EventId} at venue {VenueId}",
+                        eventId,
+                        venueId);
+                }
+            }
         }
     }
 
@@ -260,6 +309,63 @@ public class SettlementService
                 MoneyFormat.ToMoneyString(netShowRevenue)));
     }
 
+    private async Task PromoteWithRetriesAsync(
+        string stagingPath,
+        string finalPath,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 1; attempt <= PromoteMaxAttempts; attempt++)
+        {
+            try
+            {
+                await _archiveStore.PromoteAsync(stagingPath, finalPath, cancellationToken);
+                return;
+            }
+            catch (SettlementArchiveException) when (attempt < PromoteMaxAttempts)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(100 * attempt), cancellationToken);
+            }
+        }
+    }
+
+    private async Task CompensateFailedPromoteAsync(Event evt, CancellationToken cancellationToken)
+    {
+        evt.Status = EventStatus.PreShow;
+        evt.SettlementPdfUrl = null;
+        evt.SettledAt = null;
+        evt.SettledByUserId = null;
+        evt.ArtistSignatureData = null;
+
+        using (_saveContext.Authorize(FrozenEventSaveReason.SettlementReversal))
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+        }
+
+        _logger.LogWarning(
+            "Rolled back settlement state for event {EventId} after archive promote failure",
+            evt.Id);
+    }
+
+    private async Task<Event> LoadEventForFinalizeReadAsync(
+        Guid venueId,
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        if (!await _venueService.IsVenueAccessibleAsync(_tenantContext.UserId!.Value, venueId, cancellationToken))
+            throw new NotFoundException("Event not found.");
+
+        var evt = await _db.Events
+            .AsNoTracking()
+            .Include(e => e.Venue)
+                .ThenInclude(v => v.Organization)
+            .Include(e => e.LineItems)
+            .Include(e => e.Artists)
+            .FirstOrDefaultAsync(e => e.Id == eventId && e.VenueId == venueId, cancellationToken)
+            ?? throw new NotFoundException("Event not found.");
+
+        return evt;
+    }
+
     private async Task<Event> LoadEventForFinalizeWithLockAsync(
         Guid venueId,
         Guid eventId,
@@ -346,6 +452,12 @@ public class SettlementService
     {
         var orgId = evt.Venue.OrganizationId;
         return $"settlements/{orgId}/{evt.VenueId}/{evt.Id}/{settlementId}.pdf";
+    }
+
+    private static string BuildStagingPath(Event evt, Guid settlementId)
+    {
+        var orgId = evt.Venue.OrganizationId;
+        return $"staging/settlements/{orgId}/{evt.VenueId}/{evt.Id}/{settlementId}.pdf";
     }
 
     private string BuildObjectReference(string objectPath) =>

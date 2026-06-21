@@ -30,6 +30,23 @@ public class InMemorySettlementArchiveStoreTests
     }
 
     [Fact]
+    public async Task StagePromoteAndDelete_ManagesStagedAndFinalObjects()
+    {
+        var store = new InMemorySettlementArchiveStore();
+        var pdf = new byte[] { 0x25, 0x50, 0x44, 0x46 };
+        const string stagingPath = "staging/settlements/test.pdf";
+        const string finalPath = "settlements/test.pdf";
+
+        await store.StageAsync(stagingPath, pdf);
+        store.GetStoredPdf(finalPath).Should().BeNull();
+
+        await store.PromoteAsync(stagingPath, finalPath);
+        store.GetStoredPdf(finalPath).Should().Equal(pdf);
+
+        await store.DeleteStagedAsync(stagingPath);
+    }
+
+    [Fact]
     public async Task CreateSignedUrl_MissingObject_Throws()
     {
         var store = new InMemorySettlementArchiveStore();

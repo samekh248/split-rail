@@ -151,6 +151,7 @@ builder.Services.AddScoped<QboSyncCorrectionService>();
 builder.Services.AddScoped<QboSyncService>();
 builder.Services.AddScoped<QboMappingService>();
 builder.Services.AddScoped<SplitRail.Api.Services.SignatureValidator>();
+builder.Services.AddScoped<ISettlementPdfRenderer, SettlementPdfRenderer>();
 builder.Services.AddScoped<SettlementPdfRenderer>();
 builder.Services.AddScoped<SettlementService>();
 builder.Services.AddSingleton<InMemorySettlementArchiveStore>();

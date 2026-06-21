@@ -26,5 +26,6 @@ public class SettlementConcurrencyTests : IntegrationTestBase
         statuses.Should().Contain(HttpStatusCode.OK);
         statuses.Should().Contain(HttpStatusCode.Conflict);
         ArchiveStore.StoredObjectCount.Should().Be(1);
+        ArchiveStore.StagedObjectCount.Should().Be(0);
     }
 }

@@ -44,5 +44,23 @@ public class SettlementFinalizeTests : IntegrationTestBase
         stored.SettledByUserId.Should().Be(userId);
 
         ArchiveStore.StoredObjectCount.Should().Be(1);
+        ArchiveStore.StagedObjectCount.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Finalize_OnPreShowEvent_SucceedsWithPersistenceGuardActive()
+    {
+        if (!IsQuestPdfSupported()) return;
+
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var evt = await SeedSettlementReadyEventAsync(client, venueId, token);
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/settle",
+            new FinalizeSettlementRequest(ValidSignatureBase64(), true));
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<SettlementResultDto>();
+        result!.Status.Should().Be("SETTLED");
     }
 }

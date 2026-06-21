@@ -164,6 +164,15 @@ public class TestSeedingServiceTests
         public Task UploadAsync(string objectPath, byte[] pdfBytes, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
+        public Task StageAsync(string stagingPath, byte[] pdfBytes, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task PromoteAsync(string stagingPath, string finalPath, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task DeleteStagedAsync(string stagingPath, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
         public Task<(string Url, DateTimeOffset ExpiresAt)> CreateSignedUrlAsync(
             string objectPath,
             TimeSpan ttl,

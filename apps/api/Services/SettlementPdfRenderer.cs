@@ -6,7 +6,7 @@ using SplitRail.Api.DTOs.Settlement;
 
 namespace SplitRail.Api.Services;
 
-public class SettlementPdfRenderer
+public class SettlementPdfRenderer : ISettlementPdfRenderer
 {
     private static bool _licenseInitialized;
 

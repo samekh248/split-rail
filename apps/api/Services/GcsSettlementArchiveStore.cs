@@ -17,14 +17,83 @@ public class GcsSettlementArchiveStore : ISettlementArchiveStore
 
     public async Task UploadAsync(string objectPath, byte[] pdfBytes, CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(_options.BucketName))
-            throw new SettlementArchiveException("Settlement archive bucket is not configured.");
+        EnsureArchiveBucketConfigured();
+        await UploadToBucketAsync(_options.BucketName, objectPath, pdfBytes, cancellationToken);
+    }
 
+    public async Task StageAsync(string stagingPath, byte[] pdfBytes, CancellationToken cancellationToken = default)
+    {
+        EnsureArchiveBucketConfigured();
+        var stagingBucket = _options.ResolveStagingBucketName();
+        await UploadToBucketAsync(stagingBucket, stagingPath, pdfBytes, cancellationToken);
+    }
+
+    public async Task PromoteAsync(string stagingPath, string finalPath, CancellationToken cancellationToken = default)
+    {
+        EnsureArchiveBucketConfigured();
+        var stagingBucket = _options.ResolveStagingBucketName();
+
+        try
+        {
+            await GetStorageClient().CopyObjectAsync(
+                stagingBucket,
+                stagingPath,
+                _options.BucketName,
+                finalPath,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception ex) when (ex is not SettlementArchiveException)
+        {
+            throw new SettlementArchiveException("Failed to promote settlement PDF to archive storage.");
+        }
+    }
+
+    public async Task DeleteStagedAsync(string stagingPath, CancellationToken cancellationToken = default)
+    {
+        EnsureArchiveBucketConfigured();
+        var stagingBucket = _options.ResolveStagingBucketName();
+
+        try
+        {
+            await GetStorageClient().DeleteObjectAsync(
+                stagingBucket,
+                stagingPath,
+                cancellationToken: cancellationToken);
+        }
+        catch (Exception ex) when (ex is not SettlementArchiveException)
+        {
+            throw new SettlementArchiveException("Failed to delete staged settlement PDF.");
+        }
+    }
+
+    public Task<(string Url, DateTimeOffset ExpiresAt)> CreateSignedUrlAsync(
+        string objectPath,
+        TimeSpan ttl,
+        CancellationToken cancellationToken = default)
+    {
+        EnsureArchiveBucketConfigured();
+
+        var expiresAt = DateTimeOffset.UtcNow.Add(ttl);
+        var url = GetUrlSigner().Sign(
+            _options.BucketName,
+            objectPath,
+            ttl,
+            HttpMethod.Get);
+
+        return Task.FromResult((url, expiresAt));
+    }
+
+    private async Task UploadToBucketAsync(
+        string bucketName,
+        string objectPath,
+        byte[] pdfBytes,
+        CancellationToken cancellationToken)
+    {
         try
         {
             await using var stream = new MemoryStream(pdfBytes);
             await GetStorageClient().UploadObjectAsync(
-                _options.BucketName,
+                bucketName,
                 objectPath,
                 "application/pdf",
                 stream,
@@ -36,22 +105,10 @@ public class GcsSettlementArchiveStore : ISettlementArchiveStore
         }
     }
 
-    public Task<(string Url, DateTimeOffset ExpiresAt)> CreateSignedUrlAsync(
-        string objectPath,
-        TimeSpan ttl,
-        CancellationToken cancellationToken = default)
+    private void EnsureArchiveBucketConfigured()
     {
         if (string.IsNullOrWhiteSpace(_options.BucketName))
             throw new SettlementArchiveException("Settlement archive bucket is not configured.");
-
-        var expiresAt = DateTimeOffset.UtcNow.Add(ttl);
-        var url = GetUrlSigner().Sign(
-            _options.BucketName,
-            objectPath,
-            ttl,
-            HttpMethod.Get);
-
-        return Task.FromResult((url, expiresAt));
     }
 
     private StorageClient GetStorageClient() =>
