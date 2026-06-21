@@ -14,13 +14,8 @@ echo "Building API image..."
 docker build -t "${API_IMAGE}" -f apps/api/Dockerfile apps/api
 docker push "${API_IMAGE}"
 
-echo "Building web bundle..."
-pushd apps/web
-npm ci
-npm run build
-popd
-
-docker build -t "${WEB_IMAGE}" -f deploy/preview/Dockerfile.web apps/web
+echo "Building web image..."
+docker build -t "${WEB_IMAGE}" -f deploy/preview/Dockerfile.web .
 docker push "${WEB_IMAGE}"
 
 echo "Deploying Cloud Run service ${SERVICE_NAME}..."

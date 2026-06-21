@@ -2,6 +2,29 @@
 
 Per-PR Cloud Run preview for E2E testing. See `specs/005-e2e-lifecycle-leak-testing/contracts/preview-environment.md`.
 
+## Web frontend container (`Dockerfile.web`)
+
+The preview pipeline builds a self-contained web image from the **repository root**:
+
+```bash
+docker build -t splitrail-web:local -f deploy/preview/Dockerfile.web .
+```
+
+The multi-stage build:
+
+1. Exports OpenAPI from the compiled API (`dotnet swagger tofile`)
+2. Regenerates `generated-api.ts` (`npm run gen:api`)
+3. Produces the Vite production bundle
+4. Serves static assets with nginx SPA fallback (`try_files → /index.html`)
+
+Local smoke validation (requires Docker):
+
+```bash
+./deploy/preview/smoke-web-image.sh
+```
+
+**Note**: `deploy-preview.sh` currently pushes the web image to Artifact Registry but deploys **API only** to Cloud Run. Wiring the web image into Cloud Run is future work (see spec 051 Out of Scope).
+
 ## Branch protection (required checks)
 
 Configure `main` to require these status checks:
