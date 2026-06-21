@@ -52,6 +52,7 @@ When `UserId` is unavailable (unauthenticated edge case), omit the user segment 
 | `create_artist` | Artist creation |
 | `update_artist` | Artist update |
 | `delete_artist` | Artist deletion |
+| `recalculate` | Settlement payout recalculation |
 
 New mutation paths added in future features MUST extend this list if they guard against frozen events.
 

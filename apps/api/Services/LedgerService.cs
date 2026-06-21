@@ -57,6 +57,7 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
+        AssertNotSettledOrReconciled(evt, venueId, FrozenEventMutationOperation.Recalculate);
         await RecalculateAndPersistAsync(evt, cancellationToken);
         var hidePromoterRows = await IsPromoterRoleAsync(cancellationToken);
         var correctionLineItemIds = await _db.QboSyncLedgers
