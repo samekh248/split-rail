@@ -10,5 +10,5 @@
 
 ## 2. Immutable Object Snapshot Bucket Context
 - **WORM Target Bucket Uniform Identifier:** `gs://split-rail-settlements-prod`
-- **Active Lock Status:** Enforced (3-Year WORM Compliance Retention Policy Policy)
+- **Active Lock Status:** Enforced (7-Year WORM Object Retention Policy + Bucket Lock; aligned with spec 004 / specs 050)
 - **GCS Integration Strategy:** Google.Cloud.Storage.V1 client wrapper factory.

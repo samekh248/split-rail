@@ -157,6 +157,7 @@ builder.Services.AddSingleton<ISettlementArchiveStore>(sp =>
     return sp.GetRequiredService<GcsSettlementArchiveStore>();
 });
 builder.Services.AddHostedService<QboSyncHostedService>();
+builder.Services.AddHostedService<SettlementArchiveStartupValidator>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
