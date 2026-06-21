@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SplitRail.Api.Data;
+using SplitRail.Api.Data.Interceptors;
 using SplitRail.Api.DTOs.Auth;
 using SplitRail.Api.DTOs.Invitations;
 using SplitRail.Api.DTOs.Ledger;
@@ -59,8 +60,11 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         if (descriptor is not null)
             services.Remove(descriptor);
 
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(connectionString));
+        services.AddDbContext<ApplicationDbContext>((sp, options) =>
+        {
+            options.UseNpgsql(connectionString);
+            options.AddInterceptors(sp.GetRequiredService<FrozenEventImmutabilityInterceptor>());
+        });
 
         if (!ReplaceSettlementArchiveStore)
             return;
@@ -230,10 +234,28 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         tenantContext.SetContext(userId, orgId);
 
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var saveContext = scope.ServiceProvider.GetRequiredService<IFrozenEventSaveContext>();
         var evt = await db.Events.FirstAsync(e => e.Id == eventId);
+        var originalStatus = evt.Status;
         evt.Status = status;
         evt.IsBudgetLocked = isBudgetLocked;
+
+        using var authorize = ResolveFrozenEventSaveAuthorization(saveContext, originalStatus, status);
         await db.SaveChangesAsync();
+    }
+
+    private static IDisposable? ResolveFrozenEventSaveAuthorization(
+        IFrozenEventSaveContext saveContext,
+        EventStatus originalStatus,
+        EventStatus targetStatus)
+    {
+        if (originalStatus == EventStatus.Settled && targetStatus == EventStatus.Reconciled)
+            return saveContext.Authorize(FrozenEventSaveReason.EventReconciliation);
+
+        if (originalStatus == EventStatus.Settled && targetStatus == EventStatus.PreShow)
+            return saveContext.Authorize(FrozenEventSaveReason.SettlementReversal);
+
+        return null;
     }
 
     protected async Task<Guid> SeedLineItemDirectAsync(
@@ -373,7 +395,41 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
             MappedLineItemId = mappedLineItemId,
             SyncBatchId = syncBatchId ?? Guid.NewGuid(),
-            SyncedAt = DateTimeOffset.UtcNow
+            SyncedAt = DateTimeOffset.UtcNow,
+            EntryType = QboSyncLedgerEntryType.Original
+        });
+        await db.SaveChangesAsync();
+    }
+
+    protected async Task SeedOffsetLedgerEntryDirectAsync(
+        string accessToken,
+        Guid eventId,
+        Guid mappedLineItemId,
+        string qboTransactionId,
+        string qboAccountId,
+        decimal amount,
+        Guid? syncBatchId = null)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        var (userId, orgId) = ParseTokenClaims(accessToken);
+        tenantContext.SetContext(userId, orgId);
+
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.QboSyncLedgers.Add(new QboSyncLedger
+        {
+            EventId = eventId,
+            QboTransactionId = qboTransactionId,
+            QboAccountId = qboAccountId,
+            Amount = amount,
+            TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            MappedLineItemId = mappedLineItemId,
+            SyncBatchId = syncBatchId ?? Guid.NewGuid(),
+            SyncedAt = DateTimeOffset.UtcNow,
+            EntryType = QboSyncLedgerEntryType.OffsetCorrection,
+            CorrectionType = QboSyncCorrectionType.AmountChange,
+            TargetStateAbsent = false,
+            TargetStateAmount = 100m
         });
         await db.SaveChangesAsync();
     }

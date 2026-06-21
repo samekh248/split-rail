@@ -20,6 +20,7 @@ public class SettlementService
     private readonly SettlementPdfRenderer _pdfRenderer;
     private readonly ISettlementArchiveStore _archiveStore;
     private readonly SettlementArchiveOptions _archiveOptions;
+    private readonly IFrozenEventSaveContext _saveContext;
     private readonly ILogger<SettlementService> _logger;
 
     public SettlementService(
@@ -30,6 +31,7 @@ public class SettlementService
         SettlementPdfRenderer pdfRenderer,
         ISettlementArchiveStore archiveStore,
         IOptions<SettlementArchiveOptions> archiveOptions,
+        IFrozenEventSaveContext saveContext,
         ILogger<SettlementService> logger)
     {
         _db = db;
@@ -39,6 +41,7 @@ public class SettlementService
         _pdfRenderer = pdfRenderer;
         _archiveStore = archiveStore;
         _archiveOptions = archiveOptions.Value;
+        _saveContext = saveContext;
         _logger = logger;
     }
 
@@ -134,7 +137,10 @@ public class SettlementService
         evt.Status = EventStatus.PreShow;
         evt.SettlementPdfUrl = null;
 
-        await _db.SaveChangesAsync(cancellationToken);
+        using (_saveContext.Authorize(FrozenEventSaveReason.SettlementReversal))
+        {
+            await _db.SaveChangesAsync(cancellationToken);
+        }
 
         _logger.LogInformation(
             "Settlement reversed for event {EventId} at venue {VenueId} by user {UserId}",
@@ -191,7 +197,10 @@ public class SettlementService
             evt.ReconciledAt = reconciledAt;
             evt.ReconciledByUserId = userId;
 
-            await _db.SaveChangesAsync(cancellationToken);
+            using (_saveContext.Authorize(FrozenEventSaveReason.EventReconciliation))
+            {
+                await _db.SaveChangesAsync(cancellationToken);
+            }
 
             _logger.LogInformation(
                 "Event reconciled for event {EventId} at venue {VenueId} by user {UserId}",

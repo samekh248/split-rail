@@ -34,6 +34,7 @@ const mockLedger: LedgerGridResponse = {
           notes: null,
           isHiddenFromPromoter: false,
           rowVersion: 'v1',
+          hasQboCorrection: false,
         },
       ],
       blockTotals: { proforma: '10000.00', settlement: '0.00', qboActual: '0.00' },

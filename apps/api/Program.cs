@@ -12,6 +12,7 @@ using SplitRail.Api.Authorization;
 using SplitRail.Api.BackgroundServices;
 using SplitRail.Api.Configuration;
 using SplitRail.Api.Data;
+using SplitRail.Api.Data.Interceptors;
 using SplitRail.Api.Http;
 using SplitRail.Api.Middleware;
 using SplitRail.Api.Serialization;
@@ -62,7 +63,7 @@ else
 
 builder.Services.AddHttpClient("QboOAuth");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -72,6 +73,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         connectionString += $";Password={dbPassword}";
 
     options.UseNpgsql(connectionString);
+    options.AddInterceptors(sp.GetRequiredService<FrozenEventImmutabilityInterceptor>());
 });
 
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
@@ -128,6 +130,8 @@ builder.Services.AddScoped<EventService>();
 builder.Services.AddScoped<EventPinService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<FrozenEventMutationAuditor>();
+builder.Services.AddScoped<IFrozenEventSaveContext, FrozenEventSaveContext>();
+builder.Services.AddScoped<FrozenEventImmutabilityInterceptor>();
 builder.Services.AddScoped<LedgerService>();
 builder.Services.AddScoped<DealMathEngine>();
 builder.Services.AddScoped<CustomFormulaEvaluator>();
@@ -143,6 +147,7 @@ else
 }
 
 builder.Services.AddScoped<TestSeedingService>();
+builder.Services.AddScoped<QboSyncCorrectionService>();
 builder.Services.AddScoped<QboSyncService>();
 builder.Services.AddScoped<QboMappingService>();
 builder.Services.AddScoped<SplitRail.Api.Services.SignatureValidator>();

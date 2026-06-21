@@ -514,6 +514,23 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("amount");
 
+                    b.Property<Guid?>("CorrectedLedgerEntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("corrected_ledger_entry_id");
+
+                    b.Property<string>("CorrectionType")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("correction_type");
+
+                    b.Property<string>("EntryType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Original")
+                        .HasColumnName("entry_type");
+
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid")
                         .HasColumnName("event_id");
@@ -544,18 +561,37 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnName("synced_at")
                         .HasDefaultValueSql("NOW()");
 
+                    b.Property<bool?>("TargetStateAbsent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("target_state_absent");
+
+                    b.Property<decimal?>("TargetStateAmount")
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("target_state_amount");
+
                     b.Property<DateOnly>("TransactionDate")
                         .HasColumnType("date")
                         .HasColumnName("transaction_date");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CorrectedLedgerEntryId");
+
                     b.HasIndex("MappedLineItemId")
                         .HasDatabaseName("IX_qbo_sync_ledger_mapped_line_item_id");
 
+                    b.HasIndex("EventId", "EntryType")
+                        .HasDatabaseName("IX_qbo_sync_ledger_event_entry_type");
+
                     b.HasIndex("EventId", "QboTransactionId")
                         .IsUnique()
-                        .HasDatabaseName("IX_qbo_sync_ledger_event_txn");
+                        .HasDatabaseName("IX_qbo_sync_ledger_event_txn_original")
+                        .HasFilter("entry_type = 'Original'");
+
+                    b.HasIndex("EventId", "QboTransactionId", "CorrectionType", "TargetStateAbsent", "TargetStateAmount")
+                        .IsUnique()
+                        .HasDatabaseName("IX_qbo_sync_ledger_offset_idempotency")
+                        .HasFilter("entry_type = 'OffsetCorrection'");
 
                     b.ToTable("qbo_sync_ledger", (string)null);
                 });
@@ -1001,6 +1037,11 @@ namespace SplitRail.Api.Data.Migrations
 
             modelBuilder.Entity("SplitRail.Api.Models.QboSyncLedger", b =>
                 {
+                    b.HasOne("SplitRail.Api.Models.QboSyncLedger", "CorrectedLedgerEntry")
+                        .WithMany()
+                        .HasForeignKey("CorrectedLedgerEntryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("SplitRail.Api.Models.Event", "Event")
                         .WithMany("QboSyncLedgerEntries")
                         .HasForeignKey("EventId")
@@ -1011,6 +1052,8 @@ namespace SplitRail.Api.Data.Migrations
                         .WithMany()
                         .HasForeignKey("MappedLineItemId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CorrectedLedgerEntry");
 
                     b.Navigation("Event");
 

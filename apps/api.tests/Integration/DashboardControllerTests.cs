@@ -294,10 +294,10 @@ public class DashboardControllerTests : IntegrationTestBase
 
         var inWeekSettled = await CreateEventViaApiAsync(
             client, venueId, "In Week Settled", weekStart.ToString("yyyy-MM-dd"));
-        await SetEventStatusDirectAsync(token, inWeekSettled.EventId, EventStatus.Settled);
         await SeedLineItemWithValuesDirectAsync(
             token, inWeekSettled.EventId,
             proformaValue: 1000m, settlementValue: 3000m, qboActualValue: 2500m);
+        await SetEventStatusDirectAsync(token, inWeekSettled.EventId, EventStatus.Settled);
 
         var outOfWeek = await CreateEventViaApiAsync(
             client, venueId, "Out Of Week", weekStart.AddDays(-7).ToString("yyyy-MM-dd"));
@@ -511,7 +511,8 @@ public class DashboardControllerTests : IntegrationTestBase
             Amount = 50m,
             TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
             SyncBatchId = Guid.NewGuid(),
-            SyncedAt = syncedAt
+            SyncedAt = syncedAt,
+            EntryType = QboSyncLedgerEntryType.Original
         });
         await db.SaveChangesAsync();
     }

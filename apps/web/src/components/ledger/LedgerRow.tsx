@@ -3,6 +3,7 @@ import type { EditabilityDto, LineItemDto } from '@/types/generated-api';
 import type { MoveDirection } from '@/lib/reorderLineItems';
 import { canMoveRow } from '@/lib/reorderLineItems';
 import { VarianceCell } from './VarianceCell';
+import { QboCorrectionBadge } from './QboCorrectionBadge';
 
 interface LedgerRowProps {
   row: LineItemDto;
@@ -145,6 +146,9 @@ export function LedgerRow({
       </td>
       <td className="ledger-row__qbo" data-testid={`qbo-${row.id}`}>
         {formatMoney(row.qboActualValue)}
+        {row.hasQboCorrection && row.id ? (
+          <QboCorrectionBadge lineItemId={row.id} />
+        ) : null}
       </td>
       <VarianceCell
         qboActual={row.qboActualValue}

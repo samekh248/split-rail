@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SplitRail.Api.Data;
 using SplitRail.Api.Models;
+using SplitRail.Api.Models.Enums;
 using SplitRail.Api.Tests.Integration;
 using Xunit;
 
@@ -47,11 +48,14 @@ public class QboAppendOnlyTests : IntegrationTestBase
         using var verifyScope = Factory.Services.CreateScope();
         var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var ledgerAfter = await verifyDb.QboSyncLedgers.AsNoTracking().ToListAsync();
-        ledgerAfter.Should().HaveCount(1);
+        ledgerAfter.Should().HaveCount(2);
         ledgerAfter[0].Amount.Should().Be(100m);
+        ledgerAfter[0].EntryType.Should().Be(QboSyncLedgerEntryType.Original);
+        ledgerAfter[1].EntryType.Should().Be(QboSyncLedgerEntryType.OffsetCorrection);
+        ledgerAfter[1].Amount.Should().Be(899m);
 
         var updatedLineItem = await verifyDb.FinancialLineItems.FirstAsync(li => li.Id == lineItemId);
-        updatedLineItem.QboActualValue.Should().Be(100m);
+        updatedLineItem.QboActualValue.Should().Be(999m);
     }
 
     private static string BuildQboResponse(string txnId, string accountId, decimal amount, string tagName) =>

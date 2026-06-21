@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 using SplitRail.Api.Data;
 using SplitRail.Api.Models;
+using SplitRail.Api.Models.Enums;
 using SplitRail.Api.Services;
 using Xunit;
 
@@ -147,6 +148,93 @@ public class QboSyncServiceTests
     }
 
     [Fact]
+    public async Task ProcessTransactionsAsync_UpstreamAmountChange_AppendsOffsetEntry()
+    {
+        var (service, db, tenantContext) = CreateSyncService();
+        var orgId = Guid.NewGuid();
+        var venueId = Guid.NewGuid();
+        var eventId = Guid.NewGuid();
+        var lineItemId = Guid.NewGuid();
+        tenantContext.SetContext(Guid.NewGuid(), orgId);
+
+        db.Organizations.Add(new Organization { Id = orgId, Name = "Org" });
+        db.Venues.Add(new Venue { Id = venueId, OrganizationId = orgId, Name = "Venue" });
+        db.Events.Add(new Event
+        {
+            Id = eventId,
+            VenueId = venueId,
+            Title = "Show",
+            EventDate = new DateOnly(2026, 7, 4),
+            QboTagName = FakeQboTransactionClient.LifecycleTagName
+        });
+        db.FinancialLineItems.Add(new FinancialLineItem
+        {
+            Id = lineItemId,
+            EventId = eventId,
+            BlockType = "EXPENSE",
+            RowLabel = "Production"
+        });
+        db.QboAccountMappings.Add(new QboAccountMapping
+        {
+            VenueId = venueId,
+            QboAccountId = FakeQboTransactionClient.LifecycleAccountId,
+            QboAccountName = "Production",
+            MappedCategoryLabel = "Production",
+            MappedLineItemId = lineItemId
+        });
+        db.QboSyncLedgers.Add(new QboSyncLedger
+        {
+            EventId = eventId,
+            QboTransactionId = FakeQboTransactionClient.LifecycleTransactionId,
+            QboAccountId = FakeQboTransactionClient.LifecycleAccountId,
+            Amount = 5100.00m,
+            TransactionDate = new DateOnly(2026, 6, 10),
+            MappedLineItemId = lineItemId,
+            SyncBatchId = Guid.NewGuid(),
+            SyncedAt = DateTimeOffset.UtcNow,
+            EntryType = QboSyncLedgerEntryType.Original
+        });
+        await db.SaveChangesAsync();
+
+        var evt = await db.Events.Include(e => e.Venue).FirstAsync(e => e.Id == eventId);
+        var transactions = await new FakeQboTransactionClient().FetchTransactionsByTagAsync(
+            "token", "realm", FakeQboTransactionClient.LifecycleTagName);
+        transactions[0].Amount.Should().Be(5100.00m);
+
+        await service.ProcessTransactionsAsync(evt, transactions, CancellationToken.None);
+
+        var ledger = await db.QboSyncLedgers.AsNoTracking()
+            .Where(l => l.EventId == eventId)
+            .ToListAsync();
+        ledger.Should().HaveCount(1);
+        ledger[0].EntryType.Should().Be(QboSyncLedgerEntryType.Original);
+
+        transactions = new List<QboFetchedTransaction>
+        {
+            new(
+                FakeQboTransactionClient.LifecycleTransactionId,
+                FakeQboTransactionClient.LifecycleAccountId,
+                "Production",
+                6000.00m,
+                new DateOnly(2026, 6, 10))
+        };
+
+        await service.ProcessTransactionsAsync(evt, transactions, CancellationToken.None);
+
+        ledger = await db.QboSyncLedgers.AsNoTracking()
+            .Where(l => l.EventId == eventId)
+            .OrderBy(l => l.SyncedAt)
+            .ToListAsync();
+        ledger.Should().HaveCount(2);
+        ledger[0].Amount.Should().Be(5100.00m);
+        ledger[1].EntryType.Should().Be(QboSyncLedgerEntryType.OffsetCorrection);
+        ledger[1].Amount.Should().Be(900.00m);
+
+        var lineItem = await db.FinancialLineItems.FirstAsync(li => li.Id == lineItemId);
+        lineItem.QboActualValue.Should().Be(6000.00m);
+    }
+
+    [Fact]
     public async Task SyncEventInternalAsync_ReturnsEmptyWhenQboNotConnected()
     {
         var (service, db, tenantContext) = CreateSyncService();
@@ -226,6 +314,7 @@ public class QboSyncServiceTests
             new FakeQboTransactionClient(),
             venueService,
             tenantContext,
+            new QboSyncCorrectionService(db),
             NullLogger<QboSyncService>.Instance);
         return (service, db, tenantContext);
     }

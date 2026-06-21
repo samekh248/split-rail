@@ -766,9 +766,46 @@ public class ApplicationDbContext : DbContext
                 .HasColumnName("synced_at")
                 .HasDefaultValueSql("NOW()");
 
+            entity.Property(e => e.EntryType)
+                .HasColumnName("entry_type")
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(QboSyncLedgerEntryType.Original);
+
+            entity.Property(e => e.CorrectionType)
+                .HasColumnName("correction_type")
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.TargetStateAbsent)
+                .HasColumnName("target_state_absent");
+
+            entity.Property(e => e.TargetStateAmount)
+                .HasColumnName("target_state_amount")
+                .HasColumnType("numeric(12,2)");
+
+            entity.Property(e => e.CorrectedLedgerEntryId)
+                .HasColumnName("corrected_ledger_entry_id");
+
             entity.HasIndex(e => new { e.EventId, e.QboTransactionId })
                 .IsUnique()
-                .HasDatabaseName("IX_qbo_sync_ledger_event_txn");
+                .HasFilter("entry_type = 'Original'")
+                .HasDatabaseName("IX_qbo_sync_ledger_event_txn_original");
+
+            entity.HasIndex(e => new
+                {
+                    e.EventId,
+                    e.QboTransactionId,
+                    e.CorrectionType,
+                    e.TargetStateAbsent,
+                    e.TargetStateAmount
+                })
+                .IsUnique()
+                .HasFilter("entry_type = 'OffsetCorrection'")
+                .HasDatabaseName("IX_qbo_sync_ledger_offset_idempotency");
+
+            entity.HasIndex(e => new { e.EventId, e.EntryType })
+                .HasDatabaseName("IX_qbo_sync_ledger_event_entry_type");
 
             entity.HasIndex(e => e.MappedLineItemId)
                 .HasDatabaseName("IX_qbo_sync_ledger_mapped_line_item_id");
@@ -781,6 +818,11 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.MappedLineItem)
                 .WithMany()
                 .HasForeignKey(e => e.MappedLineItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.CorrectedLedgerEntry)
+                .WithMany()
+                .HasForeignKey(e => e.CorrectedLedgerEntryId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
     }

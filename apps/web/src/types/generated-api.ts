@@ -2746,6 +2746,7 @@ export interface components {
             notes?: string | null;
             isHiddenFromPromoter?: boolean;
             rowVersion?: string | null;
+            hasQboCorrection?: boolean;
         };
         LoginRequest: {
             email?: string | null;
