@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using FluentAssertions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -15,6 +16,7 @@ using SplitRail.Api.DTOs.Auth;
 using SplitRail.Api.DTOs.Invitations;
 using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.DTOs.Organizations;
+using SplitRail.Api.DTOs.Settlement;
 using SplitRail.Api.DTOs.Venues;
 using SplitRail.Api.Models;
 using SplitRail.Api.Models.Enums;
@@ -480,6 +482,108 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         await client.PostAsync($"/api/venues/{venueId}/events/{evt.EventId}/lock-budget", null);
         return evt;
     }
+
+    protected sealed record FinalizedEventSeed(
+        Guid EventId,
+        LineItemDto LineItem,
+        EventArtistDto? Artist,
+        string StoredPath,
+        byte[] OriginalPdfBytes,
+        Guid UserId);
+
+    protected async Task<FinalizedEventSeed> SeedFinalizedEventAsync(
+        HttpClient client,
+        Guid venueId,
+        string token,
+        bool includeArtist = false)
+    {
+        var (userId, _) = ParseTokenClaims(token);
+        var evt = await CreateEventViaApiAsync(client, venueId);
+
+        var createLineResponse = await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/line-items",
+            new CreateLineItemRequest("REVENUE", "Control Row", 1, false, 100m, 0m, null));
+        createLineResponse.EnsureSuccessStatusCode();
+        var lineItem = (await createLineResponse.Content.ReadFromJsonAsync<LineItemDto>())!;
+
+        var lockResponse = await client.PostAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/lock-budget", null);
+        lockResponse.EnsureSuccessStatusCode();
+
+        var updateLineResponse = await client.PutAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/line-items/{lineItem.Id}",
+            new UpdateLineItemRequest("Control Row", 1, false, 100m, 100m, null, false, lineItem.RowVersion));
+        updateLineResponse.EnsureSuccessStatusCode();
+        lineItem = (await updateLineResponse.Content.ReadFromJsonAsync<LineItemDto>())!;
+
+        EventArtistDto? artist = null;
+        if (includeArtist)
+        {
+            var createArtistResponse = await client.PostAsJsonAsync(
+                $"/api/venues/{venueId}/events/{evt.EventId}/artists",
+                new CreateArtistRequest("Headliner", 1, "guarantee", null, 5000m, 0m, 0m));
+            createArtistResponse.EnsureSuccessStatusCode();
+            artist = (await createArtistResponse.Content.ReadFromJsonAsync<EventArtistDto>())!;
+        }
+
+        var settleResponse = await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/settle",
+            new FinalizeSettlementRequest(ValidSignatureBase64(), true));
+        settleResponse.EnsureSuccessStatusCode();
+
+        var storedPath = ArchiveStore.StoredObjectPaths.Single();
+        var originalPdfBytes = ArchiveStore.GetStoredPdf(storedPath)!;
+
+        return new FinalizedEventSeed(evt.EventId, lineItem, artist, storedPath, originalPdfBytes, userId);
+    }
+
+    protected Task<FinalizedEventSeed> SeedFinalizedEventWithArtistAsync(
+        HttpClient client,
+        Guid venueId,
+        string token) =>
+        SeedFinalizedEventAsync(client, venueId, token, includeArtist: true);
+
+    protected async Task<FinalizedEventSeed> SeedFinalizedThenReconciledAsync(
+        HttpClient client,
+        Guid venueId,
+        string token,
+        bool includeArtist = false)
+    {
+        var seed = await SeedFinalizedEventAsync(client, venueId, token, includeArtist);
+        var reconcileResponse = await client.PostAsync(
+            $"/api/venues/{venueId}/events/{seed.EventId}/reconcile", null);
+        reconcileResponse.EnsureSuccessStatusCode();
+        return seed;
+    }
+
+    protected IEnumerable<TestLogCollector.LogEntry> GetFrozenAuditLogs() =>
+        LogCollector!.Entries.Where(e =>
+            e.Level == LogLevel.Warning &&
+            e.Message.Contains("Rejected frozen event mutation", StringComparison.Ordinal));
+
+    protected void AssertFrozenAuditLog(
+        Guid eventId,
+        Guid venueId,
+        Guid userId,
+        string operation,
+        string eventStatus)
+    {
+        var entry = GetFrozenAuditLogs().Should().ContainSingle().Subject;
+        GetAuditStateValue(entry, "Operation").Should().Be(operation);
+        GetAuditStateValue(entry, "EventId").Should().Be(eventId);
+        GetAuditStateValue(entry, "VenueId").Should().Be(venueId);
+        GetAuditStateValue(entry, "UserId").Should().Be(userId);
+        GetAuditStateValue(entry, "EventStatus").Should().Be(eventStatus);
+    }
+
+    protected void AssertPdfUnchanged(FinalizedEventSeed seed)
+    {
+        ArchiveStore.GetStoredPdf(seed.StoredPath).Should().Equal(seed.OriginalPdfBytes);
+        ArchiveStore.StoredObjectCount.Should().Be(1);
+    }
+
+    protected static object? GetAuditStateValue(TestLogCollector.LogEntry entry, string key) =>
+        entry.State.FirstOrDefault(kvp => kvp.Key == key).Value;
 
     protected static string ValidSignatureBase64()
     {
