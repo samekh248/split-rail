@@ -305,7 +305,7 @@ public class SettlementPostFinalizeImmutabilityTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task PostFinalize_QboSync_ActualsOnly_Succeeds_PdfUnchanged()
+    public async Task PostFinalize_QboSync_Returns400_AndLogsQboSyncRecompute_AndPdfUnchanged()
     {
         if (!IsQuestPdfSupported()) return;
 
@@ -319,16 +319,25 @@ public class SettlementPostFinalizeImmutabilityTests : IntegrationTestBase
         var qboJson = BuildQboPurchaseResponse("TXN-SYNC", "ACC-SYNC", 175m, evt!.QboTagName);
         LogCollector!.Clear();
 
-        await SyncWithHandlerAsync(client, venueId, seed.EventId, qboJson);
+        var handler = new RecordingQboHandler(qboJson);
+        await using var customFactory = CreateFactoryWithQboHandler(handler);
+        var customClient = customFactory.CreateClient();
+        customClient.DefaultRequestHeaders.Authorization = client.DefaultRequestHeaders.Authorization;
 
-        GetFrozenAuditLogs().Should().BeEmpty();
+        var syncResponse = await customClient.PostAsync(
+            $"/api/venues/{venueId}/events/{seed.EventId}/sync",
+            null);
+
+        syncResponse.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        AssertFrozenAuditLog(
+            seed.EventId, venueId, seed.UserId, FrozenEventMutationOperation.QboSyncRecompute, "SETTLED");
         AssertPdfUnchanged(seed);
 
         using var scope = Factory.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var lineItem = await db.FinancialLineItems.AsNoTracking()
             .SingleAsync(li => li.Id == seed.LineItem.Id);
-        lineItem.QboActualValue.Should().Be(175m);
+        lineItem.QboActualValue.Should().Be(0m);
         lineItem.SettlementValue.Should().Be(100m);
     }
 

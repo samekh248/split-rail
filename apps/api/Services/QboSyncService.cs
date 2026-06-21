@@ -17,6 +17,7 @@ public class QboSyncService
     private readonly VenueService _venueService;
     private readonly ITenantContext _tenantContext;
     private readonly QboSyncCorrectionService _correctionService;
+    private readonly FrozenEventMutationAuditor _frozenEventAuditor;
     private readonly ILogger<QboSyncService> _logger;
 
     public QboSyncService(
@@ -26,6 +27,7 @@ public class QboSyncService
         VenueService venueService,
         ITenantContext tenantContext,
         QboSyncCorrectionService correctionService,
+        FrozenEventMutationAuditor frozenEventAuditor,
         ILogger<QboSyncService> logger)
     {
         _db = db;
@@ -34,6 +36,7 @@ public class QboSyncService
         _venueService = venueService;
         _tenantContext = tenantContext;
         _correctionService = correctionService;
+        _frozenEventAuditor = frozenEventAuditor;
         _logger = logger;
     }
 
@@ -302,9 +305,13 @@ public class QboSyncService
         if (offsetsCreated > 0)
             await _db.SaveChangesAsync(cancellationToken);
 
-        // Constitution V exception: QBO actuals aggregate may update on SETTLED/RECONCILED events.
-        await RecomputeActualsForEventAsync(evt.Id, cancellationToken);
-        await _db.SaveChangesAsync(cancellationToken);
+        // SETTLED: skip recompute when no new transactions; reject when actuals would change.
+        // RECONCILED: sanctioned QboActualValue/UpdatedAt refresh only.
+        if (evt.Status != EventStatus.Settled || processed > 0)
+        {
+            await RecomputeActualsForEventAsync(evt.Id, cancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
         await transaction.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
@@ -328,6 +335,19 @@ public class QboSyncService
 
     internal async Task RecomputeActualsForEventAsync(Guid eventId, CancellationToken cancellationToken)
     {
+        var evt = await _db.Events
+            .AsNoTracking()
+            .FirstAsync(e => e.Id == eventId, cancellationToken);
+
+        if (evt.Status == EventStatus.Settled)
+        {
+            _frozenEventAuditor.RejectIfFrozen(
+                evt,
+                evt.VenueId,
+                _tenantContext.UserId,
+                FrozenEventMutationOperation.QboSyncRecompute);
+        }
+
         var sums = await _db.QboSyncLedgers
             .Where(l => l.EventId == eventId && l.MappedLineItemId != null)
             .GroupBy(l => l.MappedLineItemId)

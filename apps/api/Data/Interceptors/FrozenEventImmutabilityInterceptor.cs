@@ -115,7 +115,7 @@ public sealed class FrozenEventImmutabilityInterceptor : SaveChangesInterceptor
         if (!TryGetFrozenParent(entry.Entity.EventId, parentEvents, out var parent))
             return;
 
-        if (entry.State == EntityState.Modified && IsOnlyQboActualsUpdate(entry))
+        if (entry.State == EntityState.Modified && IsOnlyQboActualsUpdate(entry, parent.Status))
             return;
 
         var operation = entry.State switch
@@ -145,9 +145,12 @@ public sealed class FrozenEventImmutabilityInterceptor : SaveChangesInterceptor
         };
     }
 
-    private static bool IsOnlyQboActualsUpdate(EntityEntry<FinancialLineItem> entry)
+    private static bool IsOnlyQboActualsUpdate(EntityEntry<FinancialLineItem> entry, EventStatus parentStatus)
     {
         if (entry.State != EntityState.Modified)
+            return false;
+
+        if (parentStatus != EventStatus.Reconciled)
             return false;
 
         var hasPermittedChange = false;

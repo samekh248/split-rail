@@ -112,7 +112,7 @@ public class QboOffsetCorrectionTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task SettledEvent_UpdatesActualsOnly()
+    public async Task ReconciledEvent_UpdatesActualsOnly()
     {
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var evt = await CreateEventViaApiAsync(client, venueId);
@@ -124,6 +124,7 @@ public class QboOffsetCorrectionTests : IntegrationTestBase
         await SeedQboCredentialDirectAsync(token, venueId);
         await SeedSyncLedgerEntryDirectAsync(token, evt.EventId, "TXN-1", "ACC-1", 100m, lineItemId);
         await SetEventStatusDirectAsync(token, evt.EventId, EventStatus.Settled);
+        await SetEventStatusDirectAsync(token, evt.EventId, EventStatus.Reconciled);
 
         using (var scope = Factory.Services.CreateScope())
         {
@@ -138,9 +139,9 @@ public class QboOffsetCorrectionTests : IntegrationTestBase
 
         using var verifyScope = Factory.Services.CreateScope();
         var verifyDb = verifyScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var settledLineItem = await verifyDb.FinancialLineItems.FirstAsync(li => li.Id == lineItemId);
-        settledLineItem.QboActualValue.Should().Be(150m);
-        settledLineItem.SettlementValue.Should().Be(500m);
+        var reconciledLineItem = await verifyDb.FinancialLineItems.FirstAsync(li => li.Id == lineItemId);
+        reconciledLineItem.QboActualValue.Should().Be(150m);
+        reconciledLineItem.SettlementValue.Should().Be(500m);
     }
 
     [Fact]

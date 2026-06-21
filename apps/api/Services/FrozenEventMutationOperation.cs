@@ -12,6 +12,7 @@ public static class FrozenEventMutationOperation
     public const string UpdateArtist = "update_artist";
     public const string DeleteArtist = "delete_artist";
     public const string Recalculate = "recalculate";
+    public const string QboSyncRecompute = "qbo_sync_recompute";
 
     public const string PersistenceUpdateEvent = "persistence_update_event";
     public const string PersistenceDeleteEvent = "persistence_delete_event";
