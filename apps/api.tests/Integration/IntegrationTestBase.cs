@@ -60,6 +60,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         config["SettlementArchive:BucketName"] = "test-settlements-bucket";
         config["SettlementArchive:StagingBucketName"] = "test-settlements-staging";
         config["SettlementArchive:SignedUrlTtlMinutes"] = "15";
+        config["SettlementArchive:RetentionYears"] = "7";
+        config["SettlementArchive:EnforceRetentionValidation"] = "false";
     }
 
     protected virtual void ConfigureAdditionalTestServices(IServiceCollection services) { }

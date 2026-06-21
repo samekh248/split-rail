@@ -166,6 +166,11 @@ public class SettlementServiceTests
             CancellationToken cancellationToken = default) =>
             Task.FromResult(("https://example.test/file.pdf", DateTimeOffset.UtcNow.Add(ttl)));
 
+        public Task<DateTimeOffset?> GetRetentionUntilAsync(
+            string objectPath,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<DateTimeOffset?>(null);
+
         public int StagedCount => _staged.Count;
 
         public int FinalCount => _final.Count;

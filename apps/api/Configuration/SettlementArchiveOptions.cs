@@ -11,6 +11,12 @@ public class SettlementArchiveOptions
 
     public int SignedUrlTtlMinutes { get; set; } = 15;
 
+    /// <summary>Per-object retention duration applied on promote to the archive bucket.</summary>
+    public int RetentionYears { get; set; } = 7;
+
+    /// <summary>When true (Production default), startup validates archive bucket retention policy.</summary>
+    public bool EnforceRetentionValidation { get; set; } = true;
+
     public string ResolveStagingBucketName() =>
         string.IsNullOrWhiteSpace(StagingBucketName)
             ? $"{BucketName}-staging"

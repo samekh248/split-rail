@@ -15,5 +15,9 @@ public interface ISettlementArchiveStore
         TimeSpan ttl,
         CancellationToken cancellationToken = default);
 
+    Task<DateTimeOffset?> GetRetentionUntilAsync(
+        string objectPath,
+        CancellationToken cancellationToken = default);
+
     byte[]? TryGetStoredPdf(string objectPath) => null;
 }
