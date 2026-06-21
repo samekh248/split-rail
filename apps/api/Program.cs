@@ -47,21 +47,13 @@ builder.Services.Configure<DataProtectionOptions>(
     builder.Configuration.GetSection(DataProtectionOptions.SectionName));
 builder.Services.AddSplitRailDataProtection(builder.Configuration, builder.Environment);
 
-if (previewOptions.UseFakeQboConnector)
-{
-    builder.Services.AddSingleton<QboEgressRecordingHandler>();
-    builder.Services.AddHttpClient("QboApi")
-        .AddHttpMessageHandler(sp => sp.GetRequiredService<QboEgressRecordingHandler>())
-        .AddTransientHttpErrorPolicy(policy =>
-            policy.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
-}
-else
-{
-    builder.Services.AddHttpClient("QboApi")
-        .AddTransientHttpErrorPolicy(policy =>
-            policy.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
-}
+builder.Services.AddSingleton<QboEgressRecordingHandler>();
+builder.Services.AddHttpClient("QboApi")
+    .AddHttpMessageHandler(sp => sp.GetRequiredService<QboEgressRecordingHandler>())
+    .AddTransientHttpErrorPolicy(policy =>
+        policy.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
 
+// OAuth token/revoke uses a separate client without the accounting egress write guard.
 builder.Services.AddHttpClient("QboOAuth");
 
 builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
