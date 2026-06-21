@@ -11,4 +11,13 @@ public static class FrozenEventMutationOperation
     public const string CreateArtist = "create_artist";
     public const string UpdateArtist = "update_artist";
     public const string DeleteArtist = "delete_artist";
+
+    public const string PersistenceUpdateEvent = "persistence_update_event";
+    public const string PersistenceDeleteEvent = "persistence_delete_event";
+    public const string PersistenceCreateLineItem = "persistence_create_line_item";
+    public const string PersistenceUpdateLineItem = "persistence_update_line_item";
+    public const string PersistenceDeleteLineItem = "persistence_delete_line_item";
+    public const string PersistenceCreateArtist = "persistence_create_artist";
+    public const string PersistenceUpdateArtist = "persistence_update_artist";
+    public const string PersistenceDeleteArtist = "persistence_delete_artist";
 }

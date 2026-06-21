@@ -10,6 +10,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SplitRail.Api.Data;
+using SplitRail.Api.Data.Interceptors;
 using SplitRail.Api.DTOs.Auth;
 using SplitRail.Api.DTOs.Invitations;
 using SplitRail.Api.DTOs.Ledger;
@@ -59,8 +60,11 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         if (descriptor is not null)
             services.Remove(descriptor);
 
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(connectionString));
+        services.AddDbContext<ApplicationDbContext>((sp, options) =>
+        {
+            options.UseNpgsql(connectionString);
+            options.AddInterceptors(sp.GetRequiredService<FrozenEventImmutabilityInterceptor>());
+        });
 
         if (!ReplaceSettlementArchiveStore)
             return;
