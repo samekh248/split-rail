@@ -90,6 +90,7 @@ public class SettlementServiceTests
             new SettlementPdfRenderer(),
             archiveStore,
             Options.Create(new SettlementArchiveOptions { BucketName = "test-bucket" }),
+            new FrozenEventSaveContext(),
             NullLogger<SettlementService>.Instance);
     }
 
