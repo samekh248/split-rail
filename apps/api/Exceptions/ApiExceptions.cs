@@ -106,3 +106,8 @@ public sealed class SignatureValidationException : ApiException
 {
     public SignatureValidationException(string message) : base(message) { }
 }
+
+public sealed class DataProtectionConfigurationException : ApiException
+{
+    public DataProtectionConfigurationException(string message) : base(message) { }
+}

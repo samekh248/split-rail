@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Hosting;
 using SplitRail.Api.Data;
 using SplitRail.Api.Data.Interceptors;
 using SplitRail.Api.DTOs;
@@ -105,6 +106,28 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             sp.GetRequiredService<InMemorySettlementArchiveStore>());
 
         ConfigureAdditionalTestServices(services);
+    }
+
+    protected WebApplicationFactory<Program> CreateFactoryWithSharedDataProtectionPath(
+        string connectionString,
+        string sharedKeyDirectory)
+    {
+        return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment(Environments.Development);
+            builder.ConfigureAppConfiguration((_, config) =>
+            {
+                var settings = new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:DefaultConnection"] = connectionString,
+                    ["DataProtection:KeyDirectory"] = sharedKeyDirectory
+                };
+                AddAppConfiguration(settings);
+                config.AddInMemoryCollection(settings);
+            });
+            builder.ConfigureServices(services =>
+                ConfigureTestServices(services, connectionString));
+        });
     }
 
     public async Task InitializeAsync()

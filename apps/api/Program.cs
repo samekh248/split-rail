@@ -2,7 +2,6 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -11,6 +10,7 @@ using SplitRail.Api;
 using SplitRail.Api.Authorization;
 using SplitRail.Api.BackgroundServices;
 using SplitRail.Api.Configuration;
+using SplitRail.Api.Extensions;
 using SplitRail.Api.Data;
 using SplitRail.Api.Data.Interceptors;
 using SplitRail.Api.Http;
@@ -43,8 +43,9 @@ builder.Services.Configure<QboSyncOptions>(options =>
         options.EnableInProcessTimer = qboSyncSection.GetValue("EnableInProcessTimer", false);
 });
 
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "dp-keys")));
+builder.Services.Configure<DataProtectionOptions>(
+    builder.Configuration.GetSection(DataProtectionOptions.SectionName));
+builder.Services.AddSplitRailDataProtection(builder.Configuration, builder.Environment);
 
 if (previewOptions.UseFakeQboConnector)
 {
