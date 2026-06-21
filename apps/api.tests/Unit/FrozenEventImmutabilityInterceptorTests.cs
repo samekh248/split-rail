@@ -54,10 +54,24 @@ public class FrozenEventImmutabilityInterceptorTests
     }
 
     [Fact]
-    public async Task ModifiedLineItem_OnlyQboActualValueAndUpdatedAt_OnFrozenEvent_Allows()
+    public async Task ModifiedLineItem_OnlyQboActualValueAndUpdatedAt_OnSettledEvent_Throws()
     {
         var (db, _, _) = CreateContext();
         var (_, lineItemId) = await SeedSettledEventWithLineItemAsync(db);
+
+        var lineItem = await db.FinancialLineItems.FirstAsync(li => li.Id == lineItemId);
+        lineItem.QboActualValue = 250m;
+        lineItem.UpdatedAt = DateTimeOffset.UtcNow;
+
+        var act = () => db.SaveChangesAsync();
+        await act.Should().ThrowAsync<LedgerStateException>();
+    }
+
+    [Fact]
+    public async Task ModifiedLineItem_OnlyQboActualValueAndUpdatedAt_OnReconciledEvent_Allows()
+    {
+        var (db, saveContext, _) = CreateContext();
+        var (_, lineItemId) = await SeedReconciledEventWithLineItemAsync(db, saveContext);
 
         var lineItem = await db.FinancialLineItems.FirstAsync(li => li.Id == lineItemId);
         lineItem.QboActualValue = 250m;
@@ -183,6 +197,22 @@ public class FrozenEventImmutabilityInterceptorTests
         var evt = await db.Events.FirstAsync(e => e.Id == eventId);
         evt.Status = EventStatus.Settled;
         await db.SaveChangesAsync();
+
+        return (eventId, lineItemId);
+    }
+
+    private static async Task<(Guid EventId, Guid LineItemId)> SeedReconciledEventWithLineItemAsync(
+        ApplicationDbContext db,
+        FrozenEventSaveContext saveContext)
+    {
+        var (eventId, lineItemId) = await SeedSettledEventWithLineItemAsync(db);
+
+        var evt = await db.Events.FirstAsync(e => e.Id == eventId);
+        evt.Status = EventStatus.Reconciled;
+        using (saveContext.Authorize(FrozenEventSaveReason.EventReconciliation))
+        {
+            await db.SaveChangesAsync();
+        }
 
         return (eventId, lineItemId);
     }
