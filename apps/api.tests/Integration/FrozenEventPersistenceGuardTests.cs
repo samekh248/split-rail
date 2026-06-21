@@ -94,7 +94,7 @@ public class FrozenEventPersistenceGuardTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task SettledEvent_QboActualsRecompute_Succeeds()
+    public async Task SettledEvent_QboActualsRecompute_Rejected()
     {
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (eventId, lineItem, _) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
@@ -104,14 +104,17 @@ public class FrozenEventPersistenceGuardTests : IntegrationTestBase
         using var scope = CreateTenantScope(token);
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         var syncService = scope.ServiceProvider.GetRequiredService<QboSyncService>();
-        await syncService.RecomputeActualsForEventAsync(eventId, CancellationToken.None);
 
-        var act = () => db.SaveChangesAsync();
-        await act.Should().NotThrowAsync();
+        var act = async () =>
+        {
+            await syncService.RecomputeActualsForEventAsync(eventId, CancellationToken.None);
+            await db.SaveChangesAsync();
+        };
+        await act.Should().ThrowAsync<LedgerStateException>();
 
         var reloaded = await db.FinancialLineItems.AsNoTracking()
             .FirstAsync(li => li.Id == lineItem.Id);
-        reloaded.QboActualValue.Should().Be(300m);
+        reloaded.QboActualValue.Should().Be(0m);
         reloaded.SettlementValue.Should().Be(lineItem.SettlementValue);
     }
 
@@ -165,7 +168,7 @@ public class FrozenEventPersistenceGuardTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task SettledEvent_QboSyncWithLedgerInsert_Succeeds()
+    public async Task SettledEvent_QboSyncWithLedgerInsert_RejectedOnActualsSave()
     {
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (eventId, lineItem, _) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
@@ -192,7 +195,7 @@ public class FrozenEventPersistenceGuardTests : IntegrationTestBase
         lineItemEntity.UpdatedAt = DateTimeOffset.UtcNow;
 
         var act = () => db.SaveChangesAsync();
-        await act.Should().NotThrowAsync();
+        await act.Should().ThrowAsync<LedgerStateException>();
     }
 
     [Fact]
@@ -240,12 +243,39 @@ public class FrozenEventPersistenceGuardTests : IntegrationTestBase
     }
 
     [Fact]
-    public async Task SettledEvent_QboActualsSave_NoRejectionAuditLog()
+    public async Task SettledEvent_QboActualsSave_RejectedWithAuditLog()
+    {
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var (eventId, lineItem, userId) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
+        await SeedSyncLedgerEntryDirectAsync(
+            token, eventId, "txn-no-audit", "acct-1", 175m, lineItem.Id);
+        LogCollector!.Clear();
+
+        using var scope = CreateTenantScope(token);
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var syncService = scope.ServiceProvider.GetRequiredService<QboSyncService>();
+
+        var act = async () =>
+        {
+            await syncService.RecomputeActualsForEventAsync(eventId, CancellationToken.None);
+            await db.SaveChangesAsync();
+        };
+        await act.Should().ThrowAsync<LedgerStateException>();
+
+        GetFrozenAuditLogs().Should().ContainSingle();
+        var entry = GetFrozenAuditLogs().Single();
+        GetStateValue(entry, "Operation").Should().Be(FrozenEventMutationOperation.QboSyncRecompute);
+        GetStateValue(entry, "EventStatus").Should().Be("SETTLED");
+    }
+
+    [Fact]
+    public async Task ReconciledEvent_QboActualsSave_Succeeds()
     {
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (eventId, lineItem, _) = await SeedSettledEventWithLineItemAsync(client, venueId, token);
+        await client.PostAsync($"/api/venues/{venueId}/events/{eventId}/reconcile", null);
         await SeedSyncLedgerEntryDirectAsync(
-            token, eventId, "txn-no-audit", "acct-1", 175m, lineItem.Id);
+            token, eventId, "txn-reconciled", "acct-1", 275m, lineItem.Id);
         LogCollector!.Clear();
 
         using var scope = CreateTenantScope(token);
@@ -255,6 +285,11 @@ public class FrozenEventPersistenceGuardTests : IntegrationTestBase
         await db.SaveChangesAsync();
 
         GetFrozenAuditLogs().Should().BeEmpty();
+
+        var reloaded = await db.FinancialLineItems.AsNoTracking()
+            .FirstAsync(li => li.Id == lineItem.Id);
+        reloaded.QboActualValue.Should().Be(275m);
+        reloaded.SettlementValue.Should().Be(lineItem.SettlementValue);
     }
 
     private IServiceScope CreateTenantScope(string token)

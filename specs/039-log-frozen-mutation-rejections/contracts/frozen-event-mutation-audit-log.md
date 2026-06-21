@@ -53,6 +53,7 @@ When `UserId` is unavailable (unauthenticated edge case), omit the user segment 
 | `update_artist` | Artist update |
 | `delete_artist` | Artist deletion |
 | `recalculate` | Settlement payout recalculation |
+| `qbo_sync_recompute` | QBO sync recompute on SETTLED event or non-actuals field change during sync |
 
 New mutation paths added in future features MUST extend this list if they guard against frozen events.
 
