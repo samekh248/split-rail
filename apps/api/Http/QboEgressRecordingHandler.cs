@@ -56,6 +56,10 @@ public class QboEgressRecordingHandler : DelegatingHandler
 
         if (IsMutatingIntuitRequest(request))
         {
+            _logger.LogWarning(
+                "QBO egress write guard blocked {Method} {Host}",
+                method,
+                host);
             throw new QboSyncException(
                 $"Mutating QBO request blocked: {method} {uri}",
                 "zero_write_infiltration");
