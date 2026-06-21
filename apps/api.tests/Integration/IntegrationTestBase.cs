@@ -1,4 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -12,6 +14,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using SplitRail.Api.Data;
 using SplitRail.Api.Data.Interceptors;
+using SplitRail.Api.DTOs;
 using SplitRail.Api.DTOs.Auth;
 using SplitRail.Api.DTOs.Invitations;
 using SplitRail.Api.DTOs.Ledger;
@@ -495,7 +498,11 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         HttpClient client,
         Guid venueId,
         string token,
-        bool includeArtist = false)
+        bool includeArtist = false,
+        string artistDealType = "guarantee",
+        decimal artistBaseGuarantee = 5000m,
+        decimal artistBackendPercentage = 0m,
+        string? artistCustomFormulaExpression = null)
     {
         var (userId, _) = ParseTokenClaims(token);
         var evt = await CreateEventViaApiAsync(client, venueId);
@@ -521,7 +528,14 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         {
             var createArtistResponse = await client.PostAsJsonAsync(
                 $"/api/venues/{venueId}/events/{evt.EventId}/artists",
-                new CreateArtistRequest("Headliner", 1, "guarantee", null, 5000m, 0m, 0m));
+                new CreateArtistRequest(
+                    "Headliner",
+                    1,
+                    artistDealType,
+                    artistCustomFormulaExpression,
+                    artistBaseGuarantee,
+                    artistBackendPercentage,
+                    0m));
             createArtistResponse.EnsureSuccessStatusCode();
             artist = (await createArtistResponse.Content.ReadFromJsonAsync<EventArtistDto>())!;
         }
@@ -542,6 +556,24 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         Guid venueId,
         string token) =>
         SeedFinalizedEventAsync(client, venueId, token, includeArtist: true);
+
+    protected Task<FinalizedEventSeed> SeedFinalizedEventWithArtistDealAsync(
+        HttpClient client,
+        Guid venueId,
+        string token,
+        string dealType,
+        decimal baseGuarantee,
+        decimal backendPercentage,
+        string? customFormulaExpression = null) =>
+        SeedFinalizedEventAsync(
+            client,
+            venueId,
+            token,
+            includeArtist: true,
+            artistDealType: dealType,
+            artistBaseGuarantee: baseGuarantee,
+            artistBackendPercentage: backendPercentage,
+            artistCustomFormulaExpression: customFormulaExpression);
 
     protected async Task<FinalizedEventSeed> SeedFinalizedThenReconciledAsync(
         HttpClient client,
@@ -580,6 +612,22 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     {
         ArchiveStore.GetStoredPdf(seed.StoredPath).Should().Equal(seed.OriginalPdfBytes);
         ArchiveStore.StoredObjectCount.Should().Be(1);
+    }
+
+    protected async Task AssertArtistPayoutUnchanged(Guid artistId, decimal expectedPayout)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var artist = await db.EventArtists.AsNoTracking().SingleAsync(a => a.Id == artistId);
+        artist.CalculatedNetPayout.Should().Be(expectedPayout);
+    }
+
+    protected async Task AssertRecalculateRejectionResponse(HttpResponseMessage response)
+    {
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        error!.Type.Should().Be("ledger_state");
+        error.Detail.Should().Contain("settled or reconciled");
     }
 
     protected static object? GetAuditStateValue(TestLogCollector.LogEntry entry, string key) =>

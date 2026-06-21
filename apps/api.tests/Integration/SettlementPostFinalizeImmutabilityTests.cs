@@ -292,16 +292,78 @@ public class SettlementPostFinalizeImmutabilityTests : IntegrationTestBase
         if (!IsQuestPdfSupported()) return;
 
         var (client, venueId, token) = await SetupFinancialAdminAsync();
-        var seed = await SeedFinalizedEventAsync(client, venueId, token);
+        var seed = await SeedFinalizedEventWithArtistDealAsync(
+            client, venueId, token, "guarantee", baseGuarantee: 5000m, backendPercentage: 70m);
+        var expectedPayout = seed.Artist!.CalculatedNetPayout;
         LogCollector!.Clear();
 
         var response = await client.PostAsync(
             $"/api/venues/{venueId}/events/{seed.EventId}/recalculate", null);
 
-        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        await AssertRecalculateRejectionResponse(response);
         AssertFrozenAuditLog(
             seed.EventId, venueId, seed.UserId, FrozenEventMutationOperation.Recalculate, "SETTLED");
+        await AssertArtistPayoutUnchanged(seed.Artist.Id, expectedPayout);
         AssertPdfUnchanged(seed);
+    }
+
+    [Fact]
+    public async Task PostReconcile_Recalculate_Returns400_AndLogsRecalculate_AndPayoutUnchanged()
+    {
+        if (!IsQuestPdfSupported()) return;
+
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var seed = await SeedFinalizedThenReconciledAsync(client, venueId, token, includeArtist: true);
+        var expectedPayout = seed.Artist!.CalculatedNetPayout;
+        LogCollector!.Clear();
+
+        var response = await client.PostAsync(
+            $"/api/venues/{venueId}/events/{seed.EventId}/recalculate", null);
+
+        await AssertRecalculateRejectionResponse(response);
+        AssertFrozenAuditLog(
+            seed.EventId, venueId, seed.UserId, FrozenEventMutationOperation.Recalculate, "RECONCILED");
+        await AssertArtistPayoutUnchanged(seed.Artist.Id, expectedPayout);
+        AssertPdfUnchanged(seed);
+    }
+
+    [Fact]
+    public async Task PostFinalize_Recalculate_GuaranteeDeal_Returns400_AndPayoutUnchanged()
+    {
+        if (!IsQuestPdfSupported()) return;
+
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var seed = await SeedFinalizedEventWithArtistDealAsync(
+            client, venueId, token, "guarantee", baseGuarantee: 5000m, backendPercentage: 70m);
+        await AssertRecalculateRejectedOnFinalizedEvent(client, venueId, seed, "SETTLED");
+    }
+
+    [Fact]
+    public async Task PostFinalize_Recalculate_DoorSplitDeal_Returns400_AndPayoutUnchanged()
+    {
+        if (!IsQuestPdfSupported()) return;
+
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var seed = await SeedFinalizedEventWithArtistDealAsync(
+            client, venueId, token, "door_split", baseGuarantee: 0m, backendPercentage: 80m);
+        await AssertRecalculateRejectedOnFinalizedEvent(client, venueId, seed, "SETTLED");
+    }
+
+    [Fact]
+    public async Task PostFinalize_Recalculate_CustomFormulaDeal_Returns400_AndPayoutUnchanged()
+    {
+        if (!IsQuestPdfSupported()) return;
+
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var seed = await SeedFinalizedEventWithArtistDealAsync(
+            client,
+            venueId,
+            token,
+            "custom",
+            baseGuarantee: 0m,
+            backendPercentage: 0m,
+            customFormulaExpression: "(GrossRevenue - TotalDeductions) * 0.5");
+        await AssertRecalculateRejectedOnFinalizedEvent(client, venueId, seed, "SETTLED");
     }
 
     [Fact]
@@ -403,4 +465,23 @@ public class SettlementPostFinalizeImmutabilityTests : IntegrationTestBase
           }
         }
         """;
+
+    private async Task AssertRecalculateRejectedOnFinalizedEvent(
+        HttpClient client,
+        Guid venueId,
+        FinalizedEventSeed seed,
+        string eventStatus)
+    {
+        var expectedPayout = seed.Artist!.CalculatedNetPayout;
+        LogCollector!.Clear();
+
+        var response = await client.PostAsync(
+            $"/api/venues/{venueId}/events/{seed.EventId}/recalculate", null);
+
+        await AssertRecalculateRejectionResponse(response);
+        AssertFrozenAuditLog(
+            seed.EventId, venueId, seed.UserId, FrozenEventMutationOperation.Recalculate, eventStatus);
+        await AssertArtistPayoutUnchanged(seed.Artist.Id, expectedPayout);
+        AssertPdfUnchanged(seed);
+    }
 }

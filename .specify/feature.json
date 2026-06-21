@@ -1,3 +1,1 @@
-{
-  "feature_directory": "specs/045-block-qbo-settled-mutation"
-}
+{"feature_directory":"specs\\046-ledger-recalculate-state-guard"}
