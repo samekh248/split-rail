@@ -9,6 +9,10 @@ import {
   assertSecretManagerBinding,
   readDeployScript,
 } from '../../src/deploy/assertCloudSqlDeployContract';
+import {
+  assertProductionDoesNotReferenceDevBuckets,
+  assertSettlementArchiveEnvVars,
+} from '../../src/deploy/assertSettlementBucketContract';
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(testDir, '../../../..');
@@ -31,5 +35,20 @@ describe('production API deploy contract', () => {
     assertSecretManagerBinding(script);
     expect(script).toContain('split-rail:us-central1:split-rail-db-prod');
     assertNoHardcodedDbPassword(script);
+  });
+
+  it('deployProductionApi_settlementArchiveEnvVars', () => {
+    const script = readDeployScript('deploy/production/deploy-api.sh', repoRoot);
+    assertSettlementArchiveEnvVars(
+      script,
+      'split-rail-settlements-prod',
+      'split-rail-settlements-staging-prod',
+    );
+    expect(script).toContain('validate-settlement-buckets.sh');
+  });
+
+  it('deployProductionApi_doesNotReferenceDevBuckets', () => {
+    const script = readDeployScript('deploy/production/deploy-api.sh', repoRoot);
+    assertProductionDoesNotReferenceDevBuckets(script);
   });
 });

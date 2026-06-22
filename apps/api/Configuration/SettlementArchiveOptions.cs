@@ -17,6 +17,9 @@ public class SettlementArchiveOptions
     /// <summary>When true (Production default), startup validates archive bucket retention policy.</summary>
     public bool EnforceRetentionValidation { get; set; } = true;
 
+    /// <summary>Force in-memory archive store (local/tests only — never set in deploy scripts).</summary>
+    public bool UseInMemoryStore { get; set; }
+
     public string ResolveStagingBucketName() =>
         string.IsNullOrWhiteSpace(StagingBucketName)
             ? $"{BucketName}-staging"

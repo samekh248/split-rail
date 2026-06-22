@@ -147,15 +147,7 @@ builder.Services.AddScoped<SplitRail.Api.Services.SignatureValidator>();
 builder.Services.AddScoped<ISettlementPdfRenderer, SettlementPdfRenderer>();
 builder.Services.AddScoped<SettlementPdfRenderer>();
 builder.Services.AddScoped<SettlementService>();
-builder.Services.AddSingleton<InMemorySettlementArchiveStore>();
-builder.Services.AddSingleton<GcsSettlementArchiveStore>();
-builder.Services.AddSingleton<ISettlementArchiveStore>(sp =>
-{
-    var preview = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PreviewOptions>>().Value;
-    if (preview.UseFakeQboConnector || preview.EnableTestSeeding)
-        return sp.GetRequiredService<InMemorySettlementArchiveStore>();
-    return sp.GetRequiredService<GcsSettlementArchiveStore>();
-});
+SettlementArchiveStoreRegistration.Register(builder.Services);
 builder.Services.AddHostedService<QboSyncHostedService>();
 builder.Services.AddHostedService<SettlementArchiveStartupValidator>();
 

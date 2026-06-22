@@ -11,6 +11,7 @@ import {
   assertTeardownDeletesPreviewInstance,
   readDeployScript,
 } from '../../src/deploy/assertCloudSqlDeployContract';
+import { assertPreviewOmitsSettlementArchiveEnvVars } from '../../src/deploy/assertSettlementBucketContract';
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(testDir, '../../../..');
@@ -56,5 +57,10 @@ describe('preview database deploy contract', () => {
     expect(script).toContain('db-f1-micro');
     expect(script).toContain('POSTGRES_16');
     expect(script).toContain('splitrail-preview');
+  });
+
+  it('deployPreview_omitsSettlementArchiveBucketEnvVars', () => {
+    const script = readDeployScript('deploy/preview/deploy-preview.sh', repoRoot);
+    assertPreviewOmitsSettlementArchiveEnvVars(script);
   });
 });

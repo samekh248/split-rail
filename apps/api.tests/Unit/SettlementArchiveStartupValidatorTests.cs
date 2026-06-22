@@ -92,22 +92,27 @@ public class SettlementArchiveStartupValidatorTests
     }
 
     [Fact]
-    public async Task StartAsync_InDevelopment_SkipsValidationEvenWhenEnforced()
+    public void ShouldRunRetentionValidation_ReturnsTrue_WhenEnforcedInDevelopment()
     {
-        var options = Options.Create(new SettlementArchiveOptions
+        var options = new SettlementArchiveOptions
+        {
+            BucketName = "split-rail-settlements-dev",
+            EnforceRetentionValidation = true
+        };
+
+        SettlementArchiveStartupValidator.ShouldRunRetentionValidation(options).Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShouldRunRetentionValidation_ReturnsFalse_WhenDisabled()
+    {
+        var options = new SettlementArchiveOptions
         {
             BucketName = "split-rail-settlements-prod",
-            EnforceRetentionValidation = true
-        });
-        var environment = new FakeHostEnvironment { EnvironmentName = Environments.Development };
-        var validator = new SettlementArchiveStartupValidator(
-            options,
-            environment,
-            NullLogger<SettlementArchiveStartupValidator>.Instance);
+            EnforceRetentionValidation = false
+        };
 
-        var act = () => validator.StartAsync(CancellationToken.None);
-
-        await act.Should().NotThrowAsync();
+        SettlementArchiveStartupValidator.ShouldRunRetentionValidation(options).Should().BeFalse();
     }
 
     [Fact]
