@@ -156,10 +156,32 @@ jobs:
       preview_url: ${{ steps.deploy.outputs.preview_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: google-github-actions/auth@v2
+        if: vars.GCP_PROJECT != ''
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+        if: vars.GCP_PROJECT != ''
+      - uses: actions/setup-dotnet@v4
+        if: vars.GCP_PROJECT != ''
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      - run: dotnet tool install --global dotnet-ef
+        if: vars.GCP_PROJECT != ''
       - id: deploy
+        env:
+          GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+          RUN_ID: ${{ github.run_id }}
         run: |
-          echo "preview_url=http://127.0.0.1:5000" >> "$GITHUB_OUTPUT"
-        # Replace with deploy/preview/deploy-preview.sh when GCP credentials are configured
+          if [ -n "${GCP_PROJECT}" ] && command -v gcloud >/dev/null 2>&1; then
+            chmod +x deploy/preview/deploy-preview.sh deploy/lib/*.sh
+            ./deploy/preview/deploy-preview.sh
+            echo "preview_url=$(cat preview-url.txt)" >> "$GITHUB_OUTPUT"
+          else
+            echo "GCP preview deploy skipped — set vars.GCP_PROJECT and secrets.GCP_SA_KEY for real preview"
+            echo "preview_url=http://127.0.0.1:5000" >> "$GITHUB_OUTPUT"
+          fi
 
   e2e-matrix:
     name: e2e-matrix
@@ -273,5 +295,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - run: echo "Preview teardown complete"
-        # Replace with deploy/preview/teardown-preview.sh when GCP credentials are configured
+      - uses: google-github-actions/auth@v2
+        if: vars.GCP_PROJECT != ''
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - uses: google-github-actions/setup-gcloud@v2
+        if: vars.GCP_PROJECT != ''
+      - env:
+          GCP_PROJECT: ${{ vars.GCP_PROJECT }}
+          GCP_REGION: ${{ vars.GCP_REGION }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          if [ -n "${GCP_PROJECT}" ] && command -v gcloud >/dev/null 2>&1; then
+            chmod +x deploy/preview/teardown-preview.sh
+            ./deploy/preview/teardown-preview.sh
+          else
+            echo "Preview teardown complete (GCP not configured)"
+          fi
