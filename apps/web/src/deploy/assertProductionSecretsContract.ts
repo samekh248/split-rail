@@ -1,13 +1,12 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-/** Required Cloud Run secret bindings for production API deploy (SPLR-48). */
+/** Required Cloud Run secret bindings for production API deploy (SPLR-48, SPLR-49). */
 export const PRODUCTION_SECRET_BINDINGS = [
   { envVar: 'DB_PASSWORD', secretId: 'db-password' },
   { envVar: 'Jwt__Secret', secretId: 'jwt-signing-key' },
   { envVar: 'QBO_CLIENT_ID', secretId: 'qbo-client-id' },
   { envVar: 'QBO_CLIENT_SECRET', secretId: 'qbo-client-secret' },
-  { envVar: 'QBO_INTERNAL_TRIGGER_KEY', secretId: 'qbo-internal-trigger-key' },
 ] as const;
 
 const PLACEHOLDER_JWT_PATTERNS = [

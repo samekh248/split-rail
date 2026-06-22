@@ -18,6 +18,7 @@ public class QboSyncService
     private readonly ITenantContext _tenantContext;
     private readonly QboSyncCorrectionService _correctionService;
     private readonly FrozenEventMutationAuditor _frozenEventAuditor;
+    private readonly IQboSyncConcurrencyGate _concurrencyGate;
     private readonly ILogger<QboSyncService> _logger;
 
     public QboSyncService(
@@ -28,6 +29,7 @@ public class QboSyncService
         ITenantContext tenantContext,
         QboSyncCorrectionService correctionService,
         FrozenEventMutationAuditor frozenEventAuditor,
+        IQboSyncConcurrencyGate concurrencyGate,
         ILogger<QboSyncService> logger)
     {
         _db = db;
@@ -37,6 +39,7 @@ public class QboSyncService
         _tenantContext = tenantContext;
         _correctionService = correctionService;
         _frozenEventAuditor = frozenEventAuditor;
+        _concurrencyGate = concurrencyGate;
         _logger = logger;
     }
 
@@ -191,7 +194,17 @@ public class QboSyncService
 
     public async Task<int> SyncAllEligibleEventsAsync(CancellationToken cancellationToken = default)
     {
-        var venueIds = await _db.QboVenueCredentials
+        if (!await _concurrencyGate.TryEnterAsync(cancellationToken))
+        {
+            _logger.LogInformation(
+                "Skipped overlapping QBO sync batch: outcome={Outcome}",
+                "skipped-concurrent");
+            return 0;
+        }
+
+        try
+        {
+            var venueIds = await _db.QboVenueCredentials
             .AsNoTracking()
             .Select(c => c.VenueId)
             .ToListAsync(cancellationToken);
@@ -213,6 +226,11 @@ public class QboSyncService
         }
 
         return synced;
+        }
+        finally
+        {
+            _concurrencyGate.Release();
+        }
     }
 
     internal async Task<SyncResultDto> ProcessTransactionsAsync(

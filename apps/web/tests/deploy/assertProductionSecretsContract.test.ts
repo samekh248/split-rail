@@ -14,7 +14,7 @@ const repoRoot = resolve(testDir, '../../../..');
 
 const validDeployScript = `
 gcloud run deploy split-rail-api \\
-  --set-secrets="DB_PASSWORD=db-password:latest,Jwt__Secret=jwt-signing-key:latest,QBO_CLIENT_ID=qbo-client-id:latest,QBO_CLIENT_SECRET=qbo-client-secret:latest,QBO_INTERNAL_TRIGGER_KEY=qbo-internal-trigger-key:latest"
+  --set-secrets="DB_PASSWORD=db-password:latest,Jwt__Secret=jwt-signing-key:latest,QBO_CLIENT_ID=qbo-client-id:latest,QBO_CLIENT_SECRET=qbo-client-secret:latest"
 `;
 
 describe('assertProductionSecretsContract', () => {
@@ -35,7 +35,7 @@ describe('assertProductionSecretsContract', () => {
     }
     expect(() =>
       assertProductionSecretBindings(
-        '--set-secrets="DB_PASSWORD=db-password:1,Jwt__Secret=jwt-signing-key:latest,QBO_CLIENT_ID=qbo-client-id:latest,QBO_CLIENT_SECRET=qbo-client-secret:latest,QBO_INTERNAL_TRIGGER_KEY=qbo-internal-trigger-key:latest"',
+        '--set-secrets="DB_PASSWORD=db-password:1,Jwt__Secret=jwt-signing-key:latest,QBO_CLIENT_ID=qbo-client-id:latest,QBO_CLIENT_SECRET=qbo-client-secret:latest"',
       ),
     ).toThrow(/DB_PASSWORD=db-password:latest/);
   });

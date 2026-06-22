@@ -1,7 +1,7 @@
 namespace SplitRail.Api.Configuration;
 
 /// <summary>
-/// Validates production boot secrets are present and not placeholder values (SPLR-48, Constitution VIII).
+/// Validates production boot secrets are present and not placeholder values (SPLR-48, SPLR-49, Constitution VIII).
 /// </summary>
 public static class ProductionSecretConfigurationValidator
 {
@@ -16,8 +16,15 @@ public static class ProductionSecretConfigurationValidator
         ValidateJwtSecret(jwt.Secret);
         ValidateRequired("QboSync:ClientId", qbo.ClientId);
         ValidateRequired("QboSync:ClientSecret", qbo.ClientSecret);
-        ValidateRequired("QboSync:InternalTriggerKey", qbo.InternalTriggerKey);
+        ValidateRequired("QboSync:SchedulerServiceAccountEmail", qbo.SchedulerServiceAccountEmail);
+        ValidateRequired("QboSync:SchedulerTokenAudience", qbo.SchedulerTokenAudience);
         ValidateRequired("DB_PASSWORD", dbPassword);
+
+        if (!string.IsNullOrWhiteSpace(qbo.InternalTriggerKey))
+        {
+            throw new InvalidOperationException(
+                "Production configuration must not use QboSync:InternalTriggerKey; scheduler OIDC is required.");
+        }
     }
 
     private static void ValidateJwtSecret(string? secret)
@@ -45,14 +52,7 @@ public static class ProductionSecretConfigurationValidator
         if (string.IsNullOrWhiteSpace(value))
         {
             throw new InvalidOperationException(
-                $"Production configuration requires {name} from Secret Manager.");
-        }
-
-        if (name.Contains("InternalTriggerKey", StringComparison.Ordinal)
-            && value.Contains("dev-internal-sync-key", StringComparison.OrdinalIgnoreCase))
-        {
-            throw new InvalidOperationException(
-                $"Production configuration requires {name} from Secret Manager, not a development default.");
+                $"Production configuration requires {name} from deploy configuration or Secret Manager.");
         }
     }
 }

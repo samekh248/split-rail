@@ -70,7 +70,6 @@ public class ProductionSecretConfigurationTests : IDisposable
         ClearTestEnvironment();
         Environment.SetEnvironmentVariable("QBO_CLIENT_ID", "env-client-id-override");
         Environment.SetEnvironmentVariable("QBO_CLIENT_SECRET", "env-client-secret-override");
-        Environment.SetEnvironmentVariable("QBO_INTERNAL_TRIGGER_KEY", "test-internal-trigger-key");
 
         try
         {
@@ -155,13 +154,17 @@ public class ProductionSecretConfigurationTests : IDisposable
             values["Jwt:Secret"] = "production-test-secret-at-least-32-chars";
             values["QboSync:ClientId"] = "test-qbo-client-id";
             values["QboSync:ClientSecret"] = "test-qbo-client-secret";
-            values["QboSync:InternalTriggerKey"] = "test-internal-trigger-key";
+            values["QboSync:SchedulerServiceAccountEmail"] = "split-rail-qbo-scheduler-prod@split-rail.iam.gserviceaccount.com";
+            values["QboSync:SchedulerTokenAudience"] = "https://split-rail-api.example.com";
+            values["QboSync:InternalTriggerKey"] = "";
         }
         else
         {
             values["Jwt:Secret"] = "staging-test-secret-at-least-32-chars";
             values["QboSync:ClientId"] = "";
             values["QboSync:ClientSecret"] = "";
+            values["QboSync:SchedulerServiceAccountEmail"] = "";
+            values["QboSync:SchedulerTokenAudience"] = "";
             values["QboSync:InternalTriggerKey"] = "";
         }
 
@@ -188,7 +191,7 @@ public class ProductionSecretConfigurationTests : IDisposable
         Environment.SetEnvironmentVariable("Jwt__Secret", "production-test-secret-at-least-32-chars");
         Environment.SetEnvironmentVariable("QBO_CLIENT_ID", "test-qbo-client-id");
         Environment.SetEnvironmentVariable("QBO_CLIENT_SECRET", "test-qbo-client-secret");
-        Environment.SetEnvironmentVariable("QBO_INTERNAL_TRIGGER_KEY", "test-internal-trigger-key");
+        Environment.SetEnvironmentVariable("QBO_INTERNAL_TRIGGER_KEY", null);
     }
 
     private static void ApplyDataProtectionEnvironment()

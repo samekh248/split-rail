@@ -19,6 +19,17 @@ $env:ENV = 'prod'
 & (Join-Path $LibDir 'validate-settlement-buckets.ps1')
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
+Write-Host 'Validating QBO scheduler job before deploy...'
+$env:ENV = 'prod'
+if ([string]::IsNullOrWhiteSpace($env:CLOUD_RUN_URL)) {
+    $env:CLOUD_RUN_URL = Invoke-GcloudOrThrow run services describe $ServiceName `
+        --project $GcpProject `
+        --region $GcpRegion `
+        --format 'value(status.url)'
+}
+& (Join-Path $LibDir 'validate-qbo-scheduler.ps1')
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
 Write-Host 'Building migration bundle...'
 dotnet ef migrations bundle `
     --project (Join-Path $RepoRoot 'apps\api\split-rail-api.csproj') `
@@ -42,7 +53,9 @@ if ([string]::IsNullOrWhiteSpace($env:DB_PASSWORD)) {
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $SettlementEnv = 'SettlementArchive__BucketName=split-rail-settlements-prod,SettlementArchive__StagingBucketName=split-rail-settlements-staging-prod,SettlementArchive__RetentionYears=7,SettlementArchive__EnforceRetentionValidation=true'
-$SetSecrets = 'DB_PASSWORD=db-password:latest,Jwt__Secret=jwt-signing-key:latest,QBO_CLIENT_ID=qbo-client-id:latest,QBO_CLIENT_SECRET=qbo-client-secret:latest,QBO_INTERNAL_TRIGGER_KEY=qbo-internal-trigger-key:latest'
+$SchedulerSaEmail = "split-rail-qbo-scheduler-prod@$GcpProject.iam.gserviceaccount.com"
+$QboSchedulerEnv = "QboSync__SchedulerServiceAccountEmail=$SchedulerSaEmail,QboSync__SchedulerTokenAudience=$($env:CLOUD_RUN_URL)"
+$SetSecrets = 'DB_PASSWORD=db-password:latest,Jwt__Secret=jwt-signing-key:latest,QBO_CLIENT_ID=qbo-client-id:latest,QBO_CLIENT_SECRET=qbo-client-secret:latest'
 
 Write-Host "Deploying Cloud Run API service $ServiceName..."
 Invoke-GcloudOrThrow run deploy $ServiceName `
@@ -51,7 +64,7 @@ Invoke-GcloudOrThrow run deploy $ServiceName `
     --project $GcpProject `
     --add-cloudsql-instances=$ProdInstance `
     --set-secrets=$SetSecrets `
-    --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,$SettlementEnv" `
+    --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,$SettlementEnv,$QboSchedulerEnv" `
     --quiet | Out-Null
 
 Write-Host 'Production API deploy complete.'

@@ -517,6 +517,7 @@ public class QboSyncServiceTests
             tenantContext,
             new QboSyncCorrectionService(db),
             new FrozenEventMutationAuditor(NullLogger<FrozenEventMutationAuditor>.Instance),
+            new QboSyncConcurrencyGate(),
             NullLogger<QboSyncService>.Instance);
         return (service, db, tenantContext);
     }

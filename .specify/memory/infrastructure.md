@@ -19,4 +19,6 @@
 - **Application secrets:** `deploy/infra/provision-app-secrets.sh` or `provision-app-secrets.ps1` (spec 055, SPLR-48)
 - **Validation:** `deploy/lib/validate-settlement-buckets.sh` or `validate-settlement-buckets.ps1`
 - **Production API deploy:** `deploy/production/deploy-api.sh` or `deploy-api.ps1`
+- **QBO sync scheduler (spec 057):** `deploy/infra/provision-qbo-scheduler.sh` or `provision-qbo-scheduler.ps1` with `ENV=dev|prod`; jobs `split-rail-qbo-sync-{env}` every 6h (`0 */6 * * *` UTC) POST to `/api/internal/qbo-sync-trigger` with OIDC SA `split-rail-qbo-scheduler-{env}@split-rail.iam.gserviceaccount.com`
+- **QBO scheduler validation:** `deploy/lib/validate-qbo-scheduler.sh` or `validate-qbo-scheduler.ps1`
 - **GCS Integration Strategy:** Google.Cloud.Storage.V1 client wrapper factory; Cloud Run Workload Identity (no JSON keys)
