@@ -72,6 +72,25 @@ builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
     ?? throw new InvalidOperationException("Jwt settings not configured.");
 
+var jwtSecretFromEnv = Environment.GetEnvironmentVariable("Jwt__Secret");
+if (!string.IsNullOrEmpty(jwtSecretFromEnv))
+    jwtSettings.Secret = jwtSecretFromEnv;
+
+if (builder.Environment.IsProduction())
+{
+    var productionQbo = new QboSyncOptions();
+    qboSyncSection.Bind(productionQbo);
+    productionQbo.ClientId = Environment.GetEnvironmentVariable("QBO_CLIENT_ID") ?? productionQbo.ClientId;
+    productionQbo.ClientSecret = Environment.GetEnvironmentVariable("QBO_CLIENT_SECRET") ?? productionQbo.ClientSecret;
+    productionQbo.InternalTriggerKey =
+        Environment.GetEnvironmentVariable("QBO_INTERNAL_TRIGGER_KEY") ?? productionQbo.InternalTriggerKey;
+
+    ProductionSecretConfigurationValidator.Validate(
+        jwtSettings,
+        productionQbo,
+        Environment.GetEnvironmentVariable("DB_PASSWORD"));
+}
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
