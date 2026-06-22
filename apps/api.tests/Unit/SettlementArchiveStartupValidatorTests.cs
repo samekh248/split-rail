@@ -92,15 +92,35 @@ public class SettlementArchiveStartupValidatorTests
     }
 
     [Fact]
-    public void ShouldRunRetentionValidation_ReturnsTrue_WhenEnforcedInDevelopment()
+    public void ShouldRunRetentionValidation_ReturnsTrue_WhenEnforcedWithGcsBackend()
     {
         var options = new SettlementArchiveOptions
         {
             BucketName = "split-rail-settlements-dev",
-            EnforceRetentionValidation = true
+            EnforceRetentionValidation = true,
+            UseInMemoryStore = false
         };
+        var environment = new FakeHostEnvironment { EnvironmentName = Environments.Development };
+        var preview = new PreviewOptions();
 
-        SettlementArchiveStartupValidator.ShouldRunRetentionValidation(options).Should().BeTrue();
+        SettlementArchiveStartupValidator.ShouldRunRetentionValidation(options, environment, preview)
+            .Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShouldRunRetentionValidation_ReturnsFalse_WhenUsingInMemoryStore()
+    {
+        var options = new SettlementArchiveOptions
+        {
+            BucketName = "split-rail-settlements-dev",
+            EnforceRetentionValidation = true,
+            UseInMemoryStore = true
+        };
+        var environment = new FakeHostEnvironment { EnvironmentName = Environments.Development };
+        var preview = new PreviewOptions();
+
+        SettlementArchiveStartupValidator.ShouldRunRetentionValidation(options, environment, preview)
+            .Should().BeFalse();
     }
 
     [Fact]
@@ -111,8 +131,11 @@ public class SettlementArchiveStartupValidatorTests
             BucketName = "split-rail-settlements-prod",
             EnforceRetentionValidation = false
         };
+        var environment = new FakeHostEnvironment { EnvironmentName = Environments.Production };
+        var preview = new PreviewOptions();
 
-        SettlementArchiveStartupValidator.ShouldRunRetentionValidation(options).Should().BeFalse();
+        SettlementArchiveStartupValidator.ShouldRunRetentionValidation(options, environment, preview)
+            .Should().BeFalse();
     }
 
     [Fact]
@@ -124,8 +147,10 @@ public class SettlementArchiveStartupValidatorTests
             EnforceRetentionValidation = false
         });
         var environment = new FakeHostEnvironment { EnvironmentName = Environments.Production };
+        var preview = Options.Create(new PreviewOptions());
         var validator = new SettlementArchiveStartupValidator(
             options,
+            preview,
             environment,
             NullLogger<SettlementArchiveStartupValidator>.Instance);
 

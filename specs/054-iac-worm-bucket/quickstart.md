@@ -93,15 +93,25 @@ npm test -- tests/deploy/deploySettlementBuckets.test.ts tests/deploy/deployProd
 
 ## Scenario D — Non-preview app uses GCS (SC-003, SC-004)
 
-1. Update local `appsettings.Development.json` staging bucket to `split-rail-settlements-staging-dev` (if not already).
-2. Run API locally (not Preview environment):
+Committed `appsettings.Development.json` keeps the in-memory store so CI and unprovisioned local dev start without GCS. After provisioning dev buckets, opt in via user secrets (do not commit):
 
 ```bash
 cd apps/api
+dotnet user-secrets set "SettlementArchive:UseInMemoryStore" "false"
+dotnet user-secrets set "SettlementArchive:EnforceRetentionValidation" "true"
 dotnet run
 ```
 
-**Expect**: Startup succeeds with retention validation log for dev buckets (when `EnforceRetentionValidation=true`).
+PowerShell:
+
+```powershell
+cd apps/api
+dotnet user-secrets set "SettlementArchive:UseInMemoryStore" "false"
+dotnet user-secrets set "SettlementArchive:EnforceRetentionValidation" "true"
+dotnet run
+```
+
+**Expect**: Startup succeeds with retention validation log for dev buckets.
 
 3. Optional smoke — finalize a test event against dev buckets (requires DB + test data):
 

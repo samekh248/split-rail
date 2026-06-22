@@ -10,24 +10,33 @@ namespace SplitRail.Api.Services;
 public sealed class SettlementArchiveStartupValidator : IHostedService
 {
     private readonly SettlementArchiveOptions _options;
+    private readonly IHostEnvironment _environment;
+    private readonly PreviewOptions _preview;
     private readonly ILogger<SettlementArchiveStartupValidator> _logger;
 
     public SettlementArchiveStartupValidator(
         IOptions<SettlementArchiveOptions> options,
+        IOptions<PreviewOptions> preview,
         IHostEnvironment environment,
         ILogger<SettlementArchiveStartupValidator> logger)
     {
-        _ = environment;
         _options = options.Value;
+        _preview = preview.Value;
+        _environment = environment;
         _logger = logger;
     }
 
-    public static bool ShouldRunRetentionValidation(SettlementArchiveOptions options) =>
-        options.EnforceRetentionValidation && !string.IsNullOrWhiteSpace(options.BucketName);
+    public static bool ShouldRunRetentionValidation(
+        SettlementArchiveOptions options,
+        IHostEnvironment environment,
+        PreviewOptions preview) =>
+        options.EnforceRetentionValidation
+        && !string.IsNullOrWhiteSpace(options.BucketName)
+        && !SettlementArchiveStoreRegistration.ShouldUseInMemoryStore(environment, preview, options);
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        if (!ShouldRunRetentionValidation(_options))
+        if (!ShouldRunRetentionValidation(_options, _environment, _preview))
             return;
 
         try
