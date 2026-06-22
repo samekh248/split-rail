@@ -34,13 +34,19 @@ export function assertProductionSecretBindings(scriptText: string): void {
   }
 }
 
+function isSecretManagerBindingReference(line: string): boolean {
+  if (line.includes('--set-secrets')) return true;
+  if (!line.includes(':latest')) return false;
+  return PRODUCTION_SECRET_BINDINGS.every(({ secretId }) => line.includes(`${secretId}:latest`));
+}
+
 /** Reject cleartext JWT/QBO credentials in committed deploy scripts (FR-006, SC-002). */
 export function assertNoHardcodedJwtOrQboSecrets(scriptText: string): void {
   const lines = scriptText.split('\n');
   for (const line of lines) {
     const trimmed = line.trim();
     if (trimmed.startsWith('#')) continue;
-    if (trimmed.includes('--set-secrets')) continue;
+    if (isSecretManagerBindingReference(trimmed)) continue;
 
     for (const pattern of PLACEHOLDER_JWT_PATTERNS) {
       if (pattern.test(trimmed) && !trimmed.includes('${')) {

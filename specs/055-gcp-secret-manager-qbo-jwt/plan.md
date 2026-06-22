@@ -82,8 +82,13 @@ specs/055-gcp-secret-manager-qbo-jwt/
 deploy/
 ├── infra/
 │   └── provision-app-secrets.sh       # NEW — idempotent Secret Manager resource create
+│   └── provision-app-secrets.ps1      # NEW — Windows paired script (Constitution §X)
 └── production/
     └── deploy-api.sh                  # EXTEND — full --set-secrets bindings
+    └── deploy-api.ps1                 # NEW — Windows paired production deploy
+
+deploy/lib/
+└── migrate-bundle.ps1                 # NEW — Windows paired migration helper
 
 apps/api/
 ├── appsettings.json                   # MODIFY — empty Jwt/QBO secrets; no dev trigger key

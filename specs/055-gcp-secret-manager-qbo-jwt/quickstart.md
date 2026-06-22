@@ -20,11 +20,12 @@ See [contracts/production-secret-bindings.md](contracts/production-secret-bindin
 ```bash
 cd apps/web
 npm run test -- tests/deploy/deployProductionApi.test.ts
+npm run test -- tests/deploy/deployAppSecrets.test.ts
 npm run test -- tests/deploy/assertProductionSecretsContract.test.ts
 ```
 
 **Expected**:
-- `deploy-api.sh` includes `--set-secrets` for `DB_PASSWORD`, `Jwt__Secret`, `QBO_CLIENT_ID`, `QBO_CLIENT_SECRET`, `QBO_INTERNAL_TRIGGER_KEY`
+- `deploy-api.sh` and `deploy-api.ps1` include `--set-secrets` for `DB_PASSWORD`, `Jwt__Secret`, `QBO_CLIENT_ID`, `QBO_CLIENT_SECRET`, `QBO_INTERNAL_TRIGGER_KEY`
 - No hardcoded JWT/QBO secrets in production deploy script
 - `appsettings.json` has empty `Jwt:Secret` and empty QBO credential fields
 
@@ -49,9 +50,18 @@ dotnet test --filter "FullyQualifiedName~ProductionSecretConfiguration"
 
 **Validates**: FR-001 infrastructure prerequisite
 
+**Linux / macOS / Git Bash:**
+
 ```bash
 export GCP_PROJECT=split-rail
 ./deploy/infra/provision-app-secrets.sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+$env:GCP_PROJECT = 'split-rail'
+.\deploy\infra\provision-app-secrets.ps1
 ```
 
 Add initial secret versions (example — use real values from secure store):
@@ -87,12 +97,24 @@ done
 
 **Prerequisites**: Scenario 3 complete; container image built and pushed (`IMAGE` env set).
 
+**Linux / macOS / Git Bash:**
+
 ```bash
 export GCP_PROJECT=split-rail
 export GCP_REGION=us-central1
 export IMAGE="us-central1-docker.pkg.dev/split-rail/.../split-rail-api:TAG"
 export DB_PASSWORD="$(gcloud secrets versions access latest --secret=db-password --project=$GCP_PROJECT)"
 ./deploy/production/deploy-api.sh
+```
+
+**Windows (PowerShell):**
+
+```powershell
+$env:GCP_PROJECT = 'split-rail'
+$env:GCP_REGION = 'us-central1'
+$env:IMAGE = 'us-central1-docker.pkg.dev/split-rail/.../split-rail-api:TAG'
+$env:DB_PASSWORD = gcloud secrets versions access latest --secret=db-password --project=$env:GCP_PROJECT
+.\deploy\production\deploy-api.ps1
 ```
 
 Inspect deployed bindings:
