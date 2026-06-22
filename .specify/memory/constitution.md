@@ -1,3 +1,11 @@
+<!--
+Sync Impact Report
+- Version: 1.1.0 → 1.2.0 (MINOR: new dual-platform operator script principle)
+- Added: §X Dual-Platform Operator Scripts
+- Templates: plan-template.md ✅, tasks-template.md ✅, infrastructure.md ✅
+- Ratified: 2026-06-13 | Last Amended: 2026-06-22
+-->
+
 # Accounting-First Venue Platform Constitution
 
 ## Core Principles
@@ -71,4 +79,14 @@
 - Icon imports MUST be tree-shaken per-icon from free packages only; paid Pro icon packages require explicit approval.
 - See `.specify/memory/iconography.md` for setup, exceptions, and reference mappings (e.g. navigation pin/unpin → `faThumbtack` / `faThumbtackSlash`).
 
-**Version**: 1.1.0 | **Ratified**: 2026-06-13 | **Last Amended**: 2026-06-18
+### X. Dual-Platform Operator Scripts
+
+- Any operator-facing script under `deploy/` that must be run manually or from CI/CD (provisioning, validation, migration, deploy, teardown) MUST ship as a **paired implementation**: a Bash script (`.sh`) for Linux/macOS/CI runners and a PowerShell script (`.ps1`) for Windows.
+- Paired scripts MUST expose equivalent behavior, environment variables, and exit-code semantics; documentation (spec `quickstart.md`, `plan.md`, `.specify/memory/infrastructure.md`) MUST reference both entry points.
+- Shared logic SHOULD be extracted into dot-sourced libraries (`deploy/lib/*.sh` and `deploy/lib/*.ps1`) rather than duplicating business rules inline.
+- PowerShell scripts MUST begin with `#Requires -Version 5.1`, set `$ErrorActionPreference = 'Stop'`, and use the shared `deploy/lib/gcloud-invoke.ps1` helpers for `gcloud` calls where applicable.
+- Bash scripts MUST use `set -euo pipefail` and MUST NOT echo cleartext secrets (see §VIII).
+- Features that add a new runnable deploy script MUST include automated contract verification that both variants exist and remain behaviorally aligned (Constitution III).
+- **Exempt**: one-off smoke helpers invoked only inside Docker/Linux CI with no Windows operator path, and generated artifacts — exemptions MUST be documented in the feature spec Assumptions section.
+
+**Version**: 1.2.0 | **Ratified**: 2026-06-13 | **Last Amended**: 2026-06-22

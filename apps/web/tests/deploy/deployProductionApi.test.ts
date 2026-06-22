@@ -10,6 +10,11 @@ import {
   readDeployScript,
 } from '../../src/deploy/assertCloudSqlDeployContract';
 import {
+  assertNoHardcodedJwtOrQboSecrets,
+  assertProductionAppsettingsHygiene,
+  assertProductionSecretBindings,
+} from '../../src/deploy/assertProductionSecretsContract';
+import {
   assertProductionDoesNotReferenceDevBuckets,
   assertSettlementArchiveEnvVars,
 } from '../../src/deploy/assertSettlementBucketContract';
@@ -50,5 +55,19 @@ describe('production API deploy contract', () => {
   it('deployProductionApi_doesNotReferenceDevBuckets', () => {
     const script = readDeployScript('deploy/production/deploy-api.sh', repoRoot);
     assertProductionDoesNotReferenceDevBuckets(script);
+  });
+
+  it('deployProductionApi_allSecretBindings', () => {
+    const script = readDeployScript('deploy/production/deploy-api.sh', repoRoot);
+    assertProductionSecretBindings(script);
+  });
+
+  it('deployProductionApi_noHardcodedJwtOrQboSecrets', () => {
+    const script = readDeployScript('deploy/production/deploy-api.sh', repoRoot);
+    assertNoHardcodedJwtOrQboSecrets(script);
+  });
+
+  it('deployProductionApi_appsettingsHygiene', () => {
+    assertProductionAppsettingsHygiene(repoRoot);
   });
 });

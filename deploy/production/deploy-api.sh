@@ -25,7 +25,9 @@ echo "Applying migrations to production database..."
 export INSTANCE_CONNECTION_NAME="${PROD_INSTANCE}"
 export GCP_PROJECT
 export BUNDLE_PATH
-# DB_PASSWORD must be available for migrate step (from env or gcloud secret access)
+# DB_PASSWORD for the migration step must be fetched before running this script, e.g.:
+#   export DB_PASSWORD="$(gcloud secrets versions access latest --secret=db-password --project="${GCP_PROJECT}")"
+# Never embed cleartext passwords in this script (Constitution VIII).
 : "${DB_PASSWORD:?DB_PASSWORD required for migration step — fetch from Secret Manager before running}"
 
 "${REPO_ROOT}/deploy/lib/migrate-bundle.sh"
@@ -38,7 +40,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --region "${GCP_REGION}" \
   --project "${GCP_PROJECT}" \
   --add-cloudsql-instances="${PROD_INSTANCE}" \
-  --set-secrets="DB_PASSWORD=db-password:latest" \
+  --set-secrets="DB_PASSWORD=db-password:latest,Jwt__Secret=jwt-signing-key:latest,QBO_CLIENT_ID=qbo-client-id:latest,QBO_CLIENT_SECRET=qbo-client-secret:latest,QBO_INTERNAL_TRIGGER_KEY=qbo-internal-trigger-key:latest" \
   --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,${SETTLEMENT_ENV}" \
   --quiet
 

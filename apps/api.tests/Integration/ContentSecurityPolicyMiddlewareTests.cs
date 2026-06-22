@@ -45,6 +45,8 @@ public class ContentSecurityPolicyMiddlewareTests : IAsyncLifetime
         if (_developmentFactory is not null)
             await _developmentFactory.DisposeAsync();
 
+        Environment.SetEnvironmentVariable("Jwt__Secret", null);
+
         if (Directory.Exists(_dataProtectionDir))
             Directory.Delete(_dataProtectionDir, recursive: true);
     }
@@ -112,6 +114,14 @@ public class ContentSecurityPolicyMiddlewareTests : IAsyncLifetime
 
     private WebApplicationFactory<Program> CreateFactory(string environment)
     {
+        // Staging loads appsettings.json (empty Jwt:Secret after SPLR-48); env override is applied in Program.cs.
+        if (environment == Environments.Staging)
+        {
+            Environment.SetEnvironmentVariable(
+                "Jwt__Secret",
+                "test-secret-at-least-32-characters-long");
+        }
+
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment(environment);
