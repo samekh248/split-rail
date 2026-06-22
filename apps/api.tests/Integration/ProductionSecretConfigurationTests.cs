@@ -12,10 +12,9 @@ using Xunit;
 
 namespace SplitRail.Api.Tests.Integration;
 
-public class ProductionSecretConfigurationTests : IAsyncLifetime
+public class ProductionSecretConfigurationTests : IDisposable
 {
     private readonly string _dataProtectionDir;
-    private WebApplicationFactory<Program>? _successFactory;
 
     public ProductionSecretConfigurationTests()
     {
@@ -23,20 +22,8 @@ public class ProductionSecretConfigurationTests : IAsyncLifetime
         Directory.CreateDirectory(_dataProtectionDir);
     }
 
-    public async Task InitializeAsync()
+    public void Dispose()
     {
-        _successFactory = CreateProductionFactory(withSecrets: true);
-
-        using var scope = _successFactory.Services.CreateScope();
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        await db.Database.EnsureCreatedAsync();
-    }
-
-    public async Task DisposeAsync()
-    {
-        if (_successFactory is not null)
-            await _successFactory.DisposeAsync();
-
         ClearTestEnvironment();
 
         if (Directory.Exists(_dataProtectionDir))
@@ -58,29 +45,36 @@ public class ProductionSecretConfigurationTests : IAsyncLifetime
     }
 
     [Fact]
-    public void ProductionStartup_SucceedsWithInjectedSecrets()
+    public async Task ProductionStartup_SucceedsWithInjectedSecrets()
     {
-        Assert.NotNull(_successFactory);
-        using var scope = _successFactory.Services.CreateScope();
-        var jwt = scope.ServiceProvider.GetRequiredService<IOptions<JwtSettings>>().Value;
-        Assert.False(string.IsNullOrWhiteSpace(jwt.Secret));
-        Assert.True(jwt.Secret.Length >= 32);
+        ClearTestEnvironment();
+        ApplyProductionSecretEnvironment();
+
+        try
+        {
+            await using var factory = CreateStagingFactory(withSecrets: true);
+            using var scope = factory.Services.CreateScope();
+            var jwt = scope.ServiceProvider.GetRequiredService<IOptions<JwtSettings>>().Value;
+            Assert.False(string.IsNullOrWhiteSpace(jwt.Secret));
+            Assert.True(jwt.Secret.Length >= 32);
+        }
+        finally
+        {
+            ClearTestEnvironment();
+        }
     }
 
     [Fact]
-    public void ProductionStartup_ReadsQboOptionsFromEnvironment()
+    public async Task ProductionStartup_ReadsQboOptionsFromEnvironment()
     {
         ClearTestEnvironment();
-        ApplyDataProtectionEnvironment();
-        Environment.SetEnvironmentVariable("DB_PASSWORD", "test-db-password");
-        Environment.SetEnvironmentVariable("Jwt__Secret", "production-test-secret-at-least-32-chars");
         Environment.SetEnvironmentVariable("QBO_CLIENT_ID", "env-client-id-override");
         Environment.SetEnvironmentVariable("QBO_CLIENT_SECRET", "env-client-secret-override");
         Environment.SetEnvironmentVariable("QBO_INTERNAL_TRIGGER_KEY", "test-internal-trigger-key");
 
         try
         {
-            using var factory = CreateProductionFactory(withSecrets: false, applySecretEnvironment: false);
+            await using var factory = CreateStagingFactory(withSecrets: false);
             using var scope = factory.Services.CreateScope();
             var qbo = scope.ServiceProvider.GetRequiredService<IOptions<QboSyncOptions>>().Value;
 
@@ -93,18 +87,13 @@ public class ProductionSecretConfigurationTests : IAsyncLifetime
         }
     }
 
-    private WebApplicationFactory<Program> CreateProductionFactory(
-        bool withSecrets,
-        bool applySecretEnvironment = true)
+    /// <summary>
+    /// Production environment is required so Program.cs runs secret validation; host must not start
+    /// (validation throws before GCS/KMS Data Protection clients resolve).
+    /// </summary>
+    private WebApplicationFactory<Program> CreateProductionFactory(bool withSecrets)
     {
-        if (applySecretEnvironment)
-        {
-            if (withSecrets)
-                ApplyProductionSecretEnvironment();
-            else
-                ClearProductionSecretEnvironment();
-        }
-
+        ClearProductionSecretEnvironment();
         ApplyDataProtectionEnvironment();
 
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
@@ -112,52 +101,78 @@ public class ProductionSecretConfigurationTests : IAsyncLifetime
             builder.UseEnvironment(Environments.Production);
             builder.ConfigureAppConfiguration((_, config) =>
             {
-                var values = new Dictionary<string, string?>
-                {
-                    ["Preview:UseFakeQboConnector"] = "true",
-                    ["Preview:EnableTestSeeding"] = "false",
-                    ["QboSync:EnableInProcessTimer"] = "false",
-                    ["QboSync:RedirectUri"] = "http://localhost/api/qbo/callback",
-                    ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Database=x;Username=x",
-                    ["Jwt:Issuer"] = "split-rail",
-                    ["Jwt:Audience"] = "split-rail-api",
-                    ["SettlementArchive:BucketName"] = "test-settlements-bucket",
-                    ["SettlementArchive:StagingBucketName"] = "test-settlements-staging",
-                    ["SettlementArchive:SignedUrlTtlMinutes"] = "15",
-                    ["SettlementArchive:UseInMemoryStore"] = "true",
-                    ["SettlementArchive:EnforceRetentionValidation"] = "false",
-                };
+                config.AddInMemoryCollection(BuildBaseConfiguration(withSecrets));
+            });
+            builder.ConfigureServices(ConfigureInMemoryDatabase);
+        });
+    }
 
-                if (withSecrets)
-                {
-                    values["Jwt:Secret"] = "production-test-secret-at-least-32-chars";
-                    values["QboSync:ClientId"] = "test-qbo-client-id";
-                    values["QboSync:ClientSecret"] = "test-qbo-client-secret";
-                    values["QboSync:InternalTriggerKey"] = "test-internal-trigger-key";
-                }
-                else
-                {
-                    values["Jwt:Secret"] = "";
-                    values["QboSync:ClientId"] = "";
-                    values["QboSync:ClientSecret"] = "";
-                    values["QboSync:InternalTriggerKey"] = "";
-                }
-
+    /// <summary>
+    /// Staging uses filesystem Data Protection (no GCP credentials) while still exercising Program.cs
+    /// secret/env binding for success-path integration checks.
+    /// </summary>
+    private WebApplicationFactory<Program> CreateStagingFactory(bool withSecrets)
+    {
+        return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment(Environments.Staging);
+            builder.ConfigureAppConfiguration((_, config) =>
+            {
+                var values = BuildBaseConfiguration(withSecrets);
+                values["DataProtection:KeyDirectory"] = _dataProtectionDir;
                 config.AddInMemoryCollection(values);
             });
-            builder.ConfigureServices(services =>
-            {
-                var descriptor = services.SingleOrDefault(d =>
-                    d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
-                if (descriptor is not null)
-                    services.Remove(descriptor);
+            builder.ConfigureServices(ConfigureInMemoryDatabase);
+        });
+    }
 
-                services.AddDbContext<ApplicationDbContext>((sp, options) =>
-                {
-                    options.UseInMemoryDatabase("prod-secret-config-" + Guid.NewGuid());
-                    options.AddInterceptors(sp.GetRequiredService<FrozenEventImmutabilityInterceptor>());
-                });
-            });
+    private static Dictionary<string, string?> BuildBaseConfiguration(bool withSecrets)
+    {
+        var values = new Dictionary<string, string?>
+        {
+            ["Preview:UseFakeQboConnector"] = "true",
+            ["Preview:EnableTestSeeding"] = "false",
+            ["QboSync:EnableInProcessTimer"] = "false",
+            ["QboSync:RedirectUri"] = "http://localhost/api/qbo/callback",
+            ["ConnectionStrings:DefaultConnection"] = "Host=localhost;Database=x;Username=x;Password=x",
+            ["Jwt:Issuer"] = "split-rail",
+            ["Jwt:Audience"] = "split-rail-api",
+            ["SettlementArchive:BucketName"] = "test-settlements-bucket",
+            ["SettlementArchive:StagingBucketName"] = "test-settlements-staging",
+            ["SettlementArchive:SignedUrlTtlMinutes"] = "15",
+            ["SettlementArchive:UseInMemoryStore"] = "true",
+            ["SettlementArchive:EnforceRetentionValidation"] = "false",
+        };
+
+        if (withSecrets)
+        {
+            values["Jwt:Secret"] = "production-test-secret-at-least-32-chars";
+            values["QboSync:ClientId"] = "test-qbo-client-id";
+            values["QboSync:ClientSecret"] = "test-qbo-client-secret";
+            values["QboSync:InternalTriggerKey"] = "test-internal-trigger-key";
+        }
+        else
+        {
+            values["Jwt:Secret"] = "staging-test-secret-at-least-32-chars";
+            values["QboSync:ClientId"] = "";
+            values["QboSync:ClientSecret"] = "";
+            values["QboSync:InternalTriggerKey"] = "";
+        }
+
+        return values;
+    }
+
+    private static void ConfigureInMemoryDatabase(IServiceCollection services)
+    {
+        var descriptor = services.SingleOrDefault(d =>
+            d.ServiceType == typeof(DbContextOptions<ApplicationDbContext>));
+        if (descriptor is not null)
+            services.Remove(descriptor);
+
+        services.AddDbContext<ApplicationDbContext>((sp, options) =>
+        {
+            options.UseInMemoryDatabase("prod-secret-config-" + Guid.NewGuid());
+            options.AddInterceptors(sp.GetRequiredService<FrozenEventImmutabilityInterceptor>());
         });
     }
 
