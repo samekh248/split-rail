@@ -10,6 +10,10 @@ SERVICE_NAME="${SERVICE_NAME:-split-rail-api}"
 BUNDLE_PATH="${REPO_ROOT}/artifacts/efbundle"
 PROD_INSTANCE="split-rail:us-central1:split-rail-db-prod"
 
+echo "Validating settlement archive buckets before deploy..."
+export ENV=prod
+"${REPO_ROOT}/deploy/lib/validate-settlement-buckets.sh"
+
 echo "Building migration bundle..."
 dotnet ef migrations bundle \
   --project "${REPO_ROOT}/apps/api/split-rail-api.csproj" \
@@ -26,6 +30,8 @@ export BUNDLE_PATH
 
 "${REPO_ROOT}/deploy/lib/migrate-bundle.sh"
 
+SETTLEMENT_ENV="SettlementArchive__BucketName=split-rail-settlements-prod,SettlementArchive__StagingBucketName=split-rail-settlements-staging-prod,SettlementArchive__RetentionYears=7,SettlementArchive__EnforceRetentionValidation=true"
+
 echo "Deploying Cloud Run API service ${SERVICE_NAME}..."
 gcloud run deploy "${SERVICE_NAME}" \
   --image "${IMAGE}" \
@@ -33,7 +39,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --project "${GCP_PROJECT}" \
   --add-cloudsql-instances="${PROD_INSTANCE}" \
   --set-secrets="DB_PASSWORD=db-password:latest" \
-  --set-env-vars "ASPNETCORE_ENVIRONMENT=Production" \
+  --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,${SETTLEMENT_ENV}" \
   --quiet
 
 echo "Production API deploy complete."

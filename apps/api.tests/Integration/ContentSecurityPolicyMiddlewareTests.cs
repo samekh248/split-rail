@@ -133,7 +133,9 @@ public class ContentSecurityPolicyMiddlewareTests : IAsyncLifetime
                     ["Jwt:Audience"] = "split-rail-api",
                     ["SettlementArchive:BucketName"] = "test-settlements-bucket",
                     ["SettlementArchive:StagingBucketName"] = "test-settlements-staging",
-                    ["SettlementArchive:SignedUrlTtlMinutes"] = "15"
+                    ["SettlementArchive:SignedUrlTtlMinutes"] = "15",
+                    ["SettlementArchive:UseInMemoryStore"] = "true",
+                    ["SettlementArchive:EnforceRetentionValidation"] = "false"
                 });
             });
             builder.ConfigureServices(services =>

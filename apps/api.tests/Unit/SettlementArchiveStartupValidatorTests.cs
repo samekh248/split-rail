@@ -92,22 +92,50 @@ public class SettlementArchiveStartupValidatorTests
     }
 
     [Fact]
-    public async Task StartAsync_InDevelopment_SkipsValidationEvenWhenEnforced()
+    public void ShouldRunRetentionValidation_ReturnsTrue_WhenEnforcedWithGcsBackend()
     {
-        var options = Options.Create(new SettlementArchiveOptions
+        var options = new SettlementArchiveOptions
+        {
+            BucketName = "split-rail-settlements-dev",
+            EnforceRetentionValidation = true,
+            UseInMemoryStore = false
+        };
+        var environment = new FakeHostEnvironment { EnvironmentName = Environments.Development };
+        var preview = new PreviewOptions();
+
+        SettlementArchiveStartupValidator.ShouldRunRetentionValidation(options, environment, preview)
+            .Should().BeTrue();
+    }
+
+    [Fact]
+    public void ShouldRunRetentionValidation_ReturnsFalse_WhenUsingInMemoryStore()
+    {
+        var options = new SettlementArchiveOptions
+        {
+            BucketName = "split-rail-settlements-dev",
+            EnforceRetentionValidation = true,
+            UseInMemoryStore = true
+        };
+        var environment = new FakeHostEnvironment { EnvironmentName = Environments.Development };
+        var preview = new PreviewOptions();
+
+        SettlementArchiveStartupValidator.ShouldRunRetentionValidation(options, environment, preview)
+            .Should().BeFalse();
+    }
+
+    [Fact]
+    public void ShouldRunRetentionValidation_ReturnsFalse_WhenDisabled()
+    {
+        var options = new SettlementArchiveOptions
         {
             BucketName = "split-rail-settlements-prod",
-            EnforceRetentionValidation = true
-        });
-        var environment = new FakeHostEnvironment { EnvironmentName = Environments.Development };
-        var validator = new SettlementArchiveStartupValidator(
-            options,
-            environment,
-            NullLogger<SettlementArchiveStartupValidator>.Instance);
+            EnforceRetentionValidation = false
+        };
+        var environment = new FakeHostEnvironment { EnvironmentName = Environments.Production };
+        var preview = new PreviewOptions();
 
-        var act = () => validator.StartAsync(CancellationToken.None);
-
-        await act.Should().NotThrowAsync();
+        SettlementArchiveStartupValidator.ShouldRunRetentionValidation(options, environment, preview)
+            .Should().BeFalse();
     }
 
     [Fact]
@@ -119,8 +147,10 @@ public class SettlementArchiveStartupValidatorTests
             EnforceRetentionValidation = false
         });
         var environment = new FakeHostEnvironment { EnvironmentName = Environments.Production };
+        var preview = Options.Create(new PreviewOptions());
         var validator = new SettlementArchiveStartupValidator(
             options,
+            preview,
             environment,
             NullLogger<SettlementArchiveStartupValidator>.Instance);
 
