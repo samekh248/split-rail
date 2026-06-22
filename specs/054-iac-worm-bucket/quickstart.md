@@ -11,12 +11,32 @@ This guide validates SPLR-47 bucket provisioning and non-preview deploy wiring. 
 
 ## One-time: Provision dev buckets
 
+### Bash (Linux / macOS / Git Bash)
+
 ```bash
 export GCP_PROJECT=split-rail
 export GCP_REGION=us-central1
 export ENV=dev
 
 ./deploy/infra/provision-settlement-buckets.sh
+```
+
+### PowerShell (Windows)
+
+```powershell
+$env:GCP_PROJECT = 'split-rail'
+$env:GCP_REGION = 'us-central1'
+$env:ENV = 'dev'
+
+.\deploy\infra\provision-settlement-buckets.ps1
+```
+
+Verify (PowerShell):
+
+```powershell
+$env:GCP_PROJECT = 'split-rail'
+$env:ENV = 'dev'
+.\deploy\lib\validate-settlement-buckets.ps1
 ```
 
 **Expect**:

@@ -33,7 +33,7 @@ ensure_archive_retention() {
   if echo "${current_json}" | grep -q '"retentionPolicyLocked": true'; then
     local current_period
     current_period="$(echo "${current_json}" | grep -o '"retentionPeriod": "[0-9]*s"' | head -1 | grep -o '[0-9]*' || true)"
-    local min_seconds=$((2555 * 86400))
+    local min_seconds="${ARCHIVE_RETENTION_MIN_SECONDS}"
     if [[ -n "${current_period}" && "${current_period}" -lt "${min_seconds}" ]]; then
       echo "ERROR: archive bucket ${ARCHIVE_BUCKET} is retention-locked with insufficient period (${current_period}s). Bucket Lock is irreversible — manual ops review required." >&2
       exit 1

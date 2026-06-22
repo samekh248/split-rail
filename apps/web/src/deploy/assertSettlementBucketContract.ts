@@ -76,6 +76,19 @@ export function assertProductionDoesNotReferenceDevBuckets(scriptText: string): 
   }
 }
 
+/** Validate script must check retention and public access prevention (PowerShell). */
+export function assertValidateScriptStructurePs1(scriptText: string): void {
+  if (!/retention|RetentionPeriod|2555/.test(scriptText)) {
+    throw new Error('validate script must check archive retention policy');
+  }
+  if (!/publicAccessPrevention|public.access/i.test(scriptText)) {
+    throw new Error('validate script must check public access prevention');
+  }
+  if (!/exit 1|ValidationFailed/.test(scriptText)) {
+    throw new Error('validate script must exit non-zero on validation failure');
+  }
+}
+
 /** Validate script must check retention and public access prevention. */
 export function assertValidateScriptStructure(scriptText: string): void {
   if (!scriptText.includes('set -euo pipefail')) {

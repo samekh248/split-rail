@@ -1,3 +1,4 @@
+using Google;
 using Google.Cloud.Storage.V1;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -51,6 +52,18 @@ public sealed class SettlementArchiveStartupValidator : IHostedService
                 "Settlement archive bucket misconfiguration detected for {ArchiveBucket}",
                 _options.BucketName);
             throw;
+        }
+        catch (GoogleApiException ex) when (ex.HttpStatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            _logger.LogError(
+                ex,
+                "Settlement archive bucket not found: {ArchiveBucket}",
+                _options.BucketName);
+            throw new SettlementArchiveException(
+                $"Settlement archive bucket '{_options.BucketName}' was not found. " +
+                "Provision buckets via deploy/infra/provision-settlement-buckets.ps1 (Windows) or " +
+                "deploy/infra/provision-settlement-buckets.sh (ENV=dev), " +
+                "or set SettlementArchive:EnforceRetentionValidation to false for local development.");
         }
         catch (Exception ex)
         {

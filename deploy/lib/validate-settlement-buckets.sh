@@ -9,7 +9,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 source "${REPO_ROOT}/deploy/lib/settlement-bucket-names.sh"
 resolve_settlement_bucket_names
 
-MIN_RETENTION_SECONDS=$((2555 * 86400))
+MIN_RETENTION_SECONDS="${ARCHIVE_RETENTION_MIN_SECONDS}"
 
 describe_bucket() {
   gcloud storage buckets describe "gs://${1}" --project="${GCP_PROJECT}" --format=json 2>/dev/null
@@ -18,7 +18,7 @@ describe_bucket() {
 check_public_access_prevention() {
   local json="$1"
   local bucket_name="$2"
-  if ! echo "${json}" | grep -q '"publicAccessPrevention": "enforced"'; then
+  if ! echo "${json}" | grep -qE '"publicAccessPrevention": "enforced"|"public_access_prevention": "enforced"'; then
     echo "FAIL: bucket ${bucket_name} does not enforce public access prevention" >&2
     return 1
   fi
@@ -28,7 +28,7 @@ check_public_access_prevention() {
 check_archive_retention() {
   local json="$1"
   local retention
-  retention="$(echo "${json}" | grep -o '"retentionPeriod": "[0-9]*s"' | head -1 | grep -o '[0-9]*' || true)"
+  retention="$(echo "${json}" | grep -oE '"retentionPeriod": "[0-9]+s?"|"retentionPeriod": "[0-9]+"' | head -1 | grep -oE '[0-9]+' || true)"
   if [[ -z "${retention}" ]]; then
     echo "FAIL: archive bucket ${ARCHIVE_BUCKET} has no retention policy" >&2
     return 1

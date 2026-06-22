@@ -15,6 +15,6 @@
 - **Development staging:** `gs://split-rail-settlements-staging-dev`
 - **Preview archive (optional):** `gs://split-rail-settlements-preview`
 - **Preview staging (optional):** `gs://split-rail-settlements-staging-preview`
-- **Provisioning:** `deploy/infra/provision-settlement-buckets.sh` with `ENV=dev|preview|prod` (spec 054)
+- **Provisioning:** `deploy/infra/provision-settlement-buckets.sh` or `.ps1` with `ENV=dev|preview|prod` (spec 054)
 - **Validation:** `deploy/lib/validate-settlement-buckets.sh`
 - **GCS Integration Strategy:** Google.Cloud.Storage.V1 client wrapper factory; Cloud Run Workload Identity (no JSON keys)

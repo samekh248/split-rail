@@ -26,3 +26,7 @@ resolve_settlement_bucket_names() {
 
   export ARCHIVE_BUCKET STAGING_BUCKET
 }
+
+# Minimum archive retention seconds; matches gcloud --retention-period=2555d (7 years).
+ARCHIVE_RETENTION_MIN_SECONDS=220708800
+export ARCHIVE_RETENTION_MIN_SECONDS
