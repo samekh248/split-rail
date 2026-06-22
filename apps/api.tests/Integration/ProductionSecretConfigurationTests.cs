@@ -113,6 +113,12 @@ public class ProductionSecretConfigurationTests : IDisposable
     /// </summary>
     private WebApplicationFactory<Program> CreateStagingFactory(bool withSecrets)
     {
+        Environment.SetEnvironmentVariable(
+            "Jwt__Secret",
+            withSecrets
+                ? "production-test-secret-at-least-32-chars"
+                : "staging-test-secret-at-least-32-chars");
+
         return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment(Environments.Staging);
