@@ -127,12 +127,17 @@ public class QboMappingController : ControllerBase
 public class QboInternalSyncController : ControllerBase
 {
     private readonly QboSyncService _syncService;
-    private readonly QboSyncOptions _options;
+    private readonly IInternalSyncTriggerAuthenticator _triggerAuth;
+    private readonly ILogger<QboInternalSyncController> _logger;
 
-    public QboInternalSyncController(QboSyncService syncService, IOptions<QboSyncOptions> options)
+    public QboInternalSyncController(
+        QboSyncService syncService,
+        IInternalSyncTriggerAuthenticator triggerAuth,
+        ILogger<QboInternalSyncController> logger)
     {
         _syncService = syncService;
-        _options = options.Value;
+        _triggerAuth = triggerAuth;
+        _logger = logger;
     }
 
     [HttpPost("qbo-sync-trigger")]
@@ -140,11 +145,30 @@ public class QboInternalSyncController : ControllerBase
         [FromHeader(Name = "X-Internal-Sync-Key")] string? syncKey,
         CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(_options.InternalTriggerKey) ||
-            !string.Equals(syncKey, _options.InternalTriggerKey, StringComparison.Ordinal))
-            return Unauthorized();
+        var authFailure = await _triggerAuth.AuthorizeAsync(HttpContext, syncKey, cancellationToken);
+        if (authFailure is not null)
+        {
+            _logger.LogWarning(
+                "Rejected internal QBO sync trigger: outcome={Outcome}",
+                authFailure is StatusCodeResult { StatusCode: StatusCodes.Status401Unauthorized }
+                    ? "rejected-unauthorized"
+                    : "rejected-forbidden");
+            return authFailure;
+        }
+
+        var triggerSource = Request.Headers.ContainsKey("Authorization") ? "scheduler" : "dev-key";
+        var started = DateTimeOffset.UtcNow;
 
         var count = await _syncService.SyncAllEligibleEventsAsync(cancellationToken);
+
+        var durationMs = (DateTimeOffset.UtcNow - started).TotalMilliseconds;
+        _logger.LogInformation(
+            "Internal QBO sync trigger completed: triggerSource={TriggerSource} eventsSynced={EventsSynced} durationMs={DurationMs} outcome={Outcome}",
+            triggerSource,
+            count,
+            durationMs,
+            "accepted");
+
         return Accepted(new { eventsSynced = count });
     }
 }

@@ -14,6 +14,12 @@ echo "Validating settlement archive buckets before deploy..."
 export ENV=prod
 "${REPO_ROOT}/deploy/lib/validate-settlement-buckets.sh"
 
+echo "Validating QBO scheduler job before deploy..."
+export ENV=prod
+CLOUD_RUN_URL="${CLOUD_RUN_URL:-$(gcloud run services describe "${SERVICE_NAME}" --project="${GCP_PROJECT}" --region="${GCP_REGION}" --format='value(status.url)')}"
+export CLOUD_RUN_URL
+"${REPO_ROOT}/deploy/lib/validate-qbo-scheduler.sh"
+
 echo "Building migration bundle..."
 dotnet ef migrations bundle \
   --project "${REPO_ROOT}/apps/api/split-rail-api.csproj" \
@@ -33,6 +39,8 @@ export BUNDLE_PATH
 "${REPO_ROOT}/deploy/lib/migrate-bundle.sh"
 
 SETTLEMENT_ENV="SettlementArchive__BucketName=split-rail-settlements-prod,SettlementArchive__StagingBucketName=split-rail-settlements-staging-prod,SettlementArchive__RetentionYears=7,SettlementArchive__EnforceRetentionValidation=true"
+SCHEDULER_SA_EMAIL="split-rail-qbo-scheduler-prod@${GCP_PROJECT}.iam.gserviceaccount.com"
+QBO_SCHEDULER_ENV="QboSync__SchedulerServiceAccountEmail=${SCHEDULER_SA_EMAIL},QboSync__SchedulerTokenAudience=${CLOUD_RUN_URL}"
 
 echo "Deploying Cloud Run API service ${SERVICE_NAME}..."
 gcloud run deploy "${SERVICE_NAME}" \
@@ -40,8 +48,8 @@ gcloud run deploy "${SERVICE_NAME}" \
   --region "${GCP_REGION}" \
   --project "${GCP_PROJECT}" \
   --add-cloudsql-instances="${PROD_INSTANCE}" \
-  --set-secrets="DB_PASSWORD=db-password:latest,Jwt__Secret=jwt-signing-key:latest,QBO_CLIENT_ID=qbo-client-id:latest,QBO_CLIENT_SECRET=qbo-client-secret:latest,QBO_INTERNAL_TRIGGER_KEY=qbo-internal-trigger-key:latest" \
-  --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,${SETTLEMENT_ENV}" \
+  --set-secrets="DB_PASSWORD=db-password:latest,Jwt__Secret=jwt-signing-key:latest,QBO_CLIENT_ID=qbo-client-id:latest,QBO_CLIENT_SECRET=qbo-client-secret:latest" \
+  --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,${SETTLEMENT_ENV},${QBO_SCHEDULER_ENV}" \
   --quiet
 
 echo "Production API deploy complete."

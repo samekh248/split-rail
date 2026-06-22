@@ -39,6 +39,8 @@ builder.Services.Configure<QboSyncOptions>(options =>
     options.ClientSecret = Environment.GetEnvironmentVariable("QBO_CLIENT_SECRET") ?? options.ClientSecret;
     options.RedirectUri = Environment.GetEnvironmentVariable("QBO_REDIRECT_URI") ?? options.RedirectUri;
     options.InternalTriggerKey = Environment.GetEnvironmentVariable("QBO_INTERNAL_TRIGGER_KEY") ?? options.InternalTriggerKey;
+    options.SchedulerServiceAccountEmail = builder.Configuration["QboSync:SchedulerServiceAccountEmail"] ?? options.SchedulerServiceAccountEmail;
+    options.SchedulerTokenAudience = builder.Configuration["QboSync:SchedulerTokenAudience"] ?? options.SchedulerTokenAudience;
     if (builder.Environment.IsProduction())
         options.EnableInProcessTimer = qboSyncSection.GetValue("EnableInProcessTimer", false);
 });
@@ -84,6 +86,10 @@ if (builder.Environment.IsProduction())
     productionQbo.ClientSecret = Environment.GetEnvironmentVariable("QBO_CLIENT_SECRET") ?? productionQbo.ClientSecret;
     productionQbo.InternalTriggerKey =
         Environment.GetEnvironmentVariable("QBO_INTERNAL_TRIGGER_KEY") ?? productionQbo.InternalTriggerKey;
+    productionQbo.SchedulerServiceAccountEmail =
+        builder.Configuration["QboSync:SchedulerServiceAccountEmail"] ?? productionQbo.SchedulerServiceAccountEmail;
+    productionQbo.SchedulerTokenAudience =
+        builder.Configuration["QboSync:SchedulerTokenAudience"] ?? productionQbo.SchedulerTokenAudience;
 
     ProductionSecretConfigurationValidator.Validate(
         jwtSettings,
@@ -91,8 +97,12 @@ if (builder.Environment.IsProduction())
         Environment.GetEnvironmentVariable("DB_PASSWORD"));
 }
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -103,6 +113,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwtSettings.Issuer,
             ValidAudience = jwtSettings.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+        options.MapInboundClaims = false;
+    })
+    .AddJwtBearer(InternalSyncTriggerAuthenticator.GoogleSchedulerScheme, options =>
+    {
+        var schedulerAudience = builder.Configuration["QboSync:SchedulerTokenAudience"];
+        options.Authority = "https://accounts.google.com";
+        if (!string.IsNullOrEmpty(schedulerAudience))
+            options.Audience = schedulerAudience;
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "https://accounts.google.com",
+            ValidateAudience = !string.IsNullOrEmpty(schedulerAudience),
+            ValidAudience = schedulerAudience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
             ClockSkew = TimeSpan.FromMinutes(1)
         };
         options.MapInboundClaims = false;
@@ -127,9 +156,17 @@ builder.Services.AddAuthorization(options =>
         options.AddPolicy($"Permission:{permission}", policy =>
             policy.Requirements.Add(new PermissionRequirement(permission)));
     }
+
+    options.AddPolicy("SchedulerTrigger", policy =>
+    {
+        policy.AddAuthenticationSchemes(InternalSyncTriggerAuthenticator.GoogleSchedulerScheme);
+        policy.Requirements.Add(new SchedulerTriggerRequirement());
+    });
 });
 
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, SchedulerTriggerAuthorizationHandler>();
+builder.Services.AddScoped<IInternalSyncTriggerAuthenticator, InternalSyncTriggerAuthenticator>();
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<AuthService>();
@@ -159,6 +196,7 @@ else
 }
 
 builder.Services.AddScoped<TestSeedingService>();
+builder.Services.AddSingleton<IQboSyncConcurrencyGate, QboSyncConcurrencyGate>();
 builder.Services.AddScoped<QboSyncCorrectionService>();
 builder.Services.AddScoped<QboSyncService>();
 builder.Services.AddScoped<QboMappingService>();

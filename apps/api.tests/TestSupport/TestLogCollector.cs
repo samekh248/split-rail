@@ -19,6 +19,7 @@ public sealed class TestLogCollector : ILoggerProvider, IDisposable
         public LogLevel Level { get; init; }
         public string Category { get; init; } = string.Empty;
         public string Message { get; init; } = string.Empty;
+        public Exception? Exception { get; init; }
         public IReadOnlyList<KeyValuePair<string, object?>> State { get; init; } =
             Array.Empty<KeyValuePair<string, object?>>();
     }
@@ -47,6 +48,7 @@ public sealed class TestLogCollector : ILoggerProvider, IDisposable
                 Level = logLevel,
                 Category = category,
                 Message = message,
+                Exception = exception,
                 State = stateValues
             });
         }

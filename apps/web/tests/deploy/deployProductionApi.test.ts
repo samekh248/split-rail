@@ -15,6 +15,10 @@ import {
   assertProductionSecretBindings,
 } from '../../src/deploy/assertProductionSecretsContract';
 import {
+  assertNoInternalTriggerKeySecret,
+  assertProductionSchedulerEnvVars,
+} from '../../src/deploy/assertQboSchedulerContract';
+import {
   assertProductionDoesNotReferenceDevBuckets,
   assertSettlementArchiveEnvVars,
 } from '../../src/deploy/assertSettlementBucketContract';
@@ -69,5 +73,15 @@ describe('production API deploy contract', () => {
 
   it('deployProductionApi_appsettingsHygiene', () => {
     assertProductionAppsettingsHygiene(repoRoot);
+  });
+
+  it('deployProductionApi_schedulerEnvVars', () => {
+    const script = readDeployScript('deploy/production/deploy-api.sh', repoRoot);
+    assertProductionSchedulerEnvVars(script);
+  });
+
+  it('deployProductionApi_noInternalTriggerKeySecret', () => {
+    const script = readDeployScript('deploy/production/deploy-api.sh', repoRoot);
+    assertNoInternalTriggerKeySecret(script);
   });
 });
