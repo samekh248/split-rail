@@ -10,7 +10,8 @@ describe('AuthLayout', () => {
       </AuthLayout>,
     );
 
-    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(screen.getByRole('main')).toHaveClass('auth-layout');
+    expect(document.querySelector('.auth-layout__card')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1, name: 'Sign in' })).toBeInTheDocument();
     expect(screen.getByText('Welcome back')).toBeInTheDocument();
     expect(screen.getByTestId('child-form')).toBeInTheDocument();

@@ -59,7 +59,7 @@ export function WelcomeModal({ organizationName, onDismiss }: WelcomeModalProps)
           Your organization <strong>{organizationName}</strong> is ready. You are set up as
           Admin and can start adding venues and events.
         </p>
-        <button type="button" className="welcome-modal__dismiss" onClick={onDismiss}>
+        <button type="button" className="welcome-modal__dismiss btn-primary" onClick={onDismiss}>
           Get started
         </button>
       </div>

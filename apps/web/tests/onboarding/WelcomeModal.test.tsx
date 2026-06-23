@@ -10,6 +10,7 @@ describe('WelcomeModal', () => {
     expect(screen.getByRole('dialog')).toBeInTheDocument();
     expect(screen.getByRole('dialog')).toHaveAttribute('aria-modal', 'true');
     expect(screen.getByText(/Acme Corp/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Get started' })).toHaveClass('btn-primary');
   });
 
   it('calls onDismiss when Get started is clicked', async () => {

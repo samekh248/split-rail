@@ -1,6 +1,7 @@
 import { EventLedgerPage } from '@/pages/EventLedgerPage';
 import { useVenues } from '@/api/venues';
 import { useAuth } from '@/auth/useAuth';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 export interface DashboardHomeProps {
   organizationName: string;
@@ -27,11 +28,11 @@ export function DashboardHome({ organizationName }: DashboardHomeProps) {
     <div className="app">
       <header className="app__header">
         <div className="app__header-row">
-          <div>
-            <h1>Split Rail</h1>
+          <div className="app__header-brand">
+            <BrandLogo variant="text" />
             <p className="app__subtitle">{organizationName}</p>
           </div>
-          <button type="button" className="app__logout" onClick={() => void logout()}>
+          <button type="button" className="app__logout btn-secondary" onClick={() => void logout()}>
             Sign out
           </button>
         </div>
@@ -46,7 +47,7 @@ export function DashboardHome({ organizationName }: DashboardHomeProps) {
       {!isLoading && error ? (
         <div className="dashboard-empty dashboard-empty--error" role="alert">
           <p>Unable to load venues. Please try again.</p>
-          <button type="button" className="dashboard-empty__retry" onClick={() => void refetch()}>
+          <button type="button" className="dashboard-empty__retry btn-primary" onClick={() => void refetch()}>
             Retry
           </button>
         </div>
