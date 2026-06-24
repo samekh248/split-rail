@@ -101,7 +101,7 @@ description: "Task list for Montana High Country Branding & Theming (SPLR-96)"
 
 ### Implementation for User Story 3
 
-- [x] T023 [P] [US3] Add `sr-text.png` and `sr-badge.png` logo assets to `apps/web/public/` (SPLR-82)
+- [x] T023 [P] [US3] Add `sr-text.png` and `sr-badge.png` logo assets to `apps/web/public/brand/` with path constants in `apps/web/src/brand/assets.ts` (SPLR-82)
 - [x] T024 [US3] Implement `BrandLogo` component with `variant: 'text' | 'badge'` in `apps/web/src/components/brand/BrandLogo.tsx` (make T022 pass; SPLR-83)
 - [x] T025 [US3] Add `.brand-logo-wrapper` and variant sizing styles with ≥24px padding in expanded state in `apps/web/src/index.css`
 - [x] T026 [US3] Wire `<BrandLogo variant="text" />` into header in `apps/web/src/pages/DashboardHome.tsx` (SPLR-84 interim wiring)

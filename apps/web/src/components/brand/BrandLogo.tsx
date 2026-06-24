@@ -1,3 +1,5 @@
+import { BRAND_LOGO_AUTH, BRAND_LOGO_BADGE, BRAND_LOGO_TEXT } from '@/brand/assets';
+
 export interface BrandLogoProps {
   variant: 'text' | 'badge' | 'auth';
   className?: string;
@@ -5,9 +7,9 @@ export interface BrandLogoProps {
 }
 
 const ASSETS = {
-  text: '/sr-text.png',
-  badge: '/sr-badge.png',
-  auth: '/sr-auth-logo.png',
+  text: BRAND_LOGO_TEXT,
+  badge: BRAND_LOGO_BADGE,
+  auth: BRAND_LOGO_AUTH,
 } as const;
 
 export function BrandLogo({ variant, className, alt = 'Split-Rail' }: BrandLogoProps) {

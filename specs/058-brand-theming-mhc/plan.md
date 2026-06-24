@@ -16,7 +16,7 @@ This is a **frontend-only** feature (`apps/web`). No backend API, DTO, or databa
 
 **Primary Dependencies**: React 18, plain CSS (`index.css`). Google Fonts (`Zilla Slab`, `Inter`) loaded via `@import` or `<link>` in `index.html`/`index.css`. Testing: Vitest 2 + `@testing-library/react` + jsdom (existing). Optional dev dependency for contrast math: `color-contrast-checker` or equivalent pure-function utility in test code (no runtime dependency).
 
-**Storage**: Static assets in `apps/web/public/` (`sr-text.png`, `sr-badge.png`). CSS custom properties in `:root`. Browser-only; no server persistence.
+**Storage**: Static assets in `apps/web/public/brand/` (`sr-text.png`, `sr-badge.png`). Path constants in `apps/web/src/brand/assets.ts`. CSS custom properties in `:root`. Browser-only; no server persistence.
 
 **Testing**: Vitest + React Testing Library for `BrandLogo`, token/contrast utilities, and updated component snapshots/class assertions; dedicated `tests/theme/**` suite for legacy-hex denylist scan and WCAG AA token-pair checks. Coverage enforced at ≥80% lines/functions/branches/statements via existing `vite.config.ts` thresholds. Playwright visual regression is optional follow-up; not required for this epic's definition of done.
 
@@ -73,10 +73,14 @@ specs/058-brand-theming-mhc/
 ```text
 apps/web/
 ├── public/
-│   ├── sr-text.png                    # NEW (M2 / SPLR-82) — full wordmark
-│   └── sr-badge.png                   # NEW (M2 / SPLR-82) — compact badge
+│   └── brand/
+│       ├── sr-text.png                # NEW (M2 / SPLR-82) — full wordmark
+│       ├── sr-badge.png               # NEW (M2 / SPLR-82) — compact badge
+│       └── sr-auth-logo.png           # Auth screens wordmark
 ├── index.html                         # EXTEND — optional preconnect to fonts.googleapis.com
 ├── src/
+│   ├── brand/
+│   │   └── assets.ts                  # NEW (M2 / SPLR-82) — BRAND_LOGO_TEXT, BRAND_LOGO_BADGE
 │   ├── index.css                      # EXTEND — :root tokens, typography, shell, buttons, migration
 │   ├── components/
 │   │   ├── brand/
