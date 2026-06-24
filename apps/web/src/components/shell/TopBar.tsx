@@ -1,5 +1,6 @@
 import type { ReactNode, Ref } from 'react';
 import { useUserProfile } from '@/api/user';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 
 export interface TopBarProps {
   contextualContent?: ReactNode;
@@ -36,6 +37,11 @@ export function TopBar({
           {organizationName}
         </span>
       </div>
+      {showMobileMenu ? (
+        <div className="top-bar__brand-slot" data-testid="top-bar-brand">
+          <BrandLogo variant="text" className="top-bar__brand" />
+        </div>
+      ) : null}
       {contextualContent ? (
         <div className="top-bar__context" data-testid="top-bar-context">
           {contextualContent}
