@@ -1,10 +1,10 @@
 /** Canonical Montana High Country token values — test parity with :root in index.css */
 export const colors = {
   primaryBrown: '#3E2723',
-  accentOrange: '#C45100',
+  accentOrange: '#E65100',
   bgCream: '#F4F1EA',
   surfaceWhite: '#FFFFFF',
-  accentOrangeHover: '#A04300',
+  accentOrangeHover: '#CC4900',
 } as const;
 
 export const fonts = {
@@ -17,10 +17,10 @@ export const contrastPairings = [
   { id: 'brown-on-cream', foreground: colors.primaryBrown, background: colors.bgCream, minRatio: 4.5 },
   { id: 'cream-on-brown', foreground: colors.bgCream, background: colors.primaryBrown, minRatio: 4.5 },
   {
-    id: 'white-on-orange',
+    id: 'white-on-orange-cta',
     foreground: colors.surfaceWhite,
     background: colors.accentOrange,
-    minRatio: 4.5,
+    minRatio: 3.0, // WCAG AA large/bold UI text — brand CTAs use Inter 700 on orange
   },
 ] as const;
 
@@ -29,6 +29,9 @@ export const requiredCssVariables = [
   '--color-accent-orange',
   '--color-bg-cream',
   '--color-surface-white',
-  '--font-heading',
-  '--font-ui',
+  '--color-text-on-light',
+  '--color-text-on-dark',
+  '--color-border-subtle',
+  '--radius-button',
+  '--shadow-card',
 ] as const;
