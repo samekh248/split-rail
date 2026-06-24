@@ -45,8 +45,14 @@ function renderWithAuth(overrides: Partial<AuthContextValue> = {}) {
 describe('RegisterPage', () => {
   it('renders registration form', () => {
     renderWithAuth();
-    expect(screen.getByRole('heading', { name: 'Create account' })).toBeInTheDocument();
+    expect(screen.getByRole('main')).toHaveClass('auth-layout');
+    expect(document.querySelector('.auth-layout__card')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Split Rail' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Create account' })).toHaveClass(
+      'auth-layout__title',
+    );
     expect(screen.getByLabelText('Organization name')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Create account' })).toHaveClass('btn-primary');
   });
 
   it('calls onboard on submit', async () => {

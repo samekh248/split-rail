@@ -33,6 +33,13 @@ describe('LoginForm', () => {
     expect(screen.getByRole('button', { name: 'Signing in…' })).toBeDisabled();
   });
 
+  it('uses shared primary button styling on submit', () => {
+    render(<LoginForm onSubmit={vi.fn()} />);
+    const submit = screen.getByRole('button', { name: 'Sign in' });
+    expect(submit).toHaveClass('auth-form__submit');
+    expect(submit).toHaveClass('btn-primary');
+  });
+
   it('submits valid credentials', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn().mockResolvedValue(undefined);

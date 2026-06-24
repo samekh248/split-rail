@@ -68,6 +68,13 @@ describe('RegisterForm', () => {
     });
   });
 
+  it('uses shared primary button styling on submit', () => {
+    render(<RegisterForm onSubmit={vi.fn()} />);
+    const submit = screen.getByRole('button', { name: 'Create account' });
+    expect(submit).toHaveClass('auth-form__submit');
+    expect(submit).toHaveClass('btn-primary');
+  });
+
   it('shows a required error for a blank organization name (C4)', async () => {
     const user = userEvent.setup();
     const onSubmit = vi.fn();

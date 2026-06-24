@@ -39,4 +39,25 @@ describe('AuthLayout', () => {
 
     expect(screen.getByRole('status')).toHaveTextContent('Session expired');
   });
+
+  it('uses branded title class hook', () => {
+    render(
+      <AuthLayout title="Sign in" subtitle="Welcome">
+        <form className="auth-form" data-testid="form" />
+      </AuthLayout>,
+    );
+
+    expect(screen.getByRole('heading', { level: 1 })).toHaveClass('auth-layout__title');
+  });
+
+  it('renders centered wordmark when showLogo is enabled', () => {
+    render(
+      <AuthLayout title="Sign in" showLogo>
+        <form data-testid="child-form" />
+      </AuthLayout>,
+    );
+
+    expect(screen.getByRole('img', { name: 'Split Rail' })).toBeInTheDocument();
+    expect(document.querySelector('.auth-layout__logo')).toBeInTheDocument();
+  });
 });

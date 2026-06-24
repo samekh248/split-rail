@@ -37,9 +37,12 @@ function renderWithAuth(overrides: Partial<AuthContextValue> = {}) {
 describe('LoginPage', () => {
   it('renders login form', () => {
     renderWithAuth();
+    expect(screen.getByRole('main')).toHaveClass('auth-layout');
+    expect(document.querySelector('.auth-layout__card')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Split Rail' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Sign in' })).toHaveClass('auth-layout__title');
     expect(screen.getByLabelText('Email')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Sign in' })).toHaveClass('btn-primary');
   });
 
   it('calls login on submit', async () => {
