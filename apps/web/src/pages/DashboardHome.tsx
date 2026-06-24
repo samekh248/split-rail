@@ -28,8 +28,8 @@ export function DashboardHome({ organizationName }: DashboardHomeProps) {
       <header className="app__header">
         <div className="app__header-row">
           <div>
-            <h1>Split Rail</h1>
-            <p className="app__subtitle">{organizationName}</p>
+            <h1 className="text-on-dark">Split Rail</h1>
+            <p className="app__subtitle text-on-dark">{organizationName}</p>
           </div>
           <button type="button" className="app__logout" onClick={() => void logout()}>
             Sign out

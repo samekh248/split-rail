@@ -1,8 +1,52 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Zilla+Slab:wght@700&display=swap');
+
 :root {
-  font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+  /* Montana High Country palette (059-mhc-design-tokens) */
+  --color-primary-brown: #3e2723;
+  --color-accent-orange: #e65100;
+  --color-bg-cream: #f4f1ea;
+  --color-surface-white: #ffffff;
+
+  /* Web fonts (060-brand-web-fonts) */
+  --font-brand: 'Zilla Slab', 'Rokkitt', 'Roboto Slab', serif;
+  --font-heading: var(--font-brand);
+  --font-ui: 'Inter', 'Open Sans', 'Lato', sans-serif;
+
+  font-family: var(--font-ui);
   line-height: 1.5;
-  color: #1a1a1a;
-  background: #f6f7f9;
+  color: var(--color-primary-brown);
+  background: var(--color-bg-cream);
+}
+
+/*
+ * Typography — global defaults (061-global-typography-rules)
+ *
+ * Headings:     h1, h2, h3, .heading-brand
+ * UI text:      body, p, label, button, input, td, th
+ * Dark surface: .text-on-dark
+ */
+
+h1,
+h2,
+h3,
+.heading-brand {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  color: var(--color-primary-brown);
+}
+
+body,
+p,
+label,
+button,
+input,
+td,
+th {
+  font-family: var(--font-ui);
+}
+
+.text-on-dark {
+  color: var(--color-bg-cream);
 }
 
 * {
@@ -15,7 +59,6 @@ body {
 
 .app__header {
   background: #1e293b;
-  color: #fff;
   padding: 1rem 1.5rem;
 }
 
@@ -26,7 +69,6 @@ body {
 
 .app__subtitle {
   margin: 0.25rem 0 0;
-  opacity: 0.85;
   font-size: 0.875rem;
 }
 
