@@ -23,6 +23,12 @@ export const contrastPairings = [
     background: colors.accentOrange,
     minRatio: 3.0, // WCAG AA large/bold UI text — brand CTAs use Inter 700 on orange
   },
+  {
+    id: 'white-on-orange-badge',
+    foreground: colors.surfaceWhite,
+    background: colors.accentOrange,
+    minRatio: 3.0, // ~3.8:1 on brand Alpine Sunset; 12px/700 badge — same pairing as primary CTA
+  },
 ] as const;
 
 export const requiredCssVariables = [

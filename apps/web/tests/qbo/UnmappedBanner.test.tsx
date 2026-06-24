@@ -54,6 +54,7 @@ describe('UnmappedBanner', () => {
     expect(screen.getByTestId('unmapped-banner')).toHaveTextContent(
       '2 unassigned transactions detected',
     );
+    expect(screen.getByTestId('unmapped-banner-badge')).toHaveClass('badge-action-required');
   });
 
   it('expands list on toggle', async () => {

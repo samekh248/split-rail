@@ -126,7 +126,7 @@ export function EventCard({
       {bottleneckAlerts.map((alert) => (
         <span
           key={alert.kind}
-          className="event-card__alert-chip"
+          className="event-card__alert-chip badge-action-required"
           data-testid={`event-card-alert-${alert.kind}-${eventId}`}
         >
           {alert.label}
