@@ -22,6 +22,7 @@
   --color-surface-muted: rgba(62, 39, 35, 0.06);
 
   --font-brand: 'Zilla Slab', 'Rokkitt', 'Roboto Slab', serif;
+  --font-heading: var(--font-brand);
   --font-ui: 'Inter', 'Open Sans', 'Lato', sans-serif;
 
   --radius-button: 6px;
@@ -56,12 +57,35 @@ body {
   background: var(--color-bg-cream);
 }
 
+/*
+ * Typography — global defaults (061-global-typography-rules)
+ *
+ * Headings:     h1, h2, h3, .heading-brand
+ * UI text:      body, p, label, button, input, td, th
+ * Dark surface: .text-on-dark
+ */
+
 h1,
 h2,
+h3,
 .heading-brand {
-  font-family: var(--font-brand);
+  font-family: var(--font-heading);
   font-weight: 700;
   color: var(--color-primary-brown);
+}
+
+body,
+p,
+label,
+button,
+input,
+td,
+th {
+  font-family: var(--font-ui);
+}
+
+.text-on-dark {
+  color: var(--color-bg-cream);
 }
 
 /* Shared buttons */

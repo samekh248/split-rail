@@ -9,6 +9,7 @@ export const colors = {
 
 export const fonts = {
   brand: "'Zilla Slab', 'Rokkitt', 'Roboto Slab', serif",
+  heading: "'Zilla Slab', 'Rokkitt', 'Roboto Slab', serif",
   ui: "'Inter', 'Open Sans', 'Lato', sans-serif",
 } as const;
 
@@ -35,5 +36,6 @@ export const requiredCssVariables = [
   '--radius-button',
   '--shadow-card',
   '--font-brand',
+  '--font-heading',
   '--font-ui',
 ] as const;
