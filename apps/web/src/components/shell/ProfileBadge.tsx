@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '@/auth/useAuth';
 import { useUserProfile } from '@/api/user';
+import { navigateToSettings } from '@/lib/appRoute';
 
 export interface ProfileBadgeProps {
   showDisplayName?: boolean;
@@ -25,6 +26,7 @@ export function ProfileBadge({ showDisplayName = true, onMenuAction }: ProfileBa
   const { data: profile } = useUserProfile();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const email = profile?.email ?? null;
@@ -63,6 +65,12 @@ export function ProfileBadge({ showDisplayName = true, onMenuAction }: ProfileBa
 
   const closeMenu = () => setOpen(false);
 
+  const handleSettings = () => {
+    navigateToSettings();
+    closeMenu();
+    onMenuAction?.();
+  };
+
   const handleSignOut = () => {
     closeMenu();
     onMenuAction?.();
@@ -72,6 +80,7 @@ export function ProfileBadge({ showDisplayName = true, onMenuAction }: ProfileBa
   return (
     <div className="profile-badge" ref={menuRef}>
       <button
+        ref={buttonRef}
         type="button"
         className="profile-badge__trigger"
         aria-expanded={open}
@@ -90,6 +99,9 @@ export function ProfileBadge({ showDisplayName = true, onMenuAction }: ProfileBa
       </button>
       {open ? (
         <div className="profile-badge__menu" role="menu" data-testid="profile-badge-menu">
+          <button type="button" role="menuitem" className="profile-badge__menu-item" onClick={handleSettings}>
+            Settings
+          </button>
           <button type="button" role="menuitem" className="profile-badge__menu-item" onClick={handleSignOut}>
             Sign out
           </button>

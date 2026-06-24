@@ -1,20 +1,30 @@
 import type { ReactNode } from 'react';
 import { BrandLogo } from '@/components/brand/BrandLogo';
-import type { useSidebarState } from '@/hooks/useSidebarState';
+import { navigateToDashboard } from '@/lib/appRoute';
 import { GlobalNav } from './GlobalNav';
 import { NavPinButton } from './NavPinButton';
 import { ProfileBadge } from './ProfileBadge';
+import type { useSidebarState } from '@/hooks/useSidebarState';
 
 type SidebarState = ReturnType<typeof useSidebarState>;
 
+export type SidebarNavigationMode = 'global' | 'settings';
+
 export interface SidebarRailProps {
   sidebar: SidebarState;
+  navigationMode?: SidebarNavigationMode;
   navigation?: ReactNode;
   onNavigate?: () => void;
   footer?: ReactNode;
 }
 
-export function SidebarRail({ sidebar, navigation, onNavigate, footer }: SidebarRailProps) {
+export function SidebarRail({
+  sidebar,
+  navigationMode = 'global',
+  navigation,
+  onNavigate,
+  footer,
+}: SidebarRailProps) {
   const {
     pinnedExpanded,
     hoverExpanded,
@@ -26,13 +36,19 @@ export function SidebarRail({ sidebar, navigation, onNavigate, footer }: Sidebar
 
   const showLabels = pinnedExpanded || hoverExpanded;
 
+  const handleBrandClick = () => {
+    navigateToDashboard();
+    onNavigate?.();
+  };
+
   const navigationContent =
-    navigation ?? (
+    navigation ??
+    (navigationMode === 'settings' ? null : (
       <GlobalNav
         className={`global-nav${showLabels ? '' : ' global-nav--icons-only'}`}
         onNavigate={onNavigate}
       />
-    );
+    ));
 
   const brandButton = (
     <button
@@ -40,7 +56,7 @@ export function SidebarRail({ sidebar, navigation, onNavigate, footer }: Sidebar
       className="sidebar-rail__brand-button"
       data-testid="sidebar-brand"
       aria-label="Split Rail home"
-      onClick={() => onNavigate?.()}
+      onClick={handleBrandClick}
     >
       <BrandLogo variant={showLabels ? 'text' : 'badge'} className="sidebar-rail__brand-logo" />
     </button>

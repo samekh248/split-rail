@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using SplitRail.Api.Data;
 using SplitRail.Api.DTOs.Auth;
 using SplitRail.Api.DTOs.Invitations;
+using SplitRail.Api.DTOs.Users;
 using SplitRail.Api.Exceptions;
 using SplitRail.Api.Models;
 
@@ -95,13 +96,16 @@ public class InvitationService
         _logger.LogInformation("Invitation {InvitationId} sent to {Email} for org {OrgId}",
             invitation.Id, normalizedEmail, orgId);
 
+        var venueScopes = await LoadInvitationVenueScopesAsync(invitation.Id, cancellationToken);
+
         return (new InvitationResponse(
             invitation.Id,
             invitation.Email,
             role.RoleName,
             invitation.Status,
             invitation.ExpiresAt,
-            invitation.CreatedAt), rawToken);
+            invitation.CreatedAt,
+            venueScopes), rawToken);
     }
 
     public async Task<AcceptInvitationResponse> AcceptInvitationAsync(
@@ -184,6 +188,8 @@ public class InvitationService
     {
         var invitation = await _db.Invitations
             .Include(i => i.Role)
+            .Include(i => i.VenueScopes)
+            .ThenInclude(vs => vs.Venue)
             .FirstOrDefaultAsync(i => i.Id == invitationId, cancellationToken)
             ?? throw new NotFoundException("Invitation not found.");
 
@@ -202,7 +208,8 @@ public class InvitationService
             invitation.Role.RoleName,
             invitation.Status,
             invitation.ExpiresAt,
-            invitation.CreatedAt), rawToken);
+            invitation.CreatedAt,
+            MapVenueScopes(invitation.VenueScopes)), rawToken);
     }
 
     public async Task<IReadOnlyList<InvitationResponse>> ListInvitationsAsync(CancellationToken cancellationToken = default)
@@ -210,6 +217,8 @@ public class InvitationService
         return await _db.Invitations
             .AsNoTracking()
             .Include(i => i.Role)
+            .Include(i => i.VenueScopes)
+            .ThenInclude(vs => vs.Venue)
             .OrderByDescending(i => i.CreatedAt)
             .Select(i => new InvitationResponse(
                 i.Id,
@@ -217,9 +226,28 @@ public class InvitationService
                 i.Role.RoleName,
                 i.Status,
                 i.ExpiresAt,
-                i.CreatedAt))
+                i.CreatedAt,
+                i.VenueScopes.Select(vs => new VenueScopeDto(vs.VenueId, vs.Venue.Name)).ToList()))
             .ToListAsync(cancellationToken);
     }
+
+    private async Task<IReadOnlyList<VenueScopeDto>> LoadInvitationVenueScopesAsync(
+        Guid invitationId,
+        CancellationToken cancellationToken)
+    {
+        return await _db.InvitationVenueScopes
+            .AsNoTracking()
+            .Where(vs => vs.InvitationId == invitationId)
+            .Join(
+                _db.Venues.AsNoTracking(),
+                vs => vs.VenueId,
+                v => v.Id,
+                (vs, v) => new VenueScopeDto(vs.VenueId, v.Name))
+            .ToListAsync(cancellationToken);
+    }
+
+    private static IReadOnlyList<VenueScopeDto> MapVenueScopes(IEnumerable<InvitationVenueScope> scopes) =>
+        scopes.Select(vs => new VenueScopeDto(vs.VenueId, vs.Venue.Name)).ToList();
 
     public async Task CancelInvitationAsync(Guid invitationId, CancellationToken cancellationToken = default)
     {

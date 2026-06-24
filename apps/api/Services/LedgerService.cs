@@ -14,6 +14,7 @@ public class LedgerService
     private readonly ITenantContext _tenantContext;
     private readonly VenueService _venueService;
     private readonly DealMathEngine _dealMathEngine;
+    private readonly FrozenEventMutationAuditor _frozenEventAuditor;
     private readonly ILogger<LedgerService> _logger;
 
     public LedgerService(
@@ -21,12 +22,14 @@ public class LedgerService
         ITenantContext tenantContext,
         VenueService venueService,
         DealMathEngine dealMathEngine,
+        FrozenEventMutationAuditor frozenEventAuditor,
         ILogger<LedgerService> logger)
     {
         _db = db;
         _tenantContext = tenantContext;
         _venueService = venueService;
         _dealMathEngine = dealMathEngine;
+        _frozenEventAuditor = frozenEventAuditor;
         _logger = logger;
     }
 
@@ -37,7 +40,15 @@ public class LedgerService
     {
         var evt = await LoadEventForReadAsync(venueId, eventId, cancellationToken);
         var hidePromoterRows = await IsPromoterRoleAsync(cancellationToken);
-        return BuildLedgerGrid(evt, hidePromoterRows);
+        var correctionLineItemIds = await _db.QboSyncLedgers
+            .AsNoTracking()
+            .Where(l => l.EventId == eventId
+                && l.EntryType == QboSyncLedgerEntryType.OffsetCorrection
+                && l.MappedLineItemId != null)
+            .Select(l => l.MappedLineItemId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        return BuildLedgerGrid(evt, hidePromoterRows, correctionLineItemIds.ToHashSet());
     }
 
     public async Task<LedgerGridResponse> RecalculateAsync(
@@ -46,9 +57,18 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
+        AssertNotSettledOrReconciled(evt, venueId, FrozenEventMutationOperation.Recalculate);
         await RecalculateAndPersistAsync(evt, cancellationToken);
         var hidePromoterRows = await IsPromoterRoleAsync(cancellationToken);
-        return BuildLedgerGrid(evt, hidePromoterRows);
+        var correctionLineItemIds = await _db.QboSyncLedgers
+            .AsNoTracking()
+            .Where(l => l.EventId == eventId
+                && l.EntryType == QboSyncLedgerEntryType.OffsetCorrection
+                && l.MappedLineItemId != null)
+            .Select(l => l.MappedLineItemId!.Value)
+            .Distinct()
+            .ToListAsync(cancellationToken);
+        return BuildLedgerGrid(evt, hidePromoterRows, correctionLineItemIds.ToHashSet());
     }
 
     public async Task<EventResponse> LockBudgetAsync(
@@ -58,8 +78,12 @@ public class LedgerService
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
 
-        if (evt.Status is EventStatus.Settled or EventStatus.Reconciled)
-            throw new LedgerStateException("Cannot lock budget when event is settled or reconciled.");
+        _frozenEventAuditor.RejectIfFrozen(
+            evt,
+            venueId,
+            _tenantContext.UserId,
+            FrozenEventMutationOperation.LockBudget,
+            "Cannot lock budget when event is settled or reconciled.");
 
         if (evt.IsBudgetLocked)
             return EventService.ToEventResponse(evt);
@@ -79,7 +103,8 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
-        AssertNotSettledOrReconciled(evt);
+        AssertNotSettledOrReconciled(evt, venueId, FrozenEventMutationOperation.CreateLineItem);
+        await ValidateLineItemStructuralEditAsync(evt, cancellationToken);
         ValidateBlockType(request.BlockType);
 
         var canEditSettlement = await HasPermissionAsync(r => r.CanEditSettlement, cancellationToken);
@@ -124,7 +149,8 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
-        AssertNotSettledOrReconciled(evt);
+        AssertNotSettledOrReconciled(evt, venueId, FrozenEventMutationOperation.UpdateLineItem);
+        await ValidateLineItemStructuralEditAsync(evt, cancellationToken);
 
         var lineItem = await _db.FinancialLineItems
             .FirstOrDefaultAsync(li => li.Id == lineItemId && li.EventId == eventId, cancellationToken)
@@ -173,7 +199,8 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
-        AssertNotSettledOrReconciled(evt);
+        AssertNotSettledOrReconciled(evt, venueId, FrozenEventMutationOperation.DeleteLineItem);
+        await ValidateLineItemStructuralEditAsync(evt, cancellationToken);
 
         var lineItem = await _db.FinancialLineItems
             .FirstOrDefaultAsync(li => li.Id == lineItemId && li.EventId == eventId, cancellationToken)
@@ -200,7 +227,8 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
-        AssertArtistEditable(evt);
+        AssertArtistEditable(evt, venueId, FrozenEventMutationOperation.CreateArtist);
+        await ValidateArtistStructuralEditAsync(evt, cancellationToken);
 
         var dealType = ParseDealType(request.DealType);
         ValidateArtistDeal(dealType, request.CustomFormulaExpression);
@@ -244,7 +272,8 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
-        AssertArtistEditable(evt);
+        AssertArtistEditable(evt, venueId, FrozenEventMutationOperation.UpdateArtist);
+        await ValidateArtistStructuralEditAsync(evt, cancellationToken);
 
         var artist = await _db.EventArtists
             .FirstOrDefaultAsync(a => a.Id == artistId && a.EventId == eventId, cancellationToken)
@@ -289,7 +318,8 @@ public class LedgerService
         CancellationToken cancellationToken = default)
     {
         var evt = await LoadEventForMutationAsync(venueId, eventId, cancellationToken);
-        AssertArtistEditable(evt);
+        AssertArtistEditable(evt, venueId, FrozenEventMutationOperation.DeleteArtist);
+        await ValidateArtistStructuralEditAsync(evt, cancellationToken);
 
         var artist = await _db.EventArtists
             .FirstOrDefaultAsync(a => a.Id == artistId && a.EventId == eventId, cancellationToken)
@@ -319,16 +349,26 @@ public class LedgerService
             _ => new EditabilityDto("locked", "locked", "locked")
         };
 
-    public static void AssertNotSettledOrReconciled(Event evt)
-    {
-        if (evt.Status is EventStatus.Settled or EventStatus.Reconciled)
-            throw new LedgerStateException("Event is settled or reconciled and cannot be modified.");
-    }
+    private void AssertNotSettledOrReconciled(Event evt, Guid venueId, string operation) =>
+        _frozenEventAuditor.RejectIfFrozen(evt, venueId, _tenantContext.UserId, operation);
 
-    public static void AssertArtistEditable(Event evt)
+    private void AssertArtistEditable(Event evt, Guid venueId, string operation)
     {
-        if (evt.Status is not EventStatus.PreShow)
-            throw new LedgerStateException("Artist configuration is only permitted while event is in PRE_SHOW status.");
+        if (evt.Status is EventStatus.PreShow)
+            return;
+
+        if (evt.Status is EventStatus.Settled or EventStatus.Reconciled)
+        {
+            _frozenEventAuditor.RejectIfFrozen(
+                evt,
+                venueId,
+                _tenantContext.UserId,
+                operation,
+                "Artist configuration is only permitted while event is in PRE_SHOW status.");
+        }
+
+        throw new LedgerStateException(
+            "Artist configuration is only permitted while event is in PRE_SHOW status.");
     }
 
     private async Task RecalculateAndPersistAsync(Event evt, CancellationToken cancellationToken)
@@ -380,7 +420,10 @@ public class LedgerService
         return (grossRevenue, totalDeductions, netShowRevenue);
     }
 
-    private LedgerGridResponse BuildLedgerGrid(Event evt, bool hidePromoterRows)
+    private LedgerGridResponse BuildLedgerGrid(
+        Event evt,
+        bool hidePromoterRows,
+        IReadOnlySet<Guid> correctionLineItemIds)
     {
         var lineItems = hidePromoterRows
             ? evt.LineItems.Where(li => !li.IsHiddenFromPromoter).ToList()
@@ -392,7 +435,7 @@ public class LedgerService
             var rows = lineItems
                 .Where(li => li.BlockType == blockType.ToStorage())
                 .OrderBy(li => li.SortOrder)
-                .Select(ToLineItemDto)
+                .Select(li => ToLineItemDto(li, correctionLineItemIds.Contains(li.Id)))
                 .ToList();
 
             var blockTotals = new BlockTotalsDto(
@@ -463,6 +506,29 @@ public class LedgerService
             throw new NotFoundException("Venue not found.");
     }
 
+    private async Task ValidateLineItemStructuralEditAsync(
+        Event evt,
+        CancellationToken cancellationToken)
+    {
+        if (evt.Status is not EventStatus.PreShow)
+            throw new LedgerStateException("Event is not in PRE_SHOW and cannot be modified.");
+
+        if (evt.IsBudgetLocked)
+        {
+            if (!await HasPermissionAsync(r => r.CanEditSettlement, cancellationToken))
+                throw new AuthorizationException("Missing permission to edit settlement values.");
+        }
+        else if (!await HasPermissionAsync(r => r.CanViewFinancials, cancellationToken))
+        {
+            throw new AuthorizationException("Missing permission to edit proforma values.");
+        }
+    }
+
+    private Task ValidateArtistStructuralEditAsync(
+        Event evt,
+        CancellationToken cancellationToken) =>
+        ValidateLineItemStructuralEditAsync(evt, cancellationToken);
+
     private async Task ValidateLineItemColumnEditAsync(
         Event evt,
         decimal newProforma,
@@ -526,7 +592,7 @@ public class LedgerService
         return roleName == RoleNames.Promoter;
     }
 
-    private static LineItemDto ToLineItemDto(FinancialLineItem li)
+    private static LineItemDto ToLineItemDto(FinancialLineItem li, bool hasQboCorrection = false)
     {
         var variance = li.QboActualValue - li.SettlementValue;
         return new LineItemDto(
@@ -541,7 +607,8 @@ public class LedgerService
             Math.Abs(variance) > 0m,
             li.Notes,
             li.IsHiddenFromPromoter,
-            RowVersionFormat.ToRowVersion(li.Xmin));
+            RowVersionFormat.ToRowVersion(li.Xmin),
+            hasQboCorrection);
     }
 
     private static EventArtistDto ToArtistDto(EventArtist artist) =>

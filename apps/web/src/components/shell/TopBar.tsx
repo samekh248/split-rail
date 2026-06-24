@@ -1,18 +1,22 @@
-import type { Ref } from 'react';
+import type { ReactNode, Ref } from 'react';
+import { useUserProfile } from '@/api/user';
 
 export interface TopBarProps {
-  organizationName: string;
+  contextualContent?: ReactNode;
   onOpenMobileNav?: () => void;
   showMobileMenu?: boolean;
   mobileTriggerRef?: Ref<HTMLButtonElement>;
 }
 
 export function TopBar({
-  organizationName,
+  contextualContent,
   onOpenMobileNav,
   showMobileMenu,
   mobileTriggerRef,
 }: TopBarProps) {
+  const { data: profile } = useUserProfile();
+  const organizationName = profile?.organization?.name ?? 'Your organization';
+
   return (
     <header className="top-bar" data-testid="top-bar">
       <div className="top-bar__leading">
@@ -32,6 +36,11 @@ export function TopBar({
           {organizationName}
         </span>
       </div>
+      {contextualContent ? (
+        <div className="top-bar__context" data-testid="top-bar-context">
+          {contextualContent}
+        </div>
+      ) : null}
     </header>
   );
 }

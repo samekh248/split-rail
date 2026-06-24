@@ -78,5 +78,36 @@ public class SettlementReversalTests : IntegrationTestBase
             $"/api/venues/{venueId}/events/{evt.EventId}/settle",
             new FinalizeSettlementRequest(ValidSignatureBase64(), true));
         ArchiveStore.StoredObjectCount.Should().Be(2);
+        ArchiveStore.StagedObjectCount.Should().Be(0);
+        ArchiveStore.StoredObjectPaths.Should().HaveCount(2);
+        ArchiveStore.StoredObjectPaths.Should().OnlyHaveUniqueItems();
+    }
+
+    [Fact]
+    public async Task ReverseAndRefinalize_ProducesSecondFinalPdf_OriginalPreserved()
+    {
+        if (!IsQuestPdfSupported()) return;
+
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var evt = await SeedSettlementReadyEventAsync(client, venueId, token);
+
+        await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/settle",
+            new FinalizeSettlementRequest(ValidSignatureBase64(), true));
+
+        var firstPath = ArchiveStore.StoredObjectPaths.Single();
+        var firstBytes = ArchiveStore.GetStoredPdf(firstPath)!;
+
+        await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/reverse-settlement",
+            new ReverseSettlementRequest("Re-finalize test"));
+
+        await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/settle",
+            new FinalizeSettlementRequest(ValidSignatureBase64(), true));
+
+        ArchiveStore.StoredObjectCount.Should().Be(2);
+        ArchiveStore.GetStoredPdf(firstPath).Should().Equal(firstBytes);
+        ArchiveStore.StoredObjectPaths.Should().Contain(p => p != firstPath);
     }
 }

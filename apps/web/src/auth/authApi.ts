@@ -1,6 +1,8 @@
 import { fetchUserProfile } from '@/api/user';
 import { apiFetch } from '@/api/client';
 import type {
+  AcceptInvitationRequest,
+  AcceptInvitationResponse,
   AuthResponse,
   CreateOrganizationRequest,
   LoginRequest,
@@ -77,6 +79,7 @@ export async function refreshSession(): Promise<AuthResponse> {
   const response = await apiFetch<AuthResponse>('/auth/refresh', {
     method: 'POST',
     body: JSON.stringify(body),
+    skipAuthRecovery: true,
   });
   if (response.accessToken && response.refreshToken) {
     setTokens(response.accessToken, response.refreshToken);
@@ -122,6 +125,21 @@ export async function completeOrganizationSetup(name: string): Promise<UserProfi
   await createOrganization(name);
   await refreshSession();
   return fetchUserProfile();
+}
+
+export async function acceptInvitation(
+  request: AcceptInvitationRequest,
+): Promise<AcceptInvitationResponse> {
+  const response = await apiFetch<AcceptInvitationResponse>('/invitations/accept', {
+    method: 'POST',
+    body: JSON.stringify(request),
+    skipAuthRecovery: true,
+    skipVenueContext: true,
+  });
+  if (response.accessToken && response.refreshToken) {
+    setTokens(response.accessToken, response.refreshToken);
+  }
+  return response;
 }
 
 export async function logout(): Promise<void> {

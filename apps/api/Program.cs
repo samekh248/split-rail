@@ -2,7 +2,6 @@ using System.Text;
 using System.Text.Json.Serialization;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -11,7 +10,9 @@ using SplitRail.Api;
 using SplitRail.Api.Authorization;
 using SplitRail.Api.BackgroundServices;
 using SplitRail.Api.Configuration;
+using SplitRail.Api.Extensions;
 using SplitRail.Api.Data;
+using SplitRail.Api.Data.Interceptors;
 using SplitRail.Api.Http;
 using SplitRail.Api.Middleware;
 using SplitRail.Api.Serialization;
@@ -38,31 +39,26 @@ builder.Services.Configure<QboSyncOptions>(options =>
     options.ClientSecret = Environment.GetEnvironmentVariable("QBO_CLIENT_SECRET") ?? options.ClientSecret;
     options.RedirectUri = Environment.GetEnvironmentVariable("QBO_REDIRECT_URI") ?? options.RedirectUri;
     options.InternalTriggerKey = Environment.GetEnvironmentVariable("QBO_INTERNAL_TRIGGER_KEY") ?? options.InternalTriggerKey;
+    options.SchedulerServiceAccountEmail = builder.Configuration["QboSync:SchedulerServiceAccountEmail"] ?? options.SchedulerServiceAccountEmail;
+    options.SchedulerTokenAudience = builder.Configuration["QboSync:SchedulerTokenAudience"] ?? options.SchedulerTokenAudience;
     if (builder.Environment.IsProduction())
         options.EnableInProcessTimer = qboSyncSection.GetValue("EnableInProcessTimer", false);
 });
 
-builder.Services.AddDataProtection()
-    .PersistKeysToFileSystem(new DirectoryInfo(Path.Combine(builder.Environment.ContentRootPath, "dp-keys")));
+builder.Services.Configure<DataProtectionOptions>(
+    builder.Configuration.GetSection(DataProtectionOptions.SectionName));
+builder.Services.AddSplitRailDataProtection(builder.Configuration, builder.Environment);
 
-if (previewOptions.UseFakeQboConnector)
-{
-    builder.Services.AddSingleton<QboEgressRecordingHandler>();
-    builder.Services.AddHttpClient("QboApi")
-        .AddHttpMessageHandler(sp => sp.GetRequiredService<QboEgressRecordingHandler>())
-        .AddTransientHttpErrorPolicy(policy =>
-            policy.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
-}
-else
-{
-    builder.Services.AddHttpClient("QboApi")
-        .AddTransientHttpErrorPolicy(policy =>
-            policy.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
-}
+builder.Services.AddSingleton<QboEgressRecordingHandler>();
+builder.Services.AddHttpClient("QboApi")
+    .AddHttpMessageHandler(sp => sp.GetRequiredService<QboEgressRecordingHandler>())
+    .AddTransientHttpErrorPolicy(policy =>
+        policy.WaitAndRetryAsync(3, attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt))));
 
+// OAuth token/revoke uses a separate client without the accounting egress write guard.
 builder.Services.AddHttpClient("QboOAuth");
 
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
+builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
         ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
@@ -72,13 +68,41 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         connectionString += $";Password={dbPassword}";
 
     options.UseNpgsql(connectionString);
+    options.AddInterceptors(sp.GetRequiredService<FrozenEventImmutabilityInterceptor>());
 });
 
 var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
     ?? throw new InvalidOperationException("Jwt settings not configured.");
 
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+var jwtSecretFromEnv = Environment.GetEnvironmentVariable("Jwt__Secret");
+if (!string.IsNullOrEmpty(jwtSecretFromEnv))
+    jwtSettings.Secret = jwtSecretFromEnv;
+
+if (builder.Environment.IsProduction())
+{
+    var productionQbo = new QboSyncOptions();
+    qboSyncSection.Bind(productionQbo);
+    productionQbo.ClientId = Environment.GetEnvironmentVariable("QBO_CLIENT_ID") ?? productionQbo.ClientId;
+    productionQbo.ClientSecret = Environment.GetEnvironmentVariable("QBO_CLIENT_SECRET") ?? productionQbo.ClientSecret;
+    productionQbo.InternalTriggerKey =
+        Environment.GetEnvironmentVariable("QBO_INTERNAL_TRIGGER_KEY") ?? productionQbo.InternalTriggerKey;
+    productionQbo.SchedulerServiceAccountEmail =
+        builder.Configuration["QboSync:SchedulerServiceAccountEmail"] ?? productionQbo.SchedulerServiceAccountEmail;
+    productionQbo.SchedulerTokenAudience =
+        builder.Configuration["QboSync:SchedulerTokenAudience"] ?? productionQbo.SchedulerTokenAudience;
+
+    ProductionSecretConfigurationValidator.Validate(
+        jwtSettings,
+        productionQbo,
+        Environment.GetEnvironmentVariable("DB_PASSWORD"));
+}
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
     {
         options.TokenValidationParameters = new TokenValidationParameters
         {
@@ -89,6 +113,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwtSettings.Issuer,
             ValidAudience = jwtSettings.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Secret)),
+            ClockSkew = TimeSpan.FromMinutes(1)
+        };
+        options.MapInboundClaims = false;
+    })
+    .AddJwtBearer(InternalSyncTriggerAuthenticator.GoogleSchedulerScheme, options =>
+    {
+        var schedulerAudience = builder.Configuration["QboSync:SchedulerTokenAudience"];
+        options.Authority = "https://accounts.google.com";
+        if (!string.IsNullOrEmpty(schedulerAudience))
+            options.Audience = schedulerAudience;
+
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = "https://accounts.google.com",
+            ValidateAudience = !string.IsNullOrEmpty(schedulerAudience),
+            ValidAudience = schedulerAudience,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
             ClockSkew = TimeSpan.FromMinutes(1)
         };
         options.MapInboundClaims = false;
@@ -113,9 +156,17 @@ builder.Services.AddAuthorization(options =>
         options.AddPolicy($"Permission:{permission}", policy =>
             policy.Requirements.Add(new PermissionRequirement(permission)));
     }
+
+    options.AddPolicy("SchedulerTrigger", policy =>
+    {
+        policy.AddAuthenticationSchemes(InternalSyncTriggerAuthenticator.GoogleSchedulerScheme);
+        policy.Requirements.Add(new SchedulerTriggerRequirement());
+    });
 });
 
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, SchedulerTriggerAuthorizationHandler>();
+builder.Services.AddScoped<IInternalSyncTriggerAuthenticator, InternalSyncTriggerAuthenticator>();
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<AuthService>();
@@ -125,6 +176,11 @@ builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<VenueService>();
 builder.Services.AddScoped<InvitationService>();
 builder.Services.AddScoped<EventService>();
+builder.Services.AddScoped<EventPinService>();
+builder.Services.AddScoped<DashboardService>();
+builder.Services.AddScoped<FrozenEventMutationAuditor>();
+builder.Services.AddScoped<IFrozenEventSaveContext, FrozenEventSaveContext>();
+builder.Services.AddScoped<FrozenEventImmutabilityInterceptor>();
 builder.Services.AddScoped<LedgerService>();
 builder.Services.AddScoped<DealMathEngine>();
 builder.Services.AddScoped<CustomFormulaEvaluator>();
@@ -140,21 +196,17 @@ else
 }
 
 builder.Services.AddScoped<TestSeedingService>();
+builder.Services.AddSingleton<IQboSyncConcurrencyGate, QboSyncConcurrencyGate>();
+builder.Services.AddScoped<QboSyncCorrectionService>();
 builder.Services.AddScoped<QboSyncService>();
 builder.Services.AddScoped<QboMappingService>();
 builder.Services.AddScoped<SplitRail.Api.Services.SignatureValidator>();
+builder.Services.AddScoped<ISettlementPdfRenderer, SettlementPdfRenderer>();
 builder.Services.AddScoped<SettlementPdfRenderer>();
 builder.Services.AddScoped<SettlementService>();
-builder.Services.AddSingleton<InMemorySettlementArchiveStore>();
-builder.Services.AddSingleton<GcsSettlementArchiveStore>();
-builder.Services.AddSingleton<ISettlementArchiveStore>(sp =>
-{
-    var preview = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<PreviewOptions>>().Value;
-    if (preview.UseFakeQboConnector || preview.EnableTestSeeding)
-        return sp.GetRequiredService<InMemorySettlementArchiveStore>();
-    return sp.GetRequiredService<GcsSettlementArchiveStore>();
-});
+SettlementArchiveStoreRegistration.Register(builder.Services);
 builder.Services.AddHostedService<QboSyncHostedService>();
+builder.Services.AddHostedService<SettlementArchiveStartupValidator>();
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -186,10 +238,12 @@ builder.Services.AddSwaggerGen(c =>
             Array.Empty<string>()
         }
     });
+    c.SchemaFilter<MoneyDecimalSchemaFilter>();
 });
 
 var app = builder.Build();
 
+app.UseMiddleware<ContentSecurityPolicyMiddleware>();
 app.UseMiddleware<ExceptionHandlerMiddleware>();
 app.UseSwagger();
 app.UseSwaggerUI();

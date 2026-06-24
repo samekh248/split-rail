@@ -56,6 +56,14 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("qbo_tag_name");
 
+                    b.Property<DateTimeOffset?>("ReconciledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reconciled_at");
+
+                    b.Property<Guid?>("ReconciledByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reconciled_by_user_id");
+
                     b.Property<DateTimeOffset?>("SettledAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("settled_at");
@@ -93,6 +101,8 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ReconciledByUserId");
 
                     b.HasIndex("SettledByUserId");
 
@@ -345,6 +355,10 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<DateTimeOffset?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("archived_at");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
@@ -500,6 +514,23 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnType("numeric(12,2)")
                         .HasColumnName("amount");
 
+                    b.Property<Guid?>("CorrectedLedgerEntryId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("corrected_ledger_entry_id");
+
+                    b.Property<string>("CorrectionType")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("correction_type");
+
+                    b.Property<string>("EntryType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("Original")
+                        .HasColumnName("entry_type");
+
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid")
                         .HasColumnName("event_id");
@@ -530,18 +561,37 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnName("synced_at")
                         .HasDefaultValueSql("NOW()");
 
+                    b.Property<bool?>("TargetStateAbsent")
+                        .HasColumnType("boolean")
+                        .HasColumnName("target_state_absent");
+
+                    b.Property<decimal?>("TargetStateAmount")
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("target_state_amount");
+
                     b.Property<DateOnly>("TransactionDate")
                         .HasColumnType("date")
                         .HasColumnName("transaction_date");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CorrectedLedgerEntryId");
+
                     b.HasIndex("MappedLineItemId")
                         .HasDatabaseName("IX_qbo_sync_ledger_mapped_line_item_id");
 
+                    b.HasIndex("EventId", "EntryType")
+                        .HasDatabaseName("IX_qbo_sync_ledger_event_entry_type");
+
                     b.HasIndex("EventId", "QboTransactionId")
                         .IsUnique()
-                        .HasDatabaseName("IX_qbo_sync_ledger_event_txn");
+                        .HasDatabaseName("IX_qbo_sync_ledger_event_txn_original")
+                        .HasFilter("entry_type = 'Original'");
+
+                    b.HasIndex("EventId", "QboTransactionId", "CorrectionType", "TargetStateAbsent", "TargetStateAmount")
+                        .IsUnique()
+                        .HasDatabaseName("IX_qbo_sync_ledger_offset_idempotency")
+                        .HasFilter("entry_type = 'OffsetCorrection'");
 
                     b.ToTable("qbo_sync_ledger", (string)null);
                 });
@@ -670,7 +720,7 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnName("reversed_at")
                         .HasDefaultValueSql("NOW()");
 
-                    b.Property<Guid>("ReversedByUserId")
+                    b.Property<Guid?>("ReversedByUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("reversed_by_user_id");
 
@@ -777,6 +827,29 @@ namespace SplitRail.Api.Data.Migrations
                     b.ToTable("users", (string)null);
                 });
 
+            modelBuilder.Entity("SplitRail.Api.Models.UserEventPin", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<DateTimeOffset>("PinnedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("pinned_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("UserId", "EventId");
+
+                    b.HasIndex("EventId");
+
+                    b.ToTable("user_event_pins", (string)null);
+                });
+
             modelBuilder.Entity("SplitRail.Api.Models.UserOrganizationMapping", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -850,6 +923,11 @@ namespace SplitRail.Api.Data.Migrations
 
             modelBuilder.Entity("SplitRail.Api.Models.Event", b =>
                 {
+                    b.HasOne("SplitRail.Api.Models.User", "ReconciledByUser")
+                        .WithMany()
+                        .HasForeignKey("ReconciledByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("SplitRail.Api.Models.User", "SettledByUser")
                         .WithMany()
                         .HasForeignKey("SettledByUserId")
@@ -860,6 +938,8 @@ namespace SplitRail.Api.Data.Migrations
                         .HasForeignKey("VenueId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("ReconciledByUser");
 
                     b.Navigation("SettledByUser");
 
@@ -957,6 +1037,11 @@ namespace SplitRail.Api.Data.Migrations
 
             modelBuilder.Entity("SplitRail.Api.Models.QboSyncLedger", b =>
                 {
+                    b.HasOne("SplitRail.Api.Models.QboSyncLedger", "CorrectedLedgerEntry")
+                        .WithMany()
+                        .HasForeignKey("CorrectedLedgerEntryId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("SplitRail.Api.Models.Event", "Event")
                         .WithMany("QboSyncLedgerEntries")
                         .HasForeignKey("EventId")
@@ -967,6 +1052,8 @@ namespace SplitRail.Api.Data.Migrations
                         .WithMany()
                         .HasForeignKey("MappedLineItemId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("CorrectedLedgerEntry");
 
                     b.Navigation("Event");
 
@@ -1013,8 +1100,7 @@ namespace SplitRail.Api.Data.Migrations
                     b.HasOne("SplitRail.Api.Models.User", "ReversedByUser")
                         .WithMany()
                         .HasForeignKey("ReversedByUserId")
-                        .OnDelete(DeleteBehavior.SetNull)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Event");
 
@@ -1038,6 +1124,25 @@ namespace SplitRail.Api.Data.Migrations
                     b.Navigation("Event");
 
                     b.Navigation("Venue");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.UserEventPin", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.Event", "Event")
+                        .WithMany("UserEventPins")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SplitRail.Api.Models.User", "User")
+                        .WithMany("EventPins")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.UserOrganizationMapping", b =>
@@ -1108,6 +1213,8 @@ namespace SplitRail.Api.Data.Migrations
                     b.Navigation("Reversals");
 
                     b.Navigation("UnmappedQboTransactions");
+
+                    b.Navigation("UserEventPins");
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.Invitation", b =>
@@ -1133,6 +1240,8 @@ namespace SplitRail.Api.Data.Migrations
 
             modelBuilder.Entity("SplitRail.Api.Models.User", b =>
                 {
+                    b.Navigation("EventPins");
+
                     b.Navigation("OrganizationMappings");
 
                     b.Navigation("RefreshTokens");

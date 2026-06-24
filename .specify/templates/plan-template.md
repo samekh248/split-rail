@@ -32,7 +32,7 @@
 
 **Performance Goals**: [domain-specific, e.g., 1000 req/s, 10k lines/sec, 60 fps or NEEDS CLARIFICATION]
 
-**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable; ≥80.0% line/branch coverage on backend and frontend independently (missing/unparseable coverage reports treated as failing) or NEEDS CLARIFICATION]
+**Constraints**: [domain-specific, e.g., <200ms p95, <100MB memory, offline-capable; ≥80.0% line/branch coverage on backend and frontend independently (missing/unparseable coverage reports treated as failing); operator scripts under `deploy/` that are run manually or in CI MUST ship paired `.sh` and `.ps1` variants per Constitution §X or NEEDS CLARIFICATION]
 
 **Scale/Scope**: [domain-specific, e.g., 10k users, 1M LOC, 50 screens or NEEDS CLARIFICATION]
 

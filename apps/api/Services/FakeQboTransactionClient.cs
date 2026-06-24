@@ -8,6 +8,7 @@ public class FakeQboTransactionClient : IQboTransactionClient
 {
     public const string LifecycleTagName = "EVENT-E2E-LIFECYCLE";
     public const string LifecycleAccountId = "E2E-ACCT-001";
+    public const string LifecycleTransactionId = "E2E-TXN-001";
 
     private static readonly IReadOnlyDictionary<string, IReadOnlyList<QboFetchedTransaction>> SeedData =
         new Dictionary<string, IReadOnlyList<QboFetchedTransaction>>(StringComparer.OrdinalIgnoreCase)
@@ -15,7 +16,7 @@ public class FakeQboTransactionClient : IQboTransactionClient
             [LifecycleTagName] =
             [
                 new QboFetchedTransaction(
-                    "E2E-TXN-001",
+                    LifecycleTransactionId,
                     LifecycleAccountId,
                     "E2E Production Expense",
                     5100.00m,

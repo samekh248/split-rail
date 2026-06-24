@@ -20,6 +20,7 @@ function baseAuthValue(): AuthContextValue {
     createOrganization: vi.fn(),
     logout: vi.fn(),
     dismissWelcome: vi.fn(),
+    sessionExpired: false,
   };
 }
 

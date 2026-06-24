@@ -58,6 +58,24 @@ public class LedgerStateMachineTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task CreateLineItem_AfterLockBudget_WithSettlementValue_Returns201()
+    {
+        var (client, venueId, _) = await SetupFinancialAdminAsync();
+        var evt = await CreateEventViaApiAsync(client, venueId);
+
+        await client.PostAsync($"/api/venues/{venueId}/events/{evt.EventId}/lock-budget", null);
+
+        var response = await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/line-items",
+            new CreateLineItemRequest("EXPENSES", "Late rental", 1, false, 0m, 400m, null));
+
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var created = await response.Content.ReadFromJsonAsync<LineItemDto>();
+        created!.ProformaValue.Should().Be(0m);
+        created.SettlementValue.Should().Be(400m);
+    }
+
+    [Fact]
     public async Task SettlementEdit_AfterLock_WithPermission_Succeeds()
     {
         var (client, venueId, _) = await SetupFinancialAdminAsync();

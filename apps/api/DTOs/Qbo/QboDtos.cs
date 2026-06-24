@@ -56,3 +56,20 @@ public record UnmappedTransactionsResponse(
     IReadOnlyList<UnmappedTransactionDto> Transactions);
 
 public record UnmappedCountDto(Guid EventId, int UnmappedCount);
+
+public record VenueQboStatusDto(
+    Guid VenueId,
+    bool QboConnected,
+    DateTimeOffset? LastSyncedAt);
+
+public record VenueSyncEventResultDto(
+    Guid EventId,
+    string Title,
+    bool Success,
+    string? ErrorMessage);
+
+public record VenueSyncResultDto(
+    Guid VenueId,
+    int AttemptedCount,
+    int SucceededCount,
+    IReadOnlyList<VenueSyncEventResultDto> Results);

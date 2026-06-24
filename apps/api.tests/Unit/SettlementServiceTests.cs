@@ -9,6 +9,7 @@ using SplitRail.Api.Exceptions;
 using SplitRail.Api.Models;
 using SplitRail.Api.Models.Enums;
 using SplitRail.Api.Services;
+using SplitRail.Api.Tests.Integration;
 using Xunit;
 
 namespace SplitRail.Api.Tests.Unit;
@@ -70,6 +71,24 @@ public class SettlementServiceTests
         await act.Should().ThrowAsync<SettlementStateException>();
     }
 
+    [Fact]
+    public async Task InMemoryArchiveStore_StagePromoteDelete_LeavesNoStagedObjects()
+    {
+        var store = new InMemoryArchiveStoreForUnit();
+        var stagingPath = "staging/settlements/a.pdf";
+        var finalPath = "settlements/a.pdf";
+        var pdf = new byte[] { 0x25, 0x50, 0x44, 0x46 };
+
+        await store.StageAsync(stagingPath, pdf);
+        store.StagedCount.Should().Be(1);
+
+        await store.PromoteAsync(stagingPath, finalPath);
+        store.StagedCount.Should().Be(0);
+
+        await store.DeleteStagedAsync(stagingPath);
+        store.StagedCount.Should().Be(0);
+    }
+
     private static ApplicationDbContext CreateDbContext()
     {
         var options = new DbContextOptionsBuilder<ApplicationDbContext>()
@@ -90,6 +109,7 @@ public class SettlementServiceTests
             new SettlementPdfRenderer(),
             archiveStore,
             Options.Create(new SettlementArchiveOptions { BucketName = "test-bucket" }),
+            new FrozenEventSaveContext(),
             NullLogger<SettlementService>.Instance);
     }
 
@@ -105,15 +125,54 @@ public class SettlementServiceTests
         public void SetActiveVenueId(Guid? venueId) => ActiveVenueId = venueId;
     }
 
-    private sealed class InMemoryArchiveStoreForUnit : ISettlementArchiveStore
+    internal sealed class InMemoryArchiveStoreForUnit : ISettlementArchiveStore
     {
-        public Task UploadAsync(string objectPath, byte[] pdfBytes, CancellationToken cancellationToken = default) =>
-            Task.CompletedTask;
+        private readonly Dictionary<string, byte[]> _staged = new(StringComparer.Ordinal);
+        private readonly Dictionary<string, byte[]> _final = new(StringComparer.Ordinal);
+
+        public bool ThrowOnNextSave { get; set; }
+
+        public Task UploadAsync(string objectPath, byte[] pdfBytes, CancellationToken cancellationToken = default)
+        {
+            _final[objectPath] = pdfBytes;
+            return Task.CompletedTask;
+        }
+
+        public Task StageAsync(string stagingPath, byte[] pdfBytes, CancellationToken cancellationToken = default)
+        {
+            _staged[stagingPath] = pdfBytes;
+            return Task.CompletedTask;
+        }
+
+        public Task PromoteAsync(string stagingPath, string finalPath, CancellationToken cancellationToken = default)
+        {
+            if (!_staged.ContainsKey(stagingPath))
+                throw new SplitRail.Api.Exceptions.SettlementArchiveException("Staged object missing.");
+
+            _final[finalPath] = _staged[stagingPath];
+            _staged.Remove(stagingPath);
+            return Task.CompletedTask;
+        }
+
+        public Task DeleteStagedAsync(string stagingPath, CancellationToken cancellationToken = default)
+        {
+            _staged.Remove(stagingPath);
+            return Task.CompletedTask;
+        }
 
         public Task<(string Url, DateTimeOffset ExpiresAt)> CreateSignedUrlAsync(
             string objectPath,
             TimeSpan ttl,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(("https://example.test/file.pdf", DateTimeOffset.UtcNow.Add(ttl)));
+
+        public Task<DateTimeOffset?> GetRetentionUntilAsync(
+            string objectPath,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<DateTimeOffset?>(null);
+
+        public int StagedCount => _staged.Count;
+
+        public int FinalCount => _final.Count;
     }
 }

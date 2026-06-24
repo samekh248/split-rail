@@ -33,6 +33,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<QboSyncLedger> QboSyncLedgers => Set<QboSyncLedger>();
     public DbSet<UnmappedQboTransaction> UnmappedQboTransactions => Set<UnmappedQboTransaction>();
     public DbSet<SettlementReversal> SettlementReversals => Set<SettlementReversal>();
+    public DbSet<UserEventPin> UserEventPins => Set<UserEventPin>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,6 +56,7 @@ public class ApplicationDbContext : DbContext
         ConfigureQboSyncLedger(modelBuilder);
         ConfigureUnmappedQboTransaction(modelBuilder);
         ConfigureSettlementReversal(modelBuilder);
+        ConfigureUserEventPin(modelBuilder);
 
         ApplyTenantQueryFilters(modelBuilder);
     }
@@ -62,7 +64,8 @@ public class ApplicationDbContext : DbContext
     private void ApplyTenantQueryFilters(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Organization>().HasQueryFilter(e =>
-            _tenantContext.OrganizationId == null || e.Id == _tenantContext.OrganizationId);
+            (_tenantContext.OrganizationId == null || e.Id == _tenantContext.OrganizationId)
+            && e.ArchivedAt == null);
 
         modelBuilder.Entity<Venue>().HasQueryFilter(e =>
             _tenantContext.OrganizationId == null || e.OrganizationId == _tenantContext.OrganizationId);
@@ -115,6 +118,10 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<SettlementReversal>().HasQueryFilter(e =>
             _tenantContext.OrganizationId == null ||
             e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<UserEventPin>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
     }
 
     private static void ConfigureOrganization(ModelBuilder modelBuilder)
@@ -136,6 +143,9 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasColumnName("created_at")
                 .HasDefaultValueSql("NOW()");
+
+            entity.Property(e => e.ArchivedAt)
+                .HasColumnName("archived_at");
         });
     }
 
@@ -447,6 +457,8 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.SettledAt).HasColumnName("settled_at");
             entity.Property(e => e.SettledByUserId).HasColumnName("settled_by_user_id");
+            entity.Property(e => e.ReconciledAt).HasColumnName("reconciled_at");
+            entity.Property(e => e.ReconciledByUserId).HasColumnName("reconciled_by_user_id");
 
             entity.Property(e => e.ArtistSignatureData)
                 .HasColumnName("artist_signature_data");
@@ -474,6 +486,11 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.SettledByUser)
                 .WithMany()
                 .HasForeignKey(e => e.SettledByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.ReconciledByUser)
+                .WithMany()
+                .HasForeignKey(e => e.ReconciledByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
     }
@@ -749,9 +766,46 @@ public class ApplicationDbContext : DbContext
                 .HasColumnName("synced_at")
                 .HasDefaultValueSql("NOW()");
 
+            entity.Property(e => e.EntryType)
+                .HasColumnName("entry_type")
+                .HasConversion<string>()
+                .HasMaxLength(20)
+                .HasDefaultValue(QboSyncLedgerEntryType.Original);
+
+            entity.Property(e => e.CorrectionType)
+                .HasColumnName("correction_type")
+                .HasConversion<string>()
+                .HasMaxLength(20);
+
+            entity.Property(e => e.TargetStateAbsent)
+                .HasColumnName("target_state_absent");
+
+            entity.Property(e => e.TargetStateAmount)
+                .HasColumnName("target_state_amount")
+                .HasColumnType("numeric(12,2)");
+
+            entity.Property(e => e.CorrectedLedgerEntryId)
+                .HasColumnName("corrected_ledger_entry_id");
+
             entity.HasIndex(e => new { e.EventId, e.QboTransactionId })
                 .IsUnique()
-                .HasDatabaseName("IX_qbo_sync_ledger_event_txn");
+                .HasFilter("entry_type = 'Original'")
+                .HasDatabaseName("IX_qbo_sync_ledger_event_txn_original");
+
+            entity.HasIndex(e => new
+                {
+                    e.EventId,
+                    e.QboTransactionId,
+                    e.CorrectionType,
+                    e.TargetStateAbsent,
+                    e.TargetStateAmount
+                })
+                .IsUnique()
+                .HasFilter("entry_type = 'OffsetCorrection'")
+                .HasDatabaseName("IX_qbo_sync_ledger_offset_idempotency");
+
+            entity.HasIndex(e => new { e.EventId, e.EntryType })
+                .HasDatabaseName("IX_qbo_sync_ledger_event_entry_type");
 
             entity.HasIndex(e => e.MappedLineItemId)
                 .HasDatabaseName("IX_qbo_sync_ledger_mapped_line_item_id");
@@ -764,6 +818,11 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.MappedLineItem)
                 .WithMany()
                 .HasForeignKey(e => e.MappedLineItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.CorrectedLedgerEntry)
+                .WithMany()
+                .HasForeignKey(e => e.CorrectedLedgerEntryId)
                 .OnDelete(DeleteBehavior.SetNull);
         });
     }
@@ -863,6 +922,33 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.ReversedByUserId)
                 .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    private static void ConfigureUserEventPin(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<UserEventPin>(entity =>
+        {
+            entity.ToTable("user_event_pins");
+
+            entity.HasKey(e => new { e.UserId, e.EventId });
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+
+            entity.Property(e => e.PinnedAt)
+                .HasColumnName("pinned_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.EventPins)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.UserEventPins)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

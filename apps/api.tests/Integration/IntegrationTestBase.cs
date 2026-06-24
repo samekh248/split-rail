@@ -1,21 +1,31 @@
 using System.IdentityModel.Tokens.Jwt;
+using System.Net;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using FluentAssertions;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using SplitRail.Api.Data;
+using SplitRail.Api.Data.Interceptors;
+using SplitRail.Api.DTOs;
 using SplitRail.Api.DTOs.Auth;
 using SplitRail.Api.DTOs.Invitations;
 using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.DTOs.Organizations;
+using SplitRail.Api.DTOs.Settlement;
 using SplitRail.Api.DTOs.Venues;
 using SplitRail.Api.Models;
 using SplitRail.Api.Models.Enums;
 using SplitRail.Api.Services;
+using SplitRail.Api.Tests.TestSupport;
 using Testcontainers.PostgreSql;
 using Xunit;
 
@@ -33,8 +43,12 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected WebApplicationFactory<Program> Factory = null!;
     protected HttpClient Client = null!;
     protected InMemorySettlementArchiveStore ArchiveStore { get; } = new();
+    protected ThrowingSettlementPdfRenderer ThrowingPdfRenderer { get; } = new();
+    protected SaveChangesFailureInterceptor SaveChangesFailure { get; } = new();
+    protected TestLogCollector? LogCollector { get; private set; }
 
     protected virtual bool ReplaceSettlementArchiveStore => true;
+    protected virtual bool EnableLogCapture => false;
 
     protected virtual void AddAppConfiguration(Dictionary<string, string?> config)
     {
@@ -44,8 +58,13 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         config["QboSync:RedirectUri"] = "http://localhost/api/qbo/callback";
         config["QboSync:InternalTriggerKey"] = "test-internal-key";
         config["SettlementArchive:BucketName"] = "test-settlements-bucket";
+        config["SettlementArchive:StagingBucketName"] = "test-settlements-staging";
         config["SettlementArchive:SignedUrlTtlMinutes"] = "15";
+        config["SettlementArchive:RetentionYears"] = "7";
+        config["SettlementArchive:EnforceRetentionValidation"] = "false";
     }
+
+    protected virtual void ConfigureAdditionalTestServices(IServiceCollection services) { }
 
     protected virtual void ConfigureTestServices(IServiceCollection services, string connectionString)
     {
@@ -54,11 +73,30 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         if (descriptor is not null)
             services.Remove(descriptor);
 
-        services.AddDbContext<ApplicationDbContext>(options =>
-            options.UseNpgsql(connectionString));
+        services.AddSingleton(SaveChangesFailure);
+
+        services.AddDbContext<ApplicationDbContext>((sp, options) =>
+        {
+            options.UseNpgsql(connectionString);
+            options.AddInterceptors(
+                sp.GetRequiredService<FrozenEventImmutabilityInterceptor>(),
+                sp.GetRequiredService<SaveChangesFailureInterceptor>());
+        });
+
+        var pdfRendererDescriptor = services.SingleOrDefault(d =>
+            d.ServiceType == typeof(ISettlementPdfRenderer));
+        if (pdfRendererDescriptor is not null)
+            services.Remove(pdfRendererDescriptor);
+
+        services.AddSingleton(ThrowingPdfRenderer);
+        services.AddSingleton<ISettlementPdfRenderer>(sp =>
+            sp.GetRequiredService<ThrowingSettlementPdfRenderer>());
 
         if (!ReplaceSettlementArchiveStore)
+        {
+            ConfigureAdditionalTestServices(services);
             return;
+        }
 
         var archiveDescriptor = services.SingleOrDefault(d =>
             d.ServiceType == typeof(ISettlementArchiveStore));
@@ -68,6 +106,30 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         services.AddSingleton(ArchiveStore);
         services.AddSingleton<ISettlementArchiveStore>(sp =>
             sp.GetRequiredService<InMemorySettlementArchiveStore>());
+
+        ConfigureAdditionalTestServices(services);
+    }
+
+    protected WebApplicationFactory<Program> CreateFactoryWithSharedDataProtectionPath(
+        string connectionString,
+        string sharedKeyDirectory)
+    {
+        return new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment(Environments.Development);
+            builder.ConfigureAppConfiguration((_, config) =>
+            {
+                var settings = new Dictionary<string, string?>
+                {
+                    ["ConnectionStrings:DefaultConnection"] = connectionString,
+                    ["DataProtection:KeyDirectory"] = sharedKeyDirectory
+                };
+                AddAppConfiguration(settings);
+                config.AddInMemoryCollection(settings);
+            });
+            builder.ConfigureServices(services =>
+                ConfigureTestServices(services, connectionString));
+        });
     }
 
     public async Task InitializeAsync()
@@ -75,7 +137,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         await _postgres.StartAsync();
 
         var connectionString = _postgres.GetConnectionString();
-        Factory = new WebApplicationFactory<Program>().WithWebHostBuilder(builder =>
+
+        Action<IWebHostBuilder> configureWebHost = builder =>
         {
             builder.ConfigureAppConfiguration((_, config) =>
             {
@@ -86,7 +149,17 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
             builder.ConfigureServices(services =>
                 ConfigureTestServices(services, connectionString));
-        });
+        };
+
+        if (EnableLogCapture)
+        {
+            LogCollector = new TestLogCollector();
+            Factory = new LogCapturingWebApplicationFactory(LogCollector, configureWebHost);
+        }
+        else
+        {
+            Factory = new WebApplicationFactory<Program>().WithWebHostBuilder(configureWebHost);
+        }
 
         Client = Factory.CreateClient();
 
@@ -214,10 +287,28 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         tenantContext.SetContext(userId, orgId);
 
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var saveContext = scope.ServiceProvider.GetRequiredService<IFrozenEventSaveContext>();
         var evt = await db.Events.FirstAsync(e => e.Id == eventId);
+        var originalStatus = evt.Status;
         evt.Status = status;
         evt.IsBudgetLocked = isBudgetLocked;
+
+        using var authorize = ResolveFrozenEventSaveAuthorization(saveContext, originalStatus, status);
         await db.SaveChangesAsync();
+    }
+
+    private static IDisposable? ResolveFrozenEventSaveAuthorization(
+        IFrozenEventSaveContext saveContext,
+        EventStatus originalStatus,
+        EventStatus targetStatus)
+    {
+        if (originalStatus == EventStatus.Settled && targetStatus == EventStatus.Reconciled)
+            return saveContext.Authorize(FrozenEventSaveReason.EventReconciliation);
+
+        if (originalStatus == EventStatus.Settled && targetStatus == EventStatus.PreShow)
+            return saveContext.Authorize(FrozenEventSaveReason.SettlementReversal);
+
+        return null;
     }
 
     protected async Task<Guid> SeedLineItemDirectAsync(
@@ -357,7 +448,41 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
             MappedLineItemId = mappedLineItemId,
             SyncBatchId = syncBatchId ?? Guid.NewGuid(),
-            SyncedAt = DateTimeOffset.UtcNow
+            SyncedAt = DateTimeOffset.UtcNow,
+            EntryType = QboSyncLedgerEntryType.Original
+        });
+        await db.SaveChangesAsync();
+    }
+
+    protected async Task SeedOffsetLedgerEntryDirectAsync(
+        string accessToken,
+        Guid eventId,
+        Guid mappedLineItemId,
+        string qboTransactionId,
+        string qboAccountId,
+        decimal amount,
+        Guid? syncBatchId = null)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        var (userId, orgId) = ParseTokenClaims(accessToken);
+        tenantContext.SetContext(userId, orgId);
+
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        db.QboSyncLedgers.Add(new QboSyncLedger
+        {
+            EventId = eventId,
+            QboTransactionId = qboTransactionId,
+            QboAccountId = qboAccountId,
+            Amount = amount,
+            TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            MappedLineItemId = mappedLineItemId,
+            SyncBatchId = syncBatchId ?? Guid.NewGuid(),
+            SyncedAt = DateTimeOffset.UtcNow,
+            EntryType = QboSyncLedgerEntryType.OffsetCorrection,
+            CorrectionType = QboSyncCorrectionType.AmountChange,
+            TargetStateAbsent = false,
+            TargetStateAmount = 100m
         });
         await db.SaveChangesAsync();
     }
@@ -385,6 +510,153 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         await client.PostAsync($"/api/venues/{venueId}/events/{evt.EventId}/lock-budget", null);
         return evt;
     }
+
+    protected sealed record FinalizedEventSeed(
+        Guid EventId,
+        LineItemDto LineItem,
+        EventArtistDto? Artist,
+        string StoredPath,
+        byte[] OriginalPdfBytes,
+        Guid UserId);
+
+    protected async Task<FinalizedEventSeed> SeedFinalizedEventAsync(
+        HttpClient client,
+        Guid venueId,
+        string token,
+        bool includeArtist = false,
+        string artistDealType = "guarantee",
+        decimal artistBaseGuarantee = 5000m,
+        decimal artistBackendPercentage = 0m,
+        string? artistCustomFormulaExpression = null)
+    {
+        var (userId, _) = ParseTokenClaims(token);
+        var evt = await CreateEventViaApiAsync(client, venueId);
+
+        var createLineResponse = await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/line-items",
+            new CreateLineItemRequest("REVENUE", "Control Row", 1, false, 100m, 0m, null));
+        createLineResponse.EnsureSuccessStatusCode();
+        var lineItem = (await createLineResponse.Content.ReadFromJsonAsync<LineItemDto>())!;
+
+        var lockResponse = await client.PostAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/lock-budget", null);
+        lockResponse.EnsureSuccessStatusCode();
+
+        var updateLineResponse = await client.PutAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/line-items/{lineItem.Id}",
+            new UpdateLineItemRequest("Control Row", 1, false, 100m, 100m, null, false, lineItem.RowVersion));
+        updateLineResponse.EnsureSuccessStatusCode();
+        lineItem = (await updateLineResponse.Content.ReadFromJsonAsync<LineItemDto>())!;
+
+        EventArtistDto? artist = null;
+        if (includeArtist)
+        {
+            var createArtistResponse = await client.PostAsJsonAsync(
+                $"/api/venues/{venueId}/events/{evt.EventId}/artists",
+                new CreateArtistRequest(
+                    "Headliner",
+                    1,
+                    artistDealType,
+                    artistCustomFormulaExpression,
+                    artistBaseGuarantee,
+                    artistBackendPercentage,
+                    0m));
+            createArtistResponse.EnsureSuccessStatusCode();
+            artist = (await createArtistResponse.Content.ReadFromJsonAsync<EventArtistDto>())!;
+        }
+
+        var settleResponse = await client.PostAsJsonAsync(
+            $"/api/venues/{venueId}/events/{evt.EventId}/settle",
+            new FinalizeSettlementRequest(ValidSignatureBase64(), true));
+        settleResponse.EnsureSuccessStatusCode();
+
+        var storedPath = ArchiveStore.StoredObjectPaths.Single();
+        var originalPdfBytes = ArchiveStore.GetStoredPdf(storedPath)!;
+
+        return new FinalizedEventSeed(evt.EventId, lineItem, artist, storedPath, originalPdfBytes, userId);
+    }
+
+    protected Task<FinalizedEventSeed> SeedFinalizedEventWithArtistAsync(
+        HttpClient client,
+        Guid venueId,
+        string token) =>
+        SeedFinalizedEventAsync(client, venueId, token, includeArtist: true);
+
+    protected Task<FinalizedEventSeed> SeedFinalizedEventWithArtistDealAsync(
+        HttpClient client,
+        Guid venueId,
+        string token,
+        string dealType,
+        decimal baseGuarantee,
+        decimal backendPercentage,
+        string? customFormulaExpression = null) =>
+        SeedFinalizedEventAsync(
+            client,
+            venueId,
+            token,
+            includeArtist: true,
+            artistDealType: dealType,
+            artistBaseGuarantee: baseGuarantee,
+            artistBackendPercentage: backendPercentage,
+            artistCustomFormulaExpression: customFormulaExpression);
+
+    protected async Task<FinalizedEventSeed> SeedFinalizedThenReconciledAsync(
+        HttpClient client,
+        Guid venueId,
+        string token,
+        bool includeArtist = false)
+    {
+        var seed = await SeedFinalizedEventAsync(client, venueId, token, includeArtist);
+        var reconcileResponse = await client.PostAsync(
+            $"/api/venues/{venueId}/events/{seed.EventId}/reconcile", null);
+        reconcileResponse.EnsureSuccessStatusCode();
+        return seed;
+    }
+
+    protected IEnumerable<TestLogCollector.LogEntry> GetFrozenAuditLogs() =>
+        LogCollector!.Entries.Where(e =>
+            e.Level == LogLevel.Warning &&
+            e.Message.Contains("Rejected frozen event mutation", StringComparison.Ordinal));
+
+    protected void AssertFrozenAuditLog(
+        Guid eventId,
+        Guid venueId,
+        Guid userId,
+        string operation,
+        string eventStatus)
+    {
+        var entry = GetFrozenAuditLogs().Should().ContainSingle().Subject;
+        GetAuditStateValue(entry, "Operation").Should().Be(operation);
+        GetAuditStateValue(entry, "EventId").Should().Be(eventId);
+        GetAuditStateValue(entry, "VenueId").Should().Be(venueId);
+        GetAuditStateValue(entry, "UserId").Should().Be(userId);
+        GetAuditStateValue(entry, "EventStatus").Should().Be(eventStatus);
+    }
+
+    protected void AssertPdfUnchanged(FinalizedEventSeed seed)
+    {
+        ArchiveStore.GetStoredPdf(seed.StoredPath).Should().Equal(seed.OriginalPdfBytes);
+        ArchiveStore.StoredObjectCount.Should().Be(1);
+    }
+
+    protected async Task AssertArtistPayoutUnchanged(Guid artistId, decimal expectedPayout)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var artist = await db.EventArtists.AsNoTracking().SingleAsync(a => a.Id == artistId);
+        artist.CalculatedNetPayout.Should().Be(expectedPayout);
+    }
+
+    protected async Task AssertRecalculateRejectionResponse(HttpResponseMessage response)
+    {
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+        var error = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+        error!.Type.Should().Be("ledger_state");
+        error.Detail.Should().Contain("settled or reconciled");
+    }
+
+    protected static object? GetAuditStateValue(TestLogCollector.LogEntry entry, string key) =>
+        entry.State.FirstOrDefault(kvp => kvp.Key == key).Value;
 
     protected static string ValidSignatureBase64()
     {

@@ -5,11 +5,19 @@ export interface AuthLayoutProps {
   title: string;
   subtitle?: string;
   showLogo?: boolean;
+  notice?: ReactNode;
   children: ReactNode;
   footer?: ReactNode;
 }
 
-export function AuthLayout({ title, subtitle, showLogo, children, footer }: AuthLayoutProps) {
+export function AuthLayout({
+  title,
+  subtitle,
+  showLogo,
+  notice,
+  children,
+  footer,
+}: AuthLayoutProps) {
   return (
     <main className="auth-layout">
       <div className="auth-layout__card">
@@ -18,6 +26,7 @@ export function AuthLayout({ title, subtitle, showLogo, children, footer }: Auth
         ) : null}
         <h1 className="auth-layout__title">{title}</h1>
         {subtitle ? <p className="auth-layout__subtitle">{subtitle}</p> : null}
+        {notice}
         {children}
         {footer ? <div className="auth-layout__footer">{footer}</div> : null}
       </div>
