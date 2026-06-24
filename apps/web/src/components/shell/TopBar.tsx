@@ -1,3 +1,5 @@
+import { faBars } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { ReactNode, Ref } from 'react';
 import { useUserProfile } from '@/api/user';
 import { BrandLogo } from '@/components/brand/BrandLogo';
@@ -30,19 +32,31 @@ export function TopBar({
             data-testid="mobile-nav-open"
             onClick={onOpenMobileNav}
           >
-            ☰
+            <FontAwesomeIcon icon={faBars} className="top-bar__menu-icon" aria-hidden="true" />
           </button>
         ) : null}
-        <span className="top-bar__org-name" data-testid="top-bar-org-name">
-          {organizationName}
-        </span>
+        {showMobileMenu ? (
+          <div className="top-bar__brand-slot" data-testid="top-bar-brand">
+            <BrandLogo variant="text" className="top-bar__brand" />
+          </div>
+        ) : (
+          <span className="top-bar__org-name" data-testid="top-bar-org-name">
+            {organizationName}
+          </span>
+        )}
       </div>
       {showMobileMenu ? (
-        <div className="top-bar__brand-slot" data-testid="top-bar-brand">
-          <BrandLogo variant="text" className="top-bar__brand" />
+        <div className="top-bar__trailing" data-testid="top-bar-trailing">
+          <span className="top-bar__org-name" data-testid="top-bar-org-name">
+            {organizationName}
+          </span>
+          {contextualContent ? (
+            <div className="top-bar__context" data-testid="top-bar-context">
+              {contextualContent}
+            </div>
+          ) : null}
         </div>
-      ) : null}
-      {contextualContent ? (
+      ) : contextualContent ? (
         <div className="top-bar__context" data-testid="top-bar-context">
           {contextualContent}
         </div>

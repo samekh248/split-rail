@@ -919,6 +919,8 @@ th {
 
 .top-bar__menu-button {
   display: none;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: 1px solid var(--color-border-subtle);
   border-radius: 6px;
@@ -926,13 +928,25 @@ th {
   height: 2.25rem;
   cursor: pointer;
   color: var(--color-primary-brown);
+  padding: 0;
+}
+
+.top-bar__menu-icon {
+  width: 1rem;
+  height: 1rem;
 }
 
 .top-bar__brand-slot {
   display: none;
-  justify-self: center;
   min-width: 0;
-  grid-column: 2;
+}
+
+.top-bar__trailing {
+  display: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .top-bar__brand.brand-logo-wrapper {
@@ -1064,11 +1078,27 @@ th {
 }
 
 .mobile-nav-drawer__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
   color: inherit;
-  font-size: 1.5rem;
   cursor: pointer;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+}
+
+.mobile-nav-drawer__close-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.mobile-nav-drawer__close:focus-visible {
+  outline: 2px solid var(--color-bg-cream);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 .mobile-nav-drawer__profile {
@@ -1091,31 +1121,73 @@ th {
     display: none;
   }
 
+  .app-shell__header {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: auto;
+  }
+
+  .top-bar {
+    order: 1;
+    width: 100%;
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    justify-content: unset;
+    background: var(--color-primary-brown);
+    color: var(--color-text-on-dark);
+  }
+
+  .workspace-bar {
+    order: 2;
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
   .top-bar__menu-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    color: var(--color-text-on-dark);
+    border-color: rgba(244, 241, 234, 0.25);
+    min-width: 2.75rem;
+    min-height: 2.75rem;
   }
 
-  .top-bar {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    justify-content: unset;
+  .top-bar__menu-button:focus-visible {
+    outline: 2px solid var(--color-bg-cream);
+    outline-offset: 2px;
+  }
+
+  .top-bar__org-name {
+    color: var(--color-text-on-dark);
   }
 
   .top-bar__leading {
     grid-column: 1;
+    justify-self: start;
+  }
+
+  .top-bar__trailing {
+    display: flex;
+    grid-column: 2;
+    justify-self: end;
   }
 
   .top-bar__brand-slot {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
+  }
+
+  .top-bar__trailing .top-bar__org-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .top-bar__context {
-    grid-column: 3;
-    justify-self: end;
+    flex-shrink: 0;
   }
 }
 
