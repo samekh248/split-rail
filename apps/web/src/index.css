@@ -187,6 +187,7 @@ th {
   outline-offset: 2px;
 }
 
+.btn-secondary,
 .btn-outline,
 .auth-form__secondary,
 .event-form-panel__cancel,
@@ -197,16 +198,17 @@ th {
 .artist-deal-panel__actions button,
 .team-table__actions button {
   padding: 0.375rem 0.75rem;
-  background: var(--color-surface-white);
+  background: transparent;
   color: var(--color-primary-brown);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-button);
   font-family: var(--font-ui);
   font-size: 0.875rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
 }
 
+.btn-secondary:hover:not(:disabled),
 .btn-outline:hover:not(:disabled),
 .auth-form__secondary:hover:not(:disabled),
 .event-form-panel__cancel:hover:not(:disabled),
@@ -219,6 +221,7 @@ th {
   background: var(--color-bg-cream);
 }
 
+.btn-secondary:disabled,
 .btn-outline:disabled,
 .auth-form__secondary:disabled,
 .event-form-panel__cancel:disabled,
@@ -232,6 +235,7 @@ th {
   cursor: not-allowed;
 }
 
+.btn-secondary:focus-visible,
 .btn-outline:focus-visible,
 .auth-form__secondary:focus-visible,
 .event-form-panel__cancel:focus-visible,
@@ -292,7 +296,7 @@ th {
   background: var(--color-error-bg);
 }
 
-.btn-secondary {
+.btn-secondary--on-dark {
   padding: 0.375rem 0.75rem;
   background: transparent;
   color: var(--color-bg-cream);
@@ -304,11 +308,16 @@ th {
   cursor: pointer;
 }
 
-.btn-secondary:hover:not(:disabled) {
+.btn-secondary--on-dark:hover:not(:disabled) {
   background: var(--color-nav-hover-overlay);
 }
 
-.btn-secondary:focus-visible {
+.btn-secondary--on-dark:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary--on-dark:focus-visible {
   outline: 2px solid var(--color-bg-cream);
   outline-offset: 2px;
 }
@@ -1527,11 +1536,6 @@ th {
   width: 100%;
 }
 
-.auth-form__submit:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
 .auth-form__actions {
   display: flex;
   gap: 0.75rem;
@@ -1540,11 +1544,6 @@ th {
 
 .auth-form__secondary {
   flex: 1;
-}
-
-.auth-form__secondary:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
 }
 
 .auth-form__actions .auth-form__submit {
@@ -1734,11 +1733,6 @@ th {
 .welcome-modal__dismiss.btn-primary,
 button.welcome-modal__dismiss {
   width: 100%;
-}
-
-.welcome-modal__dismiss:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
 }
 
 .app__settings {

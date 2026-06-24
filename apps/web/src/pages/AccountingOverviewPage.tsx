@@ -71,7 +71,7 @@ export function AccountingOverviewPage() {
       {!isLoading && isError ? (
         <div className="dashboard-empty dashboard-empty--error" role="alert">
           <p>Unable to load venues. Please try again.</p>
-          <button type="button" className="dashboard-empty__retry" onClick={() => void refetch()}>
+          <button type="button" className="dashboard-empty__retry btn-primary" onClick={() => void refetch()}>
             Retry
           </button>
         </div>
@@ -107,7 +107,7 @@ export function AccountingOverviewPage() {
           <p>Unable to load accounting data. Please try again.</p>
           <button
             type="button"
-            className="dashboard-empty__retry"
+            className="dashboard-empty__retry btn-primary"
             onClick={() => void dashboardQuery.refetch()}
           >
             Retry

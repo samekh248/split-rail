@@ -73,4 +73,9 @@ describe('FinalizeSettlementPanel', () => {
       });
     });
   });
+
+  it('uses shared primary button styling', () => {
+    renderPanel();
+    expect(screen.getByTestId('finalize-settlement-btn')).toHaveClass('btn-primary');
+  });
 });

@@ -96,4 +96,15 @@ describe('SyncAllButton', () => {
       'Unable to sync events. Please try again.',
     );
   });
+
+  it('uses shared compact primary button styling', () => {
+    vi.mocked(useCanTriggerQboSync).mockReturnValue(true);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <SyncAllButton venueId="ven-1" />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('sync-all-button')).toHaveClass('btn-primary--compact');
+  });
 });

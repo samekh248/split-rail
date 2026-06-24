@@ -68,7 +68,7 @@ export function LedgerGrid({
         {!ledger.isBudgetLocked && status === 'PRE_SHOW' && (
           <button
             type="button"
-            className="ledger-grid__lock-btn"
+            className="ledger-grid__lock-btn btn-primary--compact"
             data-testid="lock-budget-btn"
             disabled={!canLockBudget || lockBudgetPending}
             onClick={onLockBudget}

@@ -29,7 +29,7 @@ export function SyncNowButton({ venueId, eventId }: SyncNowButtonProps) {
   return (
     <button
       type="button"
-      className="sync-now-button"
+      className="sync-now-button btn-primary--compact"
       data-testid="sync-now-button"
       disabled={triggerSync.isPending}
       onClick={() => void handleSync()}
