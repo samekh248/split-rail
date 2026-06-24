@@ -34,16 +34,16 @@ export const GLOBAL_NAV_ITEMS: GlobalNavItemConfig[] = [
     matchPaths: ['/', '/venues/new'],
   },
   {
+    id: 'accounting',
+    label: 'Settlements',
+    navigate: navigateToAccounting,
+    matchPaths: ['/accounting'],
+  },
+  {
     id: 'booking',
     label: 'Booking Calendar',
     disabled: true,
     matchPaths: [],
-  },
-  {
-    id: 'accounting',
-    label: 'Settlements / Accounting Sync',
-    navigate: navigateToAccounting,
-    matchPaths: ['/accounting'],
   },
 ];
 
