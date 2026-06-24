@@ -17,6 +17,13 @@ describe('BrandLogo', () => {
     expect(img).toHaveClass('brand-logo--badge');
   });
 
+  it('renders auth variant with sr-auth-logo.png', () => {
+    render(<BrandLogo variant="auth" />);
+    const img = screen.getByRole('img', { name: 'Split-Rail' });
+    expect(img).toHaveAttribute('src', '/sr-auth-logo.png');
+    expect(img).toHaveClass('brand-logo--auth');
+  });
+
   it('uses custom alt text when provided', () => {
     render(<BrandLogo variant="text" alt="Split Rail Logo" />);
     expect(screen.getByRole('img', { name: 'Split Rail Logo' })).toBeInTheDocument();

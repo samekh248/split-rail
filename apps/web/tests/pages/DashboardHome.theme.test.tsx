@@ -2,8 +2,10 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
+import { AppShell } from '@/components/shell/AppShell';
 import { DashboardHome } from '@/pages/DashboardHome';
 import { AuthContext, type AuthContextValue } from '@/auth/AuthContext';
+import { VenueProvider } from '@/venue/VenueContext';
 
 vi.mock('@/pages/EventLedgerPage', () => ({
   EventLedgerPage: () => <div data-testid="mock-ledger-page" />,
@@ -32,35 +34,63 @@ function createWrapper() {
 
   return ({ children }: { children: ReactNode }) => (
     <QueryClientProvider client={queryClient}>
-      <AuthContext.Provider value={authValue}>{children}</AuthContext.Provider>
+      <AuthContext.Provider value={authValue}>
+        <VenueProvider>{children}</VenueProvider>
+      </AuthContext.Provider>
     </QueryClientProvider>
   );
 }
 
 describe('DashboardHome theme', () => {
-  it('renders branded nav chrome header and logo', async () => {
-    global.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      json: async () => [{ id: 'ven-1', name: 'Main Hall' }],
-    });
+  it('renders branded vertical sidebar with logo', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: RequestInfo | URL) => {
+        const url = typeof input === 'string' ? input : input.toString();
+        if (url.includes('/users/me')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => ({ role: { permissions: {} } }),
+          });
+        }
+        if (url.includes('/events')) {
+          return Promise.resolve({
+            ok: true,
+            json: async () => [],
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          json: async () => [],
+        });
+      }),
+    );
 
-    render(<DashboardHome organizationName="Acme Corp" />, { wrapper: createWrapper() });
+    render(
+      <AppShell organizationName="Acme Corp">
+        <DashboardHome organizationName="Acme Corp" />
+      </AppShell>,
+      { wrapper: createWrapper() },
+    );
 
-    expect(document.querySelector('.app__header')).toBeInTheDocument();
+    expect(document.querySelector('[data-testid="sidebar-rail"]')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Split-Rail' })).toBeInTheDocument();
-    expect(screen.getByText('Acme Corp')).toHaveClass('app__subtitle');
+    expect(screen.getByTestId('top-bar-org-name')).toHaveTextContent('Acme Corp');
   });
 
-  it('wraps content in cream canvas app container', () => {
+  it('wraps content in cream canvas app shell', () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
     });
 
-    const { container } = render(<DashboardHome organizationName="Acme" />, {
-      wrapper: createWrapper(),
-    });
+    const { container } = render(
+      <AppShell organizationName="Acme">
+        <DashboardHome organizationName="Acme" />
+      </AppShell>,
+      { wrapper: createWrapper() },
+    );
 
-    expect(container.querySelector('.app')).toBeInTheDocument();
+    expect(container.querySelector('.app-shell')).toBeInTheDocument();
   });
 });

@@ -12,7 +12,7 @@ export function LoginPage({ onNavigateToRegister }: LoginPageProps) {
   return (
     <AuthLayout
       title="Sign in"
-      subtitle="Access your Split Rail workspace"
+      showLogo
       footer={
         <p className="auth-layout__nav">
           Don&apos;t have an account?{' '}

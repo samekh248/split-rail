@@ -1,59 +1,107 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEvents } from '@/api/events';
+import { EventCombobox } from '@/components/event/EventCombobox';
+import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
+import { VenueSwitcher } from '@/components/venue/VenueSwitcher';
 import { EventLedgerPage } from '@/pages/EventLedgerPage';
-import { useVenues } from '@/api/venues';
-import { useAuth } from '@/auth/useAuth';
-import { BrandLogo } from '@/components/brand/BrandLogo';
+import { useCanManageEvents } from '@/hooks/useCanManageEvents';
+import { setActiveEventId } from '@/venue/activeEventStorage';
+import { resolveActiveEventId } from '@/venue/eventSelection';
+import { useActiveVenue } from '@/venue/useActiveVenue';
 
 export interface DashboardHomeProps {
   organizationName: string;
 }
 
-function parseRouteParams(): { venueId: string; eventId: string } {
-  const params = new URLSearchParams(window.location.search);
-  const venueId = params.get('venueId') ?? '00000000-0000-0000-0000-000000000001';
-  const eventId = params.get('eventId') ?? '00000000-0000-0000-0000-000000000002';
-  return { venueId, eventId };
-}
+export function DashboardHome(_props: DashboardHomeProps) {
+  const {
+    activeVenueId,
+    venues,
+    isLoading: venuesLoading,
+    isError: venuesError,
+    refetch,
+  } = useActiveVenue();
+  const canManageEvents = useCanManageEvents();
+  const {
+    data: events = [],
+    isLoading: eventsLoading,
+    error: eventsError,
+    refetch: refetchEvents,
+  } = useEvents(activeVenueId);
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
-export function DashboardHome({ organizationName }: DashboardHomeProps) {
-  const { logout } = useAuth();
-  const { data: venues, isLoading, error, refetch } = useVenues();
-  const routeParams = parseRouteParams();
+  useEffect(() => {
+    if (!activeVenueId || eventsLoading) {
+      setSelectedEventId(null);
+      return;
+    }
+    setSelectedEventId(resolveActiveEventId(events, activeVenueId));
+  }, [activeVenueId, events, eventsLoading]);
 
-  const venueId =
-    routeParams.venueId !== '00000000-0000-0000-0000-000000000001'
-      ? routeParams.venueId
-      : (venues?.[0]?.id ?? routeParams.venueId);
+  const handleEventSelect = useCallback(
+    (eventId: string) => {
+      if (activeVenueId) {
+        setActiveEventId(activeVenueId, eventId);
+      }
+      setSelectedEventId(eventId);
+    },
+    [activeVenueId],
+  );
+
+  const workspaceBarContent = useMemo(
+    () => (
+      <div className="dashboard-workspace-bar" data-testid="dashboard-workspace-bar">
+        <VenueSwitcher />
+        {activeVenueId && !eventsLoading && events.length > 0 ? (
+          <EventCombobox
+            events={events}
+            selectedEventId={selectedEventId}
+            canManageEvents={canManageEvents}
+            onSelect={handleEventSelect}
+          />
+        ) : null}
+      </div>
+    ),
+    [
+      activeVenueId,
+      events,
+      eventsLoading,
+      selectedEventId,
+      canManageEvents,
+      handleEventSelect,
+    ],
+  );
+
+  useShellWorkspaceBar(workspaceBarContent);
+
+  const isLoading = venuesLoading || (activeVenueId !== null && eventsLoading);
+  const loadError = venuesError ?? eventsError;
 
   return (
-    <div className="app">
-      <header className="app__header">
-        <div className="app__header-row">
-          <div className="app__header-brand">
-            <BrandLogo variant="text" />
-            <p className="app__subtitle">{organizationName}</p>
-          </div>
-          <button type="button" className="app__logout btn-secondary" onClick={() => void logout()}>
-            Sign out
-          </button>
-        </div>
-      </header>
-
+    <>
       {isLoading ? (
         <div className="dashboard-empty" role="status" aria-live="polite">
           Loading workspace…
         </div>
       ) : null}
 
-      {!isLoading && error ? (
+      {!isLoading && loadError ? (
         <div className="dashboard-empty dashboard-empty--error" role="alert">
-          <p>Unable to load venues. Please try again.</p>
-          <button type="button" className="dashboard-empty__retry btn-primary" onClick={() => void refetch()}>
+          <p>Unable to load workspace. Please try again.</p>
+          <button
+            type="button"
+            className="dashboard-empty__retry btn-primary"
+            onClick={() => {
+              void refetch();
+              if (activeVenueId) void refetchEvents();
+            }}
+          >
             Retry
           </button>
         </div>
       ) : null}
 
-      {!isLoading && !error && venues && venues.length === 0 ? (
+      {!isLoading && !loadError && venues.length === 0 ? (
         <section className="dashboard-empty" aria-labelledby="dashboard-empty-heading">
           <h2 id="dashboard-empty-heading" className="dashboard-empty__heading">
             No venues yet
@@ -64,9 +112,35 @@ export function DashboardHome({ organizationName }: DashboardHomeProps) {
         </section>
       ) : null}
 
-      {!isLoading && !error && venues && venues.length > 0 ? (
-        <EventLedgerPage venueId={venueId} eventId={routeParams.eventId} />
+      {!isLoading && !loadError && venues.length > 0 && !activeVenueId ? (
+        <section className="dashboard-empty" aria-labelledby="dashboard-select-venue-heading">
+          <h2 id="dashboard-select-venue-heading" className="dashboard-empty__heading">
+            Select a venue
+          </h2>
+          <p className="dashboard-empty__text">
+            Choose a venue from the menu above to view events and ledgers.
+          </p>
+        </section>
       ) : null}
-    </div>
+
+      {!isLoading &&
+      !loadError &&
+      activeVenueId &&
+      !eventsLoading &&
+      events.length === 0 ? (
+        <section className="dashboard-empty" aria-labelledby="dashboard-no-events-heading">
+          <h2 id="dashboard-no-events-heading" className="dashboard-empty__heading">
+            No events yet
+          </h2>
+          <p className="dashboard-empty__text">
+            Create an event for this venue to open the financial ledger.
+          </p>
+        </section>
+      ) : null}
+
+      {!isLoading && !loadError && activeVenueId && selectedEventId ? (
+        <EventLedgerPage venueId={activeVenueId} eventId={selectedEventId} />
+      ) : null}
+    </>
   );
 }

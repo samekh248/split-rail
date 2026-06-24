@@ -1,3 +1,5 @@
+import { getActiveVenueId } from '@/venue/activeVenueStorage';
+
 const API_BASE = '/api';
 
 function authHeaders(): HeadersInit {
@@ -9,10 +11,26 @@ function authHeaders(): HeadersInit {
   return headers;
 }
 
+function venueContextHeaders(path: string): HeadersInit {
+  const normalizedPath = path.split('?')[0];
+  if (normalizedPath === '/users/me' || normalizedPath.startsWith('/auth/')) {
+    return {};
+  }
+  const venueId = getActiveVenueId();
+  if (!venueId) {
+    return {};
+  }
+  return { 'X-Active-Venue-Id': venueId };
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${path}`, {
     ...init,
-    headers: { ...authHeaders(), ...init?.headers },
+    headers: {
+      ...authHeaders(),
+      ...venueContextHeaders(path),
+      ...init?.headers,
+    },
   });
 
   if (!response.ok) {

@@ -1,9 +1,11 @@
+import { AppShell } from '@/components/shell/AppShell';
 import { DashboardHome } from '@/pages/DashboardHome';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { OrganizationCreateStep } from '@/components/onboarding/OrganizationCreateStep';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { useAuth } from '@/auth/useAuth';
+import { VenueProvider } from '@/venue/VenueContext';
 
 export default function App() {
   const {
@@ -47,7 +49,11 @@ export default function App() {
 
   return (
     <>
-      <DashboardHome organizationName={organizationName} />
+      <VenueProvider>
+        <AppShell organizationName={organizationName}>
+          <DashboardHome organizationName={organizationName} />
+        </AppShell>
+      </VenueProvider>
       {justOnboarded ? (
         <WelcomeModal organizationName={organizationName} onDismiss={dismissWelcome} />
       ) : null}

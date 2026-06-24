@@ -1,5 +1,5 @@
 export interface BrandLogoProps {
-  variant: 'text' | 'badge';
+  variant: 'text' | 'badge' | 'auth';
   className?: string;
   alt?: string;
 }
@@ -7,6 +7,7 @@ export interface BrandLogoProps {
 const ASSETS = {
   text: '/sr-text.png',
   badge: '/sr-badge.png',
+  auth: '/sr-auth-logo.png',
 } as const;
 
 export function BrandLogo({ variant, className, alt = 'Split-Rail' }: BrandLogoProps) {

@@ -124,7 +124,8 @@ describe('Auth gate', () => {
     renderApp();
 
     await screen.findByRole('heading', { name: 'No venues yet' });
-    await user.click(screen.getByRole('button', { name: 'Sign out' }));
+    await user.click(screen.getByTestId('profile-badge-trigger'));
+    await user.click(screen.getByRole('menuitem', { name: 'Sign out' }));
 
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
     expect(localStorage.getItem('accessToken')).toBeNull();

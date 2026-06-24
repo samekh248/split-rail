@@ -36,6 +36,7 @@ function renderWithAuth(overrides: Partial<AuthContextValue> = {}) {
 describe('LoginPage', () => {
   it('renders login form', () => {
     renderWithAuth();
+    expect(screen.getByRole('img', { name: 'Split Rail' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
     expect(screen.getByLabelText('Email')).toBeInTheDocument();
   });
