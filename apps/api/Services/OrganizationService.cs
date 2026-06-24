@@ -29,10 +29,9 @@ public class OrganizationService
         Guid userId,
         CancellationToken cancellationToken = default)
     {
-        if (string.IsNullOrWhiteSpace(request.Name))
-            throw new ValidationException("Organization name is required.");
+        var name = NameValidation.Normalize(request.Name, "Organization name");
 
-        var org = new Organization { Id = Guid.NewGuid(), Name = request.Name.Trim() };
+        var org = new Organization { Id = Guid.NewGuid(), Name = name };
         _db.Organizations.Add(org);
 
         var roles = CreateDefaultRoles(org.Id);
@@ -64,6 +63,64 @@ public class OrganizationService
             ?? throw new NotFoundException("Organization not found.");
 
         return new OrganizationResponse(org.Id, org.Name, org.CreatedAt);
+    }
+
+    public async Task<IReadOnlyList<OrganizationResponse>> ListForUserAsync(CancellationToken cancellationToken = default)
+    {
+        if (_tenantContext.UserId is not Guid userId)
+            throw new AuthenticationException();
+
+        return await _db.UserOrganizationMappings
+            .AsNoTracking()
+            .IgnoreQueryFilters()
+            .Where(m => m.UserId == userId && m.Organization.ArchivedAt == null)
+            .Select(m => new OrganizationResponse(
+                m.Organization.Id,
+                m.Organization.Name,
+                m.Organization.CreatedAt))
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<OrganizationResponse> UpdateOrganizationAsync(
+        Guid organizationId,
+        UpdateOrganizationRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        var name = NameValidation.Normalize(request.Name, "Organization name");
+
+        var org = await _db.Organizations
+            .FirstOrDefaultAsync(o => o.Id == organizationId, cancellationToken)
+            ?? throw new NotFoundException("Organization not found.");
+
+        org.Name = name;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Organization {OrganizationId} updated", org.Id);
+
+        return new OrganizationResponse(org.Id, org.Name, org.CreatedAt);
+    }
+
+    public async Task ArchiveOrganizationAsync(
+        Guid organizationId,
+        CancellationToken cancellationToken = default)
+    {
+        var org = await _db.Organizations
+            .FirstOrDefaultAsync(o => o.Id == organizationId, cancellationToken)
+            ?? throw new NotFoundException("Organization not found.");
+
+        var hasVenues = await _db.Venues
+            .AnyAsync(v => v.OrganizationId == org.Id, cancellationToken);
+        var hasFinancialData = await _db.FinancialLineItems
+            .AnyAsync(cancellationToken);
+
+        if (hasVenues || hasFinancialData)
+            throw new ConflictException(
+                "Organization cannot be deleted while it still owns venues or financial data.");
+
+        org.ArchivedAt = DateTimeOffset.UtcNow;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Organization {OrganizationId} archived", org.Id);
     }
 
     private static List<OrganizationRole> CreateDefaultRoles(Guid organizationId) =>

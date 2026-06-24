@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using SplitRail.Api.Configuration;
 using SplitRail.Api.Data;
@@ -148,11 +149,13 @@ public class TestSeedingServiceTests
         var db = new ApplicationDbContext(options, tenantContext);
         var previewOptions = Options.Create(new PreviewOptions { EnableTestSeeding = enableSeeding });
         var dataProtection = new EphemeralDataProtectionProvider();
+        var auditor = new FrozenEventMutationAuditor(NullLogger<FrozenEventMutationAuditor>.Instance);
         var service = new TestSeedingService(
             db,
             previewOptions,
             archiveStore ?? new InMemorySettlementArchiveStore(),
-            dataProtection);
+            dataProtection,
+            auditor);
         return (service, db);
     }
 
@@ -161,10 +164,24 @@ public class TestSeedingServiceTests
         public Task UploadAsync(string objectPath, byte[] pdfBytes, CancellationToken cancellationToken = default) =>
             Task.CompletedTask;
 
+        public Task StageAsync(string stagingPath, byte[] pdfBytes, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task PromoteAsync(string stagingPath, string finalPath, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task DeleteStagedAsync(string stagingPath, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
         public Task<(string Url, DateTimeOffset ExpiresAt)> CreateSignedUrlAsync(
             string objectPath,
             TimeSpan ttl,
             CancellationToken cancellationToken = default) =>
             Task.FromResult(("https://example.test/file.pdf", DateTimeOffset.UtcNow.Add(ttl)));
+
+        public Task<DateTimeOffset?> GetRetentionUntilAsync(
+            string objectPath,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<DateTimeOffset?>(null);
     }
 }

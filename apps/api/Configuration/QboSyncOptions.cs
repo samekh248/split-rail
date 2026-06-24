@@ -16,6 +16,10 @@ public class QboSyncOptions
 
     public string InternalTriggerKey { get; set; } = string.Empty;
 
+    public string SchedulerServiceAccountEmail { get; set; } = string.Empty;
+
+    public string SchedulerTokenAudience { get; set; } = string.Empty;
+
     public string IntuitAuthBaseUrl { get; set; } = "https://appcenter.intuit.com/connect/oauth2";
 
     public string IntuitTokenUrl { get; set; } = "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer";

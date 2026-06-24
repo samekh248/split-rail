@@ -31,6 +31,19 @@ public class InvitationsControllerTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task SendInvitation_Returns201WithVenueScopes()
+    {
+        var (client, adminToken, roleId, venueId) = await SetupAdminWithVenueAsync();
+        var response = await client.PostAsJsonAsync("/api/invitations",
+            new CreateInvitationRequest("manager@example.com", roleId, [venueId]));
+        response.StatusCode.Should().Be(HttpStatusCode.Created);
+        var invitation = await response.Content.ReadFromJsonAsync<InvitationResponse>();
+        invitation!.VenueScopes.Should().HaveCount(1);
+        invitation.VenueScopes[0].VenueId.Should().Be(venueId);
+        invitation.VenueScopes[0].VenueName.Should().Be("Invite Venue");
+    }
+
+    [Fact]
     public async Task SendInvitation_Returns201()
     {
         var (client, adminToken, roleId, venueId) = await SetupAdminWithVenueAsync();
@@ -63,6 +76,32 @@ public class InvitationsControllerTests : IntegrationTestBase
         var acceptResponse = await Client.PostAsJsonAsync("/api/invitations/accept",
             new AcceptInvitationRequest(rawToken, null));
         acceptResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    public async Task ListInvitations_IncludesVenueScopes()
+    {
+        var (client, adminToken, roleId, venueId) = await SetupAdminWithVenueAsync();
+        await SendInvitationViaServiceAsync(adminToken, "scoped@example.com", roleId, [venueId]);
+        var list = await client.GetFromJsonAsync<List<InvitationResponse>>("/api/invitations");
+        var invitation = list!.Single(i => i.Email == "scoped@example.com");
+        invitation.VenueScopes.Should().HaveCount(1);
+        invitation.VenueScopes[0].VenueId.Should().Be(venueId);
+    }
+
+    [Fact]
+    public async Task ResendInvitation_IncludesVenueScopes()
+    {
+        var (client, adminToken, roleId, venueId) = await SetupAdminWithVenueAsync();
+        await SendInvitationViaServiceAsync(adminToken, "resend-scoped@example.com", roleId, [venueId]);
+        var list = await client.GetFromJsonAsync<List<InvitationResponse>>("/api/invitations");
+        var invitation = list!.Single(i => i.Email == "resend-scoped@example.com");
+
+        var response = await client.PostAsync($"/api/invitations/{invitation.Id}/resend", null);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var resent = await response.Content.ReadFromJsonAsync<InvitationResponse>();
+        resent!.VenueScopes.Should().HaveCount(1);
+        resent.VenueScopes[0].VenueId.Should().Be(venueId);
     }
 
     [Fact]

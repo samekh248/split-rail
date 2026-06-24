@@ -3,6 +3,8 @@ import {
   validateEmail,
   validateOrganizationName,
   validatePassword,
+  validateVenueName,
+  VENUE_NAME_MAX_LENGTH,
 } from '@/auth/validation';
 
 describe('validation', () => {
@@ -17,6 +19,17 @@ describe('validation', () => {
 
     it('accepts valid email', () => {
       expect(validateEmail('user@example.com')).toBeUndefined();
+    });
+
+    it('rejects an over-length email (>255 chars)', () => {
+      const longLocal = 'a'.repeat(250);
+      const overLong = `${longLocal}@ex.com`;
+      expect(overLong.length).toBeGreaterThan(255);
+      expect(validateEmail(overLong)).toBe('Enter a valid email address.');
+    });
+
+    it('rejects an email that is only whitespace', () => {
+      expect(validateEmail('   ')).toBe('Email is required.');
     });
   });
 
@@ -53,6 +66,22 @@ describe('validation', () => {
 
     it('accepts non-empty name', () => {
       expect(validateOrganizationName('Acme Venues')).toBeUndefined();
+    });
+  });
+
+  describe('validateVenueName', () => {
+    it('rejects empty name', () => {
+      expect(validateVenueName('   ')).toBe('Venue name is required.');
+    });
+
+    it('rejects over-length name', () => {
+      expect(validateVenueName('a'.repeat(VENUE_NAME_MAX_LENGTH + 1))).toBe(
+        `Venue name must be ${VENUE_NAME_MAX_LENGTH} characters or fewer.`,
+      );
+    });
+
+    it('accepts valid name', () => {
+      expect(validateVenueName('The Roxy')).toBeUndefined();
     });
   });
 });

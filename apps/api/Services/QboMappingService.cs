@@ -5,6 +5,8 @@ using SplitRail.Api.DTOs.Qbo;
 using SplitRail.Api.Exceptions;
 using SplitRail.Api.Models;
 
+using SplitRail.Api.Models.Enums;
+
 namespace SplitRail.Api.Services;
 
 public class QboMappingService
@@ -204,7 +206,8 @@ public class QboMappingService
                     TransactionDate = row.TransactionDate,
                     MappedLineItemId = mappedLineItemId,
                     SyncBatchId = syncBatchId,
-                    SyncedAt = syncedAt
+                    SyncedAt = syncedAt,
+                    EntryType = QboSyncLedgerEntryType.Original
                 });
             }
 

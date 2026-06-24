@@ -52,7 +52,8 @@ public record LineItemDto(
     bool VarianceFlagged,
     string? Notes,
     bool IsHiddenFromPromoter,
-    string RowVersion);
+    string RowVersion,
+    bool HasQboCorrection = false);
 
 public record EventArtistDto(
     Guid Id,
@@ -101,12 +102,19 @@ public record EventResponse(
     string QboTagName,
     EditabilityDto Editability,
     DateTimeOffset? SettledAt = null,
-    bool SettlementPdfAvailable = false);
+    bool SettlementPdfAvailable = false,
+    DateTimeOffset? ReconciledAt = null,
+    Guid? ReconciledByUserId = null);
 
 public record CreateEventRequest(
     string Title,
     string EventDate,
-    string QboTagName);
+    string? QboTagName);
+
+public record UpdateEventRequest(
+    string Title,
+    string EventDate,
+    string? QboTagName);
 
 public record CreateLineItemRequest(
     string BlockType,

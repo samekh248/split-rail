@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { describe, expect, it, vi } from 'vitest';
 import { LedgerGrid } from '@/components/ledger/LedgerGrid';
 import { LedgerRow } from '@/components/ledger/LedgerRow';
 import type { EditabilityDto, LineItemDto } from '@/types/generated-api';
@@ -12,14 +13,35 @@ const baseRow: LineItemDto = {
   proformaValue: '10000.00',
   settlementValue: '8500.00',
   qboActualValue: '0.00',
-  variance: '0.00',
-  varianceFlagged: false,
+  variance: '-8500.00',
+  varianceFlagged: true,
   notes: null,
   isHiddenFromPromoter: false,
   rowVersion: 'v1',
 };
 
 describe('Editability', () => {
+  it('derives variance cell from QBO actual minus settlement', () => {
+    render(
+      <table>
+        <tbody>
+          <LedgerRow
+            row={baseRow}
+            editability={{
+              proforma: 'read-only',
+              settlement: 'read-only',
+              qboActuals: 'locked',
+            }}
+          />
+        </tbody>
+      </table>,
+    );
+
+    const cell = screen.getByTestId('variance-cell');
+    expect(cell).toHaveTextContent('-$8,500.00');
+    expect(cell).toHaveAttribute('data-flagged', 'true');
+  });
+
   it('locks proforma after budget lock (read-only display)', () => {
     const editability: EditabilityDto = {
       proforma: 'read-only',
@@ -90,5 +112,83 @@ describe('Editability', () => {
 
     render(<LedgerGrid ledger={lockedLedger} />);
     expect(screen.queryByTestId('lock-budget-btn')).not.toBeInTheDocument();
+  });
+
+  it('saves inline label edits on blur when structural editing is allowed', async () => {
+    const user = userEvent.setup();
+    const onLabelChange = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <LedgerRow
+            row={baseRow}
+            editability={{
+              proforma: 'editable',
+              settlement: 'locked',
+              qboActuals: 'locked',
+            }}
+            canEditStructure
+            onLabelChange={onLabelChange}
+          />
+        </tbody>
+      </table>,
+    );
+
+    const input = screen.getByTestId('label-edit-row-1');
+    await user.clear(input);
+    await user.type(input, 'Renamed row');
+    await user.tab();
+
+    expect(onLabelChange).toHaveBeenCalledWith('row-1', 'Renamed row');
+  });
+
+  it('toggles artist deduction flag on expense rows', async () => {
+    const user = userEvent.setup();
+    const onDeductionChange = vi.fn();
+
+    render(
+      <table>
+        <tbody>
+          <LedgerRow
+            row={{ ...baseRow, isArtistDeduction: false }}
+            blockType="EXPENSES"
+            editability={{
+              proforma: 'editable',
+              settlement: 'locked',
+              qboActuals: 'locked',
+            }}
+            canEditStructure
+            onDeductionChange={onDeductionChange}
+          />
+        </tbody>
+      </table>,
+    );
+
+    await user.click(screen.getByTestId('deduction-row-1'));
+
+    expect(onDeductionChange).toHaveBeenCalledWith('row-1', true);
+  });
+
+  it('shows deduction badge when flagged and structural editing is disabled', () => {
+    render(
+      <table>
+        <tbody>
+          <LedgerRow
+            row={{ ...baseRow, id: 'exp-2', isArtistDeduction: true }}
+            blockType="EXPENSES"
+            editability={{
+              proforma: 'read-only',
+              settlement: 'read-only',
+              qboActuals: 'locked',
+            }}
+            canEditStructure={false}
+          />
+        </tbody>
+      </table>,
+    );
+
+    expect(screen.getByTestId('deduction-badge-exp-2')).toHaveTextContent('Deduction');
+    expect(screen.queryByTestId('deduction-exp-2')).not.toBeInTheDocument();
   });
 });

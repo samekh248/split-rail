@@ -36,7 +36,7 @@ public class TenantContextMiddleware
         if (path.StartsWith("/api/auth", StringComparison.OrdinalIgnoreCase))
             return false;
         if (path.Equals("/api/organizations", StringComparison.OrdinalIgnoreCase) &&
-            context.Request.Method == HttpMethods.Post)
+            (context.Request.Method == HttpMethods.Post || context.Request.Method == HttpMethods.Get))
             return false;
         if (path.StartsWith("/api/invitations/accept", StringComparison.OrdinalIgnoreCase))
             return false;

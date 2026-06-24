@@ -1,8 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { fonts } from '../../src/theme/tokens';
 
 const indexCssPath = resolve(__dirname, '../../src/index.css');
+const indexHtmlPath = resolve(__dirname, '../../index.html');
 
 function readIndexCss(): string {
   return readFileSync(indexCssPath, 'utf-8');
@@ -21,6 +23,7 @@ describe('typography', () => {
     const css = readIndexCss();
     expect(css).toContain('--font-heading');
     expect(css).toContain('--font-ui');
+    expect(css).toContain('--font-brand');
   });
 
   it('applies brand heading rules to h1–h3 and .heading-brand', () => {
@@ -48,11 +51,27 @@ describe('typography', () => {
     expect(css).toMatch(/\.text-on-dark\s*\{[\s\S]*color:\s*var\(--color-bg-cream\)/);
   });
 
-  it('loads Zilla Slab and Inter via Google Fonts import', () => {
+  it('declares brand-guide font token stacks on :root', () => {
+    const css = readIndexCss();
+    expect(css).toContain(`--font-brand: ${fonts.brand}`);
+    expect(css).toContain(`--font-ui: ${fonts.ui}`);
+    expect(css).toContain('--font-heading: var(--font-brand)');
+  });
+
+  it('loads Zilla Slab and Inter via Google Fonts import with required weights', () => {
     const css = readIndexCss();
     expect(css).toContain('fonts.googleapis.com');
     expect(css).toContain('Zilla+Slab:wght@700');
     expect(css).toContain('Inter:wght@400;500;700');
     expect(css).toContain('display=swap');
+  });
+
+  it('does not load Google Fonts via duplicate stylesheet link in index.html', () => {
+    const html = readFileSync(indexHtmlPath, 'utf-8');
+    expect(html).not.toMatch(/<link[^>]+rel=["']stylesheet["'][^>]+fonts\.googleapis\.com/i);
+    expect(html).not.toMatch(/fonts\.googleapis\.com[^>]+rel=["']stylesheet["']/i);
+    expect(html).toContain('rel="preconnect"');
+    expect(html).toContain('fonts.googleapis.com');
+    expect(html).toContain('fonts.gstatic.com');
   });
 });

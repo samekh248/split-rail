@@ -43,4 +43,25 @@ describe('refreshSession', () => {
   it('throws when no refresh token is stored', async () => {
     await expect(refreshSession()).rejects.toThrow('401');
   });
+
+  it('calls /auth/refresh with skipAuthRecovery to prevent nested recovery', async () => {
+    localStorage.setItem('refreshToken', 'refresh-old');
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      statusText: 'Unauthorized',
+      json: () => Promise.resolve({ detail: 'Invalid refresh' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    await expect(refreshSession()).rejects.toThrow('401: Invalid refresh');
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/auth/refresh',
+      expect.objectContaining({
+        method: 'POST',
+        body: JSON.stringify({ refreshToken: 'refresh-old' }),
+      }),
+    );
+  });
 });

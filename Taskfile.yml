@@ -3,11 +3,92 @@
 version: '3'
 
 vars:
-  GREETING: Hello, world!
+  API_PROJECT: apps/api/split-rail-api.csproj
+  API_TEST_PROJECT: apps/api.tests/split-rail-api.tests.csproj
+  OPENAPI_URL: http://localhost:5000/swagger/v1/swagger.json
+  PREVIEW_BASE_URL: http://localhost:5173
+  API_BASE_URL: http://localhost:5000
 
 tasks:
   default:
-    desc: Print a greeting message
+    desc: List available tasks
     cmds:
-      - echo "{{.GREETING}}"
+      - task --list
     silent: true
+
+  api:build:
+    desc: Build the API (Release)
+    cmds:
+      - dotnet build {{.API_PROJECT}} -c Release
+
+  api:test:
+    desc: Run API automated tests
+    cmds:
+      - dotnet test {{.API_TEST_PROJECT}} -c Release
+
+  api:dev:
+    desc: Run API in development mode (http://localhost:5000)
+    cmds:
+      - dotnet run --project {{.API_PROJECT}} --urls http://localhost:5000
+    env:
+      ASPNETCORE_ENVIRONMENT: Development
+
+  web:dev:
+    desc: Run Vite dev server (http://localhost:5173)
+    dir: apps/web
+    cmds:
+      - npm run dev
+
+  web:build:
+    desc: Build the web application
+    dir: apps/web
+    cmds:
+      - npm run build
+
+  web:test:
+    desc: Run web unit tests
+    dir: apps/web
+    cmds:
+      - npm run test
+
+  gen:api:
+    desc: Regenerate frontend API types from OpenAPI
+    dir: apps/web
+    env:
+      OPENAPI_URL: '{{.OPENAPI_URL}}'
+    cmds:
+      - npm run gen:api
+
+  e2e:
+    desc: Run Playwright end-to-end tests
+    dir: tests/e2e
+    env:
+      PREVIEW_BASE_URL: '{{.PREVIEW_BASE_URL}}'
+      API_BASE_URL: '{{.API_BASE_URL}}'
+    cmds:
+      - npx playwright test
+
+  e2e:install:
+    desc: Install Playwright browsers for E2E
+    dir: tests/e2e
+    cmds:
+      - npx playwright install
+
+  dev:
+    desc: Start API and web dev servers in parallel
+    cmds:
+      - task: api:dev
+      - task: web:dev
+    run: parallel
+
+  build:
+    desc: Build API and web application
+    cmds:
+      - task: api:build
+      - task: web:build
+
+  test:
+    desc: Run API and web test suites
+    cmds:
+      - task: api:test
+      - task: web:test

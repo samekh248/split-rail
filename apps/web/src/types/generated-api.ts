@@ -166,6 +166,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/venues/{venueId}/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DashboardResponse"];
+                        "application/json": components["schemas"]["DashboardResponse"];
+                        "text/json": components["schemas"]["DashboardResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/venues/{venueId}/events": {
         parameters: {
             query?: never;
@@ -268,7 +307,113 @@ export interface paths {
         };
         put?: never;
         post?: never;
-        delete?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateEventRequest"];
+                    "text/json": components["schemas"]["UpdateEventRequest"];
+                    "application/*+json": components["schemas"]["UpdateEventRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EventResponse"];
+                        "application/json": components["schemas"]["EventResponse"];
+                        "text/json": components["schemas"]["EventResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
+    "/api/venues/{venueId}/events/{eventId}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -810,7 +955,28 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["OrganizationResponse"][];
+                        "application/json": components["schemas"]["OrganizationResponse"][];
+                        "text/json": components["schemas"]["OrganizationResponse"][];
+                    };
+                };
+            };
+        };
         put?: never;
         post: {
             parameters: {
@@ -883,6 +1049,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/organizations/{organizationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    organizationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateOrganizationRequest"];
+                    "text/json": components["schemas"]["UpdateOrganizationRequest"];
+                    "application/*+json": components["schemas"]["UpdateOrganizationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["OrganizationResponse"];
+                        "application/json": components["schemas"]["OrganizationResponse"];
+                        "text/json": components["schemas"]["OrganizationResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    organizationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/internal/qbo-sync-trigger": {
         parameters: {
             query?: never;
@@ -909,6 +1139,84 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/qbo/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["VenueQboStatusDto"];
+                        "application/json": components["schemas"]["VenueQboStatusDto"];
+                        "text/json": components["schemas"]["VenueQboStatusDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/sync": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["VenueSyncResultDto"];
+                        "application/json": components["schemas"]["VenueSyncResultDto"];
+                        "text/json": components["schemas"]["VenueSyncResultDto"];
+                    };
                 };
             };
         };
@@ -1533,6 +1841,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/venues/{venueId}/events/{eventId}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EventResponse"];
+                        "application/json": components["schemas"]["EventResponse"];
+                        "text/json": components["schemas"]["EventResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/": {
         parameters: {
             query?: never;
@@ -2094,7 +2442,36 @@ export interface paths {
                 };
             };
         };
-        put?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateVenueRequest"];
+                    "text/json": components["schemas"]["UpdateVenueRequest"];
+                    "application/*+json": components["schemas"]["UpdateVenueRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["VenueResponse"];
+                        "application/json": components["schemas"]["VenueResponse"];
+                        "text/json": components["schemas"]["VenueResponse"];
+                    };
+                };
+            };
+        };
         post?: never;
         delete: {
             parameters: {
@@ -2136,6 +2513,11 @@ export interface components {
             expiresIn?: number;
             /** Format: uuid */
             organizationId?: string;
+        };
+        ActionCenterDto: {
+            /** Format: int32 */
+            totalUnmappedCount?: number;
+            eventsWithUnmapped?: components["schemas"]["UnmappedEventSummaryDto"][] | null;
         };
         AuthResponse: {
             accessToken?: string | null;
@@ -2204,6 +2586,16 @@ export interface components {
         CreateVenueRequest: {
             name?: string | null;
         };
+        DashboardResponse: {
+            /** Format: uuid */
+            venueId?: string;
+            tonightEvents?: components["schemas"]["EventCardDto"][] | null;
+            pinnedEvents?: components["schemas"]["EventCardDto"][] | null;
+            recentEvents?: components["schemas"]["EventCardDto"][] | null;
+            upcomingEvents?: components["schemas"]["EventCardDto"][] | null;
+            actionCenter?: components["schemas"]["ActionCenterDto"];
+            financialHealth?: components["schemas"]["FinancialHealthDto"];
+        };
         EditabilityDto: {
             proforma?: string | null;
             settlement?: string | null;
@@ -2223,6 +2615,30 @@ export interface components {
             calculatedNetPayout?: string;
             rowVersion?: string | null;
         };
+        EventCardDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            venueId?: string;
+            title?: string | null;
+            eventDate?: string | null;
+            status?: string | null;
+            isBudgetLocked?: boolean;
+            qboTagName?: string | null;
+            /** Format: date-time */
+            settledAt?: string | null;
+            settlementPdfAvailable?: boolean;
+            /** Format: date-time */
+            reconciledAt?: string | null;
+            /** Format: uuid */
+            reconciledByUserId?: string | null;
+            isPinned?: boolean;
+            hasVarianceConcern?: boolean;
+            /** Format: int32 */
+            unmappedCount?: number;
+            /** Format: date-time */
+            lastSyncedAt?: string | null;
+        };
         EventResponse: {
             /** Format: uuid */
             eventId?: string;
@@ -2237,6 +2653,10 @@ export interface components {
             /** Format: date-time */
             settledAt?: string | null;
             settlementPdfAvailable?: boolean;
+            /** Format: date-time */
+            reconciledAt?: string | null;
+            /** Format: uuid */
+            reconciledByUserId?: string | null;
         };
         ExpectedSettlementDto: {
             computedNetPayout?: string | null;
@@ -2246,6 +2666,13 @@ export interface components {
         FinalizeSettlementRequest: {
             signatureData?: string | null;
             confirmed?: boolean;
+        };
+        FinancialHealthDto: {
+            weekStart?: string | null;
+            weekEnd?: string | null;
+            projectedNetGross?: string;
+            actualQboDeposits?: string;
+            variance?: string;
         };
         InvitationResponse: {
             /** Format: uuid */
@@ -2257,6 +2684,7 @@ export interface components {
             expiresAt?: string;
             /** Format: date-time */
             createdAt?: string;
+            venueScopes?: components["schemas"]["VenueScopeDto"][] | null;
         };
         LedgerBlockDto: {
             blockType?: string | null;
@@ -2318,6 +2746,7 @@ export interface components {
             notes?: string | null;
             isHiddenFromPromoter?: boolean;
             rowVersion?: string | null;
+            hasQboCorrection?: boolean;
         };
         LoginRequest: {
             email?: string | null;
@@ -2495,6 +2924,16 @@ export interface components {
             /** Format: int32 */
             unmappedCount?: number;
         };
+        UnmappedEventSummaryDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            venueId?: string;
+            title?: string | null;
+            eventDate?: string | null;
+            /** Format: int32 */
+            unmappedCount?: number;
+        };
         UnmappedTransactionDto: {
             /** Format: uuid */
             id?: string;
@@ -2527,6 +2966,11 @@ export interface components {
             taxWithholdingPercentage?: string;
             rowVersion?: string | null;
         };
+        UpdateEventRequest: {
+            title?: string | null;
+            eventDate?: string | null;
+            qboTagName?: string | null;
+        };
         UpdateLineItemRequest: {
             rowLabel?: string | null;
             /** Format: int32 */
@@ -2543,6 +2987,9 @@ export interface components {
             /** Format: uuid */
             mappedLineItemId?: string | null;
         };
+        UpdateOrganizationRequest: {
+            name?: string | null;
+        };
         UpdateRoleRequest: {
             canManagePermissions?: boolean | null;
             canLockBudget?: boolean | null;
@@ -2552,6 +2999,9 @@ export interface components {
             canTriggerQboSync?: boolean | null;
             canMapQboAccounts?: boolean | null;
             canViewFinancials?: boolean | null;
+        };
+        UpdateVenueRequest: {
+            name?: string | null;
         };
         UpdateVenueScopesRequest: {
             venueIds?: string[] | null;
@@ -2576,6 +3026,13 @@ export interface components {
             role?: components["schemas"]["RoleDetailDto"];
             venueScopes?: components["schemas"]["VenueScopeDto"][] | null;
         };
+        VenueQboStatusDto: {
+            /** Format: uuid */
+            venueId?: string;
+            qboConnected?: boolean;
+            /** Format: date-time */
+            lastSyncedAt?: string | null;
+        };
         VenueResponse: {
             /** Format: uuid */
             id?: string;
@@ -2590,6 +3047,22 @@ export interface components {
             venueId?: string;
             venueName?: string | null;
         };
+        VenueSyncEventResultDto: {
+            /** Format: uuid */
+            eventId?: string;
+            title?: string | null;
+            success?: boolean;
+            errorMessage?: string | null;
+        };
+        VenueSyncResultDto: {
+            /** Format: uuid */
+            venueId?: string;
+            /** Format: int32 */
+            attemptedCount?: number;
+            /** Format: int32 */
+            succeededCount?: number;
+            results?: components["schemas"]["VenueSyncEventResultDto"][] | null;
+        };
     };
     responses: never;
     parameters: never;
@@ -2602,6 +3075,7 @@ export type operations = Record<string, never>;
 
 export type AcceptInvitationRequest = components['schemas']['AcceptInvitationRequest'];
 export type AcceptInvitationResponse = components['schemas']['AcceptInvitationResponse'];
+export type ActionCenterDto = components['schemas']['ActionCenterDto'];
 export type AuthResponse = components['schemas']['AuthResponse'];
 export type BlockTotalsDto = components['schemas']['BlockTotalsDto'];
 export type ChangeRoleRequest = components['schemas']['ChangeRoleRequest'];
@@ -2613,11 +3087,14 @@ export type CreateLineItemRequest = components['schemas']['CreateLineItemRequest
 export type CreateMappingRequest = components['schemas']['CreateMappingRequest'];
 export type CreateOrganizationRequest = components['schemas']['CreateOrganizationRequest'];
 export type CreateVenueRequest = components['schemas']['CreateVenueRequest'];
+export type DashboardResponse = components['schemas']['DashboardResponse'];
 export type EditabilityDto = components['schemas']['EditabilityDto'];
 export type EventArtistDto = components['schemas']['EventArtistDto'];
+export type EventCardDto = components['schemas']['EventCardDto'];
 export type EventResponse = components['schemas']['EventResponse'];
 export type ExpectedSettlementDto = components['schemas']['ExpectedSettlementDto'];
 export type FinalizeSettlementRequest = components['schemas']['FinalizeSettlementRequest'];
+export type FinancialHealthDto = components['schemas']['FinancialHealthDto'];
 export type InvitationResponse = components['schemas']['InvitationResponse'];
 export type LedgerBlockDto = components['schemas']['LedgerBlockDto'];
 export type LedgerGridResponse = components['schemas']['LedgerGridResponse'];
@@ -2650,17 +3127,24 @@ export type SettlementResultDto = components['schemas']['SettlementResultDto'];
 export type SyncResultDto = components['schemas']['SyncResultDto'];
 export type SyncStatusDto = components['schemas']['SyncStatusDto'];
 export type UnmappedCountDto = components['schemas']['UnmappedCountDto'];
+export type UnmappedEventSummaryDto = components['schemas']['UnmappedEventSummaryDto'];
 export type UnmappedTransactionDto = components['schemas']['UnmappedTransactionDto'];
 export type UnmappedTransactionsResponse = components['schemas']['UnmappedTransactionsResponse'];
 export type UpdateArtistRequest = components['schemas']['UpdateArtistRequest'];
+export type UpdateEventRequest = components['schemas']['UpdateEventRequest'];
 export type UpdateLineItemRequest = components['schemas']['UpdateLineItemRequest'];
 export type UpdateMappingRequest = components['schemas']['UpdateMappingRequest'];
+export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
 export type UpdateRoleRequest = components['schemas']['UpdateRoleRequest'];
+export type UpdateVenueRequest = components['schemas']['UpdateVenueRequest'];
 export type UpdateVenueScopesRequest = components['schemas']['UpdateVenueScopesRequest'];
 export type UpdateVenueScopesResponse = components['schemas']['UpdateVenueScopesResponse'];
 export type UserListResponse = components['schemas']['UserListResponse'];
 export type UserProfileResponse = components['schemas']['UserProfileResponse'];
+export type VenueQboStatusDto = components['schemas']['VenueQboStatusDto'];
 export type VenueResponse = components['schemas']['VenueResponse'];
 export type VenueScopeDto = components['schemas']['VenueScopeDto'];
+export type VenueSyncEventResultDto = components['schemas']['VenueSyncEventResultDto'];
+export type VenueSyncResultDto = components['schemas']['VenueSyncResultDto'];
 export type DealType = 'guarantee' | 'door_split' | 'custom';
 export type EventStatus = 'PRE_SHOW' | 'SETTLED' | 'RECONCILED';

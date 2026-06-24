@@ -5,6 +5,8 @@ using SplitRail.Api.DTOs.Qbo;
 using SplitRail.Api.Exceptions;
 using SplitRail.Api.Models;
 
+using SplitRail.Api.Models.Enums;
+
 namespace SplitRail.Api.Services;
 
 public class QboSyncService
@@ -14,6 +16,9 @@ public class QboSyncService
     private readonly IQboTransactionClient _transactionClient;
     private readonly VenueService _venueService;
     private readonly ITenantContext _tenantContext;
+    private readonly QboSyncCorrectionService _correctionService;
+    private readonly FrozenEventMutationAuditor _frozenEventAuditor;
+    private readonly IQboSyncConcurrencyGate _concurrencyGate;
     private readonly ILogger<QboSyncService> _logger;
 
     public QboSyncService(
@@ -22,6 +27,9 @@ public class QboSyncService
         IQboTransactionClient transactionClient,
         VenueService venueService,
         ITenantContext tenantContext,
+        QboSyncCorrectionService correctionService,
+        FrozenEventMutationAuditor frozenEventAuditor,
+        IQboSyncConcurrencyGate concurrencyGate,
         ILogger<QboSyncService> logger)
     {
         _db = db;
@@ -29,6 +37,9 @@ public class QboSyncService
         _transactionClient = transactionClient;
         _venueService = venueService;
         _tenantContext = tenantContext;
+        _correctionService = correctionService;
+        _frozenEventAuditor = frozenEventAuditor;
+        _concurrencyGate = concurrencyGate;
         _logger = logger;
     }
 
@@ -126,9 +137,74 @@ public class QboSyncService
             connected);
     }
 
+    public async Task<VenueQboStatusDto> GetVenueQboStatusAsync(
+        Guid venueId,
+        CancellationToken cancellationToken = default)
+    {
+        if (_tenantContext.UserId is Guid userId &&
+            !await _venueService.IsVenueAccessibleAsync(userId, venueId, cancellationToken))
+            throw new NotFoundException("Venue not found.");
+
+        var connected = await _tokenService.IsConnectedAsync(venueId, cancellationToken);
+
+        var lastSyncedAt = await _db.QboSyncLedgers
+            .AsNoTracking()
+            .Where(l => l.Event.VenueId == venueId)
+            .OrderByDescending(l => l.SyncedAt)
+            .Select(l => (DateTimeOffset?)l.SyncedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return new VenueQboStatusDto(venueId, connected, lastSyncedAt);
+    }
+
+    public async Task<VenueSyncResultDto> SyncVenueEventsAsync(
+        Guid venueId,
+        CancellationToken cancellationToken = default)
+    {
+        if (_tenantContext.UserId is Guid userId &&
+            !await _venueService.IsVenueAccessibleAsync(userId, venueId, cancellationToken))
+            throw new NotFoundException("Venue not found.");
+
+        var events = await _db.Events
+            .AsNoTracking()
+            .Where(e => e.VenueId == venueId && e.QboTagName != "")
+            .Select(e => new { e.Id, e.Title })
+            .ToListAsync(cancellationToken);
+
+        var results = new List<VenueSyncEventResultDto>();
+        var succeeded = 0;
+
+        foreach (var evt in events)
+        {
+            try
+            {
+                await SyncEventAsync(venueId, evt.Id, cancellationToken);
+                results.Add(new VenueSyncEventResultDto(evt.Id, evt.Title, true, null));
+                succeeded++;
+            }
+            catch (ApiException ex)
+            {
+                _logger.LogWarning(ex, "Venue sync failed for event {EventId} at venue {VenueId}", evt.Id, venueId);
+                results.Add(new VenueSyncEventResultDto(evt.Id, evt.Title, false, ex.Message));
+            }
+        }
+
+        return new VenueSyncResultDto(venueId, events.Count, succeeded, results);
+    }
+
     public async Task<int> SyncAllEligibleEventsAsync(CancellationToken cancellationToken = default)
     {
-        var venueIds = await _db.QboVenueCredentials
+        if (!await _concurrencyGate.TryEnterAsync(cancellationToken))
+        {
+            _logger.LogInformation(
+                "Skipped overlapping QBO sync batch: outcome={Outcome}",
+                "skipped-concurrent");
+            return 0;
+        }
+
+        try
+        {
+            var venueIds = await _db.QboVenueCredentials
             .AsNoTracking()
             .Select(c => c.VenueId)
             .ToListAsync(cancellationToken);
@@ -150,6 +226,11 @@ public class QboSyncService
         }
 
         return synced;
+        }
+        finally
+        {
+            _concurrencyGate.Release();
+        }
     }
 
     internal async Task<SyncResultDto> ProcessTransactionsAsync(
@@ -209,7 +290,8 @@ public class QboSyncService
                     TransactionDate = txn.TransactionDate,
                     MappedLineItemId = mapping.MappedLineItemId,
                     SyncBatchId = syncBatchId,
-                    SyncedAt = syncedAt
+                    SyncedAt = syncedAt,
+                    EntryType = QboSyncLedgerEntryType.Original
                 });
                 mapped++;
             }
@@ -232,16 +314,32 @@ public class QboSyncService
         }
 
         await _db.SaveChangesAsync(cancellationToken);
-        await RecomputeActualsForEventAsync(evt.Id, cancellationToken);
-        await _db.SaveChangesAsync(cancellationToken);
+        var offsetsCreated = await _correctionService.ApplyCorrectionsAsync(
+            evt.Id,
+            transactions,
+            syncBatchId,
+            syncedAt,
+            cancellationToken);
+        if (offsetsCreated > 0)
+            await _db.SaveChangesAsync(cancellationToken);
+
+        // SETTLED: skip recompute when no new transactions; reject when actuals would change.
+        // RECONCILED: sanctioned QboActualValue/UpdatedAt refresh only.
+        if (evt.Status != EventStatus.Settled || processed > 0)
+        {
+            await RecomputeActualsForEventAsync(evt.Id, cancellationToken);
+            await _db.SaveChangesAsync(cancellationToken);
+        }
         await transaction.CommitAsync(cancellationToken);
 
         _logger.LogInformation(
-            "QBO sync completed for event {EventId}: processed={Processed}, mapped={Mapped}, unmapped={Unmapped}",
+            "QBO sync completed for event {EventId}: processed={Processed}, mapped={Mapped}, unmapped={Unmapped}, offsetsCreated={OffsetsCreated}, syncBatchId={SyncBatchId}",
             evt.Id,
             processed,
             mapped,
-            unmapped);
+            unmapped,
+            offsetsCreated,
+            syncBatchId);
 
         return new SyncResultDto(
             evt.Id,
@@ -255,6 +353,19 @@ public class QboSyncService
 
     internal async Task RecomputeActualsForEventAsync(Guid eventId, CancellationToken cancellationToken)
     {
+        var evt = await _db.Events
+            .AsNoTracking()
+            .FirstAsync(e => e.Id == eventId, cancellationToken);
+
+        if (evt.Status == EventStatus.Settled)
+        {
+            _frozenEventAuditor.RejectIfFrozen(
+                evt,
+                evt.VenueId,
+                _tenantContext.UserId,
+                FrozenEventMutationOperation.QboSyncRecompute);
+        }
+
         var sums = await _db.QboSyncLedgers
             .Where(l => l.EventId == eventId && l.MappedLineItemId != null)
             .GroupBy(l => l.MappedLineItemId)

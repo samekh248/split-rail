@@ -38,13 +38,12 @@ public class VenueService
         if (_tenantContext.OrganizationId is not Guid orgId)
             throw new AuthorizationException();
 
-        if (string.IsNullOrWhiteSpace(request.Name))
-            throw new ValidationException("Venue name is required.");
+        var name = NameValidation.Normalize(request.Name, "Venue name");
 
         var venue = new Venue
         {
             OrganizationId = orgId,
-            Name = request.Name.Trim()
+            Name = name
         };
 
         _db.Venues.Add(venue);
@@ -66,6 +65,30 @@ public class VenueService
         return venue is null
             ? null
             : new VenueResponse(venue.Id, venue.Name, venue.OrganizationId, venue.CreatedAt);
+    }
+
+    public async Task<VenueResponse> UpdateVenueAsync(
+        Guid venueId,
+        UpdateVenueRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (_tenantContext.UserId is not Guid userId)
+            throw new AuthenticationException();
+
+        var name = NameValidation.Normalize(request.Name, "Venue name");
+
+        if (!await IsVenueAccessibleAsync(userId, venueId, cancellationToken))
+            throw new NotFoundException("Venue not found.");
+
+        var venue = await _db.Venues.FirstOrDefaultAsync(v => v.Id == venueId, cancellationToken)
+            ?? throw new NotFoundException("Venue not found.");
+
+        venue.Name = name;
+        await _db.SaveChangesAsync(cancellationToken);
+
+        _logger.LogInformation("Venue {VenueId} updated", venue.Id);
+
+        return new VenueResponse(venue.Id, venue.Name, venue.OrganizationId, venue.CreatedAt);
     }
 
     public async Task DeleteVenueAsync(Guid venueId, CancellationToken cancellationToken = default)

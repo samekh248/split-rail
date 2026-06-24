@@ -34,35 +34,29 @@ public class DealMathEngine
             _ => throw new ArgumentOutOfRangeException(nameof(dealType))
         };
 
-        if (dealType == DealType.Custom)
-            return Math.Max(0m, grossArtistPayout);
-
         return ApplyTaxAndFloor(grossArtistPayout, taxWithholdingPercentage);
     }
+
+    public static decimal RoundMoney(decimal value) =>
+        Math.Round(value, 2, MidpointRounding.AwayFromZero);
 
     public static decimal CalculateGuaranteeGross(
         decimal netShowRevenue,
         decimal baseGuarantee,
         decimal backendPercentage)
     {
-        var splitAmount = netShowRevenue * backendPercentage / 100m;
+        var splitAmount = RoundMoney(netShowRevenue * backendPercentage / 100m);
         return Math.Max(baseGuarantee, splitAmount);
     }
 
     public static decimal CalculateDoorSplitGross(decimal netShowRevenue, decimal backendPercentage) =>
-        netShowRevenue * backendPercentage / 100m;
+        RoundMoney(netShowRevenue * backendPercentage / 100m);
 
     public static decimal ApplyTaxAndFloor(decimal grossArtistPayout, decimal taxWithholdingPercentage)
     {
-        var taxWithheld = Math.Round(
-            grossArtistPayout * taxWithholdingPercentage / 100m,
-            2,
-            MidpointRounding.AwayFromZero);
+        var taxWithheld = RoundMoney(grossArtistPayout * taxWithholdingPercentage / 100m);
 
-        var payout = Math.Round(
-            grossArtistPayout - taxWithheld,
-            2,
-            MidpointRounding.AwayFromZero);
+        var payout = RoundMoney(grossArtistPayout - taxWithheld);
 
         return Math.Max(0m, payout);
     }

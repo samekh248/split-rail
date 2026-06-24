@@ -1,0 +1,41 @@
+# Preview web frontend: OpenAPI export → type generation → Vite build → nginx SPA serve
+# Build context: repository root (.)
+# See specs/051-preview-dockerfile-web/contracts/preview-web-container.md
+
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS contract
+WORKDIR /src
+COPY apps/api/ apps/api/
+# Dummy connection for swagger export only — no live database at image build time
+ARG CONNECTIONSTRINGS__DEFAULTCONNECTION=Host=127.0.0.1;Port=5432;Database=build;Username=build;Password=build
+ENV ASPNETCORE_ENVIRONMENT=Development \
+    ConnectionStrings__DefaultConnection=${CONNECTIONSTRINGS__DEFAULTCONNECTION} \
+    QboSync__EnableInProcessTimer=false \
+    Jwt__Secret=docker-build-secret-at-least-32-characters-long
+RUN dotnet restore apps/api/split-rail-api.csproj \
+    && dotnet build apps/api/split-rail-api.csproj -c Release --no-restore
+RUN dotnet tool install --global Swashbuckle.AspNetCore.Cli --version 6.8.1
+ENV PATH="${PATH}:/root/.dotnet/tools"
+RUN mkdir -p /tmp/swagger/v1 \
+    && dotnet swagger tofile \
+        apps/api/bin/Release/net8.0/split-rail-api.dll \
+        /tmp/swagger/v1/swagger.json \
+        v1 \
+    && test -s /tmp/swagger/v1/swagger.json \
+    || (echo "OpenAPI contract export failed" >&2 && exit 1)
+
+FROM node:22-alpine AS build
+WORKDIR /src/apps/web
+COPY apps/web/package.json apps/web/package-lock.json ./
+COPY apps/web/scripts ./scripts
+RUN npm ci
+COPY apps/web/ ./
+COPY --from=contract /tmp/swagger/v1/swagger.json /tmp/swagger/v1/swagger.json
+RUN OPENAPI_URL=file:///tmp/swagger/v1/swagger.json npm run gen:api \
+    && npm run build \
+    && test -f dist/index.html
+
+FROM nginx:1.27-alpine AS runtime
+COPY deploy/preview/nginx.web.conf /etc/nginx/conf.d/default.conf
+COPY --from=build /src/apps/web/dist /usr/share/nginx/html
+EXPOSE 8080
+CMD ["nginx", "-g", "daemon off;"]

@@ -4,6 +4,42 @@ import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '@/App';
 import { AuthProvider } from '@/auth/AuthContext';
+import {
+  filterTonightEvents,
+  partitionRecentEvents,
+  partitionUpcomingEvents,
+} from '@/lib/partitionOverviewZones';
+import type { DashboardResponse, EventCardDto, EventResponse } from '@/types/generated-api';
+import { EVENT_A } from './fixtures/events';
+import { VENUE_A } from './fixtures/venues';
+
+function toEventCardDto(event: EventResponse): EventCardDto {
+  return {
+    eventId: event.eventId,
+    venueId: event.venueId,
+    title: event.title,
+    eventDate: event.eventDate,
+    status: event.status,
+    isBudgetLocked: event.isBudgetLocked,
+    qboTagName: event.qboTagName,
+    settledAt: event.settledAt,
+    settlementPdfAvailable: event.settlementPdfAvailable ?? false,
+    isPinned: false,
+    hasVarianceConcern: false,
+    unmappedCount: 0,
+    lastSyncedAt: null,
+  };
+}
+
+function buildDashboard(venueId: string, events: EventResponse[]): DashboardResponse {
+  return {
+    venueId,
+    tonightEvents: filterTonightEvents(events).map(toEventCardDto),
+    pinnedEvents: [],
+    upcomingEvents: partitionUpcomingEvents(events).map(toEventCardDto),
+    recentEvents: partitionRecentEvents(events).map(toEventCardDto),
+  };
+}
 
 vi.mock('@/pages/EventLedgerPage', () => ({
   EventLedgerPage: ({ venueId, eventId }: { venueId: string; eventId: string }) => (
@@ -18,7 +54,7 @@ function profileWithOrg() {
     id: 'user-1',
     email: 'user@example.com',
     organization: { id: 'org-1', name: 'Acme' },
-    role: { roleName: 'Admin', permissions: {} },
+    role: { roleName: 'Admin', permissions: { canManagePermissions: true } },
     venueScopes: [],
   };
 }
@@ -32,10 +68,65 @@ function createWrapper() {
   );
 }
 
+function mockAuthenticatedFetch(options?: {
+  venues?: typeof VENUE_A[];
+  events?: typeof EVENT_A[];
+}) {
+  const venues = options?.venues ?? [];
+  const events = options?.events ?? [];
+
+  vi.stubGlobal(
+    'fetch',
+    vi.fn((input: RequestInfo | URL) => {
+      const url = typeof input === 'string' ? input : input.toString();
+      if (url.includes('/users/me')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(profileWithOrg()),
+        });
+      }
+      const dashboardMatch = url.match(/\/venues\/([^/]+)\/dashboard$/);
+      if (dashboardMatch) {
+        const venueId = dashboardMatch[1]!;
+        const venueEvents = events.filter((event) => event.venueId === venueId);
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(buildDashboard(venueId, venueEvents)),
+        });
+      }
+      if (url.includes('/venues') && !url.includes('/events')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(venues),
+        });
+      }
+      const eventsMatch = url.match(/\/venues\/([^/]+)\/events$/);
+      if (eventsMatch) {
+        const venueId = eventsMatch[1]!;
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve(events.filter((event) => event.venueId === venueId)),
+        });
+      }
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve([]),
+      });
+    }),
+  );
+}
+
 describe('App', () => {
   beforeEach(() => {
     localStorage.clear();
     window.history.pushState({}, '', '/');
+    vi.unstubAllGlobals();
   });
 
   it('shows login when unauthenticated', async () => {
@@ -49,25 +140,24 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
   });
 
+  it('shows accept invite page when unauthenticated on accept-invite route', async () => {
+    window.history.pushState({}, '', '/accept-invite?token=abc');
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Accept invitation' })).toBeInTheDocument();
+  });
+
   it('renders dashboard empty state when authenticated with no venues', async () => {
     localStorage.setItem('accessToken', 'token');
     localStorage.setItem('refreshToken', 'refresh');
-    window.history.pushState({}, '', '/?venueId=ven-123&eventId=evt-456');
-
-    vi.stubGlobal(
-      'fetch',
-      vi.fn()
-        .mockResolvedValueOnce({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve(profileWithOrg()),
-        })
-        .mockResolvedValue({
-          ok: true,
-          status: 200,
-          json: () => Promise.resolve([]),
-        }),
-    );
+    window.history.pushState({}, '', '/');
+    mockAuthenticatedFetch();
 
     render(
       <AuthProvider>
@@ -77,5 +167,139 @@ describe('App', () => {
     );
 
     expect(await screen.findByRole('heading', { name: 'No venues yet' })).toBeInTheDocument();
+  });
+
+  it('renders dashboard overview at root when authenticated with events', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/');
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const upcomingEvent = {
+      ...EVENT_A,
+      eventDate: tomorrow.toISOString().slice(0, 10),
+    };
+    mockAuthenticatedFetch({
+      venues: [VENUE_A],
+      events: [upcomingEvent],
+    });
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByTestId('dashboard-overview')).toBeInTheDocument();
+    expect(screen.queryByTestId('mock-ledger-page')).not.toBeInTheDocument();
+  });
+
+  it('renders event workspace route with ledger host', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState(
+      {},
+      '',
+      `/venues/${VENUE_A.id}/events/${EVENT_A.eventId}`,
+    );
+    mockAuthenticatedFetch({
+      venues: [VENUE_A],
+      events: [EVENT_A],
+    });
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByTestId('mock-ledger-page')).toHaveTextContent(
+      `${VENUE_A.id}:${EVENT_A.eventId}`,
+    );
+    expect(screen.queryByTestId('dashboard-overview')).not.toBeInTheDocument();
+  });
+
+  it('renders settings landing when authenticated on /settings', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/settings');
+    mockAuthenticatedFetch();
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
+  });
+
+  it('renders team settings when authenticated on /settings/team', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/settings/team');
+    mockAuthenticatedFetch();
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Team' })).toBeInTheDocument();
+  });
+
+  it('renders organization placeholder when authenticated on /settings/organization', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/settings/organization');
+    mockAuthenticatedFetch();
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Coming soon' })).toBeInTheDocument();
+    expect(screen.getByText(/Organization settings are not available yet/)).toBeInTheDocument();
+  });
+
+  it('renders integrations placeholder when authenticated on /settings/integrations', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/settings/integrations');
+    mockAuthenticatedFetch();
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByRole('heading', { name: 'Coming soon' })).toBeInTheDocument();
+    expect(screen.getByText(/Integrations settings are not available yet/)).toBeInTheDocument();
+  });
+
+  it('renders accept invite for authenticated user on accept-invite route', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+    window.history.pushState({}, '', '/accept-invite?token=abc');
+    mockAuthenticatedFetch();
+
+    render(
+      <AuthProvider>
+        <App />
+      </AuthProvider>,
+      { wrapper: createWrapper() },
+    );
+
+    expect(await screen.findByText(/Signed in as/)).toBeInTheDocument();
   });
 });

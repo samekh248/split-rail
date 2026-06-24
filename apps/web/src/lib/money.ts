@@ -85,6 +85,54 @@ export function absMoney(value: string): string {
   return centsToString(cents < 0n ? -cents : cents);
 }
 
+function parsePercentHundredths(percent: string): bigint {
+  const trimmed = percent.trim();
+  if (!/^-?\d+(\.\d{0,2})?$/.test(trimmed)) {
+    throw new Error(`Invalid percent string: ${percent}`);
+  }
+
+  const negative = trimmed.startsWith('-');
+  const normalized = negative ? trimmed.slice(1) : trimmed;
+  const [wholePart, fracPart = ''] = normalized.split('.');
+  const fracPadded = (fracPart + '00').slice(0, CENTS_SCALE);
+  const hundredths = BigInt(wholePart) * 100n + BigInt(fracPadded);
+  return negative ? -hundredths : hundredths;
+}
+
+function divideAwayFromZero(numerator: bigint, denominator: bigint): bigint {
+  if (denominator === 0n) {
+    throw new Error('Division by zero');
+  }
+
+  const negative = (numerator < 0n) !== (denominator < 0n);
+  const absNum = numerator < 0n ? -numerator : numerator;
+  const absDen = denominator < 0n ? -denominator : denominator;
+  let quotient = absNum / absDen;
+  const remainder = absNum % absDen;
+  if (remainder * 2n >= absDen) {
+    quotient += 1n;
+  }
+
+  return negative ? -quotient : quotient;
+}
+
+/** Multiply money by a percentage string (e.g. "70.00" → 70%). */
+export function multiplyMoneyPercent(value: string, percent: string): string {
+  const valueCents = parseToCents(value);
+  const percentHundredths = parsePercentHundredths(percent);
+  const product = valueCents * percentHundredths;
+  return centsToString(divideAwayFromZero(product, 10000n));
+}
+
+/** Round money to two decimals using away-from-zero (identity for normalized strings). */
+export function roundMoneyAwayFromZero(value: string): string {
+  return normalizeMoney(value);
+}
+
+export function maxMoney(a: string, b: string): string {
+  return compareMoney(a, b) >= 0 ? normalizeMoney(a) : normalizeMoney(b);
+}
+
 /** Returns true when |variance| > 0.00 */
 export function isNonZeroVariance(variance: string): boolean {
   return !isZeroMoney(variance);

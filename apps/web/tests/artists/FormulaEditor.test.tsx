@@ -9,7 +9,7 @@ describe('FormulaEditor', () => {
 
     expect(screen.getByTestId('formula-tokens')).toBeInTheDocument();
     for (const token of FORMULA_TOKENS) {
-      expect(screen.getByTestId(`token-${token}`)).toHaveTextContent(token);
+      expect(screen.getByTestId(`token-insert-${token}`)).toHaveTextContent(token);
     }
   });
 
@@ -21,6 +21,40 @@ describe('FormulaEditor', () => {
 
     await user.type(screen.getByTestId('formula-textarea'), 'GrossRevenue');
     expect(onChange).toHaveBeenCalled();
+  });
+
+  it('inserts token at cursor position when token button is clicked', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    render(<FormulaEditor expression="( - TotalDeductions)" onChange={onChange} />);
+
+    const textarea = screen.getByTestId('formula-textarea') as HTMLTextAreaElement;
+    textarea.setSelectionRange(1, 1);
+    textarea.focus();
+
+    await user.click(screen.getByTestId('token-insert-GrossRevenue'));
+
+    expect(onChange).toHaveBeenCalledWith('(GrossRevenue - TotalDeductions)');
+  });
+
+  it('appends token when textarea is not focused', async () => {
+    const user = userEvent.setup();
+    const onChange = vi.fn();
+
+    render(<FormulaEditor expression="GrossRevenue" onChange={onChange} />);
+
+    await user.click(screen.getByTestId('token-insert-TotalDeductions'));
+
+    expect(onChange).toHaveBeenLastCalledWith('GrossRevenueTotalDeductions');
+  });
+
+  it('disables token buttons when editor is disabled', () => {
+    render(<FormulaEditor expression="" onChange={() => undefined} disabled />);
+
+    for (const token of FORMULA_TOKENS) {
+      expect(screen.getByTestId(`token-insert-${token}`)).toBeDisabled();
+    }
   });
 
   it('displays validation error when provided', () => {

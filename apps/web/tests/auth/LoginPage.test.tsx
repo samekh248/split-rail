@@ -21,6 +21,7 @@ function renderWithAuth(overrides: Partial<AuthContextValue> = {}) {
     createOrganization: vi.fn(),
     logout: vi.fn(),
     dismissWelcome: vi.fn(),
+    sessionExpired: false,
     ...overrides,
   };
 
@@ -36,6 +37,7 @@ function renderWithAuth(overrides: Partial<AuthContextValue> = {}) {
 describe('LoginPage', () => {
   it('renders login form', () => {
     renderWithAuth();
+    expect(screen.getByRole('img', { name: 'Split Rail' })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument();
     expect(screen.getByLabelText('Email')).toBeInTheDocument();
   });
@@ -52,5 +54,16 @@ describe('LoginPage', () => {
       email: 'user@example.com',
       password: 'Password1',
     });
+  });
+
+  it('shows session-expired notice when sessionExpired is true', () => {
+    renderWithAuth({ sessionExpired: true });
+    const notice = screen.getByRole('status');
+    expect(notice).toHaveTextContent('Your session expired — please sign in again.');
+  });
+
+  it('hides session-expired notice when sessionExpired is false', () => {
+    renderWithAuth({ sessionExpired: false });
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 });

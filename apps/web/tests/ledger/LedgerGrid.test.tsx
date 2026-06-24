@@ -34,6 +34,7 @@ const mockLedger: LedgerGridResponse = {
           notes: null,
           isHiddenFromPromoter: false,
           rowVersion: 'v1',
+          hasQboCorrection: false,
         },
       ],
       blockTotals: { proforma: '10000.00', settlement: '0.00', qboActual: '0.00' },
@@ -132,7 +133,7 @@ describe('LedgerGrid', () => {
     expect(onLockBudget).toHaveBeenCalled();
   });
 
-  it('shows variance banner when reconciled rows are flagged', () => {
+  it('shows variance banner when reconciled rows have non-zero derived variance', () => {
     const ledgerWithVariance: LedgerGridResponse = {
       ...mockLedger,
       status: 'RECONCILED',
@@ -142,6 +143,8 @@ describe('LedgerGrid', () => {
           rows: [
             {
               ...mockLedger.blocks[0].rows[0],
+              qboActualValue: '10100.00',
+              settlementValue: '10000.00',
               variance: '100.00',
               varianceFlagged: true,
             },
@@ -153,6 +156,32 @@ describe('LedgerGrid', () => {
     };
 
     render(<LedgerGrid ledger={ledgerWithVariance} />);
+    expect(screen.getByTestId('variance-banner')).toBeInTheDocument();
+  });
+
+  it('shows variance banner when derived variance is non-zero even if varianceFlagged is false', () => {
+    const ledgerWithDerivedOnly: LedgerGridResponse = {
+      ...mockLedger,
+      status: 'RECONCILED',
+      blocks: [
+        {
+          ...mockLedger.blocks[0],
+          rows: [
+            {
+              ...mockLedger.blocks[0].rows[0],
+              qboActualValue: '50.00',
+              settlementValue: '0.00',
+              variance: '50.00',
+              varianceFlagged: false,
+            },
+          ],
+        },
+        mockLedger.blocks[1],
+        mockLedger.blocks[2],
+      ],
+    };
+
+    render(<LedgerGrid ledger={ledgerWithDerivedOnly} />);
     expect(screen.getByTestId('variance-banner')).toBeInTheDocument();
   });
 });
