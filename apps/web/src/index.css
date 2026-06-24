@@ -1115,6 +1115,30 @@ th {
     display: none;
   }
 
+  .app-shell__header {
+    flex-direction: column;
+    align-items: stretch;
+    min-height: auto;
+  }
+
+  .top-bar {
+    order: 1;
+    width: 100%;
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    justify-content: unset;
+    background: var(--color-primary-brown);
+    color: var(--color-text-on-dark);
+  }
+
+  .workspace-bar {
+    order: 2;
+    width: 100%;
+    flex: 0 0 auto;
+  }
+
   .top-bar__menu-button {
     display: inline-flex;
     align-items: center;
@@ -1128,15 +1152,6 @@ th {
   .top-bar__menu-button:focus-visible {
     outline: 2px solid var(--color-bg-cream);
     outline-offset: 2px;
-  }
-
-  .top-bar {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    justify-content: unset;
-    background: var(--color-primary-brown);
-    color: var(--color-text-on-dark);
   }
 
   .top-bar__org-name {

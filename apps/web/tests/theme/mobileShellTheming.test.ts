@@ -69,4 +69,13 @@ describe('mobileShellTheming', () => {
       /\.mobile-nav-drawer__close:focus-visible\s*\{[\s\S]*outline:\s*2px solid var\(--color-bg-cream\)/,
     );
   });
+
+  it('stacks workspace bar below top bar on mobile', () => {
+    const mobile = extractMobileMediaBlock(readIndexCss());
+    expect(mobile).toMatch(
+      /\.app-shell__header\s*\{[\s\S]*flex-direction:\s*column/,
+    );
+    expect(mobile).toMatch(/\.top-bar\s*\{[\s\S]*order:\s*1/);
+    expect(mobile).toMatch(/\.workspace-bar\s*\{[\s\S]*order:\s*2/);
+  });
 });
