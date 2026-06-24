@@ -25,6 +25,9 @@ export function UnmappedBanner({ venueId, eventId, lineItemOptions }: UnmappedBa
         onClick={() => setExpanded((v) => !v)}
         data-testid="unmapped-banner-toggle"
       >
+        <span className="badge-action-required" data-testid="unmapped-banner-badge">
+          Action required
+        </span>
         {count} unassigned transaction{count === 1 ? '' : 's'} detected
       </button>
 

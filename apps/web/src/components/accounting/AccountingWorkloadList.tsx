@@ -25,13 +25,25 @@ export function AccountingWorkloadList({ events }: AccountingWorkloadListProps) 
               <span className="accounting-workload-list__title-text">{event.title}</span>
               <span className="accounting-workload-list__date">{event.eventDate}</span>
               {event.unmappedCount > 0 ? (
-                <span className="accounting-workload-list__badge">{event.unmappedCount} unassigned</span>
+                <span
+                  className="accounting-workload-list__badge badge-action-required"
+                  data-testid={`accounting-workload-unassigned-${event.eventId}`}
+                >
+                  {event.unmappedCount} unassigned
+                </span>
               ) : null}
             </div>
             {event.alertLabels.length > 0 ? (
               <ul className="accounting-workload-list__alerts">
-                {event.alertLabels.map((label) => (
-                  <li key={label}>{label}</li>
+                {event.alertLabels.map((label, index) => (
+                  <li key={label}>
+                    <span
+                      className="badge-action-required"
+                      data-testid={`accounting-workload-alert-${event.eventId}-${index}`}
+                    >
+                      {label}
+                    </span>
+                  </li>
                 ))}
               </ul>
             ) : null}
