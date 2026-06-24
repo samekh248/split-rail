@@ -40,6 +40,7 @@ export function FinalizeSettlementPanel({
 
       <button
         type="button"
+        className="btn-primary"
         data-testid="finalize-settlement-btn"
         disabled={!signatureData || !confirmed || finalize.isPending}
         onClick={() => {

@@ -234,7 +234,7 @@ describe('DashboardOverviewPage', () => {
     render(<DashboardOverviewPage />, { wrapper: createWrapper() });
 
     expect(await screen.findByText('Unable to load events. Please try again.')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Retry' })).toHaveClass('btn-primary');
   });
 
   it('hides empty-state add venue for restricted user with zero venues', async () => {

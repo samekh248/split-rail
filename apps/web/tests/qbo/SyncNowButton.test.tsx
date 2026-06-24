@@ -49,4 +49,15 @@ describe('SyncNowButton', () => {
     await user.click(screen.getByTestId('sync-now-button'));
     expect(mutateAsync).toHaveBeenCalled();
   });
+
+  it('uses shared compact primary button styling', () => {
+    vi.mocked(useCanTriggerQboSync).mockReturnValue(true);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <SyncNowButton venueId="ven-1" eventId="evt-1" />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('sync-now-button')).toHaveClass('btn-primary--compact');
+  });
 });

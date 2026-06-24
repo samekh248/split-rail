@@ -42,7 +42,7 @@ export function SyncAllButton({ venueId }: SyncAllButtonProps) {
     <div className="sync-all-button-wrap">
       <button
         type="button"
-        className="sync-all-button"
+        className="sync-all-button btn-primary--compact"
         data-testid="sync-all-button"
         disabled={venueSync.isPending}
         onClick={() => void handleSync()}
