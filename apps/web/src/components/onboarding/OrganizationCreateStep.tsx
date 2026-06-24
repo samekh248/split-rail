@@ -53,7 +53,7 @@ export function OrganizationCreateStep({
           disabled={pending}
           describedBy={errorId}
         />
-        <button type="submit" className="auth-form__submit" disabled={pending}>
+        <button type="submit" className="auth-form__submit btn-primary" disabled={pending}>
           {pending ? 'Creating organization…' : 'Create organization'}
         </button>
       </form>

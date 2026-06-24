@@ -60,7 +60,7 @@ export function LoginForm({ onSubmit, pending = false, formError }: LoginFormPro
         autoComplete="current-password"
         disabled={pending}
       />
-      <button type="submit" className="auth-form__submit" disabled={pending}>
+      <button type="submit" className="auth-form__submit btn-primary" disabled={pending}>
         {pending ? 'Signing in…' : 'Sign in'}
       </button>
     </form>

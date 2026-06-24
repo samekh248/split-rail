@@ -93,7 +93,7 @@ export function RegisterForm({
         autoComplete="organization"
         disabled={pending}
       />
-      <button type="submit" className="auth-form__submit" disabled={pending}>
+      <button type="submit" className="auth-form__submit btn-primary" disabled={pending}>
         {pending ? 'Creating account…' : 'Create account'}
       </button>
     </form>

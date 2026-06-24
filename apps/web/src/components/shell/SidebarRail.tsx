@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { navigateToDashboard } from '@/lib/appRoute';
 import { GlobalNav } from './GlobalNav';
 import { NavPinButton } from './NavPinButton';
@@ -49,6 +50,18 @@ export function SidebarRail({
       />
     ));
 
+  const brandButton = (
+    <button
+      type="button"
+      className="sidebar-rail__brand-button"
+      data-testid="sidebar-brand"
+      aria-label="Split Rail home"
+      onClick={handleBrandClick}
+    >
+      <BrandLogo variant={showLabels ? 'text' : 'badge'} className="sidebar-rail__brand-logo" />
+    </button>
+  );
+
   return (
     <aside
       className={`sidebar-rail${showLabels ? ' sidebar-rail--expanded' : ' sidebar-rail--collapsed'}${
@@ -61,41 +74,16 @@ export function SidebarRail({
       <div className="sidebar-rail__header">
         {pinnedExpanded ? (
           <>
-            <button
-              type="button"
-              className="sidebar-rail__brand-button"
-              data-testid="sidebar-brand"
-              aria-label="Split Rail home"
-              onClick={handleBrandClick}
-            >
-              <span className="sidebar-rail__brand">Split Rail</span>
-            </button>
+            {brandButton}
             <NavPinButton variant="unpin" onClick={unpinNavigation} />
           </>
         ) : hoverExpanded ? (
           <>
-            <button
-              type="button"
-              className="sidebar-rail__brand-button"
-              data-testid="sidebar-brand"
-              aria-label="Split Rail home"
-              onClick={handleBrandClick}
-            >
-              <span className="sidebar-rail__brand">Split Rail</span>
-            </button>
+            {brandButton}
             <NavPinButton variant="pin" onClick={pinNavigation} />
           </>
         ) : (
-          <button
-            type="button"
-            className="sidebar-rail__brand-button sidebar-rail__brand-mark"
-            aria-label="Split Rail home"
-            data-testid="sidebar-brand"
-            title="Split Rail"
-            onClick={handleBrandClick}
-          >
-            SR
-          </button>
+          brandButton
         )}
       </div>
       {navigationContent}

@@ -12,7 +12,7 @@ export function LoginPage({ onNavigateToRegister }: LoginPageProps) {
   return (
     <AuthLayout
       title="Sign in"
-      subtitle="Access your Split Rail workspace"
+      showLogo
       notice={
         sessionExpired ? (
           <p className="session-expired-notice" role="status">

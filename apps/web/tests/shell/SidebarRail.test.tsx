@@ -71,7 +71,7 @@ describe('SidebarRail', () => {
     await advanceHoverIntent();
 
     expect(screen.getByTestId('sidebar-brand')).toBeInTheDocument();
-    expect(screen.getByText('Split Rail')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Split-Rail' })).toBeInTheDocument();
     expect(screen.getByTestId('sidebar-nav-pin')).toBeInTheDocument();
     expect(screen.queryByTestId('sidebar-nav-unpin')).not.toBeInTheDocument();
   });

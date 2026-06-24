@@ -111,10 +111,8 @@ describe('root Taskfile contract', () => {
   });
 
   it('taskfile_devRunsParallel', () => {
-    const block = readTaskfile(repoRoot);
-    const devBlock = block.split('\n').slice(
-      block.split('\n').findIndex((l) => l === '  dev:'),
-    ).join('\n');
+    const content = taskfile();
+    const devBlock = extractTaskBlock(content, 'dev');
     expect(devBlock).toContain('run: parallel');
     expect(devBlock).toContain('task: api:dev');
     expect(devBlock).toContain('task: web:dev');

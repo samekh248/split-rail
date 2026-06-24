@@ -26,7 +26,7 @@ export function assertPlaceholderAbsent(content: string): void {
 
 /** Extract a task block body including the task header line. */
 export function extractTaskBlock(content: string, taskName: string): string {
-  const lines = content.split('\n');
+  const lines = content.split(/\r?\n/);
   const header = `  ${taskName}:`;
   let start = -1;
   for (let i = 0; i < lines.length; i++) {
