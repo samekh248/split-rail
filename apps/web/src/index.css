@@ -938,9 +938,15 @@ th {
 
 .top-bar__brand-slot {
   display: none;
-  justify-self: center;
   min-width: 0;
-  grid-column: 2;
+}
+
+.top-bar__trailing {
+  display: none;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  min-width: 0;
 }
 
 .top-bar__brand.brand-logo-wrapper {
@@ -1126,7 +1132,7 @@ th {
     width: 100%;
     flex: 0 0 auto;
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: auto 1fr;
     align-items: center;
     justify-content: unset;
     background: var(--color-primary-brown);
@@ -1160,16 +1166,28 @@ th {
 
   .top-bar__leading {
     grid-column: 1;
+    justify-self: start;
+  }
+
+  .top-bar__trailing {
+    display: flex;
+    grid-column: 2;
+    justify-self: end;
   }
 
   .top-bar__brand-slot {
     display: flex;
-    justify-content: center;
+    justify-content: flex-start;
+  }
+
+  .top-bar__trailing .top-bar__org-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .top-bar__context {
-    grid-column: 3;
-    justify-self: end;
+    flex-shrink: 0;
   }
 }
 

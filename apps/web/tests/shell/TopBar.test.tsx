@@ -9,13 +9,25 @@ describe('TopBar', () => {
     window.history.pushState({}, '', '/');
   });
 
-  it('shows centered wordmark when showMobileMenu is true', () => {
+  it('shows wordmark in leading slot when showMobileMenu is true', () => {
     render(<TopBar showMobileMenu />, { wrapper: createSidebarTestWrapper() });
 
+    const leading = document.querySelector('.top-bar__leading');
     const brandSlot = screen.getByTestId('top-bar-brand');
+    expect(leading).toContainElement(brandSlot);
     const img = brandSlot.querySelector('img');
     expect(img).toHaveAttribute('src', BRAND_LOGO_TEXT);
     expect(img).toHaveClass('brand-logo--text');
+  });
+
+  it('places organization name in trailing slot on mobile', () => {
+    render(<TopBar showMobileMenu />, { wrapper: createSidebarTestWrapper() });
+
+    const trailing = screen.getByTestId('top-bar-trailing');
+    expect(trailing).toContainElement(screen.getByTestId('top-bar-org-name'));
+    expect(document.querySelector('.top-bar__leading')).not.toContainElement(
+      screen.getByTestId('top-bar-org-name'),
+    );
   });
 
   it('hides brand slot when showMobileMenu is false', () => {
