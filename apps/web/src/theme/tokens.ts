@@ -8,8 +8,8 @@ export const colors = {
 } as const;
 
 export const fonts = {
-  heading: "'Zilla Slab', serif",
-  ui: "'Inter', system-ui, sans-serif",
+  brand: "'Zilla Slab', 'Rokkitt', 'Roboto Slab', serif",
+  ui: "'Inter', 'Open Sans', 'Lato', sans-serif",
 } as const;
 
 /** WCAG AA contrast pairings validated in designTokens.test.ts */
@@ -34,4 +34,6 @@ export const requiredCssVariables = [
   '--color-border-subtle',
   '--radius-button',
   '--shadow-card',
+  '--font-brand',
+  '--font-ui',
 ] as const;

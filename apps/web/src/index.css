@@ -21,8 +21,8 @@
   --color-warning-text: var(--color-primary-brown);
   --color-surface-muted: rgba(62, 39, 35, 0.06);
 
-  --font-heading: 'Zilla Slab', serif;
-  --font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-brand: 'Zilla Slab', 'Rokkitt', 'Roboto Slab', serif;
+  --font-ui: 'Inter', 'Open Sans', 'Lato', sans-serif;
 
   --radius-button: 6px;
   --radius-card: 8px;
@@ -59,7 +59,7 @@ body {
 h1,
 h2,
 .heading-brand {
-  font-family: var(--font-heading);
+  font-family: var(--font-brand);
   font-weight: 700;
   color: var(--color-primary-brown);
 }
@@ -889,7 +889,7 @@ h2,
 
 .top-bar__org-name {
   font-weight: 600;
-  font-family: var(--font-heading);
+  font-family: var(--font-brand);
   color: var(--color-primary-brown);
 }
 
@@ -1114,7 +1114,7 @@ h2,
 
 .block-section__title {
   margin: 0 0 0.75rem;
-  font-family: var(--font-heading);
+  font-family: var(--font-brand);
 }
 
 .ledger-table {
@@ -1326,7 +1326,7 @@ h2,
 .auth-layout__title {
   margin: 0 0 0.5rem;
   font-size: 1.5rem;
-  font-family: var(--font-heading);
+  font-family: var(--font-brand);
   color: var(--color-primary-brown);
 }
 
@@ -1527,7 +1527,7 @@ h2,
 .dashboard-empty__heading {
   margin: 0 0 0.75rem;
   font-size: 1.25rem;
-  font-family: var(--font-heading);
+  font-family: var(--font-brand);
 }
 
 .dashboard-empty__text {
@@ -1585,7 +1585,7 @@ h2,
 .welcome-modal__title {
   margin: 0 0 1rem;
   font-size: 1.5rem;
-  font-family: var(--font-heading);
+  font-family: var(--font-brand);
   color: var(--color-primary-brown);
 }
 

@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { PRODUCTION_CONTENT_SECURITY_POLICY } from '../../src/security/contentSecurityPolicy';
 
 const contractLiteral =
-  "default-src 'self'; script-src 'self'; connect-src 'self' *.quickbooks.com *.googleapis.com; object-src 'none';";
+  "default-src 'self'; script-src 'self'; connect-src 'self' *.quickbooks.com *.googleapis.com; object-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;";
 
 const testDir = dirname(fileURLToPath(import.meta.url));
 const firebaseJsonPath = resolve(testDir, '../../firebase.json');
@@ -17,6 +17,13 @@ describe('contentSecurityPolicy', () => {
 
   it("productionPolicy contains object-src 'none'", () => {
     expect(PRODUCTION_CONTENT_SECURITY_POLICY).toContain("object-src 'none'");
+  });
+
+  it('productionPolicy allows Google Fonts stylesheet and font file origins', () => {
+    expect(PRODUCTION_CONTENT_SECURITY_POLICY).toContain('style-src');
+    expect(PRODUCTION_CONTENT_SECURITY_POLICY).toContain('https://fonts.googleapis.com');
+    expect(PRODUCTION_CONTENT_SECURITY_POLICY).toContain('font-src');
+    expect(PRODUCTION_CONTENT_SECURITY_POLICY).toContain('https://fonts.gstatic.com');
   });
 
   it('cross-artifact sync: TS, firebase.json match contract literal', () => {
