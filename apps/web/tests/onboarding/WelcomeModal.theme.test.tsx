@@ -8,7 +8,9 @@ describe('WelcomeModal theme', () => {
     render(<WelcomeModal organizationName="Acme Corp" onDismiss={vi.fn()} />);
 
     expect(document.querySelector('.welcome-modal__backdrop')).toBeInTheDocument();
-    expect(document.querySelector('.welcome-modal')).toBeInTheDocument();
+    const modalPanel = document.querySelector('.welcome-modal');
+    expect(modalPanel).toBeInTheDocument();
+    expect(modalPanel).toHaveClass('welcome-modal');
     expect(screen.getByRole('heading', { level: 2 })).toHaveClass('welcome-modal__title');
 
     const dismiss = screen.getByRole('button', { name: 'Get started' });

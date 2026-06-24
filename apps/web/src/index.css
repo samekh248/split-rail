@@ -1219,14 +1219,22 @@ th {
   margin: 0.25rem 0 0;
 }
 
-.ledger-grid__summary {
-  display: flex;
-  gap: 1.5rem;
-  padding: 0.75rem 1rem;
+/* Shared data containers */
+.block-section,
+.ledger-grid__summary,
+.artist-deal-panel,
+.ledger-grid__artists,
+.event-card {
   background: var(--color-surface-white);
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-soft);
+}
+
+.ledger-grid__summary {
+  display: flex;
+  gap: 1.5rem;
+  padding: 0.75rem 1rem;
   margin-bottom: 1.5rem;
   font-weight: 600;
 }
@@ -1246,10 +1254,6 @@ th {
 }
 
 .block-section {
-  background: var(--color-surface-white);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-soft);
   padding: 1rem;
   margin-bottom: 1rem;
 }
@@ -1323,10 +1327,6 @@ th {
 
 .artist-deal-panel,
 .ledger-grid__artists {
-  background: var(--color-surface-white);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-soft);
   padding: 1rem;
   margin-top: 1rem;
 }
@@ -1987,9 +1987,6 @@ button.welcome-modal__dismiss {
   flex-direction: column;
   gap: 0.5rem;
   padding: 1rem;
-  border: 1px solid var(--color-border-subtle);
-  border-radius: 0.5rem;
-  background: #fff;
 }
 
 .event-card__header {
