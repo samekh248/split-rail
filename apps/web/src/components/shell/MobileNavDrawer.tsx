@@ -1,4 +1,5 @@
 import { useEffect, useRef, type RefObject } from 'react';
+import { BrandLogo } from '@/components/brand/BrandLogo';
 import { GlobalNav } from './GlobalNav';
 import { ProfileBadge } from './ProfileBadge';
 import type { SidebarNavigationMode } from './SidebarRail';
@@ -89,7 +90,7 @@ export function MobileNavDrawer({
         tabIndex={-1}
       >
         <div className="mobile-nav-drawer__header">
-          <span className="mobile-nav-drawer__title">Menu</span>
+          <BrandLogo variant="text" className="mobile-nav-drawer__brand" />
           <button
             type="button"
             className="mobile-nav-drawer__close"

@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { BRAND_LOGO_TEXT } from '@/brand/assets';
 import { MobileNavDrawer } from '@/components/shell/MobileNavDrawer';
 import { getAppPath } from '@/lib/appRoute';
 import { createSidebarTestWrapper } from './shellTestUtils';
@@ -43,6 +44,19 @@ describe('MobileNavDrawer', () => {
 
     await user.click(screen.getByTestId('mobile-nav-close'));
     expect(screen.queryByTestId('mobile-nav-drawer')).not.toBeInTheDocument();
+  });
+
+  it('shows wordmark in drawer header when open', async () => {
+    const user = userEvent.setup();
+    render(<DrawerHarness />, { wrapper: createSidebarTestWrapper() });
+
+    await user.click(screen.getByRole('button', { name: 'Open drawer' }));
+
+    const brandWrapper = document.querySelector('.mobile-nav-drawer__brand');
+    expect(brandWrapper).toBeInTheDocument();
+    const img = screen.getByRole('img', { name: 'Split-Rail' });
+    expect(img).toHaveAttribute('src', BRAND_LOGO_TEXT);
+    expect(img).toHaveClass('brand-logo--text');
   });
 
   it('closes when backdrop is clicked', async () => {

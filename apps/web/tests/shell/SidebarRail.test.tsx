@@ -1,9 +1,14 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { BRAND_LOGO_BADGE, BRAND_LOGO_TEXT } from '@/brand/assets';
 import { SidebarRail } from '@/components/shell/SidebarRail';
 import { useSidebarState } from '@/hooks/useSidebarState';
 import { getAppPath } from '@/lib/appRoute';
 import { createSidebarTestWrapper } from './shellTestUtils';
+
+function getSidebarBrandImage() {
+  return screen.getByTestId('sidebar-brand').querySelector('img');
+}
 
 function SidebarRailHarness() {
   const sidebar = useSidebarState();
@@ -131,5 +136,35 @@ describe('SidebarRail', () => {
 
     fireEvent.click(screen.getByTestId('sidebar-brand'));
     expect(getAppPath()).toBe('/');
+  });
+
+  it('shows wordmark when sidebar is expanded', () => {
+    render(<SidebarRailHarness />, { wrapper: createSidebarTestWrapper() });
+
+    expect(getSidebarBrandImage()).toHaveAttribute('src', BRAND_LOGO_TEXT);
+    expect(getSidebarBrandImage()).toHaveClass('brand-logo--text');
+  });
+
+  it('shows badge when sidebar is collapsed', () => {
+    vi.useFakeTimers();
+    render(<SidebarRailHarness />, { wrapper: createSidebarTestWrapper() });
+
+    fireEvent.click(screen.getByTestId('sidebar-nav-unpin'));
+    expect(getSidebarBrandImage()).toHaveAttribute('src', BRAND_LOGO_BADGE);
+    expect(getSidebarBrandImage()).toHaveClass('brand-logo--badge');
+  });
+
+  it('shows wordmark on hover overlay when collapsed', async () => {
+    vi.useFakeTimers();
+    render(<SidebarRailHarness />, { wrapper: createSidebarTestWrapper() });
+
+    fireEvent.click(screen.getByTestId('sidebar-nav-unpin'));
+    expect(getSidebarBrandImage()).toHaveAttribute('src', BRAND_LOGO_BADGE);
+
+    fireEvent.mouseEnter(screen.getByTestId('sidebar-rail'));
+    await advanceHoverIntent();
+
+    expect(getSidebarBrandImage()).toHaveAttribute('src', BRAND_LOGO_TEXT);
+    expect(getSidebarBrandImage()).toHaveClass('brand-logo--text');
   });
 });

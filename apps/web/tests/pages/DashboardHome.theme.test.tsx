@@ -15,7 +15,11 @@ describe('AppShell theme', () => {
     );
 
     expect(screen.getByTestId('sidebar-rail')).toBeInTheDocument();
-    expect(screen.getByRole('img', { name: 'Split-Rail' })).toBeInTheDocument();
+    expect(screen.getByTestId('sidebar-brand').querySelector('img')).toHaveAttribute(
+      'src',
+      '/brand/sr-text.png',
+    );
+    expect(screen.getByTestId('top-bar-brand')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(screen.getByTestId('top-bar-org-name')).toHaveTextContent('Acme Org');
