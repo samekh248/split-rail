@@ -24,6 +24,7 @@ export function SignaturePad({ onChange, width = 400, height = 120 }: SignatureP
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.clearRect(0, 0, width, height);
+    // intentional hex: canvas signature ink — non-chrome drawing color (SPLR-91 out-of-scope)
     ctx.strokeStyle = '#111';
     ctx.lineWidth = 2;
     ctx.lineCap = 'round';

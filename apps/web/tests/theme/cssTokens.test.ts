@@ -61,4 +61,11 @@ describe('cssTokens', () => {
     expect(css).toMatch(/--radius-button:\s*6px/);
     expect(css).toMatch(/--shadow-card:\s*0 2px 5px rgba\(0,\s*0,\s*0,\s*0\.05\)/);
   });
+
+  it('defines success semantic tokens in :root (SPLR-91)', () => {
+    const root = extractRootBlock(readIndexCss());
+    expect(root).toMatch(/--color-success:\s*#15803d/i);
+    expect(root).toMatch(/--color-success-bg:\s*#f0fdf4/i);
+    expect(root).toMatch(/--color-success-border:\s*#86efac/i);
+  });
 });

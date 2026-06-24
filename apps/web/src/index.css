@@ -19,6 +19,9 @@
   --color-warning-bg: #fff3e0;
   --color-warning-border: var(--color-accent-orange);
   --color-warning-text: var(--color-primary-brown);
+  --color-success: #15803d;
+  --color-success-bg: #f0fdf4;
+  --color-success-border: #86efac;
   --color-surface-muted: rgba(62, 39, 35, 0.06);
 
   --font-brand: 'Zilla Slab', 'Rokkitt', 'Roboto Slab', serif;
@@ -1482,10 +1485,10 @@ th {
 .session-expired-notice {
   margin: 0 0 1rem;
   padding: 0.75rem 1rem;
-  background: #fef3c7;
-  border: 1px solid #fcd34d;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
   border-radius: 8px;
-  color: #92400e;
+  color: var(--color-warning-text);
   font-size: 0.875rem;
   line-height: 1.4;
 }
@@ -1672,7 +1675,7 @@ th {
   margin-top: 1.25rem;
   padding: 0.625rem 1.25rem;
   background: var(--color-primary-brown);
-  color: #fff;
+  color: var(--color-text-on-dark);
   border: none;
   border-radius: 8px;
   font-size: 1rem;
@@ -1759,7 +1762,7 @@ button.welcome-modal__dismiss {
 
 .settings-layout__header {
   background: var(--color-primary-brown);
-  color: #fff;
+  color: var(--color-text-on-dark);
   padding: 1rem 1.5rem;
 }
 
@@ -1795,7 +1798,7 @@ button.welcome-modal__dismiss {
 
 .settings-nav__item {
   text-align: left;
-  background: #fff;
+  background: var(--color-surface-white);
   border: 1px solid var(--color-border-subtle);
   border-radius: 8px;
   padding: 0.625rem 0.75rem;
@@ -1810,7 +1813,7 @@ button.welcome-modal__dismiss {
 }
 
 .settings-layout__content {
-  background: #fff;
+  background: var(--color-surface-white);
   border: 1px solid var(--color-border-subtle);
   border-radius: 8px;
   padding: 1.25rem;
@@ -1877,13 +1880,14 @@ button.welcome-modal__dismiss {
 }
 
 .team-section__banner--error {
-  background: #fef2f2;
-  color: #b91c1c;
+  background: var(--color-error-bg);
+  color: var(--color-error);
 }
 
 .team-section__banner--success {
-  background: #f0fdf4;
-  color: #15803d;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
 }
 
 .invite-form__venues {
@@ -1930,7 +1934,7 @@ button.welcome-modal__dismiss {
 }
 
 .team-modal__error {
-  color: #dc2626;
+  color: var(--color-error);
   font-size: 0.875rem;
 }
 
@@ -1941,7 +1945,7 @@ button.welcome-modal__dismiss {
 }
 
 .team-confirm {
-  background: #fff;
+  background: var(--color-surface-white);
   border-radius: 12px;
   padding: 1.5rem;
   max-width: 420px;
@@ -1959,7 +1963,7 @@ button.welcome-modal__dismiss {
 }
 
 .team-confirm__error {
-  color: #dc2626;
+  color: var(--color-error);
   font-size: 0.875rem;
 }
 
@@ -2151,7 +2155,7 @@ button.welcome-modal__dismiss {
   border: 1px solid var(--color-border-subtle);
   border-radius: 0.5rem;
   overflow: hidden;
-  background: #fff;
+  background: var(--color-surface-white);
 }
 
 .upcoming-view-toggle__button {
@@ -2208,7 +2212,7 @@ button.welcome-modal__dismiss {
   padding: 0.25rem;
   border: 1px solid var(--color-border-subtle);
   border-radius: 0.375rem;
-  background: #fff;
+  background: var(--color-surface-white);
   display: flex;
   flex-direction: column;
   gap: 0.125rem;
@@ -2295,7 +2299,7 @@ button.welcome-modal__dismiss {
   padding: 1rem 1.25rem;
   border: 1px solid var(--color-border-subtle);
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--color-surface-white);
 }
 
 .financial-health-widget__heading {
@@ -2390,7 +2394,7 @@ button.welcome-modal__dismiss {
   flex-direction: column;
   width: min(28rem, 100vw);
   max-height: 100vh;
-  background: #fff;
+  background: var(--color-surface-white);
   box-shadow: -4px 0 24px rgba(15, 23, 42, 0.15);
 }
 
@@ -2426,16 +2430,16 @@ button.welcome-modal__dismiss {
 .unassigned-drawer__success {
   padding: 1rem;
   border-radius: 0.5rem;
-  background: #ecfdf5;
-  color: #065f46;
-  border: 1px solid #6ee7b7;
+  background: var(--color-success-bg);
+  color: var(--color-success);
+  border: 1px solid var(--color-success-border);
 }
 
 .unassigned-drawer__error {
   padding: 1rem;
   border-radius: 0.5rem;
-  background: #fef2f2;
-  color: #991b1b;
+  background: var(--color-error-bg);
+  color: var(--color-error);
 }
 
 .unassigned-drawer__retry {
@@ -2492,7 +2496,7 @@ button.welcome-modal__dismiss {
   padding: 0 0.75rem;
   border: none;
   border-left: 1px solid var(--color-border-subtle);
-  background: #fff;
+  background: var(--color-surface-white);
   cursor: pointer;
 }
 
@@ -2536,7 +2540,7 @@ button.welcome-modal__dismiss {
   padding: 1rem 1.25rem;
   border: 1px solid var(--color-border-subtle);
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--color-surface-white);
 }
 
 .venue-qbo-status-card__title {
