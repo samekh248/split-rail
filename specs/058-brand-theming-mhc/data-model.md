@@ -53,7 +53,7 @@ Maps spec entity **UI surface tier** to token application:
 | Field | Type | Values | Rule |
 |-------|------|--------|------|
 | `variant` | `'text' \| 'badge'` | wordmark / compact | Selected by navigation layout |
-| `assetPath` | `string` | `/sr-text.png` or `/sr-badge.png` | Public URL |
+| `assetPath` | `string` | `/brand/sr-text.png` or `/brand/sr-badge.png` | Public URL |
 | `alt` | `string` | `"Split-Rail"` | Constant for a11y |
 
 ### Selection rules (Navigation state → Logo variant)

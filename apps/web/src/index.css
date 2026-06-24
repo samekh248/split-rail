@@ -3,10 +3,12 @@
 :root {
   /* Montana High Country palette */
   --color-primary-brown: #3e2723;
-  --color-accent-orange: #c45100;
-  --color-accent-orange-hover: #a04300;
+  --color-accent-orange: #e65100;
+  --color-accent-orange-hover: #cc4900;
   --color-bg-cream: #f4f1ea;
   --color-surface-white: #ffffff;
+  --color-text-on-light: var(--color-primary-brown);
+  --color-text-on-dark: var(--color-bg-cream);
   --color-nav-hover-overlay: rgba(255, 255, 255, 0.1);
   --color-border-subtle: rgba(62, 39, 35, 0.15);
   --color-text-muted: rgba(62, 39, 35, 0.72);
@@ -25,7 +27,7 @@
   --radius-button: 6px;
   --radius-card: 8px;
   --shadow-soft: 0 2px 5px rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 4px 24px rgba(62, 39, 35, 0.08);
+  --shadow-card: 0 2px 5px rgba(0, 0, 0, 0.05);
   --shadow-modal: 0 8px 32px rgba(62, 39, 35, 0.15);
 
   --sidebar-width-expanded: 17.5rem;

@@ -6,10 +6,12 @@ Dynamic logo component for navigation branding (SPLR-83, FR-007).
 
 ## Assets (SPLR-82)
 
+Path constants: `apps/web/src/brand/assets.ts` (`BRAND_LOGO_TEXT`, `BRAND_LOGO_BADGE`, `BRAND_LOGO_AUTH`).
+
 | File | Path | Usage |
 |------|------|-------|
-| Wordmark | `apps/web/public/sr-text.png` | Expanded sidebar, mobile drawer/top |
-| Badge | `apps/web/public/sr-badge.png` | Collapsed sidebar rail |
+| Wordmark | `apps/web/public/brand/sr-text.png` | Expanded sidebar, mobile drawer/top |
+| Badge | `apps/web/public/brand/sr-badge.png` | Collapsed sidebar rail |
 
 Assets MUST be optimized PNG/SVG with transparent backgrounds suitable for Lodgepole Brown nav chrome.
 
@@ -24,8 +26,8 @@ Assets MUST be optimized PNG/SVG with transparent backgrounds suitable for Lodge
 ## Rendering contract
 
 ```tsx
-// variant === 'text'  → <img src="/sr-text.png" alt={alt} className="brand-logo brand-logo--text" />
-// variant === 'badge' → <img src="/sr-badge.png" alt={alt} className="brand-logo brand-logo--badge" />
+// variant === 'text'  → <img src="/brand/sr-text.png" alt={alt} className="brand-logo brand-logo--text" />
+// variant === 'badge' → <img src="/brand/sr-badge.png" alt={alt} className="brand-logo brand-logo--badge" />
 ```
 
 - Single `<img>` per render; no inline SVG duplication.

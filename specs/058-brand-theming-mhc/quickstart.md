@@ -5,7 +5,7 @@ How to run and validate the feature by milestone. References [contracts/design-t
 ## Prerequisites
 
 - Node 22 + dependencies in `apps/web` (`npm install`)
-- Logo assets `sr-text.png` and `sr-badge.png` in `apps/web/public/` (M2)
+- Logo assets `sr-text.png` and `sr-badge.png` in `apps/web/public/brand/` (M2)
 - Backend optional for visual verification (auth flows need API for full journey)
 
 ## Run
@@ -39,7 +39,7 @@ Expected after M6: all tests pass, coverage gate satisfied, `legacyPalette.test.
 
 ### M2 — Logo assets & BrandLogo (SPLR-82, SPLR-83, SPLR-84)
 
-1. `public/sr-text.png` and `public/sr-badge.png` load without 404.
+1. `public/brand/sr-text.png` and `public/brand/sr-badge.png` load without 404.
 2. `BrandLogo variant="text"` and `variant="badge"` render in unit tests.
 3. Header or sidebar shows wordmark with adequate padding.
 4. When shell supports collapse, badge logo appears in collapsed state.

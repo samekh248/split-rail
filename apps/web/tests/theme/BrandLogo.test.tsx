@@ -6,21 +6,21 @@ describe('BrandLogo', () => {
   it('renders text variant with sr-text.png', () => {
     render(<BrandLogo variant="text" />);
     const img = screen.getByRole('img', { name: 'Split-Rail' });
-    expect(img).toHaveAttribute('src', '/sr-text.png');
+    expect(img).toHaveAttribute('src', '/brand/sr-text.png');
     expect(img).toHaveClass('brand-logo--text');
   });
 
   it('renders badge variant with sr-badge.png', () => {
     render(<BrandLogo variant="badge" />);
     const img = screen.getByRole('img', { name: 'Split-Rail' });
-    expect(img).toHaveAttribute('src', '/sr-badge.png');
+    expect(img).toHaveAttribute('src', '/brand/sr-badge.png');
     expect(img).toHaveClass('brand-logo--badge');
   });
 
   it('renders auth variant with sr-auth-logo.png', () => {
     render(<BrandLogo variant="auth" />);
     const img = screen.getByRole('img', { name: 'Split-Rail' });
-    expect(img).toHaveAttribute('src', '/sr-auth-logo.png');
+    expect(img).toHaveAttribute('src', '/brand/sr-auth-logo.png');
     expect(img).toHaveClass('brand-logo--auth');
   });
 
