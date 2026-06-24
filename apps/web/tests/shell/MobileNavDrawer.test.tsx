@@ -59,6 +59,26 @@ describe('MobileNavDrawer', () => {
     expect(img).toHaveClass('brand-logo--text');
   });
 
+  it('renders themed drawer panel when open', async () => {
+    const user = userEvent.setup();
+    render(<DrawerHarness />, { wrapper: createSidebarTestWrapper() });
+
+    await user.click(screen.getByRole('button', { name: 'Open drawer' }));
+
+    const panel = document.querySelector('.mobile-nav-drawer__panel');
+    expect(panel).toBeInTheDocument();
+  });
+
+  it('renders Font Awesome xmark icon for the close button', async () => {
+    const user = userEvent.setup();
+    render(<DrawerHarness />, { wrapper: createSidebarTestWrapper() });
+
+    await user.click(screen.getByRole('button', { name: 'Open drawer' }));
+
+    const closeButton = screen.getByTestId('mobile-nav-close');
+    expect(closeButton.querySelector('svg[data-icon="xmark"]')).toBeInTheDocument();
+  });
+
   it('closes when backdrop is clicked', async () => {
     const user = userEvent.setup();
     render(<DrawerHarness />, { wrapper: createSidebarTestWrapper() });

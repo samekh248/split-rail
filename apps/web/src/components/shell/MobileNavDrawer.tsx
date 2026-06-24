@@ -1,3 +1,5 @@
+import { faXmark } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useEffect, useRef, type RefObject } from 'react';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { GlobalNav } from './GlobalNav';
@@ -98,7 +100,11 @@ export function MobileNavDrawer({
             data-testid="mobile-nav-close"
             onClick={onClose}
           >
-            ×
+            <FontAwesomeIcon
+              icon={faXmark}
+              className="mobile-nav-drawer__close-icon"
+              aria-hidden="true"
+            />
           </button>
         </div>
         {navigationContent}

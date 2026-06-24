@@ -919,6 +919,8 @@ th {
 
 .top-bar__menu-button {
   display: none;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: 1px solid var(--color-border-subtle);
   border-radius: 6px;
@@ -926,6 +928,12 @@ th {
   height: 2.25rem;
   cursor: pointer;
   color: var(--color-primary-brown);
+  padding: 0;
+}
+
+.top-bar__menu-icon {
+  width: 1rem;
+  height: 1rem;
 }
 
 .top-bar__brand-slot {
@@ -1064,11 +1072,27 @@ th {
 }
 
 .mobile-nav-drawer__close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   border: none;
   color: inherit;
-  font-size: 1.5rem;
   cursor: pointer;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0;
+}
+
+.mobile-nav-drawer__close-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.mobile-nav-drawer__close:focus-visible {
+  outline: 2px solid var(--color-bg-cream);
+  outline-offset: 2px;
+  border-radius: 6px;
 }
 
 .mobile-nav-drawer__profile {
@@ -1095,6 +1119,15 @@ th {
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    color: var(--color-text-on-dark);
+    border-color: rgba(244, 241, 234, 0.25);
+    min-width: 2.75rem;
+    min-height: 2.75rem;
+  }
+
+  .top-bar__menu-button:focus-visible {
+    outline: 2px solid var(--color-bg-cream);
+    outline-offset: 2px;
   }
 
   .top-bar {
@@ -1102,6 +1135,12 @@ th {
     grid-template-columns: auto 1fr auto;
     align-items: center;
     justify-content: unset;
+    background: var(--color-primary-brown);
+    color: var(--color-text-on-dark);
+  }
+
+  .top-bar__org-name {
+    color: var(--color-text-on-dark);
   }
 
   .top-bar__leading {

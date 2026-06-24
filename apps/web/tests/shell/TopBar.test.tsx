@@ -23,4 +23,11 @@ describe('TopBar', () => {
 
     expect(screen.queryByTestId('top-bar-brand')).not.toBeInTheDocument();
   });
+
+  it('renders Font Awesome bars icon for the mobile menu button', () => {
+    render(<TopBar showMobileMenu />, { wrapper: createSidebarTestWrapper() });
+
+    const menuButton = screen.getByTestId('mobile-nav-open');
+    expect(menuButton.querySelector('svg[data-icon="bars"]')).toBeInTheDocument();
+  });
 });

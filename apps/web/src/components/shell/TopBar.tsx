@@ -1,3 +1,5 @@
+import { faBars } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { ReactNode, Ref } from 'react';
 import { useUserProfile } from '@/api/user';
 import { BrandLogo } from '@/components/brand/BrandLogo';
@@ -30,7 +32,7 @@ export function TopBar({
             data-testid="mobile-nav-open"
             onClick={onOpenMobileNav}
           >
-            ☰
+            <FontAwesomeIcon icon={faBars} className="top-bar__menu-icon" aria-hidden="true" />
           </button>
         ) : null}
         <span className="top-bar__org-name" data-testid="top-bar-org-name">
