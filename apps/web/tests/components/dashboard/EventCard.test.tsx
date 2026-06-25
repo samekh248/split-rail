@@ -60,7 +60,7 @@ describe('EventCard', () => {
       expect(screen.getByTestId(`event-card-date-${EVENT_A.eventId}`)).toHaveTextContent('Aug 1, 2026');
       const badge = screen.getByTestId(`event-card-booking-${EVENT_A.eventId}`);
       expect(badge).toBeInTheDocument();
-      expect(badge).toHaveAttribute('title', expect.stringContaining('full calendar coming soon'));
+      expect(badge).toHaveAttribute('title', expect.stringContaining('Booking placement status'));
     });
 
     it('shows placeholders when title and date are missing', () => {

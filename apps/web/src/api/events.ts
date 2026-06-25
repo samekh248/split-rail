@@ -1,10 +1,18 @@
 import { useMemo } from 'react';
 import { useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  buildCalendarPlacementFromEvent,
+  refetchCalendarPlacements,
+  upsertCalendarPlacementInCache,
+} from './calendar';
+import { regionsQueryKey } from './regions';
 import { apiFetch } from './client';
 import type {
   CreateEventRequest,
   EventResponse,
+  RegionResponse,
   UpdateEventRequest,
+  VenueResponse,
 } from '@/types/generated-api';
 
 export function eventsQueryKey(venueId: string) {
@@ -51,10 +59,21 @@ export function useCreateEvent(venueId: string | null) {
         method: 'POST',
         body: JSON.stringify(body),
       }),
-    onSuccess: () => {
+    onSuccess: async (created) => {
       if (venueId) {
         void queryClient.invalidateQueries({ queryKey: eventsQueryKey(venueId) });
       }
+
+      const venues = queryClient.getQueryData<VenueResponse[]>(['venues']) ?? [];
+      const venue = venues.find((item) => item.id === created.venueId);
+      const regions = queryClient.getQueryData<RegionResponse[]>(regionsQueryKey()) ?? [];
+      const region = regions.find((item) => item.id === venue?.regionId);
+
+      upsertCalendarPlacementInCache(
+        queryClient,
+        buildCalendarPlacementFromEvent(created, venue, region),
+      );
+      await refetchCalendarPlacements(queryClient);
     },
   });
 }
@@ -72,6 +91,7 @@ export function useUpdateEvent(venueId: string | null, eventId: string | null) {
       if (venueId) {
         void queryClient.invalidateQueries({ queryKey: eventsQueryKey(venueId) });
       }
+      void queryClient.invalidateQueries({ queryKey: ['calendar'] });
     },
   });
 }
@@ -88,6 +108,7 @@ export function useDeleteEvent(venueId: string | null) {
       if (venueId) {
         void queryClient.invalidateQueries({ queryKey: eventsQueryKey(venueId) });
       }
+      void queryClient.invalidateQueries({ queryKey: ['calendar'] });
     },
   });
 }

@@ -34,11 +34,27 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("artist_signature_data");
 
+                    b.Property<string>("BookingPlacementStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("CONFIRMED")
+                        .HasColumnName("booking_placement_status");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("NOW()");
+
+                    b.Property<TimeOnly?>("CurfewTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("curfew_time");
+
+                    b.Property<TimeOnly?>("DoorsTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("doors_time");
 
                     b.Property<DateOnly>("EventDate")
                         .HasColumnType("date")
@@ -49,6 +65,10 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("is_budget_locked");
+
+                    b.Property<TimeOnly?>("LoadInTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("load_in_time");
 
                     b.Property<string>("QboTagName")
                         .IsRequired()
@@ -84,6 +104,11 @@ namespace SplitRail.Api.Data.Migrations
                         .HasDefaultValue("PRE_SHOW")
                         .HasColumnName("status");
 
+                    b.Property<string>("SupportLineup")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("support_lineup");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -108,6 +133,9 @@ namespace SplitRail.Api.Data.Migrations
 
                     b.HasIndex("VenueId")
                         .HasDatabaseName("IX_events_venue_id");
+
+                    b.HasIndex("VenueId", "EventDate")
+                        .HasDatabaseName("ix_events_venue_id_event_date");
 
                     b.ToTable("events", (string)null);
                 });
@@ -692,6 +720,43 @@ namespace SplitRail.Api.Data.Migrations
                     b.ToTable("refresh_tokens", (string)null);
                 });
 
+            modelBuilder.Entity("SplitRail.Api.Models.Region", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text")
+                        .HasColumnName("notes");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_regions_organization_id_name");
+
+                    b.ToTable("regions", (string)null);
+                });
+
             modelBuilder.Entity("SplitRail.Api.Models.SettlementReversal", b =>
                 {
                     b.Property<Guid>("Id")
@@ -914,9 +979,16 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("organization_id");
 
+                    b.Property<Guid?>("RegionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("region_id");
+
                     b.HasKey("Id");
 
                     b.HasIndex("OrganizationId");
+
+                    b.HasIndex("RegionId")
+                        .HasDatabaseName("ix_venues_region_id");
 
                     b.ToTable("venues", (string)null);
                 });
@@ -1089,6 +1161,17 @@ namespace SplitRail.Api.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("SplitRail.Api.Models.Region", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.Organization", "Organization")
+                        .WithMany("Regions")
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organization");
+                });
+
             modelBuilder.Entity("SplitRail.Api.Models.SettlementReversal", b =>
                 {
                     b.HasOne("SplitRail.Api.Models.Event", "Event")
@@ -1199,7 +1282,14 @@ namespace SplitRail.Api.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("SplitRail.Api.Models.Region", "Region")
+                        .WithMany("Venues")
+                        .HasForeignKey("RegionId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.Navigation("Organization");
+
+                    b.Navigation("Region");
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.Event", b =>
@@ -1226,6 +1316,8 @@ namespace SplitRail.Api.Data.Migrations
                 {
                     b.Navigation("Invitations");
 
+                    b.Navigation("Regions");
+
                     b.Navigation("Roles");
 
                     b.Navigation("UserMappings");
@@ -1236,6 +1328,11 @@ namespace SplitRail.Api.Data.Migrations
             modelBuilder.Entity("SplitRail.Api.Models.OrganizationRole", b =>
                 {
                     b.Navigation("UserMappings");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.Region", b =>
+                {
+                    b.Navigation("Venues");
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.User", b =>

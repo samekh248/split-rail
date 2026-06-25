@@ -5,6 +5,7 @@ export type DashboardPath = '/' | '/venues' | '/venues/new';
 
 export type AppPath =
   | DashboardPath
+  | '/booking'
   | '/accounting'
   | '/settings'
   | '/settings/team'
@@ -13,6 +14,13 @@ export type AppPath =
   | '/accept-invite';
 
 const WORKSPACE_PATH_PATTERN = /^\/venues\/([^/]+)\/events\/([^/]+)\/?$/;
+
+function normalizeAppPathname(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    return pathname.replace(/\/+$/, '');
+  }
+  return pathname;
+}
 
 export function isEventWorkspacePath(pathname: string): boolean {
   return WORKSPACE_PATH_PATTERN.test(pathname);
@@ -55,7 +63,7 @@ export function replacePath(path: string): void {
 }
 
 export function getAppPath(): AppPath | string {
-  const { pathname } = window.location;
+  const pathname = normalizeAppPathname(window.location.pathname);
   if (isEventWorkspacePath(pathname)) {
     return pathname;
   }
@@ -76,6 +84,8 @@ export function getAppPath(): AppPath | string {
       return '/accept-invite';
     case '/accounting':
       return '/accounting';
+    case '/booking':
+      return '/booking';
     default:
       return '/';
   }
@@ -113,6 +123,10 @@ export function navigateToDashboard(): void {
 
 export function navigateToAccounting(): void {
   pushPath('/accounting');
+}
+
+export function navigateToBooking(): void {
+  pushPath('/booking');
 }
 
 export function navigateToSettings(): void {

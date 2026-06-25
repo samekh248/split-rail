@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SplitRail.Api.DTOs.Booking;
 using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.Models;
 using SplitRail.Api.Models.Enums;
@@ -17,6 +18,7 @@ public class ApplicationDbContext : DbContext
     }
 
     public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<Region> Regions => Set<Region>();
     public DbSet<Venue> Venues => Set<Venue>();
     public DbSet<User> Users => Set<User>();
     public DbSet<OrganizationRole> OrganizationRoles => Set<OrganizationRole>();
@@ -40,6 +42,7 @@ public class ApplicationDbContext : DbContext
         base.OnModelCreating(modelBuilder);
 
         ConfigureOrganization(modelBuilder);
+        ConfigureRegion(modelBuilder);
         ConfigureVenue(modelBuilder);
         ConfigureUser(modelBuilder);
         ConfigureOrganizationRole(modelBuilder);
@@ -68,6 +71,9 @@ public class ApplicationDbContext : DbContext
             && e.ArchivedAt == null);
 
         modelBuilder.Entity<Venue>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null || e.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<Region>().HasQueryFilter(e =>
             _tenantContext.OrganizationId == null || e.OrganizationId == _tenantContext.OrganizationId);
 
         modelBuilder.Entity<OrganizationRole>().HasQueryFilter(e =>
@@ -163,6 +169,9 @@ public class ApplicationDbContext : DbContext
             entity.Property(e => e.OrganizationId)
                 .HasColumnName("organization_id");
 
+            entity.Property(e => e.RegionId)
+                .HasColumnName("region_id");
+
             entity.Property(e => e.Name)
                 .HasColumnName("name")
                 .HasMaxLength(255)
@@ -176,6 +185,50 @@ public class ApplicationDbContext : DbContext
                 .WithMany(o => o.Venues)
                 .HasForeignKey(e => e.OrganizationId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Region)
+                .WithMany(r => r.Venues)
+                .HasForeignKey(e => e.RegionId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.RegionId).HasDatabaseName("ix_venues_region_id");
+        });
+    }
+
+    private static void ConfigureRegion(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Region>(entity =>
+        {
+            entity.ToTable("regions");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.OrganizationId)
+                .HasColumnName("organization_id");
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.Notes)
+                .HasColumnName("notes");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.Organization)
+                .WithMany(o => o.Regions)
+                .HasForeignKey(e => e.OrganizationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => new { e.OrganizationId, e.Name })
+                .IsUnique()
+                .HasDatabaseName("ix_regions_organization_id_name");
         });
     }
 
@@ -476,7 +529,30 @@ public class ApplicationDbContext : DbContext
                 .HasColumnName("created_at")
                 .HasDefaultValueSql("NOW()");
 
+            entity.Property(e => e.BookingPlacementStatus)
+                .HasColumnName("booking_placement_status")
+                .HasMaxLength(20)
+                .HasConversion(
+                    v => BookingPlacementStatusFormat.ToApiString(v),
+                    v => BookingPlacementStatusFormat.FromApiString(v))
+                .HasDefaultValue(BookingPlacementStatus.Confirmed);
+
+            entity.Property(e => e.DoorsTime)
+                .HasColumnName("doors_time");
+
+            entity.Property(e => e.LoadInTime)
+                .HasColumnName("load_in_time");
+
+            entity.Property(e => e.CurfewTime)
+                .HasColumnName("curfew_time");
+
+            entity.Property(e => e.SupportLineup)
+                .HasColumnName("support_lineup")
+                .HasMaxLength(2000);
+
             entity.HasIndex(e => e.VenueId).HasDatabaseName("IX_events_venue_id");
+            entity.HasIndex(e => new { e.VenueId, e.EventDate })
+                .HasDatabaseName("ix_events_venue_id_event_date");
 
             entity.HasOne(e => e.Venue)
                 .WithMany()

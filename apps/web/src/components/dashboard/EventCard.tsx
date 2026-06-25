@@ -5,7 +5,7 @@ import {
   deriveBottleneckAlertsFromSummary,
   mergeBottleneckAlerts,
 } from '@/lib/eventCardSummary';
-import { BOOKING_PREVIEW_TOOLTIP, getBookingPreviewLabel } from '@/lib/eventCardLabels';
+import { BOOKING_PREVIEW_TOOLTIP, getBookingStatusLabel } from '@/lib/eventCardLabels';
 import { resolveQuickLinks, type WorkspaceFocus } from '@/lib/eventCardQuickLinks';
 import { eventHasNegativeVariance } from '@/lib/eventCardVariance';
 import type { EventCardDto, EventResponse, LineItemDto, PermissionsDto } from '@/types/generated-api';
@@ -63,7 +63,10 @@ export function EventCard({
     (isEventCardDto(event) && event.hasVarianceConcern === true)
     || (lineItems != null && eventHasNegativeVariance(lineItems));
   const pinnedState = isPinned ?? (isEventCardDto(event) ? event.isPinned === true : false);
-  const bookingLabel = getBookingPreviewLabel(event.eventId);
+  const bookingLabel = getBookingStatusLabel(
+    'bookingPlacementStatus' in event ? event.bookingPlacementStatus : null,
+    event.eventId,
+  );
 
   return (
     <article

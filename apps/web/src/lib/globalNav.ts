@@ -1,6 +1,6 @@
 import type { AppPath } from '@/lib/appRoute';
 import { getActiveVenueId } from '@/venue/activeVenueStorage';
-import { getAppPath, isEventWorkspacePath, navigateToAccounting, navigateToDashboard, navigateToVenues } from '@/lib/appRoute';
+import { getAppPath, isEventWorkspacePath, navigateToAccounting, navigateToBooking, navigateToDashboard, navigateToVenues } from '@/lib/appRoute';
 
 export type GlobalNavId = 'dashboard' | 'venues' | 'booking' | 'accounting';
 
@@ -48,8 +48,8 @@ export const GLOBAL_NAV_ITEMS: GlobalNavItemConfig[] = [
   {
     id: 'booking',
     label: 'Booking Calendar',
-    disabled: true,
-    matchPaths: [],
+    navigate: navigateToBooking,
+    matchPaths: ['/booking'],
   },
 ];
 

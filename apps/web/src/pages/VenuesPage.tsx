@@ -23,14 +23,14 @@ function mapDeleteError(error: unknown): string {
 export function VenuesPage() {
   const { isLoading: profileLoading } = useUserProfile();
   const canManageVenues = useCanManageVenues();
-  const { venues, isLoading, isError, refetch } = useActiveVenue();
+  const { venues, isPending, isError, refetch } = useActiveVenue();
   const deleteVenue = useDeleteVenue();
 
   const [editingVenue, setEditingVenue] = useState<VenueResponse | null>(null);
   const [deletingVenue, setDeletingVenue] = useState<VenueResponse | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const showEmpty = !isLoading && !isError && venues.length === 0;
+  const showEmpty = !isPending && !isError && venues.length === 0;
 
   const handleDeleteConfirm = async () => {
     if (!deletingVenue?.id) {
@@ -61,13 +61,13 @@ export function VenuesPage() {
         ) : null}
       </header>
 
-      {isLoading ? (
+      {isPending ? (
         <div className="dashboard-empty" role="status" aria-live="polite">
           Loading venues…
         </div>
       ) : null}
 
-      {!isLoading && isError ? (
+      {!isPending && isError ? (
         <div className="dashboard-empty dashboard-empty--error" role="alert">
           <p>Unable to load venues. Please try again.</p>
           <button
@@ -105,7 +105,7 @@ export function VenuesPage() {
         </section>
       ) : null}
 
-      {!isLoading && !isError && venues.length > 0 ? (
+      {!isPending && !isError && venues.length > 0 ? (
         <VenueList
           venues={venues}
           canManage={canManageVenues}

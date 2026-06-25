@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SplitRail.Api.Data;
+using SplitRail.Api.DTOs.Booking;
 using SplitRail.Api.DTOs.Dashboard;
 using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.Exceptions;
@@ -126,7 +127,8 @@ public class DashboardService
             isPinned,
             LedgerVarianceHelper.HasVarianceConcern(evt.LineItems),
             evt.UnmappedQboTransactions.Count,
-            lastSyncedAt);
+            lastSyncedAt,
+            BookingPlacementStatusFormat.ToApiString(evt.BookingPlacementStatus));
     }
 
     private static DateOnly ParseEventDate(string eventDate) =>
