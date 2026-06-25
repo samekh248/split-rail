@@ -14,7 +14,7 @@ import {
   filterPlacementsByView,
   getCalendarDaysForMonth,
   getMonthBounds,
-  groupPlacementsByDateAndVenue,
+  groupPlacementsByDate,
   toDateKey,
   type BookingPlacement,
   type CalendarViewContext,
@@ -72,36 +72,16 @@ export function BookingCalendarPage() {
     () => filterPlacementsByView(placements.map(toBookingPlacement), context),
     [placements, context],
   );
-  const grouped = useMemo(() => groupPlacementsByDateAndVenue(filtered), [filtered]);
+  const placementsByDate = useMemo(
+    () => groupPlacementsByDate(filtered),
+    [filtered],
+  );
   const days = useMemo(
     () => getCalendarDaysForMonth(context.month).map((date) => toDateKey(date)),
     [context.month],
   );
 
-  const matrixVenues = useMemo(() => {
-    const venueMap = new Map<string, { id: string; name: string; regionName: string | null }>();
-    for (const placement of filtered) {
-      venueMap.set(placement.venueId, {
-        id: placement.venueId,
-        name: placement.venueName,
-        regionName: placement.regionName,
-      });
-    }
-    for (const venue of venues) {
-      if (venue.id) {
-        venueMap.set(venue.id, {
-          id: venue.id,
-          name: venue.name ?? 'Venue',
-          regionName: null,
-        });
-      }
-    }
-    return [...venueMap.values()].sort((a, b) => a.name.localeCompare(b.name));
-  }, [filtered, venues]);
-
-  const agendaPlacements = agendaDate
-    ? Object.values(grouped[agendaDate] ?? {}).flat()
-    : [];
+  const agendaPlacements = agendaDate ? placementsByDate[agendaDate] ?? [] : [];
 
   return (
     <div className="booking-calendar-page" data-testid="booking-calendar-page">
@@ -122,20 +102,19 @@ export function BookingCalendarPage() {
       />
 
       <BookingCalendarMatrix
-        days={days}
-        venues={matrixVenues}
-        grouped={grouped}
+        month={context.month}
+        placementsByDate={placementsByDate}
         onDateClick={setAgendaDate}
         onPlacementClick={setSelectedPlacement}
-        onCellQuickAdd={(dateKey, venueId) => {
-          setQuickAdd({ date: dateKey, venueId });
+        onCellQuickAdd={(dateKey) => {
+          setQuickAdd({ date: dateKey, venueId: venues[0]?.id ?? '' });
           setCreateEventOpen(true);
         }}
       />
 
       <BookingCalendarMobileStream
         days={days}
-        grouped={grouped}
+        placementsByDate={placementsByDate}
         onPlacementClick={setSelectedPlacement}
       />
 

@@ -60,7 +60,15 @@ export function CreateVenuePage() {
 
   const errorId = submitError ? 'venue-create-error' : undefined;
 
-  if (profileLoading || !canManage) {
+  if (profileLoading) {
+    return (
+      <div className="create-venue-page" role="status" aria-live="polite">
+        Loading…
+      </div>
+    );
+  }
+
+  if (!canManage) {
     return null;
   }
 

@@ -21,6 +21,7 @@ export interface VenueContextValue {
   activeVenue: VenueResponse | null;
   isAllVenuesSelected: boolean;
   isLoading: boolean;
+  isPending: boolean;
   isError: boolean;
   refetch: () => void;
   setActiveVenue: (id: string | null) => void;
@@ -49,15 +50,22 @@ export function resolveActiveVenueId(venues: VenueResponse[]): string | null {
 
 export function VenueProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
-  const { data: venues = [], isLoading, isError, refetch } = useVenues();
+  const {
+    data: venues = [],
+    isLoading,
+    isPending,
+    isError,
+    refetch,
+  } = useVenues();
+  const safeVenues = Array.isArray(venues) ? venues : [];
   const [activeVenueId, setActiveVenueIdState] = useState<string | null>(null);
 
   useEffect(() => {
     if (isLoading || isError) {
       return;
     }
-    setActiveVenueIdState(resolveActiveVenueId(venues));
-  }, [venues, isLoading, isError]);
+    setActiveVenueIdState(resolveActiveVenueId(safeVenues));
+  }, [safeVenues, isLoading, isError]);
 
   const activateVenueId = useCallback((id: string) => {
     persistActiveVenueId(id);
@@ -73,39 +81,41 @@ export function VenueProvider({ children }: { children: ReactNode }) {
         void queryClient.invalidateQueries();
         return;
       }
-      if (!venues.some((venue) => venue.id === id)) {
+      if (!safeVenues.some((venue) => venue.id === id)) {
         return;
       }
       activateVenueId(id);
     },
-    [venues, activateVenueId, queryClient],
+    [safeVenues, activateVenueId, queryClient],
   );
 
   const activeVenue = useMemo(
-    () => venues.find((venue) => venue.id === activeVenueId) ?? null,
-    [venues, activeVenueId],
+    () => safeVenues.find((venue) => venue.id === activeVenueId) ?? null,
+    [safeVenues, activeVenueId],
   );
 
-  const isAllVenuesSelected = activeVenueId === null && venues.length > 0;
+  const isAllVenuesSelected = activeVenueId === null && safeVenues.length > 0;
 
   const value = useMemo(
     () => ({
-      venues,
+      venues: safeVenues,
       activeVenueId,
       activeVenue,
       isAllVenuesSelected,
       isLoading,
+      isPending,
       isError,
       refetch: () => void refetch(),
       setActiveVenue,
       activateVenueId,
     }),
     [
-      venues,
+      safeVenues,
       activeVenueId,
       activeVenue,
       isAllVenuesSelected,
       isLoading,
+      isPending,
       isError,
       refetch,
       setActiveVenue,

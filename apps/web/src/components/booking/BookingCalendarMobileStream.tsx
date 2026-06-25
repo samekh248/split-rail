@@ -1,21 +1,21 @@
 import { sortAgendaPlacements, type BookingPlacement } from '@/lib/bookingCalendar';
-import { placementStatusLabel } from '@/components/booking/BookingCalendarMatrix';
+import { placementStatusLabel, statusClass } from '@/components/booking/BookingCalendarMatrix';
 
 export interface BookingCalendarMobileStreamProps {
   days: string[];
-  grouped: Record<string, Record<string, BookingPlacement[]>>;
+  placementsByDate: Record<string, BookingPlacement[]>;
   onPlacementClick: (placement: BookingPlacement) => void;
 }
 
 export function BookingCalendarMobileStream({
   days,
-  grouped,
+  placementsByDate,
   onPlacementClick,
 }: BookingCalendarMobileStreamProps) {
   return (
     <div className="booking-calendar-mobile" data-testid="booking-calendar-mobile">
       {days.map((dateKey) => {
-        const dayPlacements = Object.values(grouped[dateKey] ?? {}).flat();
+        const dayPlacements = placementsByDate[dateKey] ?? [];
         if (dayPlacements.length === 0) {
           return null;
         }
@@ -26,7 +26,11 @@ export function BookingCalendarMobileStream({
             <ul>
               {sorted.map((placement) => (
                 <li key={placement.eventId}>
-                  <button type="button" onClick={() => onPlacementClick(placement)}>
+                  <button
+                    type="button"
+                    className={`booking-placement booking-calendar-mobile__event ${statusClass(placement.bookingPlacementStatus)}`}
+                    onClick={() => onPlacementClick(placement)}
+                  >
                     <span>{placement.doorsTime ?? 'Time TBD'}</span>
                     <strong>{placement.title}</strong>
                     <span>{placement.venueName}</span>

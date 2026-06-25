@@ -71,6 +71,25 @@ export function getMonthBounds(month: string): MonthBounds {
   };
 }
 
+export function groupPlacementsByDate(
+  placements: BookingPlacement[],
+): Record<string, BookingPlacement[]> {
+  const grouped: Record<string, BookingPlacement[]> = {};
+
+  for (const placement of placements) {
+    if (!grouped[placement.eventDate]) {
+      grouped[placement.eventDate] = [];
+    }
+    grouped[placement.eventDate]!.push(placement);
+  }
+
+  for (const dateKey of Object.keys(grouped)) {
+    grouped[dateKey] = sortAgendaPlacements(grouped[dateKey]!);
+  }
+
+  return grouped;
+}
+
 export function groupPlacementsByDateAndVenue(
   placements: BookingPlacement[],
 ): Record<string, Record<string, BookingPlacement[]>> {
@@ -188,6 +207,58 @@ export function getCalendarDaysForMonth(month: string): Date[] {
     cursor = addLocalDays(cursor, 1);
   }
   return days;
+}
+
+export interface MonthCalendarDayCell {
+  date: Date;
+  dateKey: string;
+  isAdjacentMonth: boolean;
+}
+
+export interface MonthCalendarWeekRow {
+  days: MonthCalendarDayCell[];
+}
+
+const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
+export function getWeekdayLabels(): readonly string[] {
+  return WEEKDAY_LABELS;
+}
+
+export function buildMonthCalendarWeeks(month: string): MonthCalendarWeekRow[] {
+  const [year, monthNum] = month.split('-').map(Number);
+  const anchorMonth = monthNum - 1;
+  const firstOfMonth = new Date(year, anchorMonth, 1);
+  const lastOfMonth = new Date(year, anchorMonth + 1, 0);
+
+  let cursor = startOfLocalDay(firstOfMonth);
+  cursor = addLocalDays(cursor, -cursor.getDay());
+
+  let gridEnd = startOfLocalDay(lastOfMonth);
+  const endDayOfWeek = gridEnd.getDay();
+  if (endDayOfWeek !== 6) {
+    gridEnd = addLocalDays(gridEnd, 6 - endDayOfWeek);
+  }
+
+  const weeks: MonthCalendarWeekRow[] = [];
+  let currentWeek: MonthCalendarDayCell[] = [];
+
+  while (cursor <= gridEnd) {
+    currentWeek.push({
+      date: new Date(cursor),
+      dateKey: toDateKey(cursor),
+      isAdjacentMonth: cursor.getMonth() !== anchorMonth,
+    });
+
+    if (currentWeek.length === 7) {
+      weeks.push({ days: currentWeek });
+      currentWeek = [];
+    }
+
+    cursor = addLocalDays(cursor, 1);
+  }
+
+  return weeks;
 }
 
 export function formatBookingStatusLabel(status: BookingPlacementStatus): string {

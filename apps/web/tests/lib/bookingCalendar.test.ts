@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildMonthCalendarWeeks,
   filterPlacementsByView,
   getMonthBounds,
+  groupPlacementsByDate,
   groupPlacementsByDateAndVenue,
   previewConflict,
   sortAgendaPlacements,
@@ -32,6 +34,22 @@ describe('bookingCalendar', () => {
     const bounds = getMonthBounds('2026-06');
     expect(bounds.from).toBe('2026-06-01');
     expect(bounds.to).toBe('2026-06-30');
+  });
+
+  it('groupPlacementsByDate sorts each day', () => {
+    const grouped = groupPlacementsByDate([
+      placement({ eventId: 'e2', eventDate: '2026-06-01', doorsTime: '20:00' }),
+      placement({ eventId: 'e1', eventDate: '2026-06-01', doorsTime: '19:00' }),
+    ]);
+    expect(grouped['2026-06-01']?.map((p) => p.eventId)).toEqual(['e1', 'e2']);
+  });
+
+  it('buildMonthCalendarWeeks pads to full weeks', () => {
+    const weeks = buildMonthCalendarWeeks('2026-06');
+    expect(weeks.length).toBeGreaterThanOrEqual(4);
+    expect(weeks[0]?.days).toHaveLength(7);
+    const inMonthDays = weeks.flatMap((week) => week.days).filter((day) => !day.isAdjacentMonth);
+    expect(inMonthDays).toHaveLength(30);
   });
 
   it('groupPlacementsByDateAndVenue nests by date then venue', () => {

@@ -1,93 +1,126 @@
-import type { BookingPlacement } from '@/lib/bookingCalendar';
-import { formatBookingStatusLabel } from '@/lib/bookingCalendar';
+import {
+  buildMonthCalendarWeeks,
+  formatBookingStatusLabel,
+  getWeekdayLabels,
+  type BookingPlacement,
+} from '@/lib/bookingCalendar';
 
-const MAX_VISIBLE = 3;
+export const MAX_VISIBLE_PLACEMENTS_PER_DAY = 2;
 
 export interface BookingCalendarMatrixProps {
-  days: string[];
-  venues: { id: string; name: string; regionName: string | null }[];
-  grouped: Record<string, Record<string, BookingPlacement[]>>;
+  month: string;
+  placementsByDate: Record<string, BookingPlacement[]>;
   onDateClick: (dateKey: string) => void;
   onPlacementClick: (placement: BookingPlacement) => void;
-  onCellQuickAdd: (dateKey: string, venueId: string) => void;
+  onCellQuickAdd?: (dateKey: string) => void;
 }
 
-function statusClass(status: BookingPlacement['bookingPlacementStatus']): string {
+export function statusClass(status: BookingPlacement['bookingPlacementStatus']): string {
   if (status === 'CANCELLED') {
     return 'booking-placement--cancelled';
   }
   if (status === 'CONFIRMED') {
     return 'booking-placement--confirmed';
   }
-  return 'booking-placement--hold';
+  if (status === 'HOLD_2') {
+    return 'booking-placement--hold booking-placement--hold-2';
+  }
+  return 'booking-placement--hold booking-placement--hold-1';
 }
 
-export function BookingCalendarMatrix({
-  days,
-  venues,
-  grouped,
-  onDateClick,
-  onPlacementClick,
-  onCellQuickAdd,
-}: BookingCalendarMatrixProps) {
-  return (
-    <div className="booking-calendar-matrix" data-testid="booking-calendar-matrix">
-      <table>
-        <thead>
-          <tr>
-            <th>Date</th>
-            {venues.map((venue) => (
-              <th key={venue.id}>{venue.name}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {days.map((dateKey) => (
-            <tr key={dateKey}>
-              <th scope="row">
-                <button type="button" onClick={() => onDateClick(dateKey)}>
-                  {dateKey}
-                </button>
-              </th>
-              {venues.map((venue) => {
-                const placements = grouped[dateKey]?.[venue.id] ?? [];
-                const visible = placements.slice(0, MAX_VISIBLE);
-                const overflow = placements.length - visible.length;
-                return (
-                  <td
-                    key={`${dateKey}-${venue.id}`}
-                    onDoubleClick={() => onCellQuickAdd(dateKey, venue.id)}
-                  >
-                    {visible.map((placement) => (
-                      <button
-                        key={placement.eventId}
-                        type="button"
-                        className={`booking-placement ${statusClass(placement.bookingPlacementStatus)}`}
-                        onClick={() => onPlacementClick(placement)}
-                      >
-                        {placement.title}
-                      </button>
-                    ))}
-                    {overflow > 0 ? (
-                      <button
-                        type="button"
-                        data-testid={`booking-cell-more-${dateKey}`}
-                        onClick={() => onDateClick(dateKey)}
-                      >
-                        +{overflow} more
-                      </button>
-                    ) : null}
-                  </td>
-                );
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+function formatDayNumber(date: Date): string {
+  return String(date.getDate());
 }
 
 export function placementStatusLabel(status: BookingPlacement['bookingPlacementStatus']): string {
   return formatBookingStatusLabel(status);
+}
+
+export function BookingCalendarMatrix({
+  month,
+  placementsByDate,
+  onDateClick,
+  onPlacementClick,
+  onCellQuickAdd,
+}: BookingCalendarMatrixProps) {
+  const weeks = buildMonthCalendarWeeks(month);
+  const weekdayLabels = getWeekdayLabels();
+
+  return (
+    <div className="booking-calendar-matrix" data-testid="booking-calendar-matrix">
+      <div className="booking-calendar-matrix__weekdays" aria-hidden="true">
+        {weekdayLabels.map((label) => (
+          <div key={label} className="booking-calendar-matrix__weekday">
+            {label}
+          </div>
+        ))}
+      </div>
+
+      <div className="booking-calendar-matrix__grid">
+        {weeks.map((week) => (
+          <div key={week.days[0]?.dateKey ?? 'week'} className="booking-calendar-matrix__week">
+            {week.days.map((day) => {
+              const placements = placementsByDate[day.dateKey] ?? [];
+              const visible = placements.slice(0, MAX_VISIBLE_PLACEMENTS_PER_DAY);
+              const totalCount = placements.length;
+              const showTotalBadge = totalCount > MAX_VISIBLE_PLACEMENTS_PER_DAY;
+
+              return (
+                <div
+                  key={day.dateKey}
+                  className={`booking-calendar-matrix__day${
+                    day.isAdjacentMonth ? ' booking-calendar-matrix__day--adjacent' : ''
+                  }`}
+                  data-testid={`booking-calendar-day-${day.dateKey}`}
+                >
+                  <button
+                    type="button"
+                    className="booking-calendar-matrix__day-label"
+                    onClick={() => onDateClick(day.dateKey)}
+                    aria-label={`${day.dateKey}, ${totalCount} events`}
+                  >
+                    {formatDayNumber(day.date)}
+                  </button>
+
+                  {totalCount > 0 ? (
+                    <div className="booking-calendar-matrix__day-events">
+                      {visible.map((placement) => (
+                        <button
+                          key={placement.eventId}
+                          type="button"
+                          className={`booking-placement booking-calendar-matrix__event ${statusClass(placement.bookingPlacementStatus)}`}
+                          onClick={() => onPlacementClick(placement)}
+                          title={`${placement.title} — ${placement.venueName}`}
+                        >
+                          <span className="booking-calendar-matrix__event-title">{placement.title}</span>
+                        </button>
+                      ))}
+                      {showTotalBadge ? (
+                        <button
+                          type="button"
+                          className="booking-calendar-matrix__total-count"
+                          data-testid={`booking-cell-total-${day.dateKey}`}
+                          onClick={() => onDateClick(day.dateKey)}
+                          aria-label={`${totalCount} events on ${day.dateKey}`}
+                        >
+                          {totalCount}
+                        </button>
+                      ) : null}
+                    </div>
+                  ) : onCellQuickAdd ? (
+                    <button
+                      type="button"
+                      className="booking-calendar-matrix__quick-add"
+                      onClick={() => onCellQuickAdd(day.dateKey)}
+                      aria-label={`Add event on ${day.dateKey}`}
+                    />
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

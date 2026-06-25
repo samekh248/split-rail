@@ -129,6 +129,12 @@ describe('appRoute', () => {
     expect(getDashboardPath()).toBe('/venues');
   });
 
+  it('getAppPath normalizes /venues/ trailing slash', () => {
+    window.history.pushState({}, '', '/venues/');
+    expect(getAppPath()).toBe('/venues');
+    expect(getDashboardPath()).toBe('/venues');
+  });
+
   it('navigateToVenues updates path and hook state', () => {
     const { result } = renderHook(() => useAppRoute());
     act(() => navigateToVenues());

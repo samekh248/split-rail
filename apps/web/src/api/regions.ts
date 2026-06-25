@@ -9,7 +9,7 @@ export function regionsQueryKey() {
 export function useRegions() {
   return useQuery({
     queryKey: regionsQueryKey(),
-    queryFn: () => apiFetch<RegionResponse[]>('/regions'),
+    queryFn: () => apiFetch<RegionResponse[]>('/regions', { skipVenueContext: true }),
     staleTime: 30_000,
   });
 }
