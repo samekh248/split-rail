@@ -1,6 +1,12 @@
 import type { RgbaColor } from '@/theme/contrast';
+import type { RootTokenCompareMode } from '@/theme/parseCssRoot';
 
-/** Canonical Montana High Country token values — test parity with :root in index.css */
+/**
+ * Maintainer: approved brand changes MUST update this file and matching `:root`
+ * declarations in `apps/web/src/index.css` together, then run `npm run test:brand`.
+ *
+ * Procedure: `specs/072-design-token-regression-tests/quickstart.md` § Updating expected brand values
+ */
 export const colors = {
   primaryBrown: '#3E2723',
   accentOrange: '#E65100',
@@ -18,6 +24,56 @@ export const colors = {
   successBg: '#F0FDF4',
   warningBg: '#FFF3E0',
 } as const;
+
+function formatRgba({ r, g, b, a }: RgbaColor): string {
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+export type RootTokenParityEntry = {
+  cssVariable: string;
+  expected: string;
+  compareMode: RootTokenCompareMode;
+};
+
+/** Expected `:root` primitive values — parity-checked in tests/brand/designTokens.test.ts */
+export const rootTokenParity: readonly RootTokenParityEntry[] = [
+  { cssVariable: '--color-primary-brown', expected: colors.primaryBrown, compareMode: 'hex' },
+  { cssVariable: '--color-accent-orange', expected: colors.accentOrange, compareMode: 'hex' },
+  {
+    cssVariable: '--color-accent-orange-hover',
+    expected: colors.accentOrangeHover,
+    compareMode: 'hex',
+  },
+  {
+    cssVariable: '--color-accent-orange-disabled',
+    expected: colors.accentOrangeDisabled,
+    compareMode: 'hex',
+  },
+  { cssVariable: '--color-bg-cream', expected: colors.bgCream, compareMode: 'hex' },
+  { cssVariable: '--color-surface-white', expected: colors.surfaceWhite, compareMode: 'hex' },
+  { cssVariable: '--color-error', expected: colors.error, compareMode: 'hex' },
+  { cssVariable: '--color-error-bg', expected: colors.errorBg, compareMode: 'hex' },
+  { cssVariable: '--color-success', expected: colors.success, compareMode: 'hex' },
+  { cssVariable: '--color-success-bg', expected: colors.successBg, compareMode: 'hex' },
+  { cssVariable: '--color-warning-bg', expected: colors.warningBg, compareMode: 'hex' },
+  {
+    cssVariable: '--color-text-muted',
+    expected: formatRgba(colors.textMutedRgba),
+    compareMode: 'rgba',
+  },
+  {
+    cssVariable: '--color-border-subtle',
+    expected: formatRgba(colors.borderSubtleRgba),
+    compareMode: 'rgba',
+  },
+] as const;
+
+export const semanticAliasWiring = [
+  { cssVariable: '--color-text-on-light', expected: 'var(--color-primary-brown)' },
+  { cssVariable: '--color-text-on-dark', expected: 'var(--color-bg-cream)' },
+  { cssVariable: '--color-text-on-accent', expected: 'var(--color-surface-white)' },
+  { cssVariable: '--color-text-on-accent-disabled', expected: 'var(--color-surface-white)' },
+] as const;
 
 export const fonts = {
   brand: "'Zilla Slab', 'Rokkitt', 'Roboto Slab', serif",

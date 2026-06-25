@@ -1,15 +1,16 @@
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { LEGACY_HEX_DENYLIST } from '@/theme/legacyPalette';
+import { findLegacyHexViolations, LEGACY_HEX_DENYLIST } from '@/theme/legacyPalette';
 
-const indexCssPath = resolve(__dirname, '../../src/index.css');
+describe('legacyPalette module', () => {
+  it('exports a non-empty denylist including SPLR-95 minimum legacy colors', () => {
+    const denylist = LEGACY_HEX_DENYLIST.map((hex) => hex.toLowerCase());
+    expect(denylist.length).toBeGreaterThan(0);
+    expect(denylist).toContain('#1e293b');
+    expect(denylist).toContain('#2563eb');
+  });
 
-describe('legacyPalette scan', () => {
-  it('contains no denylisted legacy hex values in index.css', () => {
-    const css = readFileSync(indexCssPath, 'utf-8').toLowerCase();
-    for (const hex of LEGACY_HEX_DENYLIST) {
-      expect(css, `found legacy hex ${hex}`).not.toContain(hex.toLowerCase());
-    }
+  it('findLegacyHexViolations detects denylisted hex in css text', () => {
+    expect(findLegacyHexViolations('color: #2563eb;')).toEqual(['#2563eb']);
+    expect(findLegacyHexViolations('color: var(--color-primary-brown);')).toEqual([]);
   });
 });
