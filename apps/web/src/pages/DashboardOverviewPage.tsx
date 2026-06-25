@@ -126,7 +126,7 @@ export function DashboardOverviewPage() {
         />
         {!isAllVenuesSelected ? (
           <LoadingPlaceholder
-            variant="card"
+            variant="zone"
             label="Loading financial health"
             data-testid="financial-health-loading"
           />
