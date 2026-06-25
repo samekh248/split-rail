@@ -10,6 +10,8 @@ describe('OrganizationCreateStep theme', () => {
     expect(document.querySelector('.auth-layout')).toBeInTheDocument();
     expect(document.querySelector('.auth-layout__card')).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 1 })).toHaveClass('auth-layout__title');
+    expect(document.querySelector('.auth-layout__subtitle')).toBeInTheDocument();
+    expect(document.querySelector('.auth-form')).toBeInTheDocument();
     const submit = screen.getByRole('button', { name: 'Create organization' });
     expect(submit).toHaveClass('auth-form__submit');
     expect(submit).toHaveClass('btn-primary');
