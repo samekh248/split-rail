@@ -30,12 +30,16 @@ export interface CalendarViewContext {
   venueId: string | null;
   month: string;
   showCancelled: boolean;
+  displayMode: 'calendar' | 'list';
 }
 
 export interface MonthBounds {
   from: string;
   to: string;
 }
+
+/** Must match `CalendarService.MaxDateSpanDays` in the API. */
+export const MAX_CALENDAR_QUERY_SPAN_DAYS = 93;
 
 export type ConflictPreviewAction =
   | { type: 'createHold' }
@@ -69,6 +73,29 @@ export function getMonthBounds(month: string): MonthBounds {
     from: toDateKey(start),
     to: toDateKey(end),
   };
+}
+
+export function getUpcomingPlacementsBounds(month: string): MonthBounds {
+  const { to } = getMonthBounds(month);
+  const [year, monthNum, day] = to.split('-').map(Number);
+  const afterMonthStart = addLocalDays(new Date(year, monthNum - 1, day), 1);
+  const rangeEnd = addLocalDays(afterMonthStart, MAX_CALENDAR_QUERY_SPAN_DAYS);
+
+  return {
+    from: toDateKey(afterMonthStart),
+    to: toDateKey(startOfLocalDay(rangeEnd)),
+  };
+}
+
+export function pickNextUpcomingPlacements(
+  placements: BookingPlacement[],
+  afterDate: string,
+  limit: number,
+): BookingPlacement[] {
+  return sortPlacementsForList(placements.filter((placement) => placement.eventDate > afterDate)).slice(
+    0,
+    limit,
+  );
 }
 
 export function groupPlacementsByDate(
@@ -174,6 +201,18 @@ export function sortAgendaPlacements(placements: BookingPlacement[]): BookingPla
       return 1;
     }
     return a.venueName.localeCompare(b.venueName);
+  });
+}
+
+export function sortPlacementsForList(placements: BookingPlacement[]): BookingPlacement[] {
+  return [...placements].sort((a, b) => {
+    const dateCompare = a.eventDate.localeCompare(b.eventDate);
+    if (dateCompare !== 0) {
+      return dateCompare;
+    }
+
+    const [first] = sortAgendaPlacements([a, b]);
+    return first === a ? -1 : 1;
   });
 }
 

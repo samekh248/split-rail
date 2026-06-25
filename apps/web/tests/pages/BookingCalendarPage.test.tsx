@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BookingCalendarPage } from '@/pages/BookingCalendarPage';
+import { clearBookingCalendarDisplayModeCookie } from '@/lib/bookingCalendarViewStorage';
 
 vi.mock('@/venue/useActiveVenue', () => ({
   useActiveVenue: () => ({
@@ -28,6 +29,7 @@ vi.mock('@/api/calendar', () => ({
 
 describe('BookingCalendarPage', () => {
   beforeEach(() => {
+    clearBookingCalendarDisplayModeCookie();
     window.history.pushState({}, '', '/booking');
   });
 
@@ -40,5 +42,33 @@ describe('BookingCalendarPage', () => {
 
     expect(screen.getByTestId('booking-calendar-page')).toBeInTheDocument();
     expect(screen.getByTestId('booking-calendar-controls')).toBeInTheDocument();
+    expect(screen.getByTestId('booking-calendar-matrix')).toBeInTheDocument();
+  });
+
+  it('switches to list view when list toggle is selected', () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId('booking-display-list'));
+
+    expect(screen.getByTestId('booking-calendar-page')).toHaveClass('booking-calendar-page--list');
+    expect(screen.getByTestId('booking-calendar-list')).toBeInTheDocument();
+    expect(screen.getByTestId('booking-display-list')).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  it('restores list view from cookie on load', () => {
+    document.cookie = 'bookingCalendarDisplayMode=list; Path=/; SameSite=Lax';
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('booking-calendar-page')).toHaveClass('booking-calendar-page--list');
+    expect(screen.getByTestId('booking-display-list')).toHaveAttribute('aria-pressed', 'true');
   });
 });
