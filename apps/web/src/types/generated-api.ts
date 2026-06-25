@@ -166,6 +166,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/calendar/placements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    from?: string;
+                    to?: string;
+                    regionId?: string;
+                    venueId?: string;
+                    includeCancelled?: boolean;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CalendarPlacementDto"][];
+                        "application/json": components["schemas"]["CalendarPlacementDto"][];
+                        "text/json": components["schemas"]["CalendarPlacementDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/venues/{venueId}/dashboard": {
         parameters: {
             query?: never;
@@ -1627,6 +1670,134 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/regions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RegionResponse"][];
+                        "application/json": components["schemas"]["RegionResponse"][];
+                        "text/json": components["schemas"]["RegionResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateRegionRequest"];
+                    "text/json": components["schemas"]["CreateRegionRequest"];
+                    "application/*+json": components["schemas"]["CreateRegionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RegionResponse"];
+                        "application/json": components["schemas"]["RegionResponse"];
+                        "text/json": components["schemas"]["RegionResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/regions/{regionId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    regionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    regionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateRegionRequest"];
+                    "text/json": components["schemas"]["UpdateRegionRequest"];
+                    "application/*+json": components["schemas"]["UpdateRegionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RegionResponse"];
+                        "application/json": components["schemas"]["RegionResponse"];
+                        "text/json": components["schemas"]["RegionResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/roles": {
         parameters: {
             query?: never;
@@ -2530,6 +2701,28 @@ export interface components {
             settlement?: string;
             qboActual?: string;
         };
+        CalendarPlacementDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            venueId?: string;
+            venueName?: string | null;
+            /** Format: uuid */
+            regionId?: string | null;
+            regionName?: string | null;
+            title?: string | null;
+            eventDate?: string | null;
+            bookingPlacementStatus?: string | null;
+            doorsTime?: string | null;
+            loadInTime?: string | null;
+            curfewTime?: string | null;
+            supportLineup?: string | null;
+            financialStatus?: string | null;
+            isBudgetLocked?: boolean;
+            qboTagName?: string | null;
+            hasLineItems?: boolean;
+            workspaceAllowed?: boolean;
+        };
         ChangeRoleRequest: {
             /** Format: uuid */
             roleId?: string;
@@ -2587,6 +2780,10 @@ export interface components {
         };
         CreateOrganizationRequest: {
             name?: string | null;
+        };
+        CreateRegionRequest: {
+            name?: string | null;
+            notes?: string | null;
         };
         CreateVenueRequest: {
             name?: string | null;
@@ -2838,6 +3035,18 @@ export interface components {
         RefreshRequest: {
             refreshToken?: string | null;
         };
+        RegionResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string | null;
+            notes?: string | null;
+            /** Format: uuid */
+            organizationId?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: int32 */
+            venueCount?: number;
+        };
         RegisterRequest: {
             email?: string | null;
             password?: string | null;
@@ -3009,6 +3218,10 @@ export interface components {
         UpdateOrganizationRequest: {
             name?: string | null;
         };
+        UpdateRegionRequest: {
+            name?: string | null;
+            notes?: string | null;
+        };
         UpdateRoleRequest: {
             canManagePermissions?: boolean | null;
             canLockBudget?: boolean | null;
@@ -3065,48 +3278,6 @@ export interface components {
             /** Format: uuid */
             regionId?: string | null;
         };
-        CalendarPlacementDto: {
-            /** Format: uuid */
-            eventId?: string;
-            /** Format: uuid */
-            venueId?: string;
-            venueName?: string | null;
-            /** Format: uuid */
-            regionId?: string | null;
-            regionName?: string | null;
-            title?: string | null;
-            eventDate?: string | null;
-            bookingPlacementStatus?: string | null;
-            doorsTime?: string | null;
-            loadInTime?: string | null;
-            curfewTime?: string | null;
-            supportLineup?: string | null;
-            financialStatus?: string | null;
-            isBudgetLocked?: boolean;
-            qboTagName?: string | null;
-            hasLineItems?: boolean;
-            workspaceAllowed?: boolean;
-        };
-        RegionResponse: {
-            /** Format: uuid */
-            id?: string;
-            name?: string | null;
-            notes?: string | null;
-            /** Format: uuid */
-            organizationId?: string;
-            /** Format: date-time */
-            createdAt?: string;
-            /** Format: int32 */
-            venueCount?: number;
-        };
-        CreateRegionRequest: {
-            name?: string | null;
-            notes?: string | null;
-        };
-        UpdateRegionRequest: {
-            name?: string | null;
-            notes?: string | null;
-        };
         VenueScopeDto: {
             /** Format: uuid */
             venueId?: string;
@@ -3143,16 +3314,16 @@ export type AcceptInvitationResponse = components['schemas']['AcceptInvitationRe
 export type ActionCenterDto = components['schemas']['ActionCenterDto'];
 export type AuthResponse = components['schemas']['AuthResponse'];
 export type BlockTotalsDto = components['schemas']['BlockTotalsDto'];
+export type CalendarPlacementDto = components['schemas']['CalendarPlacementDto'];
 export type ChangeRoleRequest = components['schemas']['ChangeRoleRequest'];
 export type ChangeRoleResponse = components['schemas']['ChangeRoleResponse'];
 export type CreateArtistRequest = components['schemas']['CreateArtistRequest'];
 export type CreateEventRequest = components['schemas']['CreateEventRequest'];
-export type CalendarPlacementDto = components['schemas']['CalendarPlacementDto'];
-export type CreateRegionRequest = components['schemas']['CreateRegionRequest'];
 export type CreateInvitationRequest = components['schemas']['CreateInvitationRequest'];
 export type CreateLineItemRequest = components['schemas']['CreateLineItemRequest'];
 export type CreateMappingRequest = components['schemas']['CreateMappingRequest'];
 export type CreateOrganizationRequest = components['schemas']['CreateOrganizationRequest'];
+export type CreateRegionRequest = components['schemas']['CreateRegionRequest'];
 export type CreateVenueRequest = components['schemas']['CreateVenueRequest'];
 export type DashboardResponse = components['schemas']['DashboardResponse'];
 export type EditabilityDto = components['schemas']['EditabilityDto'];
@@ -3180,9 +3351,9 @@ export type QboAccountMappingDto = components['schemas']['QboAccountMappingDto']
 export type QboAccountMappingsResponse = components['schemas']['QboAccountMappingsResponse'];
 export type QboEgressRecordDto = components['schemas']['QboEgressRecordDto'];
 export type RefreshRequest = components['schemas']['RefreshRequest'];
+export type RegionResponse = components['schemas']['RegionResponse'];
 export type RegisterRequest = components['schemas']['RegisterRequest'];
 export type RegisterResponse = components['schemas']['RegisterResponse'];
-export type RegionResponse = components['schemas']['RegionResponse'];
 export type ResetSeedResponseDto = components['schemas']['ResetSeedResponseDto'];
 export type ReverseSettlementRequest = components['schemas']['ReverseSettlementRequest'];
 export type RoleDetailDto = components['schemas']['RoleDetailDto'];
