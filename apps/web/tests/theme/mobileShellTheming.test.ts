@@ -15,6 +15,12 @@ function extractMobileMediaBlock(css: string): string {
 }
 
 describe('mobileShellTheming', () => {
+  it('themes desktop sidebar with brown background and cream text tokens', () => {
+    const css = readIndexCss();
+    expect(css).toMatch(/\.sidebar-rail\s*\{[\s\S]*background:\s*var\(--color-primary-brown\)/);
+    expect(css).toMatch(/\.sidebar-rail\s*\{[\s\S]*color:\s*var\(--color-bg-cream\)/);
+  });
+
   it('themes mobile top bar with brown background and cream text tokens', () => {
     const mobile = extractMobileMediaBlock(readIndexCss());
     expect(mobile).toMatch(/\.top-bar\s*\{[\s\S]*background:\s*var\(--color-primary-brown\)/);

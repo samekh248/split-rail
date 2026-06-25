@@ -17,7 +17,7 @@ describe('button theme classes', () => {
     const css = readFileSync(indexCssPath, 'utf-8');
     const block = sharedButtonBlock(css);
     expect(block).toMatch(/\.btn-primary[\s\S]*background:\s*var\(--color-accent-orange\)/);
-    expect(block).toMatch(/\.btn-primary[\s\S]*color:\s*var\(--color-surface-white\)/);
+    expect(block).toMatch(/\.btn-primary[\s\S]*color:\s*var\(--color-text-on-accent\)/);
   });
 
   it('defines .btn-primary interaction states with design tokens', () => {
@@ -26,7 +26,9 @@ describe('button theme classes', () => {
     expect(block).toMatch(
       /\.btn-primary:hover:not\(:disabled\)[\s\S]*background:\s*var\(--color-accent-orange-hover\)/,
     );
-    expect(block).toMatch(/\.btn-primary:disabled[\s\S]*opacity:\s*0\.6/);
+    expect(block).toMatch(/\.btn-primary:disabled[\s\S]*background:\s*var\(--color-accent-orange-disabled\)/);
+    expect(block).toMatch(/\.btn-primary:disabled[\s\S]*color:\s*var\(--color-text-on-accent-disabled\)/);
+    expect(block).toMatch(/\.btn-primary:disabled[\s\S]*opacity:\s*1/);
     expect(block).toMatch(
       /\.btn-primary:focus-visible[\s\S]*outline:\s*2px solid var\(--color-focus-ring\)/,
     );
@@ -38,7 +40,7 @@ describe('button theme classes', () => {
     expect(block).toMatch(
       /\.btn-primary--compact[\s\S]*background:\s*var\(--color-accent-orange\)/,
     );
-    expect(block).toMatch(/\.btn-primary--compact[\s\S]*color:\s*var\(--color-surface-white\)/);
+    expect(block).toMatch(/\.btn-primary--compact[\s\S]*color:\s*var\(--color-text-on-accent\)/);
     expect(block).toMatch(/\.btn-primary--compact[\s\S]*font-size:\s*0\.875rem/);
   });
 
