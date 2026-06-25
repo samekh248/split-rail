@@ -12,6 +12,7 @@ export function RegisterPage({ onNavigateToLogin }: RegisterPageProps) {
   return (
     <AuthLayout
       title="Create account"
+      showLogo
       subtitle="Register your organization on Split Rail"
       footer={
         <p className="auth-layout__nav">
