@@ -8,6 +8,7 @@
     "build": "tsc -p tsconfig.app.json --noEmit && vite build",
     "preview": "vite preview",
     "test": "vitest run",
+    "test:brand": "vitest run tests/brand",
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "gen:api": "node scripts/gen-api.mjs",
