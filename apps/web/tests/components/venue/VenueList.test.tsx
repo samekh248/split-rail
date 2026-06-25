@@ -52,7 +52,7 @@ describe('VenueList', () => {
       <VenueList venues={[]} isLoading onEdit={vi.fn()} onDelete={vi.fn()} />,
     );
 
-    expect(screen.getByText('Loading venues…')).toBeInTheDocument();
+    expect(screen.getByRole('status', { name: 'Loading venues…' })).toBeInTheDocument();
   });
 
   it('shows error state with retry', async () => {

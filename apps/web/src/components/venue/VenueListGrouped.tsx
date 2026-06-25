@@ -34,59 +34,63 @@ export function VenueListGrouped({
       {sections.map((section) => (
         <section
           key={section.sectionKey}
-          className="venues-page__region-group team-section"
+          className="venues-group"
           data-testid={`venues-region-section-${section.sectionKey}`}
           aria-labelledby={`venues-region-heading-${section.sectionKey}`}
         >
-          <h2 id={`venues-region-heading-${section.sectionKey}`} className="team-section__title">
+          <h2 id={`venues-region-heading-${section.sectionKey}`} className="venues-group__heading">
             {section.title}
           </h2>
 
           {section.venues.length === 0 ? (
             <p
-              className="venues-page__region-empty team-section__empty"
+              className="venues-group__empty"
               data-testid={`venues-region-empty-${section.sectionKey}`}
             >
               No venues
             </p>
           ) : (
-            <table className="team-table">
-              <thead>
-                <tr>
-                  <th scope="col">Name</th>
-                  <th scope="col">Created</th>
-                  {canManage ? <th scope="col">Actions</th> : null}
-                </tr>
-              </thead>
-              <tbody>
-                {section.venues.map((venue) => (
-                  <tr key={venue.id}>
-                    <td>{venue.name}</td>
-                    <td>{formatCreatedAt(venue.createdAt)}</td>
-                    {canManage ? (
-                      <td>
-                        <div className="team-table__actions">
-                          <button
-                            type="button"
-                            data-testid={`edit-venue-${venue.id}`}
-                            onClick={() => onEdit(venue)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            data-testid={`delete-venue-${venue.id}`}
-                            onClick={() => onDelete(venue)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    ) : null}
+            <div className="venues-list__table-wrap">
+              <table className="venues-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Created</th>
+                    {canManage ? <th scope="col">Actions</th> : null}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {section.venues.map((venue) => (
+                    <tr key={venue.id}>
+                      <td>
+                        <span className="venues-table__name">{venue.name}</span>
+                      </td>
+                      <td className="venues-table__date">{formatCreatedAt(venue.createdAt)}</td>
+                      {canManage ? (
+                        <td>
+                          <div className="team-table__actions">
+                            <button
+                              type="button"
+                              data-testid={`edit-venue-${venue.id}`}
+                              onClick={() => onEdit(venue)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              data-testid={`delete-venue-${venue.id}`}
+                              onClick={() => onDelete(venue)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      ) : null}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       ))}

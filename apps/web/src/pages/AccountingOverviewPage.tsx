@@ -33,6 +33,8 @@ export function AccountingOverviewPage() {
   );
 
   const venueScopeKey = venueId ?? 'none';
+  const qboConnected = qboStatusQuery.data?.qboConnected ?? false;
+  const showQboSyncFeatures = !qboStatusQuery.isLoading && qboConnected;
 
   const workspaceBarContent = useMemo(
     () => (
@@ -58,7 +60,7 @@ export function AccountingOverviewPage() {
   }
 
   return (
-    <div className="accounting-overview" data-testid="accounting-overview-page">
+    <main className="accounting-overview" data-testid="accounting-overview-page">
       <header className="accounting-overview__header">
         <h1 className="accounting-overview__title">Settlements &amp; Accounting Sync</h1>
       </header>
@@ -120,8 +122,11 @@ export function AccountingOverviewPage() {
 
       {!isLoading && !isError && showContent && !dashboardQuery.isError ? (
         <>
-          <VenueQboStatusCard status={qboStatusQuery.data} isLoading={qboStatusQuery.isLoading} />
-          {venueId ? <SyncAllButton venueId={venueId} /> : null}
+          <section className="accounting-overview__panel accounting-overview__panel--status">
+            <VenueQboStatusCard status={qboStatusQuery.data} isLoading={qboStatusQuery.isLoading} />
+            {venueId && showQboSyncFeatures ? <SyncAllButton venueId={venueId} /> : null}
+          </section>
+
           <UnassignedTransactionsBanner
             actionCenter={dashboardQuery.data?.actionCenter}
             venues={venues}
@@ -130,17 +135,20 @@ export function AccountingOverviewPage() {
             venueScopeKey={venueScopeKey}
             onRetryDashboard={() => void dashboardQuery.refetch()}
           />
-          {dashboardQuery.isLoading ? (
-            <LoadingPlaceholder
-              variant="card"
-              label="Loading accounting workload"
-              data-testid="accounting-workload-loading"
-            />
-          ) : (
-            <AccountingWorkloadList events={workloadEvents} />
-          )}
+
+          {showQboSyncFeatures ? (
+            dashboardQuery.isLoading ? (
+              <LoadingPlaceholder
+                variant="card"
+                label="Loading accounting workload"
+                data-testid="accounting-workload-loading"
+              />
+            ) : (
+              <AccountingWorkloadList events={workloadEvents} />
+            )
+          ) : null}
         </>
       ) : null}
-    </div>
+    </main>
   );
 }

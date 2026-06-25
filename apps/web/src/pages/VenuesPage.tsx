@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { LoadingPlaceholder } from '@/components/shell/LoadingPlaceholder';
 import { useRegions } from '@/api/regions';
 import { RegionManagementPanel } from '@/components/booking/RegionManagementPanel';
 import { DeleteVenueConfirm } from '@/components/venue/DeleteVenueConfirm';
@@ -113,7 +114,7 @@ export function VenuesPage() {
   };
 
   return (
-    <div className="venues-page" data-testid="venues-page">
+    <main className="venues-page" data-testid="venues-page">
       <header className="venues-page__header">
         <h1 className="venues-page__title">Venues</h1>
         {!profileLoading && canManageVenues ? (
@@ -144,9 +145,11 @@ export function VenuesPage() {
       ) : null}
 
       {isPending ? (
-        <div className="dashboard-empty" role="status" aria-live="polite">
-          Loading venues…
-        </div>
+        <LoadingPlaceholder
+          variant="page"
+          label="Loading venues…"
+          data-testid="venues-page-loading"
+        />
       ) : null}
 
       {!isPending && isError ? (
@@ -200,7 +203,9 @@ export function VenuesPage() {
       ) : null}
 
       {showVenueList && displayMode === 'flat' ? (
-        <VenueList venues={filteredVenues} {...listHandlers} />
+        <section className="venues-page__body" data-testid="venues-page-body">
+          <VenueList venues={filteredVenues} {...listHandlers} />
+        </section>
       ) : null}
 
       {showVenueList && displayMode === 'grouped' ? (
@@ -231,6 +236,6 @@ export function VenuesPage() {
       ) : null}
 
       <RegionManagementPanel open={regionsPanelOpen} onClose={() => setRegionsPanelOpen(false)} />
-    </div>
+    </main>
   );
 }

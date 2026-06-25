@@ -17,7 +17,7 @@ export function VenueQboStatusCard({ status, isLoading }: VenueQboStatusCardProp
   if (isLoading) {
     return (
       <LoadingPlaceholder
-        variant="card"
+        variant="zone"
         label="Loading QuickBooks status"
         data-testid="venue-qbo-status-loading"
       />
@@ -29,7 +29,13 @@ export function VenueQboStatusCard({ status, isLoading }: VenueQboStatusCardProp
   return (
     <section className="venue-qbo-status-card" data-testid="venue-qbo-status-card">
       <h2 className="venue-qbo-status-card__title">QuickBooks connection</h2>
-      <p className="venue-qbo-status-card__status" data-testid="venue-qbo-status-connected">
+      <p
+        className={[
+          'venue-qbo-status-card__status',
+          connected ? 'venue-qbo-status-card__status--connected' : 'venue-qbo-status-card__status--disconnected',
+        ].join(' ')}
+        data-testid="venue-qbo-status-connected"
+      >
         {connected ? 'Connected' : 'Not connected'}
       </p>
       {connected ? (
