@@ -3,7 +3,7 @@ import { formatBookingStatusLabel } from '@/lib/bookingCalendar';
 
 export function getBookingStatusLabel(
   status: string | null | undefined,
-  eventId?: string,
+  _eventId?: string,
 ): string {
   if (status) {
     return formatBookingStatusLabel(status as BookingPlacementStatus);

@@ -80,7 +80,7 @@ export function CreateHoldModal({
           </select>
         </label>
         <FormField label="Date" id="booking-hold-date" type="date" value={eventDate} onChange={setEventDate} />
-        <FormField label="Act name" id="booking-hold-title" value={title} onChange={setTitle} />
+        <FormField label="Act name" id="booking-hold-title" type="text" value={title} onChange={setTitle} />
         <label>
           Tier
           <select value={tier} onChange={(event) => setTier(event.target.value as typeof tier)}>

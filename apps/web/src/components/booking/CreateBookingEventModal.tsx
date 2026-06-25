@@ -81,7 +81,7 @@ export function CreateBookingEventModal({
           </select>
         </label>
         <FormField label="Date" id="booking-event-date" type="date" value={eventDate} onChange={setEventDate} />
-        <FormField label="Title" id="booking-event-title" value={title} onChange={setTitle} />
+        <FormField label="Title" id="booking-event-title" type="text" value={title} onChange={setTitle} />
         <FormField label="Doors time" id="booking-event-doors" type="time" value={doorsTime} onChange={setDoorsTime} />
         {error ? <p role="alert">{error}</p> : null}
         <button type="button" onClick={onClose}>
