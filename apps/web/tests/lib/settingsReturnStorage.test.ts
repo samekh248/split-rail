@@ -31,6 +31,11 @@ describe('settingsReturnStorage', () => {
     expect(readSettingsReturnPath()).toBe('/');
   });
 
+  it('captures venues list return path when entering settings from app', () => {
+    captureSettingsReturnPath('/venues');
+    expect(readSettingsReturnPath()).toBe('/venues');
+  });
+
   it('captures create-venue return path when entering settings from app', () => {
     captureSettingsReturnPath('/venues/new');
     expect(readSettingsReturnPath()).toBe('/venues/new');

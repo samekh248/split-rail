@@ -153,30 +153,6 @@ describe('EventWorkspacePage', () => {
     expect(await screen.findByTestId('mock-ledger-page')).toHaveTextContent(EVENT_A.eventId!);
   });
 
-  it('shows persistent shell add venue when venues exist for permitted user', async () => {
-    mockWorkspaceFetch({
-      venues: [VENUE_A],
-      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
-    });
-
-    render(<EventWorkspacePage />, { wrapper: createWrapper() });
-
-    expect(await screen.findByTestId('header-add-venue')).toBeInTheDocument();
-  });
-
-  it('hides shell add venue for restricted user with existing venues', async () => {
-    mockWorkspaceFetch({
-      profile: workspaceMemberProfile,
-      venues: [VENUE_A],
-      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
-    });
-
-    render(<EventWorkspacePage />, { wrapper: createWrapper() });
-
-    await screen.findByTestId('mock-ledger-page');
-    expect(screen.queryByTestId('header-add-venue')).not.toBeInTheDocument();
-  });
-
   it('switches selected event from combobox and updates URL', async () => {
     mockWorkspaceFetch({
       venues: [VENUE_A],

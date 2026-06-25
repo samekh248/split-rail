@@ -26,7 +26,7 @@ import {
 } from '@/lib/eventCardSummary';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
-import { navigateToCreateVenue, navigateToEventWorkspace } from '@/lib/dashboardRoute';
+import { navigateToVenues, navigateToEventWorkspace } from '@/lib/dashboardRoute';
 import type { PermissionsDto } from '@/types/generated-api';
 
 const EMPTY_PERMISSIONS: PermissionsDto = {};
@@ -113,20 +113,10 @@ export function DashboardOverviewPage() {
   const workspaceBarContent = useMemo(
     () => (
       <div className="dashboard-workspace-bar" data-testid="dashboard-workspace-bar">
-        {!profileLoading && canManageVenues ? (
-          <button
-            type="button"
-            className="app__add-venue"
-            data-testid="header-add-venue"
-            onClick={() => navigateToCreateVenue()}
-          >
-            Add venue
-          </button>
-        ) : null}
         <VenueSwitcher />
       </div>
     ),
-    [profileLoading, canManageVenues],
+    [],
   );
 
   useShellWorkspaceBar(workspaceBarContent);
@@ -220,9 +210,9 @@ export function DashboardOverviewPage() {
               type="button"
               className="dashboard-empty__cta"
               data-testid="empty-state-add-venue"
-              onClick={() => navigateToCreateVenue()}
+              onClick={() => navigateToVenues()}
             >
-              Add venue
+              Go to Venues
             </button>
           ) : null}
         </section>

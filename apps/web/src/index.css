@@ -2527,6 +2527,24 @@ button.welcome-modal__dismiss {
   border-bottom: none;
 }
 
+.venues-page {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.venues-page__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0;
+}
+
+.venues-page__title {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
 .accounting-overview {
   display: grid;
   gap: 1.5rem;

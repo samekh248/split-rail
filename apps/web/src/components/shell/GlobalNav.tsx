@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowsRotate, faCalendarDays, faGauge } from '@fortawesome/free-solid-svg-icons';
+import { faArrowsRotate, faBuilding, faCalendarDays, faGauge } from '@fortawesome/free-solid-svg-icons';
 import { getAppPath } from '@/lib/appRoute';
 import { GLOBAL_NAV_ITEMS, navigateToAccountingWithVenueScope, resolveActiveGlobalNavId, type GlobalNavId } from '@/lib/globalNav';
 import { useCanManageEvents } from '@/hooks/useCanManageEvents';
@@ -7,6 +7,7 @@ import { useActiveVenue } from '@/venue/useActiveVenue';
 
 const NAV_ICONS: Record<GlobalNavId, typeof faGauge> = {
   dashboard: faGauge,
+  venues: faBuilding,
   booking: faCalendarDays,
   accounting: faArrowsRotate,
 };

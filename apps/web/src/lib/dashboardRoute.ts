@@ -10,6 +10,7 @@ export {
   navigateToAcceptInvite,
   navigateToCreateVenue,
   navigateToDashboard,
+  navigateToVenues,
   navigateToIntegrationsSettings,
   navigateToOrganizationSettings,
   navigateToSettings,

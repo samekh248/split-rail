@@ -4,6 +4,7 @@ import {
   getDashboardPath,
   navigateToCreateVenue,
   navigateToDashboard,
+  navigateToVenues,
   navigateToEventWorkspace,
   useDashboardRoute,
 } from '@/lib/dashboardRoute';
@@ -20,6 +21,18 @@ describe('dashboardRoute', () => {
   it('getDashboardPath returns /venues/new on create path', () => {
     window.history.pushState({}, '', '/venues/new');
     expect(getDashboardPath()).toBe('/venues/new');
+  });
+
+  it('getDashboardPath returns /venues on venues list path', () => {
+    window.history.pushState({}, '', '/venues');
+    expect(getDashboardPath()).toBe('/venues');
+  });
+
+  it('navigateToVenues updates path and hook state', () => {
+    const { result } = renderHook(() => useDashboardRoute());
+    act(() => navigateToVenues());
+    expect(window.location.pathname).toBe('/venues');
+    expect(result.current).toBe('/venues');
   });
 
   it('navigateToCreateVenue updates path and hook state', () => {
