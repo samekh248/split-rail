@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FormField } from '@/components/auth/FormField';
 import { useCreateEvent } from '@/api/events';
 import type { VenueResponse } from '@/types/generated-api';
@@ -9,7 +9,7 @@ export interface CreateBookingEventModalProps {
   defaultVenueId?: string | null;
   defaultDate?: string | null;
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: (eventDate: string) => void;
 }
 
 export function CreateBookingEventModal({
@@ -27,6 +27,17 @@ export function CreateBookingEventModal({
   const [error, setError] = useState<string | null>(null);
   const createEvent = useCreateEvent(venueId || null);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    setVenueId(defaultVenueId ?? venues[0]?.id ?? '');
+    setEventDate(defaultDate ?? '');
+    setTitle('');
+    setDoorsTime('');
+    setError(null);
+  }, [open, defaultVenueId, defaultDate, venues]);
+
   if (!open) {
     return null;
   }
@@ -42,7 +53,7 @@ export function CreateBookingEventModal({
         bookingPlacementStatus: 'CONFIRMED',
         doorsTime: doorsTime || null,
       });
-      onCreated();
+      onCreated(eventDate);
       onClose();
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : 'Unable to create event.';

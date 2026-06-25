@@ -83,6 +83,14 @@ export function BookingCalendarPage() {
 
   const agendaPlacements = agendaDate ? placementsByDate[agendaDate] ?? [] : [];
 
+  const handlePlacementCreated = (eventDate: string) => {
+    const month = eventDate.slice(0, 7);
+    if (month && month !== context.month) {
+      setContext((current) => ({ ...current, month }));
+    }
+    setQuickAdd(null);
+  };
+
   return (
     <div className="booking-calendar-page" data-testid="booking-calendar-page">
       <BookingCalendarControls
@@ -142,7 +150,7 @@ export function BookingCalendarPage() {
         defaultVenueId={quickAdd?.venueId}
         defaultDate={quickAdd?.date}
         onClose={() => setCreateEventOpen(false)}
-        onCreated={() => void refetch()}
+        onCreated={handlePlacementCreated}
       />
 
       <CreateHoldModal
@@ -151,7 +159,7 @@ export function BookingCalendarPage() {
         defaultVenueId={quickAdd?.venueId}
         defaultDate={quickAdd?.date}
         onClose={() => setCreateHoldOpen(false)}
-        onCreated={() => void refetch()}
+        onCreated={handlePlacementCreated}
       />
 
       <RegionManagementPanel open={regionsOpen} onClose={() => setRegionsOpen(false)} />

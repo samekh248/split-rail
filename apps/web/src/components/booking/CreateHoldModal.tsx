@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { FormField } from '@/components/auth/FormField';
 import { useCreateEvent } from '@/api/events';
 import type { VenueResponse } from '@/types/generated-api';
@@ -9,7 +9,7 @@ export interface CreateHoldModalProps {
   defaultVenueId?: string | null;
   defaultDate?: string | null;
   onClose: () => void;
-  onCreated: () => void;
+  onCreated: (eventDate: string) => void;
 }
 
 export function CreateHoldModal({
@@ -27,6 +27,17 @@ export function CreateHoldModal({
   const [error, setError] = useState<string | null>(null);
   const createEvent = useCreateEvent(venueId || null);
 
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+    setVenueId(defaultVenueId ?? venues[0]?.id ?? '');
+    setEventDate(defaultDate ?? '');
+    setTitle('');
+    setTier('auto');
+    setError(null);
+  }, [open, defaultVenueId, defaultDate, venues]);
+
   if (!open) {
     return null;
   }
@@ -41,7 +52,7 @@ export function CreateHoldModal({
         qboTagName: null,
         bookingPlacementStatus: tier === 'auto' ? 'HOLD_1' : tier,
       });
-      onCreated();
+      onCreated(eventDate);
       onClose();
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : 'Unable to create hold.';
