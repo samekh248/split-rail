@@ -8,7 +8,7 @@ describe('badge-action-required', () => {
   it('defines pill-shaped orange badge with white bold text', () => {
     const css = readFileSync(indexCssPath, 'utf-8');
     expect(css).toMatch(/\.badge-action-required[\s\S]*background:\s*var\(--color-accent-orange\)/);
-    expect(css).toMatch(/\.badge-action-required[\s\S]*color:\s*var\(--color-surface-white\)/);
+    expect(css).toMatch(/\.badge-action-required[\s\S]*color:\s*var\(--color-text-on-accent\)/);
     expect(css).toMatch(/\.badge-action-required[\s\S]*border-radius:\s*9999px/);
     expect(css).toMatch(/\.badge-action-required[\s\S]*font-weight:\s*700/);
     expect(css).toMatch(/\.badge-action-required[\s\S]*font-size:\s*0\.75rem/);

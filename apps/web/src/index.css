@@ -9,10 +9,13 @@
   --color-surface-white: #ffffff;
   --color-text-on-light: var(--color-primary-brown);
   --color-text-on-dark: var(--color-bg-cream);
+  --color-text-on-accent: var(--color-surface-white);
+  --color-text-on-accent-disabled: var(--color-surface-white);
   --color-nav-hover-overlay: rgba(255, 255, 255, 0.1);
-  --color-border-subtle: rgba(62, 39, 35, 0.15);
+  --color-border-subtle: rgba(62, 39, 35, 0.52);
   --color-text-muted: rgba(62, 39, 35, 0.72);
   --color-focus-ring: var(--color-accent-orange);
+  --color-accent-orange-disabled: #d97b4a;
   --color-error: #b91c1c;
   --color-error-border: #fecaca;
   --color-error-bg: #fef2f2;
@@ -103,7 +106,7 @@ th {
 .team-section [role='alert'] button {
   padding: 0.75rem 1rem;
   background: var(--color-accent-orange);
-  color: var(--color-surface-white);
+  color: var(--color-text-on-accent);
   border: none;
   border-radius: var(--radius-button);
   font-family: var(--font-ui);
@@ -121,7 +124,7 @@ th {
 .event-form-panel__submit {
   padding: 0.5rem 1rem;
   background: var(--color-accent-orange);
-  color: var(--color-surface-white);
+  color: var(--color-text-on-accent);
   border: none;
   border-radius: var(--radius-button);
   font-family: var(--font-ui);
@@ -166,7 +169,9 @@ th {
 .invite-form__submit:disabled,
 .team-modal__save:disabled,
 .event-form-panel__submit:disabled {
-  opacity: 0.6;
+  background: var(--color-accent-orange-disabled);
+  color: var(--color-text-on-accent-disabled);
+  opacity: 1;
   cursor: not-allowed;
 }
 
@@ -330,7 +335,7 @@ th {
   display: inline-block;
   padding: 0.125rem 0.625rem;
   background: var(--color-accent-orange);
-  color: var(--color-surface-white);
+  color: var(--color-text-on-accent);
   border-radius: 9999px;
   font-family: var(--font-ui);
   font-size: 0.75rem;
@@ -998,7 +1003,7 @@ th {
   height: 2rem;
   border-radius: 999px;
   background: var(--color-accent-orange);
-  color: var(--color-surface-white);
+  color: var(--color-text-on-accent);
   display: inline-flex;
   align-items: center;
   justify-content: center;

@@ -57,9 +57,16 @@ describe('cssTokens', () => {
     const css = readIndexCss();
     expect(css).toMatch(/--color-text-on-light:\s*var\(--color-primary-brown\)/);
     expect(css).toMatch(/--color-text-on-dark:\s*var\(--color-bg-cream\)/);
-    expect(css).toMatch(/--color-border-subtle:\s*rgba\(62,\s*39,\s*35,\s*0\.15\)/);
+    expect(css).toMatch(/--color-text-on-accent:\s*var\(--color-surface-white\)/);
+    expect(css).toMatch(/--color-border-subtle:\s*rgba\(62,\s*39,\s*35,\s*0\.52\)/);
     expect(css).toMatch(/--radius-button:\s*6px/);
     expect(css).toMatch(/--shadow-card:\s*0 2px 5px rgba\(0,\s*0,\s*0,\s*0\.05\)/);
+  });
+
+  it('defines SPLR-94 accessibility contrast tokens in :root', () => {
+    const root = extractRootBlock(readIndexCss());
+    expect(root).toMatch(/--color-accent-orange-disabled:\s*#d97b4a/i);
+    expect(root).toMatch(/--color-text-on-accent-disabled:\s*var\(--color-surface-white\)/);
   });
 
   it('defines success semantic tokens in :root (SPLR-91)', () => {

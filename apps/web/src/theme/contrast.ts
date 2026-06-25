@@ -11,6 +11,12 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } {
   };
 }
 
+function rgbToHex(r: number, g: number, b: number): string {
+  const channel = (value: number) =>
+    Math.max(0, Math.min(255, value)).toString(16).padStart(2, '0');
+  return `#${channel(r)}${channel(g)}${channel(b)}`.toUpperCase();
+}
+
 function relativeLuminance(channel: number): number {
   return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
 }
@@ -29,6 +35,43 @@ export function contrastRatio(foregroundHex: string, backgroundHex: string): num
   return (lighter + 0.05) / (darker + 0.05);
 }
 
+export type RgbaColor = { r: number; g: number; b: number; a: number };
+
+/** Alpha-composite an sRGB foreground onto an opaque hex background */
+export function compositeRgbaOnHex(rgba: RgbaColor, backgroundHex: string): string {
+  const bg = hexToRgb(backgroundHex);
+  const fg = { r: rgba.r / 255, g: rgba.g / 255, b: rgba.b / 255 };
+  const blend = (fgChannel: number, bgChannel: number) =>
+    Math.round((fgChannel * rgba.a + bgChannel * (1 - rgba.a)) * 255);
+  return rgbToHex(blend(fg.r, bg.r), blend(fg.g, bg.g), blend(fg.b, bg.b));
+}
+
 export function meetsWcagAaNormalText(foregroundHex: string, backgroundHex: string): boolean {
   return contrastRatio(foregroundHex, backgroundHex) >= 4.5;
+}
+
+export function meetsWcagAaLargeText(foregroundHex: string, backgroundHex: string): boolean {
+  return contrastRatio(foregroundHex, backgroundHex) >= 3.0;
+}
+
+export function meetsWcagAaUiComponent(foregroundHex: string, backgroundHex: string): boolean {
+  return contrastRatio(foregroundHex, backgroundHex) >= 3.0;
+}
+
+export type ContrastPairingInput = {
+  foreground: string;
+  background: string;
+  foregroundRgba?: RgbaColor;
+};
+
+/** Resolve effective opaque foreground hex for ratio measurement */
+export function resolvePairingForeground(pairing: ContrastPairingInput): string {
+  if (pairing.foregroundRgba) {
+    return compositeRgbaOnHex(pairing.foregroundRgba, pairing.background);
+  }
+  return pairing.foreground;
+}
+
+export function pairingContrastRatio(pairing: ContrastPairingInput): number {
+  return contrastRatio(resolvePairingForeground(pairing), pairing.background);
 }
