@@ -115,6 +115,44 @@ export function DashboardOverviewPage() {
   const showDashboardWidgets = showEventsContent && !dashboardLoading && !dashboardError;
   const showDashboardBody = !isLoading && !isError && showEventsContent && !dashboardError;
   const dashboardDataLoading = showEventsContent && dashboardLoading;
+  const totalUnmappedCount = actionCenter?.totalUnmappedCount ?? 0;
+  const showInsightsSection =
+    totalUnmappedCount > 0 || (!isAllVenuesSelected && financialHealth != null);
+
+  const dashboardInsightsWidgets = (
+    <>
+      <UnassignedTransactionsBanner
+        actionCenter={actionCenter}
+        venues={venues}
+        isAllVenuesView={isAllVenuesSelected}
+        isLoading={dashboardLoading}
+        venueScopeKey={venueScopeKey}
+        onRetryDashboard={() => void refetchDashboard()}
+      />
+      {!isAllVenuesSelected ? (
+        <FinancialHealthWidget financialHealth={financialHealth} isLoading={dashboardLoading} />
+      ) : null}
+    </>
+  );
+
+  const dashboardActionWidgets = showDashboardWidgets ? (
+    showInsightsSection ? (
+      <div className="dashboard-overview__insights">{dashboardInsightsWidgets}</div>
+    ) : (
+      dashboardInsightsWidgets
+    )
+  ) : null;
+
+  const workspaceBarContent = useMemo(
+    () => (
+      <div className="dashboard-workspace-bar" data-testid="dashboard-workspace-bar">
+        <VenueSwitcher />
+      </div>
+    ),
+    [],
+  );
+
+  useShellWorkspaceBar(workspaceBarContent);
 
   const dashboardLoadingContent = (
     <>
@@ -139,17 +177,6 @@ export function DashboardOverviewPage() {
       </div>
     </>
   );
-
-  const workspaceBarContent = useMemo(
-    () => (
-      <div className="dashboard-workspace-bar" data-testid="dashboard-workspace-bar">
-        <VenueSwitcher />
-      </div>
-    ),
-    [],
-  );
-
-  useShellWorkspaceBar(workspaceBarContent);
 
   const handleQuickLink = (venueId: string, eventId: string, focus?: WorkspaceFocus) => {
     navigateToEventWorkspace(venueId, eventId, focus);
@@ -181,22 +208,6 @@ export function DashboardOverviewPage() {
     onPinToggle: handlePinToggle,
     onCardActivate: handleCardActivate,
   };
-
-  const dashboardActionWidgets = showDashboardWidgets ? (
-    <div className="dashboard-overview__insights">
-      <UnassignedTransactionsBanner
-        actionCenter={actionCenter}
-        venues={venues}
-        isAllVenuesView={isAllVenuesSelected}
-        isLoading={dashboardLoading}
-        venueScopeKey={venueScopeKey}
-        onRetryDashboard={() => void refetchDashboard()}
-      />
-      {!isAllVenuesSelected ? (
-        <FinancialHealthWidget financialHealth={financialHealth} isLoading={dashboardLoading} />
-      ) : null}
-    </div>
-  ) : null;
 
   const recentFilterSlot = showDashboardWidgets ? (
     <BottleneckFilter

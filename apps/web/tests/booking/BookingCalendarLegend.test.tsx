@@ -8,7 +8,7 @@ describe('BookingCalendarLegend', () => {
     render(<BookingCalendarLegend />);
 
     expect(screen.getByTestId('booking-calendar-legend')).toBeInTheDocument();
-    expect(screen.getByText('Booked')).toBeInTheDocument();
+    expect(screen.getByText('Confirmed')).toBeInTheDocument();
     expect(screen.getByText('Hold 1')).toBeInTheDocument();
     expect(screen.getByText('Hold 2')).toBeInTheDocument();
     expect(screen.queryByText('Cancelled')).not.toBeInTheDocument();

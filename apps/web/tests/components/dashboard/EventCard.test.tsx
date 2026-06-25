@@ -63,6 +63,13 @@ describe('EventCard', () => {
       const badge = screen.getByTestId(`event-card-booking-${EVENT_A.eventId}`);
       expect(badge).toBeInTheDocument();
       expect(badge).toHaveAttribute('title', expect.stringContaining('Booking placement status'));
+      expect(badge).toHaveClass('event-card__booking-badge--confirmed');
+    });
+
+    it('applies booking status colors for hold placements', () => {
+      renderCard({ ...EVENT_A, bookingPlacementStatus: 'HOLD_2' });
+      const badge = screen.getByTestId(`event-card-booking-${EVENT_A.eventId}`);
+      expect(badge).toHaveClass('event-card__booking-badge--hold-2');
     });
 
     it('shows placeholders when title and date are missing', () => {

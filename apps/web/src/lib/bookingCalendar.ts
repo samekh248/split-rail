@@ -341,7 +341,7 @@ export function placementLegendHighlightClass(
 }
 
 export const BOOKING_PLACEMENT_LEGEND = [
-  { status: 'CONFIRMED' as const, label: 'Booked', className: 'booking-placement--confirmed' },
+  { status: 'CONFIRMED' as const, label: 'Confirmed', className: 'booking-placement--confirmed' },
   {
     status: 'HOLD_1' as const,
     label: 'Hold 1',

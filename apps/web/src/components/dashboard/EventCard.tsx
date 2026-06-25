@@ -5,7 +5,8 @@ import {
   deriveBottleneckAlertsFromSummary,
   mergeBottleneckAlerts,
 } from '@/lib/eventCardSummary';
-import { BOOKING_PREVIEW_TOOLTIP, getBookingStatusLabel } from '@/lib/eventCardLabels';
+import { BOOKING_PREVIEW_TOOLTIP, eventCardBookingBadgeClass, getBookingStatusLabel } from '@/lib/eventCardLabels';
+import type { BookingPlacementStatus } from '@/lib/bookingCalendar';
 import { resolveQuickLinks, type WorkspaceFocus } from '@/lib/eventCardQuickLinks';
 import { eventHasNegativeVariance } from '@/lib/eventCardVariance';
 import type { EventCardDto, EventResponse, LineItemDto, PermissionsDto } from '@/types/generated-api';
@@ -65,9 +66,11 @@ export function EventCard({
     (isEventCardDto(event) && event.hasVarianceConcern === true)
     || (lineItems != null && eventHasNegativeVariance(lineItems));
   const pinnedState = isPinned ?? (isEventCardDto(event) ? event.isPinned === true : false);
-  const bookingLabel = getBookingStatusLabel(
-    'bookingPlacementStatus' in event ? event.bookingPlacementStatus : null,
-    event.eventId,
+  const bookingStatus =
+    'bookingPlacementStatus' in event ? event.bookingPlacementStatus : null;
+  const bookingLabel = getBookingStatusLabel(bookingStatus, event.eventId);
+  const bookingBadgeClass = eventCardBookingBadgeClass(
+    (bookingStatus ?? 'CONFIRMED') as BookingPlacementStatus,
   );
 
   const quickLinksNav = quickLinks.length > 0 ? (
@@ -92,7 +95,7 @@ export function EventCard({
 
   const bookingBadge = (
     <span
-      className="event-card__booking-badge"
+      className={['event-card__booking-badge', bookingBadgeClass].join(' ')}
       title={BOOKING_PREVIEW_TOOLTIP}
       data-testid={`event-card-booking-${eventId}`}
     >
