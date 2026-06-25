@@ -4,7 +4,10 @@ import {
   buildMonthCalendarWeeks,
   formatBookingStatusLabel,
   getWeekdayLabels,
+  placementLegendHighlightClass,
+  placementStatusClass,
   type BookingPlacement,
+  type BookingPlacementStatus,
 } from '@/lib/bookingCalendar';
 
 export const MAX_VISIBLE_PLACEMENTS_PER_DAY = 2;
@@ -12,22 +15,10 @@ export const MAX_VISIBLE_PLACEMENTS_PER_DAY = 2;
 export interface BookingCalendarMatrixProps {
   month: string;
   placementsByDate: Record<string, BookingPlacement[]>;
+  highlightedStatus?: BookingPlacementStatus | null;
   onDateClick: (dateKey: string) => void;
   onPlacementClick: (placement: BookingPlacement) => void;
   onCellQuickAdd?: (dateKey: string) => void;
-}
-
-export function statusClass(status: BookingPlacement['bookingPlacementStatus']): string {
-  if (status === 'CANCELLED') {
-    return 'booking-placement--cancelled';
-  }
-  if (status === 'CONFIRMED') {
-    return 'booking-placement--confirmed';
-  }
-  if (status === 'HOLD_2') {
-    return 'booking-placement--hold booking-placement--hold-2';
-  }
-  return 'booking-placement--hold booking-placement--hold-1';
 }
 
 function formatDayNumber(date: Date): string {
@@ -37,6 +28,8 @@ function formatDayNumber(date: Date): string {
 export function placementStatusLabel(status: BookingPlacement['bookingPlacementStatus']): string {
   return formatBookingStatusLabel(status);
 }
+
+export { placementStatusClass as statusClass };
 
 function QuickAddButton({
   dateKey,
@@ -65,6 +58,7 @@ function QuickAddButton({
 export function BookingCalendarMatrix({
   month,
   placementsByDate,
+  highlightedStatus = null,
   onDateClick,
   onPlacementClick,
   onCellQuickAdd,
@@ -100,14 +94,14 @@ export function BookingCalendarMatrix({
                   data-testid={`booking-calendar-day-${day.dateKey}`}
                 >
                   <div className="booking-calendar-matrix__day-header">
+                    <span className="booking-calendar-matrix__day-label" aria-hidden="true">
+                      {formatDayNumber(day.date)}
+                    </span>
                     {onCellQuickAdd ? (
                       <QuickAddButton dateKey={day.dateKey} onCellQuickAdd={onCellQuickAdd} />
                     ) : (
                       <span className="booking-calendar-matrix__day-header-spacer" aria-hidden="true" />
                     )}
-                    <span className="booking-calendar-matrix__day-label" aria-hidden="true">
-                      {formatDayNumber(day.date)}
-                    </span>
                   </div>
 
                   {totalCount > 0 ? (
@@ -116,7 +110,17 @@ export function BookingCalendarMatrix({
                         <button
                           key={placement.eventId}
                           type="button"
-                          className={`booking-placement booking-calendar-matrix__event ${statusClass(placement.bookingPlacementStatus)}`}
+                          className={[
+                            'booking-placement',
+                            'booking-calendar-matrix__event',
+                            placementStatusClass(placement.bookingPlacementStatus),
+                            placementLegendHighlightClass(
+                              placement.bookingPlacementStatus,
+                              highlightedStatus,
+                            ),
+                          ]
+                            .filter(Boolean)
+                            .join(' ')}
                           onClick={() => onPlacementClick(placement)}
                           title={`${placement.title} — ${placement.venueName}`}
                         >

@@ -9,6 +9,8 @@ import {
   MAX_CALENDAR_QUERY_SPAN_DAYS,
   pickNextUpcomingPlacements,
   previewConflict,
+  placementStatusClass,
+  placementLegendHighlightClass,
   sortAgendaPlacements,
   sortPlacementsForList,
   type BookingPlacement,
@@ -163,5 +165,23 @@ describe('bookingCalendar', () => {
 
     const filtered = filterPlacementsByView(placements, context);
     expect(filtered).toHaveLength(0);
+  });
+
+  it('maps placement statuses to distinct style classes', () => {
+    expect(placementStatusClass('CONFIRMED')).toBe('booking-placement--confirmed');
+    expect(placementStatusClass('HOLD_1')).toBe('booking-placement--hold booking-placement--hold-1');
+    expect(placementStatusClass('HOLD_2')).toBe('booking-placement--hold booking-placement--hold-2');
+    expect(placementStatusClass('CANCELLED')).toBe('booking-placement--cancelled');
+  });
+
+  it('returns legend highlight classes when a status is highlighted', () => {
+    expect(placementLegendHighlightClass('CONFIRMED', null)).toBe('');
+    expect(placementLegendHighlightClass('CONFIRMED', undefined)).toBe('');
+    expect(placementLegendHighlightClass('CONFIRMED', 'CONFIRMED')).toBe(
+      'booking-placement--legend-match',
+    );
+    expect(placementLegendHighlightClass('HOLD_1', 'CONFIRMED')).toBe(
+      'booking-placement--legend-dim',
+    );
   });
 });

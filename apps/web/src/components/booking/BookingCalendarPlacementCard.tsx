@@ -1,10 +1,12 @@
+import type { BookingPlacement, BookingPlacementStatus } from '@/lib/bookingCalendar';
+import { placementLegendHighlightClass } from '@/lib/bookingCalendar';
 import { placementStatusLabel, statusClass } from '@/components/booking/BookingCalendarMatrix';
-import type { BookingPlacement } from '@/lib/bookingCalendar';
 
 export interface BookingCalendarPlacementCardProps {
   placement: BookingPlacement;
   onClick: (placement: BookingPlacement) => void;
   variant?: 'default' | 'compact';
+  highlightedStatus?: BookingPlacementStatus | null;
 }
 
 function formatListDate(dateKey: string): string {
@@ -29,11 +31,13 @@ export function BookingCalendarPlacementCard({
   placement,
   onClick,
   variant = 'default',
+  highlightedStatus = null,
 }: BookingCalendarPlacementCardProps) {
   const cardClassName = [
     'booking-placement',
     'booking-calendar-list__card',
     statusClass(placement.bookingPlacementStatus),
+    placementLegendHighlightClass(placement.bookingPlacementStatus, highlightedStatus),
     variant === 'compact' ? 'booking-calendar-list__card--compact' : '',
   ]
     .filter(Boolean)

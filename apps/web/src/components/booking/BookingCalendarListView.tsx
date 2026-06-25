@@ -1,14 +1,16 @@
 import { useMemo } from 'react';
-import { sortPlacementsForList, type BookingPlacement } from '@/lib/bookingCalendar';
+import { sortPlacementsForList, type BookingPlacement, type BookingPlacementStatus } from '@/lib/bookingCalendar';
 import { BookingCalendarPlacementCard } from '@/components/booking/BookingCalendarPlacementCard';
 
 export interface BookingCalendarListViewProps {
   placements: BookingPlacement[];
+  highlightedStatus?: BookingPlacementStatus | null;
   onPlacementClick: (placement: BookingPlacement) => void;
 }
 
 export function BookingCalendarListView({
   placements,
+  highlightedStatus = null,
   onPlacementClick,
 }: BookingCalendarListViewProps) {
   const sorted = useMemo(() => sortPlacementsForList(placements), [placements]);
@@ -26,7 +28,11 @@ export function BookingCalendarListView({
       <ul className="booking-calendar-list__items">
         {sorted.map((placement) => (
           <li key={placement.eventId} className="booking-calendar-list__item">
-            <BookingCalendarPlacementCard placement={placement} onClick={onPlacementClick} />
+            <BookingCalendarPlacementCard
+              placement={placement}
+              highlightedStatus={highlightedStatus}
+              onClick={onPlacementClick}
+            />
           </li>
         ))}
       </ul>

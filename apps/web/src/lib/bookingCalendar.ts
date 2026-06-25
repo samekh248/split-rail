@@ -314,3 +314,43 @@ export function formatBookingStatusLabel(status: BookingPlacementStatus): string
       return status;
   }
 }
+
+export function placementStatusClass(status: BookingPlacementStatus): string {
+  if (status === 'CANCELLED') {
+    return 'booking-placement--cancelled';
+  }
+  if (status === 'CONFIRMED') {
+    return 'booking-placement--confirmed';
+  }
+  if (status === 'HOLD_2') {
+    return 'booking-placement--hold booking-placement--hold-2';
+  }
+  return 'booking-placement--hold booking-placement--hold-1';
+}
+
+export function placementLegendHighlightClass(
+  status: BookingPlacementStatus,
+  highlightedStatus: BookingPlacementStatus | null | undefined,
+): string {
+  if (!highlightedStatus) {
+    return '';
+  }
+  return status === highlightedStatus
+    ? 'booking-placement--legend-match'
+    : 'booking-placement--legend-dim';
+}
+
+export const BOOKING_PLACEMENT_LEGEND = [
+  { status: 'CONFIRMED' as const, label: 'Booked', className: 'booking-placement--confirmed' },
+  {
+    status: 'HOLD_1' as const,
+    label: 'Hold 1',
+    className: 'booking-placement--hold booking-placement--hold-1',
+  },
+  {
+    status: 'HOLD_2' as const,
+    label: 'Hold 2',
+    className: 'booking-placement--hold booking-placement--hold-2',
+  },
+  { status: 'CANCELLED' as const, label: 'Cancelled', className: 'booking-placement--cancelled' },
+] as const;

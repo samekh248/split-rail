@@ -1,15 +1,23 @@
-import { sortAgendaPlacements, type BookingPlacement } from '@/lib/bookingCalendar';
-import { placementStatusLabel, statusClass } from '@/components/booking/BookingCalendarMatrix';
+import {
+  sortAgendaPlacements,
+  placementLegendHighlightClass,
+  placementStatusClass,
+  type BookingPlacement,
+  type BookingPlacementStatus,
+} from '@/lib/bookingCalendar';
+import { placementStatusLabel } from '@/components/booking/BookingCalendarMatrix';
 
 export interface BookingCalendarMobileStreamProps {
   days: string[];
   placementsByDate: Record<string, BookingPlacement[]>;
+  highlightedStatus?: BookingPlacementStatus | null;
   onPlacementClick: (placement: BookingPlacement) => void;
 }
 
 export function BookingCalendarMobileStream({
   days,
   placementsByDate,
+  highlightedStatus = null,
   onPlacementClick,
 }: BookingCalendarMobileStreamProps) {
   return (
@@ -22,13 +30,23 @@ export function BookingCalendarMobileStream({
         const sorted = sortAgendaPlacements(dayPlacements);
         return (
           <section key={dateKey} className="booking-calendar-mobile__day">
-            <h3>{dateKey}</h3>
-            <ul>
+            <h3 className="booking-calendar-mobile__day-label">{dateKey}</h3>
+            <ul className="booking-calendar-mobile__events">
               {sorted.map((placement) => (
                 <li key={placement.eventId}>
                   <button
                     type="button"
-                    className={`booking-placement booking-calendar-mobile__event ${statusClass(placement.bookingPlacementStatus)}`}
+                    className={[
+                      'booking-placement',
+                      'booking-calendar-mobile__event',
+                      placementStatusClass(placement.bookingPlacementStatus),
+                      placementLegendHighlightClass(
+                        placement.bookingPlacementStatus,
+                        highlightedStatus,
+                      ),
+                    ]
+                      .filter(Boolean)
+                      .join(' ')}
                     onClick={() => onPlacementClick(placement)}
                   >
                     <span>{placement.doorsTime ?? 'Time TBD'}</span>
