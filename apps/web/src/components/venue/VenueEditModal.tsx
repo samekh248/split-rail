@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { FormField } from '@/components/auth/FormField';
 import { SelectField } from '@/components/auth/SelectField';
+import { ModalHeader } from '@/components/shell/ModalHeader';
 import { validateVenueName } from '@/auth/validation';
 import { useUpdateVenue } from '@/api/venues';
 import { useRegions } from '@/api/regions';
@@ -106,9 +107,12 @@ export function VenueEditModal({ venue, open, onClose, onSaved }: VenueEditModal
         onClick={(event) => event.stopPropagation()}
         data-testid="venue-edit-modal"
       >
-        <h2 id="venue-edit-title" className="welcome-modal__title">
-          Edit venue
-        </h2>
+        <ModalHeader
+          title="Edit venue"
+          titleId="venue-edit-title"
+          onClose={onClose}
+          closeDisabled={isPending}
+        />
         {error ? (
           <p className="team-modal__error" role="alert">
             {error}
@@ -142,9 +146,6 @@ export function VenueEditModal({ venue, open, onClose, onSaved }: VenueEditModal
           />
         ) : null}
         <div className="team-modal__actions">
-          <button type="button" onClick={onClose} disabled={isPending}>
-            Cancel
-          </button>
           <button
             type="button"
             className="team-modal__save"

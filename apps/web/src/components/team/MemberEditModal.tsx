@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { SelectField } from '@/components/auth/SelectField';
+import { ModalHeader } from '@/components/shell/ModalHeader';
 import { useRoles } from '@/api/roles';
 import { useChangeMemberRole, useUpdateMemberVenueScopes } from '@/api/users';
 import { useVenues } from '@/api/venues';
@@ -144,9 +145,12 @@ export function MemberEditModal({ member, open, onClose, onSaved }: MemberEditMo
         onClick={(event) => event.stopPropagation()}
         data-testid="member-edit-modal"
       >
-        <h2 id="member-edit-title" className="welcome-modal__title">
-          Edit member
-        </h2>
+        <ModalHeader
+          title="Edit member"
+          titleId="member-edit-title"
+          onClose={onClose}
+          closeDisabled={isPending}
+        />
         <p className="team-modal__subtitle">{member.email}</p>
         {error ? (
           <p className="team-modal__error" role="alert">
@@ -190,9 +194,6 @@ export function MemberEditModal({ member, open, onClose, onSaved }: MemberEditMo
             : null}
         </fieldset>
         <div className="team-modal__actions">
-          <button type="button" onClick={onClose} disabled={isPending}>
-            Cancel
-          </button>
           <button
             type="button"
             className="team-modal__save"

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { FormField } from '@/components/auth/FormField';
+import { ModalHeader } from '@/components/shell/ModalHeader';
 import { validateEventForm, type EventFormValues } from '@/auth/validation';
 
 export interface EventFormPanelProps {
@@ -54,9 +55,13 @@ export function EventFormPanel({
       aria-labelledby="event-form-panel-heading"
       data-testid="event-form-panel"
     >
-      <h2 id="event-form-panel-heading" className="event-form-panel__heading">
-        {mode === 'create' ? 'Create event' : 'Edit event'}
-      </h2>
+      <ModalHeader
+        title={mode === 'create' ? 'Create event' : 'Edit event'}
+        titleId="event-form-panel-heading"
+        onClose={onCancel}
+        closeDisabled={isPending}
+        titleClassName="event-form-panel__heading"
+      />
       <form className="event-form-panel__form" onSubmit={(event) => void handleSubmit(event)}>
         <FormField
           id="event-title"
@@ -90,9 +95,6 @@ export function EventFormPanel({
           </p>
         ) : null}
         <div className="event-form-panel__actions">
-          <button type="button" className="event-form-panel__cancel" onClick={onCancel} disabled={isPending}>
-            Cancel
-          </button>
           <button type="submit" className="event-form-panel__submit" disabled={isPending}>
             {mode === 'create' ? 'Create event' : 'Save changes'}
           </button>

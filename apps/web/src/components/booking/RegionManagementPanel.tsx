@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { faXmark } from '@fortawesome/free-solid-svg-icons';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { FormField } from '@/components/auth/FormField';
+import { ModalHeader } from '@/components/shell/ModalHeader';
 import { useCreateRegion, useDeleteRegion, useRegions, useUpdateRegion } from '@/api/regions';
 
 export interface RegionManagementPanelProps {
@@ -101,20 +100,12 @@ export function RegionManagementPanel({ open, onClose }: RegionManagementPanelPr
         tabIndex={-1}
         onClick={(event) => event.stopPropagation()}
       >
-        <header className="region-panel__header">
-          <h2 id="region-panel-title" className="welcome-modal__title">
-            Manage regions
-          </h2>
-          <button
-            type="button"
-            className="region-panel__close"
-            data-testid="booking-region-panel-close"
-            aria-label="Close"
-            onClick={onClose}
-          >
-            <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
-          </button>
-        </header>
+        <ModalHeader
+          title="Manage regions"
+          titleId="region-panel-title"
+          onClose={onClose}
+          closeTestId="booking-region-panel-close"
+        />
 
         <section className="region-panel__section" aria-labelledby="region-panel-list-heading">
           <h3 id="region-panel-list-heading" className="region-panel__section-title">

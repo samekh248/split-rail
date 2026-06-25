@@ -268,7 +268,7 @@ th {
   .select-field__trigger,
   .select-field__option,
   .mobile-nav-drawer__close,
-  .region-panel__close,
+  .modal-close,
   .unassigned-drawer__close,
   .profile-badge__menu-item,
   [class*='__trigger'],
@@ -329,7 +329,7 @@ th {
   .select-field__trigger,
   .select-field__option,
   .mobile-nav-drawer__close,
-  .region-panel__close,
+  .modal-close,
   .unassigned-drawer__close,
   .profile-badge__menu-item,
   [class*='__trigger'],
@@ -382,7 +382,7 @@ th {
   .select-field__trigger,
   .select-field__option,
   .mobile-nav-drawer__close,
-  .region-panel__close,
+  .modal-close,
   .unassigned-drawer__close,
   .profile-badge__menu-item,
   [class*='__trigger'],
@@ -436,7 +436,7 @@ th {
   .select-field__trigger,
   .select-field__option,
   .mobile-nav-drawer__close,
-  .region-panel__close,
+  .modal-close,
   .unassigned-drawer__close,
   .profile-badge__menu-item,
   [class*='__trigger'],
@@ -3567,9 +3567,7 @@ button.welcome-modal__dismiss {
 }
 
 .booking-daily-agenda,
-.booking-event-drawer,
-.booking-create-event-modal,
-.booking-create-hold-modal {
+.booking-event-drawer {
   position: fixed;
   inset: 20% 20% auto 20%;
   z-index: 40;
@@ -3578,6 +3576,11 @@ button.welcome-modal__dismiss {
   border-radius: 0.75rem;
   padding: 1.5rem 1.75rem;
   box-shadow: var(--shadow-modal);
+}
+
+.booking-create-event-modal,
+.booking-create-hold-modal {
+  max-width: 28rem;
 }
 
 .booking-create-modal__form {
@@ -3602,7 +3605,7 @@ button.welcome-modal__dismiss {
   max-width: 36rem;
 }
 
-.region-panel__header {
+.modal-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -3610,11 +3613,15 @@ button.welcome-modal__dismiss {
   margin-bottom: 1.25rem;
 }
 
-.region-panel__header .welcome-modal__title {
+.modal-header .welcome-modal__title,
+.modal-header .team-confirm__heading,
+.modal-header .booking-create-modal__title,
+.modal-header .event-form-panel__heading,
+.modal-header .event-delete-confirm__heading {
   margin: 0;
 }
 
-.region-panel__close {
+.modal-close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -3629,14 +3636,19 @@ button.welcome-modal__dismiss {
   cursor: pointer;
 }
 
-.region-panel__close:hover {
+.modal-close:hover:not(:disabled) {
   background: var(--color-bg-cream);
   color: var(--color-primary-brown);
 }
 
-.region-panel__close:focus-visible {
+.modal-close:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
+}
+
+.modal-close:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .region-panel__section {

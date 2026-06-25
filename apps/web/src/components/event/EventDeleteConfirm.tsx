@@ -1,3 +1,5 @@
+import { ModalHeader } from '@/components/shell/ModalHeader';
+
 export interface EventDeleteConfirmProps {
   eventTitle: string;
   onConfirm: () => void;
@@ -19,16 +21,17 @@ export function EventDeleteConfirm({
       aria-describedby="event-delete-description"
       data-testid="event-delete-confirm"
     >
-      <h2 id="event-delete-heading" className="event-delete-confirm__heading">
-        Delete event?
-      </h2>
+      <ModalHeader
+        title="Delete event?"
+        titleId="event-delete-heading"
+        onClose={onCancel}
+        closeDisabled={isPending}
+        titleClassName="event-delete-confirm__heading"
+      />
       <p id="event-delete-description" className="event-delete-confirm__text">
         Permanently delete &ldquo;{eventTitle}&rdquo;? This cannot be undone.
       </p>
       <div className="event-delete-confirm__actions">
-        <button type="button" onClick={onCancel} disabled={isPending}>
-          Cancel
-        </button>
         <button
           type="button"
           className="event-delete-confirm__danger"

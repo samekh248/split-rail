@@ -41,4 +41,21 @@ describe('BookingPlacementTypeModal', () => {
     fireEvent.click(screen.getByTestId('booking-placement-type-hold'));
     expect(onSelectHold).toHaveBeenCalled();
   });
+
+  it('closes when the header close button is clicked', () => {
+    const onClose = vi.fn();
+
+    render(
+      <BookingPlacementTypeModal
+        open
+        dateKey="2026-06-15"
+        onClose={onClose}
+        onSelectEvent={vi.fn()}
+        onSelectHold={vi.fn()}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('booking-placement-type-close'));
+    expect(onClose).toHaveBeenCalled();
+  });
 });

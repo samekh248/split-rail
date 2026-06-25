@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarCheck, faClock } from '@fortawesome/free-solid-svg-icons';
+import { ModalHeader } from '@/components/shell/ModalHeader';
 
 export interface BookingPlacementTypeModalProps {
   open: boolean;
@@ -67,9 +68,12 @@ export function BookingPlacementTypeModal({
         data-testid="booking-placement-type-modal"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="booking-placement-type-title" className="welcome-modal__title">
-          Add to calendar
-        </h2>
+        <ModalHeader
+          title="Add to calendar"
+          titleId="booking-placement-type-title"
+          onClose={onClose}
+          closeTestId="booking-placement-type-close"
+        />
         <p className="team-modal__subtitle">{formatChooserDate(dateKey)}</p>
         <div className="booking-placement-type-modal__options" role="group" aria-label="Placement type">
           <button
@@ -95,11 +99,6 @@ export function BookingPlacementTypeModal({
             <span className="booking-placement-type-modal__option-description">
               Reserve this date as a tentative hold
             </span>
-          </button>
-        </div>
-        <div className="team-modal__actions">
-          <button type="button" className="btn-secondary" onClick={onClose}>
-            Cancel
           </button>
         </div>
       </div>

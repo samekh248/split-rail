@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { ModalHeader } from '@/components/shell/ModalHeader';
 import type { UserListResponse } from '@/types/generated-api';
 
 export interface RemoveMemberConfirmProps {
@@ -58,9 +59,13 @@ export function RemoveMemberConfirm({
         data-testid="remove-member-confirm"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="remove-member-heading" className="team-confirm__heading">
-          Remove member?
-        </h2>
+        <ModalHeader
+          title="Remove member?"
+          titleId="remove-member-heading"
+          onClose={onCancel}
+          closeDisabled={isPending}
+          titleClassName="team-confirm__heading"
+        />
         <p id="remove-member-description" className="team-confirm__text">
           Remove <strong>{member.email}</strong> from your organization? They will lose access
           immediately.
@@ -71,9 +76,6 @@ export function RemoveMemberConfirm({
           </p>
         ) : null}
         <div className="team-confirm__actions">
-          <button type="button" onClick={onCancel} disabled={isPending}>
-            Cancel
-          </button>
           <button
             type="button"
             className="team-confirm__danger"

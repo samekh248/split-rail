@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useDeleteEvent, useUpdateEvent } from '@/api/events';
 import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
+import { ModalHeader } from '@/components/shell/ModalHeader';
 import type { BookingPlacement } from '@/lib/bookingCalendar';
 import { placementStatusLabel } from '@/components/booking/BookingCalendarMatrix';
 
@@ -119,15 +120,16 @@ export function BookingEventDrawer({
       data-testid="booking-event-drawer"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="booking-event-drawer-title"
       ref={dialogRef}
       tabIndex={-1}
     >
-      <header>
-        <h2>{placement.title}</h2>
-        <button type="button" onClick={onClose}>
-          Close
-        </button>
-      </header>
+      <ModalHeader
+        title={placement.title}
+        titleId="booking-event-drawer-title"
+        onClose={onClose}
+        closeTestId="booking-event-drawer-close"
+      />
 
       {mode === 'detail' ? (
         <div>
