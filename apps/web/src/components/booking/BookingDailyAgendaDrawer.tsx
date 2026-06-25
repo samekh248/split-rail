@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { sortAgendaPlacements, type BookingPlacement } from '@/lib/bookingCalendar';
 import { placementStatusLabel } from '@/components/booking/BookingCalendarMatrix';
+import { ModalHeader } from '@/components/shell/ModalHeader';
 
 export interface BookingDailyAgendaDrawerProps {
   open: boolean;
@@ -45,16 +46,16 @@ export function BookingDailyAgendaDrawer({
       data-testid="booking-daily-agenda"
       role="dialog"
       aria-modal="true"
-      aria-label={`Agenda for ${dateKey}`}
+      aria-labelledby="booking-daily-agenda-title"
       ref={dialogRef}
       tabIndex={-1}
     >
-      <header>
-        <h2>{dateKey}</h2>
-        <button type="button" onClick={onClose}>
-          Close
-        </button>
-      </header>
+      <ModalHeader
+        title={dateKey}
+        titleId="booking-daily-agenda-title"
+        onClose={onClose}
+        closeTestId="booking-daily-agenda-close"
+      />
       <ul>
         {sorted.map((placement) => (
           <li key={placement.eventId}>

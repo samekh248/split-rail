@@ -8,17 +8,39 @@ import { AppShell } from '@/components/shell/AppShell';
 import { AuthContext, type AuthContextValue } from '@/auth/AuthContext';
 import { VenueProvider } from '@/venue/VenueContext';
 import { getAppPath } from '@/lib/appRoute';
+import { clearVenuesPageViewCookies } from '@/lib/venueListViewStorage';
 import {
   mockWorkspaceFetch,
   workspaceAdminProfile,
   workspaceMemberProfile,
 } from '../utils/mockWorkspaceFetch';
+import { pickSelectFieldOption } from '../utils/selectField';
+
+const REGION_WEST = { id: 'region-a', name: 'West', notes: null, venueCount: 1 };
+const REGION_EAST = { id: 'region-b', name: 'East', notes: null, venueCount: 0 };
 
 const VENUE_A = {
   id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
   name: 'Hall A',
   organizationId: 'org-1',
   createdAt: '2026-06-01T00:00:00Z',
+  regionId: 'region-a',
+};
+
+const VENUE_B = {
+  id: 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb',
+  name: 'Hall B',
+  organizationId: 'org-1',
+  createdAt: '2026-06-02T00:00:00Z',
+  regionId: 'region-b',
+};
+
+const VENUE_UNASSIGNED = {
+  id: 'cccccccc-cccc-cccc-cccc-cccccccccccc',
+  name: 'Loft',
+  organizationId: 'org-1',
+  createdAt: '2026-06-03T00:00:00Z',
+  regionId: null,
 };
 
 function createWrapper() {
@@ -59,6 +81,7 @@ describe('VenuesPage', () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
+    clearVenuesPageViewCookies();
     window.history.pushState({}, '', '/venues');
     vi.unstubAllGlobals();
   });
@@ -147,5 +170,101 @@ describe('VenuesPage', () => {
     expect(await screen.findByText('Unable to load venues. Please try again.')).toBeInTheDocument();
     await user.click(screen.getByRole('button', { name: 'Retry' }));
     expect(globalThis.fetch).toHaveBeenCalled();
+  });
+
+  it('shows manage regions for admin and opens region panel', async () => {
+    mockWorkspaceFetch({ venues: [VENUE_A], regions: [REGION_WEST, REGION_EAST] });
+    const user = userEvent.setup();
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    expect(await screen.findByTestId('venues-manage-regions')).toBeInTheDocument();
+    await user.click(screen.getByTestId('venues-manage-regions'));
+    expect(screen.getByTestId('booking-region-panel')).toBeInTheDocument();
+  });
+
+  it('hides manage regions for read-only users', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceMemberProfile,
+      venues: [VENUE_A],
+      regions: [REGION_WEST],
+    });
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await screen.findByText('Hall A');
+    expect(screen.queryByTestId('venues-manage-regions')).not.toBeInTheDocument();
+  });
+
+  it('filters venues by region', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A, VENUE_B, VENUE_UNASSIGNED],
+      regions: [REGION_WEST, REGION_EAST],
+    });
+    const user = userEvent.setup();
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await screen.findByTestId('venues-region-filter');
+    await pickSelectFieldOption(user, 'venues-region-filter', 'region-a');
+    expect(screen.getByText('Hall A')).toBeInTheDocument();
+    expect(screen.queryByText('Hall B')).not.toBeInTheDocument();
+    expect(screen.queryByText('Loft')).not.toBeInTheDocument();
+  });
+
+  it('omits unassigned filter when all venues are assigned', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A, VENUE_B],
+      regions: [REGION_WEST, REGION_EAST],
+    });
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    const filter = await screen.findByTestId('venues-region-filter');
+    expect(screen.queryByRole('option', { name: 'Unassigned' })).not.toBeInTheDocument();
+    expect(filter).toBeInTheDocument();
+  });
+
+  it('shows filter-empty state when no venues match', async () => {
+    document.cookie = 'venuesPageRegionFilter=region-b; Path=/; SameSite=Lax';
+    mockWorkspaceFetch({ venues: [VENUE_A], regions: [REGION_WEST, REGION_EAST] });
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    expect(await screen.findByText('No venues in this region')).toBeInTheDocument();
+    expect(screen.queryByTestId('venue-list-table')).not.toBeInTheDocument();
+  });
+
+  it('switches to grouped view', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      regions: [REGION_WEST, REGION_EAST],
+    });
+    const user = userEvent.setup();
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await screen.findByTestId('venues-display-mode');
+    await pickSelectFieldOption(user, 'venues-display-mode', 'grouped');
+    expect(screen.getByTestId('venues-grouped-list')).toBeInTheDocument();
+    expect(screen.getByTestId('venues-region-empty-region-b')).toHaveTextContent('No venues');
+    expect(screen.queryByTestId('venue-list-table')).not.toBeInTheDocument();
+  });
+
+  it('restores filter and display mode from cookies on remount', async () => {
+    document.cookie = 'venuesPageRegionFilter=region-a; Path=/; SameSite=Lax';
+    document.cookie = 'venuesPageDisplayMode=grouped; Path=/; SameSite=Lax';
+    mockWorkspaceFetch({
+      venues: [VENUE_A, VENUE_B],
+      regions: [REGION_WEST, REGION_EAST],
+    });
+
+    const { unmount } = render(<VenuesPage />, { wrapper: createWrapper() });
+    await screen.findByTestId('venues-grouped-list');
+    unmount();
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+    expect(await screen.findByTestId('venues-grouped-list')).toBeInTheDocument();
+    expect(screen.getByTestId('venues-region-filter')).toHaveTextContent('West');
   });
 });

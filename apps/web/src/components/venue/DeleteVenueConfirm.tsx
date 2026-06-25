@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { ModalHeader } from '@/components/shell/ModalHeader';
 import type { VenueResponse } from '@/types/generated-api';
 
 export interface DeleteVenueConfirmProps {
@@ -58,9 +59,13 @@ export function DeleteVenueConfirm({
         data-testid="delete-venue-confirm"
         onClick={(event) => event.stopPropagation()}
       >
-        <h2 id="delete-venue-heading" className="team-confirm__heading">
-          Delete venue?
-        </h2>
+        <ModalHeader
+          title="Delete venue?"
+          titleId="delete-venue-heading"
+          onClose={onCancel}
+          closeDisabled={isPending}
+          titleClassName="team-confirm__heading"
+        />
         <p id="delete-venue-description" className="team-confirm__text">
           Delete <strong>{venue.name}</strong>? This permanently removes the venue, its events,
           ledgers, and related data.
@@ -71,9 +76,6 @@ export function DeleteVenueConfirm({
           </p>
         ) : null}
         <div className="team-confirm__actions">
-          <button type="button" onClick={onCancel} disabled={isPending}>
-            Cancel
-          </button>
           <button
             type="button"
             className="team-confirm__danger"

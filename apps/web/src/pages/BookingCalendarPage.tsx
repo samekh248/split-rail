@@ -11,7 +11,7 @@ import { BookingDailyAgendaDrawer } from '@/components/booking/BookingDailyAgend
 import { BookingEventDrawer } from '@/components/booking/BookingEventDrawer';
 import { CreateBookingEventModal } from '@/components/booking/CreateBookingEventModal';
 import { CreateHoldModal } from '@/components/booking/CreateHoldModal';
-import { RegionManagementPanel } from '@/components/booking/RegionManagementPanel';
+import { BookingPlacementTypeModal } from '@/components/booking/BookingPlacementTypeModal';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import {
   filterPlacementsByView,
@@ -92,7 +92,7 @@ export function BookingCalendarPage() {
   const [selectedPlacement, setSelectedPlacement] = useState<BookingPlacement | null>(null);
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [createHoldOpen, setCreateHoldOpen] = useState(false);
-  const [regionsOpen, setRegionsOpen] = useState(false);
+  const [placementTypeOpen, setPlacementTypeOpen] = useState(false);
   const [quickAdd, setQuickAdd] = useState<{ venueId: string; date: string } | null>(null);
 
   const filtered = useMemo(
@@ -137,15 +137,6 @@ export function BookingCalendarPage() {
         regions={regions}
         venues={venues}
         onContextChange={setContext}
-        onCreateEvent={() => {
-          setQuickAdd(null);
-          setCreateEventOpen(true);
-        }}
-        onCreateHold={() => {
-          setQuickAdd(null);
-          setCreateHoldOpen(true);
-        }}
-        onManageRegions={() => setRegionsOpen(true)}
       />
 
       <section className="booking-calendar-body" data-testid="booking-calendar-body">
@@ -172,7 +163,7 @@ export function BookingCalendarPage() {
           onPlacementClick={setSelectedPlacement}
           onCellQuickAdd={(dateKey) => {
             setQuickAdd({ date: dateKey, venueId: venues[0]?.id ?? '' });
-            setCreateEventOpen(true);
+            setPlacementTypeOpen(true);
           }}
         />
 
@@ -201,12 +192,32 @@ export function BookingCalendarPage() {
         onUpdated={() => void Promise.all([refetch(), refetchUpcoming()])}
       />
 
+      <BookingPlacementTypeModal
+        open={placementTypeOpen}
+        dateKey={quickAdd?.date ?? null}
+        onClose={() => {
+          setPlacementTypeOpen(false);
+          setQuickAdd(null);
+        }}
+        onSelectEvent={() => {
+          setPlacementTypeOpen(false);
+          setCreateEventOpen(true);
+        }}
+        onSelectHold={() => {
+          setPlacementTypeOpen(false);
+          setCreateHoldOpen(true);
+        }}
+      />
+
       <CreateBookingEventModal
         open={createEventOpen}
         venues={venues}
         defaultVenueId={quickAdd?.venueId}
         defaultDate={quickAdd?.date}
-        onClose={() => setCreateEventOpen(false)}
+        onClose={() => {
+          setCreateEventOpen(false);
+          setQuickAdd(null);
+        }}
         onCreated={handlePlacementCreated}
       />
 
@@ -215,11 +226,13 @@ export function BookingCalendarPage() {
         venues={venues}
         defaultVenueId={quickAdd?.venueId}
         defaultDate={quickAdd?.date}
-        onClose={() => setCreateHoldOpen(false)}
+        onClose={() => {
+          setCreateHoldOpen(false);
+          setQuickAdd(null);
+        }}
         onCreated={handlePlacementCreated}
       />
 
-      <RegionManagementPanel open={regionsOpen} onClose={() => setRegionsOpen(false)} />
     </div>
   );
 }

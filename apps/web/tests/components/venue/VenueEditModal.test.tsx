@@ -111,7 +111,7 @@ describe('VenueEditModal', () => {
       { wrapper: Wrapper },
     );
 
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalled();
   });
 });

@@ -44,7 +44,7 @@ describe('EventFormPanel', () => {
       <EventFormPanel mode="create" onSubmit={vi.fn()} onCancel={onCancel} />,
     );
 
-    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await user.click(screen.getByRole('button', { name: 'Close' }));
     expect(onCancel).toHaveBeenCalled();
   });
 });

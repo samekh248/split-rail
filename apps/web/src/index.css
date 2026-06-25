@@ -121,7 +121,17 @@ th {
 .ledger-grid__lock-btn,
 .invite-form__submit,
 .team-modal__save,
-.event-form-panel__submit {
+.event-form-panel__submit,
+:is(.app-shell__content, .auth-layout) button[type='submit']:not(
+  .btn-primary,
+  .btn-primary--compact,
+  .auth-form__submit,
+  .invite-form__submit,
+  .welcome-modal__dismiss,
+  .team-modal__save,
+  .event-form-panel__submit,
+  .dashboard-empty__retry
+) {
   padding: 0.5rem 1rem;
   background: var(--color-accent-orange);
   color: var(--color-text-on-accent);
@@ -148,7 +158,17 @@ th {
 .ledger-grid__lock-btn:hover:not(:disabled),
 .invite-form__submit:hover:not(:disabled),
 .team-modal__save:hover:not(:disabled),
-.event-form-panel__submit:hover:not(:disabled) {
+.event-form-panel__submit:hover:not(:disabled),
+:is(.app-shell__content, .auth-layout) button[type='submit']:not(
+  .btn-primary,
+  .btn-primary--compact,
+  .auth-form__submit,
+  .invite-form__submit,
+  .welcome-modal__dismiss,
+  .team-modal__save,
+  .event-form-panel__submit,
+  .dashboard-empty__retry
+):hover:not(:disabled) {
   background: var(--color-accent-orange-hover);
   box-shadow: var(--shadow-soft);
 }
@@ -168,7 +188,17 @@ th {
 .ledger-grid__lock-btn:disabled,
 .invite-form__submit:disabled,
 .team-modal__save:disabled,
-.event-form-panel__submit:disabled {
+.event-form-panel__submit:disabled,
+:is(.app-shell__content, .auth-layout) button[type='submit']:not(
+  .btn-primary,
+  .btn-primary--compact,
+  .auth-form__submit,
+  .invite-form__submit,
+  .welcome-modal__dismiss,
+  .team-modal__save,
+  .event-form-panel__submit,
+  .dashboard-empty__retry
+):disabled {
   background: var(--color-accent-orange-disabled);
   color: var(--color-text-on-accent-disabled);
   opacity: 1;
@@ -190,7 +220,17 @@ th {
 .ledger-grid__lock-btn:focus-visible,
 .invite-form__submit:focus-visible,
 .team-modal__save:focus-visible,
-.event-form-panel__submit:focus-visible {
+.event-form-panel__submit:focus-visible,
+:is(.app-shell__content, .auth-layout) button[type='submit']:not(
+  .btn-primary,
+  .btn-primary--compact,
+  .auth-form__submit,
+  .invite-form__submit,
+  .welcome-modal__dismiss,
+  .team-modal__save,
+  .event-form-panel__submit,
+  .dashboard-empty__retry
+):focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
@@ -204,7 +244,47 @@ th {
 .add-line-item-form__actions button[type='button'],
 .artist-deal-panel__edit,
 .artist-deal-panel__actions button,
-.team-table__actions button {
+.team-table__actions button,
+:is(.app-shell__content, .auth-layout) button[type='button']:not(
+  .btn-primary,
+  .btn-primary--compact,
+  .btn-secondary,
+  .btn-outline,
+  .btn-danger,
+  .btn-danger-outline,
+  .auth-form__submit,
+  .auth-form__secondary,
+  .welcome-modal__dismiss,
+  .team-modal__save,
+  .event-form-panel__submit,
+  .event-form-panel__cancel,
+  .dashboard-empty__cta,
+  .dashboard-empty__retry,
+  .unassigned-drawer__retry,
+  .invite-form__submit,
+  .sync-now-button,
+  .sync-all-button,
+  .ledger-grid__lock-btn,
+  .select-field__trigger,
+  .select-field__option,
+  .mobile-nav-drawer__close,
+  .modal-close,
+  .unassigned-drawer__close,
+  .profile-badge__menu-item,
+  [class*='__trigger'],
+  [class*='__close'],
+  [class*='__option'],
+  [class*='__link'],
+  [class*='__menu-item'],
+  [class*='display-mode__btn'],
+  [class*='view-toggle__button'],
+  [class*='booking-placement'],
+  [class*='booking-calendar-matrix__'],
+  [class*='booking-placement-type-modal__'],
+  [class*='event-combobox__'],
+  [class*='venue-switcher__'],
+  .settings-nav__item
+) {
   padding: 0.375rem 0.75rem;
   background: transparent;
   color: var(--color-primary-brown);
@@ -225,7 +305,47 @@ th {
 .add-line-item-form__actions button[type='button']:hover:not(:disabled),
 .artist-deal-panel__edit:hover:not(:disabled),
 .artist-deal-panel__actions button:hover:not(:disabled),
-.team-table__actions button:hover:not(:disabled) {
+.team-table__actions button:hover:not(:disabled),
+:is(.app-shell__content, .auth-layout) button[type='button']:not(
+  .btn-primary,
+  .btn-primary--compact,
+  .btn-secondary,
+  .btn-outline,
+  .btn-danger,
+  .btn-danger-outline,
+  .auth-form__submit,
+  .auth-form__secondary,
+  .welcome-modal__dismiss,
+  .team-modal__save,
+  .event-form-panel__submit,
+  .event-form-panel__cancel,
+  .dashboard-empty__cta,
+  .dashboard-empty__retry,
+  .unassigned-drawer__retry,
+  .invite-form__submit,
+  .sync-now-button,
+  .sync-all-button,
+  .ledger-grid__lock-btn,
+  .select-field__trigger,
+  .select-field__option,
+  .mobile-nav-drawer__close,
+  .modal-close,
+  .unassigned-drawer__close,
+  .profile-badge__menu-item,
+  [class*='__trigger'],
+  [class*='__close'],
+  [class*='__option'],
+  [class*='__link'],
+  [class*='__menu-item'],
+  [class*='display-mode__btn'],
+  [class*='view-toggle__button'],
+  [class*='booking-placement'],
+  [class*='booking-calendar-matrix__'],
+  [class*='booking-placement-type-modal__'],
+  [class*='event-combobox__'],
+  [class*='venue-switcher__'],
+  .settings-nav__item
+):hover:not(:disabled) {
   background: var(--color-bg-cream);
 }
 
@@ -238,7 +358,47 @@ th {
 .add-line-item-form__actions button[type='button']:disabled,
 .artist-deal-panel__edit:disabled,
 .artist-deal-panel__actions button:disabled,
-.team-table__actions button:disabled {
+.team-table__actions button:disabled,
+:is(.app-shell__content, .auth-layout) button[type='button']:not(
+  .btn-primary,
+  .btn-primary--compact,
+  .btn-secondary,
+  .btn-outline,
+  .btn-danger,
+  .btn-danger-outline,
+  .auth-form__submit,
+  .auth-form__secondary,
+  .welcome-modal__dismiss,
+  .team-modal__save,
+  .event-form-panel__submit,
+  .event-form-panel__cancel,
+  .dashboard-empty__cta,
+  .dashboard-empty__retry,
+  .unassigned-drawer__retry,
+  .invite-form__submit,
+  .sync-now-button,
+  .sync-all-button,
+  .ledger-grid__lock-btn,
+  .select-field__trigger,
+  .select-field__option,
+  .mobile-nav-drawer__close,
+  .modal-close,
+  .unassigned-drawer__close,
+  .profile-badge__menu-item,
+  [class*='__trigger'],
+  [class*='__close'],
+  [class*='__option'],
+  [class*='__link'],
+  [class*='__menu-item'],
+  [class*='display-mode__btn'],
+  [class*='view-toggle__button'],
+  [class*='booking-placement'],
+  [class*='booking-calendar-matrix__'],
+  [class*='booking-placement-type-modal__'],
+  [class*='event-combobox__'],
+  [class*='venue-switcher__'],
+  .settings-nav__item
+):disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
@@ -252,7 +412,47 @@ th {
 .add-line-item-form__actions button[type='button']:focus-visible,
 .artist-deal-panel__edit:focus-visible,
 .artist-deal-panel__actions button:focus-visible,
-.team-table__actions button:focus-visible {
+.team-table__actions button:focus-visible,
+:is(.app-shell__content, .auth-layout) button[type='button']:not(
+  .btn-primary,
+  .btn-primary--compact,
+  .btn-secondary,
+  .btn-outline,
+  .btn-danger,
+  .btn-danger-outline,
+  .auth-form__submit,
+  .auth-form__secondary,
+  .welcome-modal__dismiss,
+  .team-modal__save,
+  .event-form-panel__submit,
+  .event-form-panel__cancel,
+  .dashboard-empty__cta,
+  .dashboard-empty__retry,
+  .unassigned-drawer__retry,
+  .invite-form__submit,
+  .sync-now-button,
+  .sync-all-button,
+  .ledger-grid__lock-btn,
+  .select-field__trigger,
+  .select-field__option,
+  .mobile-nav-drawer__close,
+  .modal-close,
+  .unassigned-drawer__close,
+  .profile-badge__menu-item,
+  [class*='__trigger'],
+  [class*='__close'],
+  [class*='__option'],
+  [class*='__link'],
+  [class*='__menu-item'],
+  [class*='display-mode__btn'],
+  [class*='view-toggle__button'],
+  [class*='booking-placement'],
+  [class*='booking-calendar-matrix__'],
+  [class*='booking-placement-type-modal__'],
+  [class*='event-combobox__'],
+  [class*='venue-switcher__'],
+  .settings-nav__item
+):focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
@@ -1582,6 +1782,131 @@ th {
   background: var(--color-surface-white);
 }
 
+select.form-field__input {
+  padding: 0.4rem 0.75rem;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  cursor: pointer;
+}
+
+.select-field {
+  position: relative;
+  display: inline-block;
+  min-width: 6rem;
+  vertical-align: middle;
+}
+
+.select-field__trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-white);
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  font-family: var(--font-ui);
+  color: var(--color-primary-brown);
+  cursor: pointer;
+  text-align: left;
+}
+
+.select-field--open .select-field__trigger {
+  border-color: var(--color-accent-orange);
+}
+
+.select-field--invalid .select-field__trigger {
+  border-color: var(--color-error);
+}
+
+.select-field__trigger:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 0;
+  border-color: var(--color-accent-orange);
+}
+
+.select-field__trigger:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.select-field__value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.select-field__value--placeholder {
+  color: var(--color-text-muted);
+}
+
+.select-field__chevron {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  opacity: 0.85;
+  transition: transform 0.15s ease;
+}
+
+.select-field--open .select-field__chevron {
+  transform: rotate(180deg);
+}
+
+.select-field__list {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  padding: 0.25rem 0;
+  list-style: none;
+  min-width: 100%;
+  max-height: 12rem;
+  overflow-y: auto;
+  background: var(--color-surface-white);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.select-field__option {
+  display: block;
+  width: 100%;
+  padding: 0.4rem 0.75rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  font-size: 0.8125rem;
+  line-height: 1.25;
+  font-family: var(--font-ui);
+  color: var(--color-primary-brown);
+  cursor: pointer;
+}
+
+.select-field__option--selected {
+  background: var(--color-warning-bg);
+  font-weight: 600;
+}
+
+.select-field__option--highlighted {
+  background: var(--color-bg-cream);
+}
+
+.select-field__option:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.select-field__option:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 .form-field__input:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 0;
@@ -2545,6 +2870,43 @@ button.welcome-modal__dismiss {
   font-size: 1.5rem;
 }
 
+.venues-page-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.venues-page-controls__field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.venues-page-controls__label {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.venues-page-controls__manage-regions {
+  margin-left: auto;
+}
+
+.venues-page-controls__helper {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.venues-grouped-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.venues-page__region-empty {
+  margin: 0;
+}
+
 .accounting-overview {
   display: grid;
   gap: 1.5rem;
@@ -2663,11 +3025,60 @@ button.welcome-modal__dismiss {
   white-space: nowrap;
 }
 
-.booking-calendar-controls__actions {
-  display: flex;
-  flex-wrap: wrap;
+.booking-placement-type-modal {
+  max-width: 28rem;
+}
+
+.booking-placement-type-modal__options {
+  display: grid;
   gap: 0.75rem;
-  align-items: center;
+  margin-bottom: 0.25rem;
+}
+
+.booking-placement-type-modal__option {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 0.75rem;
+  row-gap: 0.125rem;
+  align-items: start;
+  width: 100%;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-white);
+  color: var(--color-primary-brown);
+  text-align: left;
+  cursor: pointer;
+  font-family: var(--font-ui);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.booking-placement-type-modal__option:hover {
+  background: var(--color-bg-cream);
+  border-color: var(--color-accent-orange);
+}
+
+.booking-placement-type-modal__option:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.booking-placement-type-modal__icon {
+  grid-row: 1 / span 2;
+  margin-top: 0.125rem;
+  color: var(--color-accent-orange);
+}
+
+.booking-placement-type-modal__option-title {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.booking-placement-type-modal__option-description {
+  font-size: 0.8125rem;
+  color: var(--color-text-muted);
+  line-height: 1.35;
 }
 
 .booking-calendar-controls__field {
@@ -3008,20 +3419,25 @@ button.welcome-modal__dismiss {
   opacity: 0.65;
 }
 
+.booking-calendar-matrix__day-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.25rem;
+}
+
+.booking-calendar-matrix__day-header-spacer {
+  width: 1.25rem;
+  height: 1.25rem;
+  flex-shrink: 0;
+}
+
 .booking-calendar-matrix__day-label {
-  align-self: flex-end;
-  border: none;
-  background: transparent;
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-primary-brown);
   padding: 0.125rem 0.375rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.booking-calendar-matrix__day-label:hover {
-  background: var(--color-surface-muted);
+  line-height: 1.25;
 }
 
 .booking-calendar-matrix__day-events {
@@ -3067,15 +3483,37 @@ button.welcome-modal__dismiss {
 }
 
 .booking-calendar-matrix__quick-add {
-  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
   border: none;
   background: transparent;
   cursor: pointer;
-  min-height: 2rem;
+  padding: 0;
+  color: var(--color-text-muted);
+  opacity: 0.4;
+  transition: opacity 0.15s ease, color 0.15s ease;
+}
+
+.booking-calendar-matrix__quick-add-icon {
+  width: 0.75rem;
+  height: 0.75rem;
 }
 
 .booking-calendar-matrix__quick-add:hover {
-  background: color-mix(in srgb, var(--color-accent-orange) 8%, transparent);
+  opacity: 0.85;
+  color: var(--color-text-muted);
+  background: transparent;
+}
+
+.booking-calendar-matrix__quick-add:focus-visible {
+  opacity: 0.9;
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+  border-radius: var(--radius-card);
 }
 
 .booking-placement {
@@ -3129,18 +3567,123 @@ button.welcome-modal__dismiss {
 }
 
 .booking-daily-agenda,
-.booking-event-drawer,
-.booking-create-event-modal,
-.booking-create-hold-modal,
-.booking-region-panel {
+.booking-event-drawer {
   position: fixed;
   inset: 20% 20% auto 20%;
   z-index: 40;
   background: var(--color-surface-white);
   border: 1px solid var(--color-border-subtle);
   border-radius: 0.75rem;
-  padding: 1rem;
+  padding: 1.5rem 1.75rem;
   box-shadow: var(--shadow-modal);
+}
+
+.booking-create-event-modal,
+.booking-create-hold-modal {
+  max-width: 28rem;
+}
+
+.booking-create-modal__form {
+  display: grid;
+  gap: 1rem;
+}
+
+.booking-create-modal__title {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  font-family: var(--font-brand);
+  color: var(--color-primary-brown);
+}
+
+.booking-create-modal__actions {
+  margin-top: 0.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+.region-panel {
+  max-width: 36rem;
+}
+
+.modal-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.modal-header .welcome-modal__title,
+.modal-header .team-confirm__heading,
+.modal-header .booking-create-modal__title,
+.modal-header .event-form-panel__heading,
+.modal-header .event-delete-confirm__heading {
+  margin: 0;
+}
+
+.modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-button);
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.modal-close:hover:not(:disabled) {
+  background: var(--color-bg-cream);
+  color: var(--color-primary-brown);
+}
+
+.modal-close:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.modal-close:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.region-panel__section {
+  margin-bottom: 0.5rem;
+}
+
+.region-panel__section-title {
+  margin: 0 0 0.75rem;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: var(--font-ui);
+  color: var(--color-primary-brown);
+}
+
+.region-panel__table {
+  margin-bottom: 0.25rem;
+}
+
+.region-panel__empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.region-panel__form {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--color-border-subtle);
+}
+
+textarea.form-field__input {
+  min-height: 4.5rem;
+  resize: vertical;
 }
 
 @media (max-width: 767px) {

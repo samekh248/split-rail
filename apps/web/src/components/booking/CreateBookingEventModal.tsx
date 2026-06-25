@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FormField } from '@/components/auth/FormField';
+import { SelectField } from '@/components/auth/SelectField';
+import { ModalHeader } from '@/components/shell/ModalHeader';
 import { useCreateEvent } from '@/api/events';
 import type { VenueResponse } from '@/types/generated-api';
 
@@ -20,6 +22,7 @@ export function CreateBookingEventModal({
   onClose,
   onCreated,
 }: CreateBookingEventModalProps) {
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [venueId, setVenueId] = useState(defaultVenueId ?? venues[0]?.id ?? '');
   const [eventDate, setEventDate] = useState(defaultDate ?? '');
   const [title, setTitle] = useState('');
@@ -37,6 +40,23 @@ export function CreateBookingEventModal({
     setDoorsTime('');
     setError(null);
   }, [open, defaultVenueId, defaultDate, venues]);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    dialogRef.current?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [open, onClose]);
 
   if (!open) {
     return null;
@@ -62,33 +82,49 @@ export function CreateBookingEventModal({
   };
 
   return (
-    <div
-      className="booking-create-event-modal"
-      data-testid="booking-create-event-modal"
-      role="dialog"
-      aria-modal="true"
-    >
-      <form onSubmit={handleSubmit}>
-        <h2>Create confirmed event</h2>
-        <label>
-          Venue
-          <select value={venueId} onChange={(event) => setVenueId(event.target.value)}>
-            {venues.map((venue) => (
-              <option key={venue.id} value={venue.id ?? ''}>
-                {venue.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <FormField label="Date" id="booking-event-date" type="date" value={eventDate} onChange={setEventDate} />
-        <FormField label="Title" id="booking-event-title" type="text" value={title} onChange={setTitle} />
-        <FormField label="Doors time" id="booking-event-doors" type="time" value={doorsTime} onChange={setDoorsTime} />
-        {error ? <p role="alert">{error}</p> : null}
-        <button type="button" onClick={onClose}>
-          Cancel
-        </button>
-        <button type="submit">Save</button>
-      </form>
+    <div className="welcome-modal__backdrop" onClick={onClose} role="presentation">
+      <div
+        ref={dialogRef}
+        className="welcome-modal booking-create-event-modal"
+        data-testid="booking-create-event-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="booking-event-modal-title"
+        tabIndex={-1}
+        onClick={(event) => event.stopPropagation()}
+      >
+        <form className="booking-create-modal__form" onSubmit={handleSubmit}>
+          <ModalHeader
+            title="Create confirmed event"
+            titleId="booking-event-modal-title"
+            onClose={onClose}
+            closeTestId="booking-create-event-close"
+          />
+          <SelectField
+            id="booking-event-venue"
+            label="Venue"
+            value={venueId}
+            options={venues.map((venue) => ({
+              value: venue.id ?? '',
+              label: venue.name ?? 'Unnamed venue',
+            }))}
+            onChange={setVenueId}
+          />
+          <FormField label="Date" id="booking-event-date" type="date" value={eventDate} onChange={setEventDate} />
+          <FormField label="Title" id="booking-event-title" type="text" value={title} onChange={setTitle} />
+          <FormField label="Doors time" id="booking-event-doors" type="time" value={doorsTime} onChange={setDoorsTime} />
+          {error ? (
+            <p className="team-modal__error" role="alert">
+              {error}
+            </p>
+          ) : null}
+          <div className="team-modal__actions booking-create-modal__actions">
+            <button type="submit" className="team-modal__save">
+              Save
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

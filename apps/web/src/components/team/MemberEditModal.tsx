@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { SelectField } from '@/components/auth/SelectField';
+import { ModalHeader } from '@/components/shell/ModalHeader';
 import { useRoles } from '@/api/roles';
 import { useChangeMemberRole, useUpdateMemberVenueScopes } from '@/api/users';
 import { useVenues } from '@/api/venues';
@@ -143,33 +145,29 @@ export function MemberEditModal({ member, open, onClose, onSaved }: MemberEditMo
         onClick={(event) => event.stopPropagation()}
         data-testid="member-edit-modal"
       >
-        <h2 id="member-edit-title" className="welcome-modal__title">
-          Edit member
-        </h2>
+        <ModalHeader
+          title="Edit member"
+          titleId="member-edit-title"
+          onClose={onClose}
+          closeDisabled={isPending}
+        />
         <p className="team-modal__subtitle">{member.email}</p>
         {error ? (
           <p className="team-modal__error" role="alert">
             {error}
           </p>
         ) : null}
-        <div className="form-field">
-          <label htmlFor="member-edit-role" className="form-field__label">
-            Role
-          </label>
-          <select
-            id="member-edit-role"
-            className="form-field__input"
-            value={roleId}
-            onChange={(event) => setRoleId(event.target.value)}
-            disabled={isPending}
-          >
-            {roles.map((role) => (
-              <option key={role.id} value={role.id ?? ''}>
-                {role.roleName}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          id="member-edit-role"
+          label="Role"
+          value={roleId}
+          options={roles.map((role) => ({
+            value: role.id ?? '',
+            label: role.roleName ?? 'Role',
+          }))}
+          onChange={setRoleId}
+          disabled={isPending}
+        />
         <fieldset className="invite-form__venues">
           <legend className="form-field__label">Venue access</legend>
           <label className="invite-form__venue-option">
@@ -196,9 +194,6 @@ export function MemberEditModal({ member, open, onClose, onSaved }: MemberEditMo
             : null}
         </fieldset>
         <div className="team-modal__actions">
-          <button type="button" onClick={onClose} disabled={isPending}>
-            Cancel
-          </button>
           <button
             type="button"
             className="team-modal__save"

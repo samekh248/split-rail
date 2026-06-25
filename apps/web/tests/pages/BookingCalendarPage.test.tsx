@@ -71,4 +71,42 @@ describe('BookingCalendarPage', () => {
     expect(screen.getByTestId('booking-calendar-page')).toHaveClass('booking-calendar-page--list');
     expect(screen.getByTestId('booking-display-list')).toHaveAttribute('aria-pressed', 'true');
   });
+
+  it('does not render manage regions control', () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByTestId('booking-manage-regions')).not.toBeInTheDocument();
+  });
+
+  it('opens placement type chooser from an empty day quick-add', () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId('booking-cell-quick-add-2026-06-15'));
+
+    expect(screen.getByTestId('booking-placement-type-modal')).toBeInTheDocument();
+    expect(screen.queryByTestId('booking-create-event')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('booking-create-hold')).not.toBeInTheDocument();
+  });
+
+  it('opens create event modal after choosing confirmed event', () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId('booking-cell-quick-add-2026-06-15'));
+    fireEvent.click(screen.getByTestId('booking-placement-type-event'));
+
+    expect(screen.queryByTestId('booking-placement-type-modal')).not.toBeInTheDocument();
+    expect(screen.getByTestId('booking-create-event-modal')).toBeInTheDocument();
+  });
 });

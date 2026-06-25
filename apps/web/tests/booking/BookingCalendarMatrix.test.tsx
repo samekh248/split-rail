@@ -90,4 +90,40 @@ describe('BookingCalendarMatrix', () => {
     await userEvent.click(screen.getByTestId(`booking-cell-total-${date}`));
     expect(onDateClick).toHaveBeenCalledWith(date);
   });
+
+  it('opens create event when quick-add is clicked on an empty day', async () => {
+    const onCellQuickAdd = vi.fn();
+
+    render(
+      <BookingCalendarMatrix
+        month="2026-06"
+        placementsByDate={{}}
+        onDateClick={vi.fn()}
+        onPlacementClick={vi.fn()}
+        onCellQuickAdd={onCellQuickAdd}
+      />,
+    );
+
+    await userEvent.click(screen.getByTestId('booking-cell-quick-add-2026-06-15'));
+    expect(onCellQuickAdd).toHaveBeenCalledWith('2026-06-15');
+  });
+
+  it('shows quick-add at the bottom of days that already have events', async () => {
+    const date = '2026-06-10';
+    const onCellQuickAdd = vi.fn();
+
+    render(
+      <BookingCalendarMatrix
+        month="2026-06"
+        placementsByDate={{ [date]: [makePlacement('e1', date, 'Act One')] }}
+        onDateClick={vi.fn()}
+        onPlacementClick={vi.fn()}
+        onCellQuickAdd={onCellQuickAdd}
+      />,
+    );
+
+    expect(screen.getByTestId(`booking-cell-quick-add-${date}`)).toBeInTheDocument();
+    await userEvent.click(screen.getByTestId(`booking-cell-quick-add-${date}`));
+    expect(onCellQuickAdd).toHaveBeenCalledWith(date);
+  });
 });

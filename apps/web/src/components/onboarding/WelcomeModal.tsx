@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { ModalHeader } from '@/components/shell/ModalHeader';
 
 export interface WelcomeModalProps {
   organizationName: string;
@@ -52,9 +53,11 @@ export function WelcomeModal({ organizationName, onDismiss }: WelcomeModalProps)
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 id="welcome-modal-title" className="welcome-modal__title">
-          Welcome to Split Rail
-        </h2>
+        <ModalHeader
+          title="Welcome to Split Rail"
+          titleId="welcome-modal-title"
+          onClose={onDismiss}
+        />
         <p className="welcome-modal__body">
           Your organization <strong>{organizationName}</strong> is ready. You are set up as
           Admin and can start adding venues and events.
