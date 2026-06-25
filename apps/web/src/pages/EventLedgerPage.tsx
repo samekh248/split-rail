@@ -23,6 +23,7 @@ import type {
   EventStatus,
   LineItemDto,
 } from '@/types/generated-api';
+import { LoadingPlaceholder } from '@/components/shell/LoadingPlaceholder';
 import { FinalizeSettlementPanel } from '@/components/settlement/FinalizeSettlementPanel';
 import { SettlementLockedBanner } from '@/components/settlement/SettlementLockedBanner';
 import type { WorkspaceFocus } from '@/lib/eventCardQuickLinks';
@@ -246,19 +247,31 @@ export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProp
   );
 
   if (isLoading) {
-    return <p data-testid="ledger-loading">Loading ledger…</p>;
+    return (
+      <main className="event-ledger-page" data-testid="event-ledger-page">
+        <LoadingPlaceholder variant="page" label="Loading ledger" data-testid="ledger-loading" />
+      </main>
+    );
   }
 
   if (error) {
     return (
-      <p role="alert" data-testid="ledger-error">
-        Failed to load ledger: {error.message}
-      </p>
+      <main className="event-ledger-page" data-testid="event-ledger-page">
+        <p role="alert" data-testid="ledger-error" className="event-ledger-page__error">
+          Failed to load ledger: {error.message}
+        </p>
+      </main>
     );
   }
 
   if (!ledger) {
-    return <p data-testid="ledger-empty">No ledger data.</p>;
+    return (
+      <main className="event-ledger-page" data-testid="event-ledger-page">
+        <p data-testid="ledger-empty" className="event-ledger-page__empty">
+          No ledger data.
+        </p>
+      </main>
+    );
   }
 
   const lineItemOptions = (ledger.blocks ?? [])
@@ -268,8 +281,8 @@ export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProp
 
   return (
     <main className="event-ledger-page" data-testid="event-ledger-page">
-      <div data-testid="workspace-focus-sync">
-        <div className="event-ledger-page__toolbar">
+      <div className="event-ledger-page__alerts">
+        <div className="event-ledger-page__toolbar" data-testid="workspace-focus-sync">
           <SyncNowButton venueId={venueId} eventId={eventId} />
         </div>
 
@@ -278,24 +291,24 @@ export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProp
           eventId={eventId}
           lineItemOptions={lineItemOptions}
         />
+
+        {structuralError && (
+          <p role="alert" data-testid="structural-error" className="event-ledger-page__error">
+            {structuralError}
+          </p>
+        )}
+
+        <SettlementLockedBanner
+          venueId={venueId}
+          eventId={eventId}
+          status={ledger.status as EventStatus}
+          settlementPdfAvailable={ledger.settlementPdfAvailable}
+        />
+
+        {ledger.isBudgetLocked && ledger.status === 'PRE_SHOW' && (
+          <FinalizeSettlementPanel venueId={venueId} eventId={eventId} />
+        )}
       </div>
-
-      {structuralError && (
-        <p role="alert" data-testid="structural-error" className="event-ledger-page__error">
-          {structuralError}
-        </p>
-      )}
-
-      <SettlementLockedBanner
-        venueId={venueId}
-        eventId={eventId}
-        status={ledger.status as EventStatus}
-        settlementPdfAvailable={ledger.settlementPdfAvailable}
-      />
-
-      {ledger.isBudgetLocked && ledger.status === 'PRE_SHOW' && (
-        <FinalizeSettlementPanel venueId={venueId} eventId={eventId} />
-      )}
 
       <LedgerGrid
         ledger={ledger}

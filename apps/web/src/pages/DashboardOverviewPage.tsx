@@ -118,18 +118,20 @@ export function DashboardOverviewPage() {
 
   const dashboardLoadingContent = (
     <>
-      <LoadingPlaceholder
-        variant="banner"
-        label="Loading unassigned transactions"
-        data-testid="unassigned-transactions-loading"
-      />
-      {!isAllVenuesSelected ? (
+      <div className="dashboard-overview__insights">
         <LoadingPlaceholder
-          variant="card"
-          label="Loading financial health"
-          data-testid="financial-health-loading"
+          variant="banner"
+          label="Loading unassigned transactions"
+          data-testid="unassigned-transactions-loading"
         />
-      ) : null}
+        {!isAllVenuesSelected ? (
+          <LoadingPlaceholder
+            variant="card"
+            label="Loading financial health"
+            data-testid="financial-health-loading"
+          />
+        ) : null}
+      </div>
       <div className="dashboard-overview__zones" data-testid="dashboard-overview-loading">
         <DashboardZoneLoading title="Pinned events" data-testid="dashboard-zone-pinned-loading" />
         <DashboardZoneLoading title="Upcoming events" data-testid="dashboard-zone-upcoming-loading" />
@@ -181,7 +183,7 @@ export function DashboardOverviewPage() {
   };
 
   const dashboardActionWidgets = showDashboardWidgets ? (
-    <>
+    <div className="dashboard-overview__insights">
       <UnassignedTransactionsBanner
         actionCenter={actionCenter}
         venues={venues}
@@ -193,7 +195,7 @@ export function DashboardOverviewPage() {
       {!isAllVenuesSelected ? (
         <FinancialHealthWidget financialHealth={financialHealth} isLoading={dashboardLoading} />
       ) : null}
-    </>
+    </div>
   ) : null;
 
   const recentFilterSlot = showDashboardWidgets ? (
@@ -205,7 +207,7 @@ export function DashboardOverviewPage() {
   ) : null;
 
   return (
-    <div className="dashboard-overview">
+    <main className="dashboard-overview">
       {isLoading ? (
         <LoadingPlaceholder
           variant="page"
@@ -262,9 +264,9 @@ export function DashboardOverviewPage() {
       ) : null}
 
       {pinError ? (
-        <div className="dashboard-empty dashboard-empty--error" role="alert" data-testid="dashboard-pin-error">
-          <p>{pinError}</p>
-        </div>
+        <p className="dashboard-overview__error" role="alert" data-testid="dashboard-pin-error">
+          {pinError}
+        </p>
       ) : null}
 
       {showDashboardBody && dashboardDataLoading ? dashboardLoadingContent : null}
@@ -305,6 +307,6 @@ export function DashboardOverviewPage() {
           </div>
         </>
       ) : null}
-    </div>
+    </main>
   );
 }

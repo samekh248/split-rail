@@ -81,10 +81,13 @@ export function AddLineItemForm({
       onSubmit={(event) => void handleSubmit(event)}
     >
       <div className="add-line-item-form__field">
-        <label htmlFor={`add-label-${blockType}`}>Label</label>
+        <label className="form-field__label" htmlFor={`add-label-${blockType}`}>
+          Label
+        </label>
         <input
           id={`add-label-${blockType}`}
           type="text"
+          className="form-field__input"
           value={rowLabel}
           onChange={(event) => setRowLabel(event.target.value)}
           data-testid="add-line-item-label"
@@ -104,10 +107,13 @@ export function AddLineItemForm({
       ) : null}
 
       <div className="add-line-item-form__field">
-        <label htmlFor={`add-value-${blockType}`}>{valueLabel}</label>
+        <label className="form-field__label" htmlFor={`add-value-${blockType}`}>
+          {valueLabel}
+        </label>
         <input
           id={`add-value-${blockType}`}
           type="text"
+          className="form-field__input"
           value={value}
           onChange={(event) => setValue(event.target.value)}
           data-testid={isBudgetLocked ? 'add-line-item-settlement' : 'add-line-item-proforma'}

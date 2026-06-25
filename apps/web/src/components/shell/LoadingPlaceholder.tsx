@@ -65,7 +65,9 @@ export function DashboardZoneLoading({
       data-testid={testId}
       aria-busy="true"
     >
-      <h2 className="dashboard-zone__heading">{title}</h2>
+      <div className="dashboard-zone__header">
+        <h2 className="dashboard-zone__heading">{title}</h2>
+      </div>
       <LoadingPlaceholder variant="zone" label={`Loading ${title.toLowerCase()}`} />
     </section>
   );

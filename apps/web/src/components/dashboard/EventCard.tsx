@@ -185,7 +185,7 @@ export function EventCard({
           <p className="event-card__date" data-testid={`event-card-date-${eventId}`}>
             {formatEventDate(event.eventDate)}
           </p>
-          {badges}
+          <div className="event-card__badges">{badges}</div>
           {quickLinksNav}
         </>
       )}
