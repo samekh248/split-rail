@@ -1,3 +1,4 @@
+import { LoadingPlaceholder } from '@/components/shell/LoadingPlaceholder';
 import type { VenueQboStatusDto } from '@/types/generated-api';
 
 export interface VenueQboStatusCardProps {
@@ -15,9 +16,11 @@ function formatSyncedAt(value: string | null | undefined): string {
 export function VenueQboStatusCard({ status, isLoading }: VenueQboStatusCardProps) {
   if (isLoading) {
     return (
-      <section className="venue-qbo-status-card" data-testid="venue-qbo-status-card" aria-busy="true">
-        <p>Loading QuickBooks status…</p>
-      </section>
+      <LoadingPlaceholder
+        variant="card"
+        label="Loading QuickBooks status"
+        data-testid="venue-qbo-status-loading"
+      />
     );
   }
 

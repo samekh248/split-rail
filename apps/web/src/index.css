@@ -2022,6 +2022,86 @@ select.form-field__input {
   color: var(--color-error);
 }
 
+.loading-placeholder {
+  position: relative;
+  overflow: hidden;
+}
+
+.loading-placeholder__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.loading-placeholder__line {
+  display: block;
+  height: 0.75rem;
+  border-radius: 0.25rem;
+  background: var(--color-surface-muted);
+  animation: loading-placeholder-pulse 1.4s ease-in-out infinite;
+}
+
+.loading-placeholder__line--long {
+  width: 100%;
+}
+
+.loading-placeholder__line--medium {
+  width: 65%;
+}
+
+.loading-placeholder__line--short {
+  width: 40%;
+}
+
+.loading-placeholder__label {
+  margin: 1rem 0 0;
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+}
+
+.loading-placeholder--page {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.loading-placeholder--card {
+  margin-bottom: 1rem;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  background: var(--color-surface-white);
+  box-shadow: var(--shadow-soft);
+}
+
+.loading-placeholder--banner {
+  margin-bottom: 1rem;
+  padding: 0.875rem 1rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 0.5rem;
+  background: var(--color-surface-white);
+}
+
+.loading-placeholder--zone {
+  padding: 0.25rem 0;
+}
+
+.loading-placeholder--inline {
+  padding: 0.5rem 0;
+}
+
+@keyframes loading-placeholder-pulse {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
 .dashboard-empty__retry {
   margin-top: 1rem;
 }
@@ -2415,6 +2495,32 @@ button.welcome-modal__dismiss {
 .event-card__pin-icon {
   width: 0.875rem;
   height: 0.875rem;
+}
+
+.event-card--compact {
+  gap: 0.25rem;
+  padding: 0.75rem 1rem;
+}
+
+.event-card--compact .event-card__header {
+  align-items: center;
+}
+
+.event-card--compact .event-card__booking-badge {
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.event-card--compact .event-card__meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.375rem 0.625rem;
+}
+
+.event-card--compact .event-card__date {
+  font-size: 0.8125rem;
+  white-space: nowrap;
 }
 
 .dashboard-overview {
@@ -3611,6 +3717,23 @@ button.welcome-modal__dismiss {
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1.25rem;
+}
+
+.modal-header__title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.modal-header__title-row .welcome-modal__title,
+.modal-header__title-row .team-confirm__heading,
+.modal-header__title-row .booking-create-modal__title,
+.modal-header__title-row .event-form-panel__heading,
+.modal-header__title-row .event-delete-confirm__heading {
+  flex: 1;
+  min-width: 0;
 }
 
 .modal-header .welcome-modal__title,

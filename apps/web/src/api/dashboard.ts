@@ -41,6 +41,14 @@ function mergePartitionArrays(arrays: EventCardDto[][]): EventCardDto[] {
   return dedupeByEventId(arrays.flat());
 }
 
+export function filterCancelledDashboardEvents(events: EventCardDto[]): EventCardDto[] {
+  return events.filter((event) => event.bookingPlacementStatus !== 'CANCELLED');
+}
+
+function visiblePartitionEvents(events: EventCardDto[] | null | undefined): EventCardDto[] {
+  return filterCancelledDashboardEvents(events ?? []);
+}
+
 function emptyPartitions(): MergedDashboardPartitions {
   return {
     pinnedEvents: [],
@@ -99,10 +107,10 @@ export function normalizeDashboardPartitions(
   data: DashboardResponse | MergedDashboardPartitions,
 ): MergedDashboardPartitions {
   return {
-    pinnedEvents: data.pinnedEvents ?? [],
-    tonightEvents: data.tonightEvents ?? [],
-    upcomingEvents: data.upcomingEvents ?? [],
-    recentEvents: data.recentEvents ?? [],
+    pinnedEvents: visiblePartitionEvents(data.pinnedEvents),
+    tonightEvents: visiblePartitionEvents(data.tonightEvents),
+    upcomingEvents: visiblePartitionEvents(data.upcomingEvents),
+    recentEvents: visiblePartitionEvents(data.recentEvents),
   };
 }
 
@@ -162,10 +170,18 @@ export function useAllVenuesDashboard(venueIds: string[]) {
       return emptyPartitions();
     }
     return {
-      pinnedEvents: mergePartitionArrays(dashboards.map((dashboard) => dashboard.pinnedEvents ?? [])),
-      tonightEvents: mergePartitionArrays(dashboards.map((dashboard) => dashboard.tonightEvents ?? [])),
-      upcomingEvents: mergePartitionArrays(dashboards.map((dashboard) => dashboard.upcomingEvents ?? [])),
-      recentEvents: mergePartitionArrays(dashboards.map((dashboard) => dashboard.recentEvents ?? [])),
+      pinnedEvents: visiblePartitionEvents(
+        mergePartitionArrays(dashboards.map((dashboard) => dashboard.pinnedEvents ?? [])),
+      ),
+      tonightEvents: visiblePartitionEvents(
+        mergePartitionArrays(dashboards.map((dashboard) => dashboard.tonightEvents ?? [])),
+      ),
+      upcomingEvents: visiblePartitionEvents(
+        mergePartitionArrays(dashboards.map((dashboard) => dashboard.upcomingEvents ?? [])),
+      ),
+      recentEvents: visiblePartitionEvents(
+        mergePartitionArrays(dashboards.map((dashboard) => dashboard.recentEvents ?? [])),
+      ),
     };
   }, [results, venueIds]);
 

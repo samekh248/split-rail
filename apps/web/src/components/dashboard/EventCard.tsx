@@ -22,6 +22,7 @@ export interface EventCardProps {
   isPinned?: boolean;
   onPinToggle?: () => void;
   onActivate?: () => void;
+  compact?: boolean;
 }
 
 function isEventCardDto(event: EventCardEvent): event is EventCardDto {
@@ -51,6 +52,7 @@ export function EventCard({
   isPinned,
   onPinToggle,
   onActivate,
+  compact = false,
 }: EventCardProps) {
   const eventId = event.eventId ?? 'unknown';
   const venueId = event.venueId ?? '';
@@ -68,9 +70,65 @@ export function EventCard({
     event.eventId,
   );
 
+  const quickLinksNav = quickLinks.length > 0 ? (
+    <nav className="event-card__quick-links" aria-label="Event actions">
+      {quickLinks.map((link) => (
+        <button
+          key={link.testId}
+          type="button"
+          className="event-card__quick-link"
+          data-testid={`event-card-link-${link.testId}-${eventId}`}
+          onClick={() => {
+            if (venueId && event.eventId) {
+              onQuickLink(venueId, event.eventId, link.focus);
+            }
+          }}
+        >
+          {link.label}
+        </button>
+      ))}
+    </nav>
+  ) : null;
+
+  const bookingBadge = (
+    <span
+      className="event-card__booking-badge"
+      title={BOOKING_PREVIEW_TOOLTIP}
+      data-testid={`event-card-booking-${eventId}`}
+    >
+      {bookingLabel}
+    </span>
+  );
+
+  const secondaryBadges = (
+    <>
+      {showVariance && (
+        <span className="event-card__variance-badge" data-testid={`event-card-variance-${eventId}`}>
+          Variance
+        </span>
+      )}
+      {bottleneckAlerts.map((alert) => (
+        <span
+          key={alert.kind}
+          className="event-card__alert-chip badge-action-required"
+          data-testid={`event-card-alert-${alert.kind}-${eventId}`}
+        >
+          {alert.label}
+        </span>
+      ))}
+    </>
+  );
+
+  const badges = (
+    <>
+      {bookingBadge}
+      {secondaryBadges}
+    </>
+  );
+
   return (
     <article
-      className="event-card"
+      className={['event-card', compact ? 'event-card--compact' : ''].filter(Boolean).join(' ')}
       data-testid={`event-card-${eventId}`}
       onClick={(e) => {
         if (!onActivate) {
@@ -95,64 +153,41 @@ export function EventCard({
     >
       <header className="event-card__header">
         <h3 className="event-card__title">{title}</h3>
-        {onPinToggle && (
-          <button
-            type="button"
-            className="event-card__pin"
-            aria-label={pinnedState ? 'Unpin event' : 'Pin event'}
-            data-testid={`event-card-pin-${eventId}`}
-            onClick={onPinToggle}
-          >
-            <FontAwesomeIcon
-              icon={pinnedState ? faThumbtackSlash : faThumbtack}
-              className="event-card__pin-icon"
-              aria-hidden="true"
-            />
-          </button>
+        {compact ? (
+          bookingBadge
+        ) : (
+          onPinToggle && (
+            <button
+              type="button"
+              className="event-card__pin"
+              aria-label={pinnedState ? 'Unpin event' : 'Pin event'}
+              data-testid={`event-card-pin-${eventId}`}
+              onClick={onPinToggle}
+            >
+              <FontAwesomeIcon
+                icon={pinnedState ? faThumbtackSlash : faThumbtack}
+                className="event-card__pin-icon"
+                aria-hidden="true"
+              />
+            </button>
+          )
         )}
       </header>
-      <p className="event-card__date" data-testid={`event-card-date-${eventId}`}>
-        {formatEventDate(event.eventDate)}
-      </p>
-      <span
-        className="event-card__booking-badge"
-        title={BOOKING_PREVIEW_TOOLTIP}
-        data-testid={`event-card-booking-${eventId}`}
-      >
-        {bookingLabel}
-      </span>
-      {showVariance && (
-        <span className="event-card__variance-badge" data-testid={`event-card-variance-${eventId}`}>
-          Variance
-        </span>
-      )}
-      {bottleneckAlerts.map((alert) => (
-        <span
-          key={alert.kind}
-          className="event-card__alert-chip badge-action-required"
-          data-testid={`event-card-alert-${alert.kind}-${eventId}`}
-        >
-          {alert.label}
-        </span>
-      ))}
-      {quickLinks.length > 0 && (
-        <nav className="event-card__quick-links" aria-label="Event actions">
-          {quickLinks.map((link) => (
-            <button
-              key={link.testId}
-              type="button"
-              className="event-card__quick-link"
-              data-testid={`event-card-link-${link.testId}-${eventId}`}
-              onClick={() => {
-                if (venueId && event.eventId) {
-                  onQuickLink(venueId, event.eventId, link.focus);
-                }
-              }}
-            >
-              {link.label}
-            </button>
-          ))}
-        </nav>
+      {compact ? (
+        <div className="event-card__meta-row">
+          <span className="event-card__date" data-testid={`event-card-date-${eventId}`}>
+            {formatEventDate(event.eventDate)}
+          </span>
+          {secondaryBadges}
+        </div>
+      ) : (
+        <>
+          <p className="event-card__date" data-testid={`event-card-date-${eventId}`}>
+            {formatEventDate(event.eventDate)}
+          </p>
+          {badges}
+          {quickLinksNav}
+        </>
       )}
     </article>
   );

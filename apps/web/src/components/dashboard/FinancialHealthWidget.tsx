@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartLine } from '@fortawesome/free-solid-svg-icons';
+import { LoadingPlaceholder } from '@/components/shell/LoadingPlaceholder';
 import { formatMoney } from '@/lib/money';
 import type { FinancialHealthDto } from '@/types/generated-api';
 
@@ -28,7 +29,17 @@ function formatWeekRange(weekStart?: string | null, weekEnd?: string | null): st
 }
 
 export function FinancialHealthWidget({ financialHealth, isLoading }: FinancialHealthWidgetProps) {
-  if (isLoading || !financialHealth) {
+  if (isLoading) {
+    return (
+      <LoadingPlaceholder
+        variant="card"
+        label="Loading financial health"
+        data-testid="financial-health-loading"
+      />
+    );
+  }
+
+  if (!financialHealth) {
     return null;
   }
 

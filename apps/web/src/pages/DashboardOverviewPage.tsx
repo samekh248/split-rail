@@ -9,6 +9,10 @@ import {
 import { BottleneckFilter } from '@/components/dashboard/BottleneckFilter';
 import { FinancialHealthWidget } from '@/components/dashboard/FinancialHealthWidget';
 import { UnassignedTransactionsBanner } from '@/components/dashboard/UnassignedTransactionsBanner';
+import {
+  DashboardZoneLoading,
+  LoadingPlaceholder,
+} from '@/components/shell/LoadingPlaceholder';
 import type { WorkspaceFocus } from '@/components/dashboard/EventCard';
 import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
 import {
@@ -109,6 +113,30 @@ export function DashboardOverviewPage() {
     : 'No recent events';
 
   const showDashboardWidgets = showEventsContent && !dashboardLoading && !dashboardError;
+  const showDashboardBody = !isLoading && !isError && showEventsContent && !dashboardError;
+  const dashboardDataLoading = showEventsContent && dashboardLoading;
+
+  const dashboardLoadingContent = (
+    <>
+      <LoadingPlaceholder
+        variant="banner"
+        label="Loading unassigned transactions"
+        data-testid="unassigned-transactions-loading"
+      />
+      {!isAllVenuesSelected ? (
+        <LoadingPlaceholder
+          variant="card"
+          label="Loading financial health"
+          data-testid="financial-health-loading"
+        />
+      ) : null}
+      <div className="dashboard-overview__zones" data-testid="dashboard-overview-loading">
+        <DashboardZoneLoading title="Pinned events" data-testid="dashboard-zone-pinned-loading" />
+        <DashboardZoneLoading title="Upcoming events" data-testid="dashboard-zone-upcoming-loading" />
+        <DashboardZoneLoading title="Recent events" data-testid="dashboard-zone-recent-loading" />
+      </div>
+    </>
+  );
 
   const workspaceBarContent = useMemo(
     () => (
@@ -178,10 +206,12 @@ export function DashboardOverviewPage() {
 
   return (
     <div className="dashboard-overview">
-      {isLoading || (showEventsContent && dashboardLoading) ? (
-        <div className="dashboard-empty" role="status" aria-live="polite">
-          Loading workspace…
-        </div>
+      {isLoading ? (
+        <LoadingPlaceholder
+          variant="page"
+          label="Loading workspace…"
+          data-testid="dashboard-page-loading"
+        />
       ) : null}
 
       {!isLoading && isError ? (
@@ -237,10 +267,10 @@ export function DashboardOverviewPage() {
         </div>
       ) : null}
 
-      {!isLoading &&
-      !isError &&
-      showEventsContent &&
-      showDashboardWidgets &&
+      {showDashboardBody && dashboardDataLoading ? dashboardLoadingContent : null}
+
+      {showDashboardBody &&
+      !dashboardDataLoading &&
       !hasAnyDashboardEvents(partitions) ? (
         <>
           {dashboardActionWidgets}
@@ -257,10 +287,8 @@ export function DashboardOverviewPage() {
         </>
       ) : null}
 
-      {!isLoading &&
-      !isError &&
-      showEventsContent &&
-      showDashboardWidgets &&
+      {showDashboardBody &&
+      !dashboardDataLoading &&
       hasAnyDashboardEvents(partitions) ? (
         <>
           {dashboardActionWidgets}

@@ -5,7 +5,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   applyPinOptimisticUpdate,
   dashboardQueryKey,
+  filterCancelledDashboardEvents,
   mergeActionCenter,
+  normalizeDashboardPartitions,
   useDashboard,
   usePinEvent,
   useUnpinEvent,
@@ -216,5 +218,34 @@ describe('dashboard api hooks', () => {
       'evt-b',
       'evt-a',
     ]);
+  });
+
+  it('normalizeDashboardPartitions excludes cancelled booking placements', () => {
+    const active = {
+      eventId: '11111111-1111-1111-1111-111111111111',
+      venueId: VENUE_A.id,
+      title: 'Active Show',
+      eventDate: '2026-06-20',
+      bookingPlacementStatus: 'CONFIRMED',
+    };
+    const cancelled = {
+      eventId: '22222222-2222-2222-2222-222222222222',
+      venueId: VENUE_A.id,
+      title: 'Cancelled Show',
+      eventDate: '2026-06-21',
+      bookingPlacementStatus: 'CANCELLED',
+    };
+
+    const partitions = normalizeDashboardPartitions({
+      pinnedEvents: [cancelled],
+      tonightEvents: [],
+      upcomingEvents: [active, cancelled],
+      recentEvents: [cancelled],
+    });
+
+    expect(partitions.upcomingEvents).toEqual([active]);
+    expect(partitions.pinnedEvents).toEqual([]);
+    expect(partitions.recentEvents).toEqual([]);
+    expect(filterCancelledDashboardEvents([active, cancelled])).toEqual([active]);
   });
 });

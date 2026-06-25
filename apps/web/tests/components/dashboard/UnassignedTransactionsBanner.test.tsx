@@ -94,7 +94,7 @@ describe('UnassignedTransactionsBanner', () => {
       expect(screen.queryByTestId('unassigned-transactions-banner')).not.toBeInTheDocument();
     });
 
-    it('hides banner while loading', () => {
+    it('shows loading placeholder while loading', () => {
       renderBanner({
         actionCenter: actionCenter({
           totalUnmappedCount: 3,
@@ -111,6 +111,7 @@ describe('UnassignedTransactionsBanner', () => {
         isLoading: true,
       });
 
+      expect(screen.getByTestId('unassigned-transactions-loading')).toBeInTheDocument();
       expect(screen.queryByTestId('unassigned-transactions-banner')).not.toBeInTheDocument();
     });
 

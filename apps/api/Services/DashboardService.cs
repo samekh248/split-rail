@@ -49,7 +49,13 @@ public class DashboardService
             .ToListAsync(cancellationToken);
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var cards = events
+        var allCards = events
+            .Select(e => ToEventCardDto(e))
+            .ToList();
+        var visibleEvents = events
+            .Where(e => e.BookingPlacementStatus != BookingPlacementStatus.Cancelled)
+            .ToList();
+        var cards = visibleEvents
             .Select(e => ToEventCardDto(e))
             .ToList();
 
@@ -81,7 +87,7 @@ public class DashboardService
             upcoming.Count,
             cards.Sum(c => c.UnmappedCount));
 
-        var actionCenter = BuildActionCenter(cards);
+        var actionCenter = BuildActionCenter(allCards);
         var financialHealth = DashboardFinancialHealthHelper.BuildFinancialHealthDto(events, today);
 
         return new DashboardResponse(venueId, tonight, pinned, recent, upcoming, actionCenter, financialHealth);

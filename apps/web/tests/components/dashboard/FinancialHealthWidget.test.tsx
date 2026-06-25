@@ -24,13 +24,17 @@ describe('FinancialHealthWidget', () => {
     expect(screen.getByTestId('financial-health-variance')).toBeInTheDocument();
   });
 
-  it('returns null when loading or financialHealth undefined', () => {
-    const { container, rerender } = render(
-      <FinancialHealthWidget financialHealth={FIXTURE} isLoading />,
-    );
-    expect(container).toBeEmptyDOMElement();
+  it('shows loading placeholder when loading', () => {
+    render(<FinancialHealthWidget financialHealth={FIXTURE} isLoading />);
 
-    rerender(<FinancialHealthWidget financialHealth={undefined} isLoading={false} />);
+    expect(screen.getByTestId('financial-health-loading')).toBeInTheDocument();
+    expect(screen.queryByTestId('financial-health-widget')).not.toBeInTheDocument();
+  });
+
+  it('returns null when financialHealth is undefined and not loading', () => {
+    const { container } = render(
+      <FinancialHealthWidget financialHealth={undefined} isLoading={false} />,
+    );
     expect(container).toBeEmptyDOMElement();
   });
 

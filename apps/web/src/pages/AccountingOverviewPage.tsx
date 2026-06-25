@@ -4,6 +4,7 @@ import { UnassignedTransactionsBanner } from '@/components/dashboard/UnassignedT
 import { VenueQboStatusCard } from '@/components/accounting/VenueQboStatusCard';
 import { AccountingWorkloadList } from '@/components/accounting/AccountingWorkloadList';
 import { SyncAllButton } from '@/components/qbo/SyncAllButton';
+import { LoadingPlaceholder } from '@/components/shell/LoadingPlaceholder';
 import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
 import { useDashboard } from '@/api/dashboard';
 import { useVenueQboStatus } from '@/api/qbo';
@@ -62,10 +63,12 @@ export function AccountingOverviewPage() {
         <h1 className="accounting-overview__title">Settlements &amp; Accounting Sync</h1>
       </header>
 
-      {isLoading || (showContent && dashboardQuery.isLoading) ? (
-        <div className="dashboard-empty" role="status" aria-live="polite">
-          Loading workspace…
-        </div>
+      {isLoading ? (
+        <LoadingPlaceholder
+          variant="page"
+          label="Loading workspace…"
+          data-testid="accounting-page-loading"
+        />
       ) : null}
 
       {!isLoading && isError ? (
@@ -127,7 +130,15 @@ export function AccountingOverviewPage() {
             venueScopeKey={venueScopeKey}
             onRetryDashboard={() => void dashboardQuery.refetch()}
           />
-          <AccountingWorkloadList events={workloadEvents} />
+          {dashboardQuery.isLoading ? (
+            <LoadingPlaceholder
+              variant="card"
+              label="Loading accounting workload"
+              data-testid="accounting-workload-loading"
+            />
+          ) : (
+            <AccountingWorkloadList events={workloadEvents} />
+          )}
         </>
       ) : null}
     </div>

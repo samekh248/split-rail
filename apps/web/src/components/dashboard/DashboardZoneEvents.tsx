@@ -8,6 +8,7 @@ export interface DashboardZoneEventsProps {
   testId: string;
   className?: string;
   filterSlot?: ReactNode;
+  compact?: boolean;
   events: EventCardDto[];
   permissions: PermissionsDto;
   onQuickLink: (venueId: string, eventId: string, focus?: WorkspaceFocus) => void;
@@ -21,6 +22,7 @@ export function DashboardZoneEvents({
   testId,
   className,
   filterSlot,
+  compact = true,
   events,
   permissions,
   onQuickLink,
@@ -50,8 +52,13 @@ export function DashboardZoneEvents({
                 permissions={permissions}
                 onQuickLink={onQuickLink}
                 isPinned={event.isPinned === true}
-                onPinToggle={() => onPinToggle(venueId, eventId, event.isPinned === true)}
+                onPinToggle={
+                  compact
+                    ? undefined
+                    : () => onPinToggle(venueId, eventId, event.isPinned === true)
+                }
                 onActivate={() => onCardActivate(venueId, eventId)}
+                compact={compact}
               />
             );
           })}
