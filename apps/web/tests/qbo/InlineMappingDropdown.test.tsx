@@ -2,6 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { pickSelectFieldOption } from '../utils/selectField';
 import { dashboardQueryKey } from '@/api/dashboard';
 import { InlineMappingDropdown } from '@/components/qbo/InlineMappingDropdown';
 
@@ -46,7 +47,7 @@ describe('InlineMappingDropdown', () => {
       </QueryClientProvider>,
     );
 
-    await user.selectOptions(screen.getByTestId('inline-mapping-select'), 'row-1');
+    await pickSelectFieldOption(user, 'inline-mapping-select', 'row-1');
     await user.click(screen.getByTestId('inline-mapping-confirm'));
 
     expect(mutateAsync).toHaveBeenCalledWith({
@@ -79,7 +80,7 @@ describe('InlineMappingDropdown', () => {
       </QueryClientProvider>,
     );
 
-    await user.selectOptions(screen.getByTestId('inline-mapping-select'), 'row-1');
+    await pickSelectFieldOption(user, 'inline-mapping-select', 'row-1');
     await user.click(screen.getByTestId('inline-mapping-confirm'));
 
     expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: dashboardQueryKey('ven-1') });

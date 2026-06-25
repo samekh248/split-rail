@@ -2,8 +2,6 @@ import type { RegionResponse, VenueResponse } from '@/types/generated-api';
 import type { CalendarViewContext } from '@/lib/bookingCalendar';
 import { SelectField } from '@/components/auth/SelectField';
 import { BookingCalendarDisplayModeToggle } from '@/components/booking/BookingCalendarDisplayModeToggle';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus } from '@fortawesome/free-solid-svg-icons';
 
 const VIEW_MODE_OPTIONS = [
   { value: 'global', label: 'Global' },
@@ -19,8 +17,6 @@ export interface BookingCalendarControlsProps {
   regions: RegionResponse[];
   venues: VenueResponse[];
   onContextChange: (next: CalendarViewContext) => void;
-  onCreateEvent: () => void;
-  onCreateHold: () => void;
 }
 
 export function BookingCalendarControls({
@@ -28,8 +24,6 @@ export function BookingCalendarControls({
   regions,
   venues,
   onContextChange,
-  onCreateEvent,
-  onCreateHold,
 }: BookingCalendarControlsProps) {
   return (
     <div className="booking-calendar-controls" data-testid="booking-calendar-controls">
@@ -114,15 +108,6 @@ export function BookingCalendarControls({
           />
         </div>
       </header>
-
-      <div className="booking-calendar-controls__actions">
-        <button type="button" data-testid="booking-create-event" onClick={onCreateEvent}>
-          <FontAwesomeIcon icon={faPlus} /> Create Event
-        </button>
-        <button type="button" data-testid="booking-create-hold" onClick={onCreateHold}>
-          <FontAwesomeIcon icon={faPlus} /> Create Hold
-        </button>
-      </div>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   buildMonthCalendarWeeks,
   formatBookingStatusLabel,
@@ -34,6 +36,30 @@ function formatDayNumber(date: Date): string {
 
 export function placementStatusLabel(status: BookingPlacement['bookingPlacementStatus']): string {
   return formatBookingStatusLabel(status);
+}
+
+function QuickAddButton({
+  dateKey,
+  onCellQuickAdd,
+}: {
+  dateKey: string;
+  onCellQuickAdd: (dateKey: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="booking-calendar-matrix__quick-add"
+      data-testid={`booking-cell-quick-add-${dateKey}`}
+      onClick={() => onCellQuickAdd(dateKey)}
+      aria-label={`Add event on ${dateKey}`}
+    >
+      <FontAwesomeIcon
+        icon={faPlus}
+        className="booking-calendar-matrix__quick-add-icon"
+        aria-hidden="true"
+      />
+    </button>
+  );
 }
 
 export function BookingCalendarMatrix({
@@ -73,14 +99,16 @@ export function BookingCalendarMatrix({
                   }`}
                   data-testid={`booking-calendar-day-${day.dateKey}`}
                 >
-                  <button
-                    type="button"
-                    className="booking-calendar-matrix__day-label"
-                    onClick={() => onDateClick(day.dateKey)}
-                    aria-label={`${day.dateKey}, ${totalCount} events`}
-                  >
-                    {formatDayNumber(day.date)}
-                  </button>
+                  <div className="booking-calendar-matrix__day-header">
+                    {onCellQuickAdd ? (
+                      <QuickAddButton dateKey={day.dateKey} onCellQuickAdd={onCellQuickAdd} />
+                    ) : (
+                      <span className="booking-calendar-matrix__day-header-spacer" aria-hidden="true" />
+                    )}
+                    <span className="booking-calendar-matrix__day-label" aria-hidden="true">
+                      {formatDayNumber(day.date)}
+                    </span>
+                  </div>
 
                   {totalCount > 0 ? (
                     <div className="booking-calendar-matrix__day-events">
@@ -107,13 +135,6 @@ export function BookingCalendarMatrix({
                         </button>
                       ) : null}
                     </div>
-                  ) : onCellQuickAdd ? (
-                    <button
-                      type="button"
-                      className="booking-calendar-matrix__quick-add"
-                      onClick={() => onCellQuickAdd(day.dateKey)}
-                      aria-label={`Add event on ${day.dateKey}`}
-                    />
                   ) : null}
                 </div>
               );

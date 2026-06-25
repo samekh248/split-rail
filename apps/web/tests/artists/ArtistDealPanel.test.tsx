@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { pickSelectFieldOption } from '../utils/selectField';
 import { ArtistDealPanel } from '@/components/artists/ArtistDealPanel';
 import type { EventArtistDto } from '@/types/generated-api';
 
@@ -201,7 +202,7 @@ describe('ArtistDealPanel', () => {
       />,
     );
 
-    await user.selectOptions(screen.getByTestId('deal-type-select'), 'custom');
+    await pickSelectFieldOption(user, 'deal-type-select', 'custom');
     await user.type(screen.getByTestId('formula-textarea'), 'GrossRevenue + +');
 
     expect(screen.getByTestId('payout-preview-error')).toBeInTheDocument();
@@ -220,7 +221,7 @@ describe('ArtistDealPanel', () => {
       />,
     );
 
-    await user.selectOptions(screen.getByTestId('deal-type-select'), 'custom');
+    await pickSelectFieldOption(user, 'deal-type-select', 'custom');
 
     expect(screen.getByTestId('formula-editor')).toBeInTheDocument();
     expect(screen.getByTestId('formula-error')).toHaveTextContent('Formula could not be evaluated');

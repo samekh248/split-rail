@@ -69,7 +69,7 @@ export function VenuesPageControls({
       {canManageVenues ? (
         <button
           type="button"
-          className="venues-page-controls__manage-regions"
+          className="venues-page-controls__manage-regions btn-secondary"
           data-testid="venues-manage-regions"
           onClick={onManageRegions}
         >

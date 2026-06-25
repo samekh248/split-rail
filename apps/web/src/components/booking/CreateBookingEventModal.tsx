@@ -68,9 +68,12 @@ export function CreateBookingEventModal({
       data-testid="booking-create-event-modal"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="booking-event-modal-title"
     >
-      <form onSubmit={handleSubmit}>
-        <h2>Create confirmed event</h2>
+      <form className="booking-create-modal__form" onSubmit={handleSubmit}>
+        <h2 id="booking-event-modal-title" className="booking-create-modal__title">
+          Create confirmed event
+        </h2>
         <SelectField
           id="booking-event-venue"
           label="Venue"
@@ -84,11 +87,19 @@ export function CreateBookingEventModal({
         <FormField label="Date" id="booking-event-date" type="date" value={eventDate} onChange={setEventDate} />
         <FormField label="Title" id="booking-event-title" type="text" value={title} onChange={setTitle} />
         <FormField label="Doors time" id="booking-event-doors" type="time" value={doorsTime} onChange={setDoorsTime} />
-        {error ? <p role="alert">{error}</p> : null}
-        <button type="button" onClick={onClose}>
-          Cancel
-        </button>
-        <button type="submit">Save</button>
+        {error ? (
+          <p className="team-modal__error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <div className="team-modal__actions booking-create-modal__actions">
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="team-modal__save">
+            Save
+          </button>
+        </div>
       </form>
     </div>
   );

@@ -67,9 +67,12 @@ export function CreateHoldModal({
       data-testid="booking-create-hold-modal"
       role="dialog"
       aria-modal="true"
+      aria-labelledby="booking-hold-title"
     >
-      <form onSubmit={handleSubmit}>
-        <h2>Create hold</h2>
+      <form className="booking-create-modal__form" onSubmit={handleSubmit}>
+        <h2 id="booking-hold-title" className="booking-create-modal__title">
+          Create hold
+        </h2>
         <SelectField
           id="booking-hold-venue"
           label="Venue"
@@ -81,7 +84,7 @@ export function CreateHoldModal({
           onChange={setVenueId}
         />
         <FormField label="Date" id="booking-hold-date" type="date" value={eventDate} onChange={setEventDate} />
-        <FormField label="Act name" id="booking-hold-title" type="text" value={title} onChange={setTitle} />
+        <FormField label="Act name" id="booking-hold-act-name" type="text" value={title} onChange={setTitle} />
         <SelectField
           id="booking-hold-tier"
           label="Tier"
@@ -93,11 +96,19 @@ export function CreateHoldModal({
           ]}
           onChange={(value) => setTier(value as typeof tier)}
         />
-        {error ? <p role="alert">{error}</p> : null}
-        <button type="button" onClick={onClose}>
-          Cancel
-        </button>
-        <button type="submit">Save</button>
+        {error ? (
+          <p className="team-modal__error" role="alert">
+            {error}
+          </p>
+        ) : null}
+        <div className="team-modal__actions booking-create-modal__actions">
+          <button type="button" className="btn-secondary" onClick={onClose}>
+            Cancel
+          </button>
+          <button type="submit" className="team-modal__save">
+            Save
+          </button>
+        </div>
       </form>
     </div>
   );

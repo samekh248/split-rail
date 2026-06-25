@@ -14,6 +14,7 @@ import {
   workspaceAdminProfile,
   workspaceMemberProfile,
 } from '../utils/mockWorkspaceFetch';
+import { pickSelectFieldOption } from '../utils/selectField';
 
 const REGION_WEST = { id: 'region-a', name: 'West', notes: null, venueCount: 1 };
 const REGION_EAST = { id: 'region-b', name: 'East', notes: null, venueCount: 0 };
@@ -205,7 +206,7 @@ describe('VenuesPage', () => {
     render(<VenuesPage />, { wrapper: createWrapper() });
 
     await screen.findByTestId('venues-region-filter');
-    await user.selectOptions(screen.getByTestId('venues-region-filter'), 'region-a');
+    await pickSelectFieldOption(user, 'venues-region-filter', 'region-a');
     expect(screen.getByText('Hall A')).toBeInTheDocument();
     expect(screen.queryByText('Hall B')).not.toBeInTheDocument();
     expect(screen.queryByText('Loft')).not.toBeInTheDocument();
@@ -243,7 +244,8 @@ describe('VenuesPage', () => {
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
-    await user.selectOptions(await screen.findByTestId('venues-display-mode'), 'grouped');
+    await screen.findByTestId('venues-display-mode');
+    await pickSelectFieldOption(user, 'venues-display-mode', 'grouped');
     expect(screen.getByTestId('venues-grouped-list')).toBeInTheDocument();
     expect(screen.getByTestId('venues-region-empty-region-b')).toHaveTextContent('No venues');
     expect(screen.queryByTestId('venue-list-table')).not.toBeInTheDocument();
@@ -263,6 +265,6 @@ describe('VenuesPage', () => {
 
     render(<VenuesPage />, { wrapper: createWrapper() });
     expect(await screen.findByTestId('venues-grouped-list')).toBeInTheDocument();
-    expect(screen.getByTestId('venues-region-filter')).toHaveValue('region-a');
+    expect(screen.getByTestId('venues-region-filter')).toHaveTextContent('West');
   });
 });

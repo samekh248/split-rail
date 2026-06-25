@@ -119,7 +119,7 @@ export function VenuesPage() {
         {!profileLoading && canManageVenues ? (
           <button
             type="button"
-            className="venues-page__add"
+            className="venues-page__add btn-primary--compact"
             data-testid="venues-add-venue"
             onClick={() => navigateToCreateVenue()}
           >

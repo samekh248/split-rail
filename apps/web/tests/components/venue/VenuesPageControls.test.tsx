@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { VenuesPageControls } from '@/components/venue/VenuesPageControls';
+import { pickSelectFieldOption } from '../../utils/selectField';
 
 const FILTER_OPTIONS = [
   { value: 'all' as const, label: 'All regions' },
@@ -24,8 +26,7 @@ describe('VenuesPageControls', () => {
       />,
     );
 
-    expect(screen.getByTestId('venues-region-filter')).toBeInTheDocument();
-    expect(screen.getByRole('option', { name: 'West' })).toBeInTheDocument();
+    expect(screen.getByTestId('venues-region-filter')).toHaveTextContent('All regions');
   });
 
   it('hides region filter when showRegionFilter is false', () => {
@@ -66,8 +67,9 @@ describe('VenuesPageControls', () => {
     expect(onManageRegions).toHaveBeenCalled();
   });
 
-  it('changes display mode via select', () => {
+  it('changes display mode via select', async () => {
     const onDisplayModeChange = vi.fn();
+    const user = userEvent.setup();
     render(
       <VenuesPageControls
         regionFilter="all"
@@ -82,7 +84,7 @@ describe('VenuesPageControls', () => {
       />,
     );
 
-    fireEvent.change(screen.getByTestId('venues-display-mode'), { target: { value: 'grouped' } });
+    await pickSelectFieldOption(user, 'venues-display-mode', 'grouped');
     expect(onDisplayModeChange).toHaveBeenCalledWith('grouped');
   });
 
