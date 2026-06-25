@@ -5,10 +5,8 @@ import { EventCombobox } from '@/components/event/EventCombobox';
 import { EventFormPanel } from '@/components/event/EventFormPanel';
 import { EventDeleteConfirm } from '@/components/event/EventDeleteConfirm';
 import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
-import { useUserProfile } from '@/api/user';
 import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from '@/api/events';
 import { useActiveVenue } from '@/venue/useActiveVenue';
-import { useCanManageVenues } from '@/hooks/useCanManageVenues';
 import { useCanManageEvents } from '@/hooks/useCanManageEvents';
 import {
   buildEventWorkspacePath,
@@ -16,7 +14,6 @@ import {
   replacePath,
   useEventWorkspaceRoute,
 } from '@/lib/appRoute';
-import { navigateToCreateVenue } from '@/lib/dashboardRoute';
 import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
 import { isRecognizedWorkspaceFocus } from '@/lib/workspaceFocusScroll';
 import { setActiveEventId } from '@/venue/activeEventStorage';
@@ -33,8 +30,6 @@ export function EventWorkspacePage() {
     ? workspaceRoute.focus
     : null;
 
-  const { isLoading: profileLoading } = useUserProfile();
-  const canManageVenues = useCanManageVenues();
   const canManageEvents = useCanManageEvents();
   const { venues, activeVenueId, isLoading, isError, refetch, activateVenueId } = useActiveVenue();
   const {
@@ -142,16 +137,6 @@ export function EventWorkspacePage() {
   const workspaceBarContent = useMemo(
     () => (
       <div className="dashboard-workspace-bar" data-testid="dashboard-workspace-bar">
-        {!profileLoading && canManageVenues ? (
-          <button
-            type="button"
-            className="app__add-venue"
-            data-testid="header-add-venue"
-            onClick={() => navigateToCreateVenue()}
-          >
-            Add venue
-          </button>
-        ) : null}
         <VenueSwitcher />
         {showEventWorkspace && !eventsLoading && events.length > 0 ? (
           <EventCombobox
@@ -191,8 +176,6 @@ export function EventWorkspacePage() {
       </div>
     ),
     [
-      profileLoading,
-      canManageVenues,
       showEventWorkspace,
       eventsLoading,
       events,

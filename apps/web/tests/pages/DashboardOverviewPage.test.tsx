@@ -8,7 +8,7 @@ import { AuthContext, type AuthContextValue } from '@/auth/AuthContext';
 import { AppShell } from '@/components/shell/AppShell';
 import { VenueProvider } from '@/venue/VenueContext';
 import { buildEventWorkspacePath } from '@/lib/appRoute';
-import { getDashboardPath } from '@/lib/dashboardRoute';
+import { getAppPath } from '@/lib/appRoute';
 import * as eventWorkspaceRoute from '@/lib/eventWorkspaceRoute';
 import type { DashboardResponse, EventCardDto, EventResponse, FinancialHealthDto } from '@/types/generated-api';
 import { EVENT_A, EVENT_B } from '../fixtures/events';
@@ -625,7 +625,7 @@ describe('DashboardOverviewPage', () => {
     render(<DashboardOverviewPage />, { wrapper: createWrapper() });
 
     await user.click(await screen.findByTestId('empty-state-add-venue'));
-    expect(getDashboardPath()).toBe('/venues/new');
+    expect(getAppPath()).toBe('/venues');
   });
 
   describe('financial health widget', () => {

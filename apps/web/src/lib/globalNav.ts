@@ -1,8 +1,8 @@
 import type { AppPath } from '@/lib/appRoute';
 import { getActiveVenueId } from '@/venue/activeVenueStorage';
-import { getAppPath, isEventWorkspacePath, navigateToAccounting, navigateToDashboard } from '@/lib/appRoute';
+import { getAppPath, isEventWorkspacePath, navigateToAccounting, navigateToDashboard, navigateToVenues } from '@/lib/appRoute';
 
-export type GlobalNavId = 'dashboard' | 'booking' | 'accounting';
+export type GlobalNavId = 'dashboard' | 'venues' | 'booking' | 'accounting';
 
 export interface GlobalNavItemConfig {
   id: GlobalNavId;
@@ -31,13 +31,19 @@ export const GLOBAL_NAV_ITEMS: GlobalNavItemConfig[] = [
     id: 'dashboard',
     label: 'Dashboard',
     navigate: navigateToDashboard,
-    matchPaths: ['/', '/venues/new'],
+    matchPaths: ['/'],
   },
   {
     id: 'accounting',
     label: 'Settlements',
     navigate: navigateToAccounting,
     matchPaths: ['/accounting'],
+  },
+  {
+    id: 'venues',
+    label: 'Venues',
+    navigate: navigateToVenues,
+    matchPaths: ['/venues', '/venues/new'],
   },
   {
     id: 'booking',
@@ -48,8 +54,8 @@ export const GLOBAL_NAV_ITEMS: GlobalNavItemConfig[] = [
 ];
 
 export function matchesDashboardNavPath(pathname: string): boolean {
-  if (pathname === '/' || pathname === '/venues/new') {
-    return true;
+  if (pathname === '/' || pathname === '/venues' || pathname === '/venues/new') {
+    return false;
   }
   return isEventWorkspacePath(pathname);
 }

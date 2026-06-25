@@ -22,7 +22,12 @@ describe('globalNav', () => {
         '/venues/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/events/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
       ),
     ).toBe('dashboard');
-    expect(resolveActiveGlobalNavId('/venues/new')).toBe('dashboard');
+  });
+
+  it('resolves venues as active on /venues and /venues/new', () => {
+    expect(resolveActiveGlobalNavId('/venues')).toBe('venues');
+    expect(resolveActiveGlobalNavId('/venues/new')).toBe('venues');
+    expect(resolveActiveGlobalNavId('/venues/new')).not.toBe('dashboard');
   });
 
   it('returns null on settings routes', () => {

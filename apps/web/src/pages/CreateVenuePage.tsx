@@ -4,7 +4,7 @@ import { validateVenueName } from '@/auth/validation';
 import { useCreateVenue } from '@/api/venues';
 import { useUserProfile } from '@/api/user';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
-import { navigateToDashboard } from '@/lib/dashboardRoute';
+import { navigateToVenues } from '@/lib/dashboardRoute';
 
 function mapCreateError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
@@ -31,7 +31,7 @@ export function CreateVenuePage() {
       return;
     }
     if (!canManage) {
-      navigateToDashboard();
+      navigateToVenues();
     }
   }, [canManage, profileLoading]);
 
@@ -46,7 +46,7 @@ export function CreateVenuePage() {
     setSubmitError(null);
     try {
       await createVenue.mutateAsync({ name: venueName.trim() });
-      navigateToDashboard();
+      navigateToVenues();
     } catch (error) {
       setSubmitError(mapCreateError(error));
     }
@@ -88,7 +88,7 @@ export function CreateVenuePage() {
             type="button"
             className="auth-form__secondary"
             disabled={createVenue.isPending}
-            onClick={() => navigateToDashboard()}
+            onClick={() => navigateToVenues()}
           >
             Cancel
           </button>

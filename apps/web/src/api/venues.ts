@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
+import { isEventWorkspacePath, navigateToDashboard, parseEventWorkspacePath } from '@/lib/appRoute';
 import { useActiveVenue } from '@/venue/useActiveVenue';
+import { clearActiveVenueId, getActiveVenueId } from '@/venue/activeVenueStorage';
 import type { CreateVenueRequest, UpdateVenueRequest, VenueResponse } from '@/types/generated-api';
 
 export function useVenues() {
@@ -49,6 +51,39 @@ export function useUpdateVenue(venueId: string) {
       }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ['venues'] });
+    },
+  });
+}
+
+export function useDeleteVenue() {
+  const queryClient = useQueryClient();
+  const { activeVenueId } = useActiveVenue();
+
+  return useMutation({
+    mutationFn: (venueId: string) =>
+      apiFetch<void>(`/venues/${venueId}`, {
+        method: 'DELETE',
+        skipVenueContext: true,
+      }),
+    onSuccess: (_result, venueId) => {
+      queryClient.setQueryData<VenueResponse[]>(['venues'], (existing) =>
+        (existing ?? []).filter((venue) => venue.id !== venueId),
+      );
+
+      const remembered = getActiveVenueId();
+      if (remembered === venueId || activeVenueId === venueId) {
+        clearActiveVenueId();
+      }
+
+      const pathname = window.location.pathname;
+      if (isEventWorkspacePath(pathname)) {
+        const workspace = parseEventWorkspacePath(pathname);
+        if (workspace?.venueId === venueId) {
+          navigateToDashboard();
+        }
+      }
+
+      void queryClient.invalidateQueries();
     },
   });
 }

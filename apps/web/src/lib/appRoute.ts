@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { captureSettingsReturnPath, readSettingsReturnPath } from '@/lib/settingsReturnStorage';
 
-export type DashboardPath = '/' | '/venues/new';
+export type DashboardPath = '/' | '/venues' | '/venues/new';
 
 export type AppPath =
   | DashboardPath
@@ -60,6 +60,8 @@ export function getAppPath(): AppPath | string {
     return pathname;
   }
   switch (pathname) {
+    case '/venues':
+      return '/venues';
     case '/venues/new':
       return '/venues/new';
     case '/settings':
@@ -81,7 +83,13 @@ export function getAppPath(): AppPath | string {
 
 export function getDashboardPath(): DashboardPath {
   const path = getAppPath();
-  return path === '/venues/new' ? '/venues/new' : '/';
+  if (path === '/venues/new') {
+    return '/venues/new';
+  }
+  if (path === '/venues') {
+    return '/venues';
+  }
+  return '/';
 }
 
 export function getInviteTokenFromUrl(): string | null {
@@ -89,6 +97,10 @@ export function getInviteTokenFromUrl(): string | null {
     return null;
   }
   return new URLSearchParams(window.location.search).get('token');
+}
+
+export function navigateToVenues(): void {
+  pushPath('/venues');
 }
 
 export function navigateToCreateVenue(): void {
@@ -142,7 +154,13 @@ export function useAppRoute(): AppPath | string {
 
 export function useDashboardRoute(): DashboardPath {
   const appPath = useAppRoute();
-  return appPath === '/venues/new' ? '/venues/new' : '/';
+  if (appPath === '/venues/new') {
+    return '/venues/new';
+  }
+  if (appPath === '/venues') {
+    return '/venues';
+  }
+  return '/';
 }
 
 export interface EventWorkspaceRouteParams {

@@ -53,6 +53,20 @@ describe('GlobalNav', () => {
     expect(screen.getByTestId('global-nav-dashboard')).toHaveClass('global-nav__item--active');
   });
 
+  it('highlights venues on /venues', () => {
+    window.history.pushState({}, '', '/venues');
+    renderNav();
+    expect(screen.getByTestId('global-nav-venues')).toHaveClass('global-nav__item--active');
+    expect(screen.getByTestId('global-nav-dashboard')).not.toHaveClass('global-nav__item--active');
+  });
+
+  it('navigates to /venues when venues is clicked', async () => {
+    const user = userEvent.setup();
+    renderNav();
+    await user.click(screen.getByTestId('global-nav-venues'));
+    expect(getAppPath()).toBe('/venues');
+  });
+
   it('highlights dashboard on root route', () => {
     window.history.pushState({}, '', '/');
     renderNav();

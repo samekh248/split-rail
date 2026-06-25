@@ -12,7 +12,7 @@ import { deriveAccountingWorkloadEvents } from '@/lib/accountingWorkload';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
 import { useCanManageEvents } from '@/hooks/useCanManageEvents';
-import { navigateToCreateVenue } from '@/lib/dashboardRoute';
+import { navigateToVenues } from '@/lib/dashboardRoute';
 
 export function AccountingOverviewPage() {
   const { isLoading: profileLoading } = useUserProfile();
@@ -94,9 +94,9 @@ export function AccountingOverviewPage() {
               type="button"
               className="dashboard-empty__cta"
               data-testid="empty-state-add-venue"
-              onClick={() => navigateToCreateVenue()}
+              onClick={() => navigateToVenues()}
             >
-              Add venue
+              Go to Venues
             </button>
           ) : null}
         </section>

@@ -10,6 +10,7 @@ import {
   navigateToAcceptInvite,
   navigateToCreateVenue,
   navigateToDashboard,
+  navigateToVenues,
   navigateToIntegrationsSettings,
   navigateToOrganizationSettings,
   navigateToSettings,
@@ -109,6 +110,19 @@ describe('appRoute', () => {
   it('getInviteTokenFromUrl returns null on other paths', () => {
     window.history.pushState({}, '', '/settings');
     expect(getInviteTokenFromUrl()).toBeNull();
+  });
+
+  it('getAppPath returns /venues', () => {
+    window.history.pushState({}, '', '/venues');
+    expect(getAppPath()).toBe('/venues');
+    expect(getDashboardPath()).toBe('/venues');
+  });
+
+  it('navigateToVenues updates path and hook state', () => {
+    const { result } = renderHook(() => useAppRoute());
+    act(() => navigateToVenues());
+    expect(window.location.pathname).toBe('/venues');
+    expect(result.current).toBe('/venues');
   });
 
   it('navigateToCreateVenue updates path and hook state', () => {

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { DashboardOverviewPage } from '@/pages/DashboardOverviewPage';
 import { AccountingOverviewPage } from '@/pages/AccountingOverviewPage';
 import { EventWorkspacePage } from '@/pages/EventWorkspacePage';
+import { VenuesPage } from '@/pages/VenuesPage';
 import { CreateVenuePage } from '@/pages/CreateVenuePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
@@ -123,6 +124,8 @@ export default function App() {
       <AuthenticatedShell>
         {workspaceRoute ? (
           <EventWorkspacePage />
+        ) : appPath === '/venues' ? (
+          <VenuesPage />
         ) : appPath === '/venues/new' ? (
           <CreateVenuePage />
         ) : appPath === '/accounting' ? (

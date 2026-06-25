@@ -7,7 +7,7 @@ import { CreateVenuePage } from '@/pages/CreateVenuePage';
 import { AppShell } from '@/components/shell/AppShell';
 import { AuthContext, type AuthContextValue } from '@/auth/AuthContext';
 import { VenueProvider } from '@/venue/VenueContext';
-import { getDashboardPath } from '@/lib/dashboardRoute';
+import { getAppPath } from '@/lib/appRoute';
 import { getActiveVenueId } from '@/venue/activeVenueStorage';
 import { VENUE_NAME_MAX_LENGTH } from '@/auth/validation';
 import {
@@ -82,7 +82,7 @@ describe('CreateVenuePage', () => {
     await user.type(await screen.findByLabelText('Venue name'), 'The Roxy');
     await user.click(screen.getByRole('button', { name: 'Create venue' }));
 
-    await waitFor(() => expect(getDashboardPath()).toBe('/'));
+    await waitFor(() => expect(getAppPath()).toBe('/venues'));
     await waitFor(() => expect(getActiveVenueId()).toBe(CREATED_VENUE.id));
   });
 
@@ -91,7 +91,7 @@ describe('CreateVenuePage', () => {
 
     render(<CreateVenuePage />, { wrapper: createWrapper() });
 
-    await waitFor(() => expect(getDashboardPath()).toBe('/'));
+    await waitFor(() => expect(getAppPath()).toBe('/venues'));
     expect(screen.queryByLabelText('Venue name')).not.toBeInTheDocument();
   });
 
@@ -183,7 +183,7 @@ describe('CreateVenuePage', () => {
 
     await user.click(await screen.findByRole('button', { name: 'Cancel' }));
 
-    expect(getDashboardPath()).toBe('/');
+    expect(getAppPath()).toBe('/venues');
     expect(fetchMock.mock.calls.filter((call) => call[1]?.method === 'POST')).toHaveLength(0);
   });
 });
