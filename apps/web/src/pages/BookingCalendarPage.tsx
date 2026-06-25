@@ -1,7 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useCalendarPlacements } from '@/api/calendar';
 import { useRegions } from '@/api/regions';
 import { BookingCalendarControls } from '@/components/booking/BookingCalendarControls';
+import { BookingCalendarMonthNav } from '@/components/booking/BookingCalendarMonthNav';
+import { BookingCalendarListView } from '@/components/booking/BookingCalendarListView';
+import { BookingCalendarUpcomingSection } from '@/components/booking/BookingCalendarUpcomingSection';
 import { BookingCalendarMatrix } from '@/components/booking/BookingCalendarMatrix';
 import { BookingCalendarMobileStream } from '@/components/booking/BookingCalendarMobileStream';
 import { BookingDailyAgendaDrawer } from '@/components/booking/BookingDailyAgendaDrawer';
@@ -14,11 +17,17 @@ import {
   filterPlacementsByView,
   getCalendarDaysForMonth,
   getMonthBounds,
+  getUpcomingPlacementsBounds,
   groupPlacementsByDate,
+  pickNextUpcomingPlacements,
   toDateKey,
   type BookingPlacement,
   type CalendarViewContext,
 } from '@/lib/bookingCalendar';
+import {
+  readBookingCalendarDisplayMode,
+  writeBookingCalendarDisplayMode,
+} from '@/lib/bookingCalendarViewStorage';
 import type { CalendarPlacementDto } from '@/types/generated-api';
 
 function defaultMonth(): string {
@@ -47,19 +56,37 @@ function toBookingPlacement(dto: CalendarPlacementDto): BookingPlacement {
 export function BookingCalendarPage() {
   const { venues } = useActiveVenue();
   const { data: regions = [] } = useRegions();
-  const [context, setContext] = useState<CalendarViewContext>({
+  const [context, setContext] = useState<CalendarViewContext>(() => ({
     viewMode: 'global',
     regionId: null,
     venueId: null,
     month: defaultMonth(),
     showCancelled: false,
-  });
+    displayMode: readBookingCalendarDisplayMode() ?? 'calendar',
+  }));
+
+  useEffect(() => {
+    writeBookingCalendarDisplayMode(context.displayMode);
+  }, [context.displayMode]);
   const bounds = useMemo(() => getMonthBounds(context.month), [context.month]);
+  const upcomingBounds = useMemo(
+    () => (context.displayMode === 'list' ? getUpcomingPlacementsBounds(context.month) : null),
+    [context.displayMode, context.month],
+  );
   const { data: placements = [], refetch } = useCalendarPlacements({
     from: bounds.from,
     to: bounds.to,
     includeCancelled: context.showCancelled,
   });
+  const { data: upcomingPlacements = [], refetch: refetchUpcoming } = useCalendarPlacements(
+    upcomingBounds
+      ? {
+          from: upcomingBounds.from,
+          to: upcomingBounds.to,
+          includeCancelled: context.showCancelled,
+        }
+      : null,
+  );
 
   const [agendaDate, setAgendaDate] = useState<string | null>(null);
   const [selectedPlacement, setSelectedPlacement] = useState<BookingPlacement | null>(null);
@@ -71,6 +98,15 @@ export function BookingCalendarPage() {
   const filtered = useMemo(
     () => filterPlacementsByView(placements.map(toBookingPlacement), context),
     [placements, context],
+  );
+  const upcomingFiltered = useMemo(
+    () =>
+      pickNextUpcomingPlacements(
+        filterPlacementsByView(upcomingPlacements.map(toBookingPlacement), context),
+        bounds.to,
+        3,
+      ),
+    [upcomingPlacements, context, bounds.to],
   );
   const placementsByDate = useMemo(
     () => groupPlacementsByDate(filtered),
@@ -92,7 +128,10 @@ export function BookingCalendarPage() {
   };
 
   return (
-    <div className="booking-calendar-page" data-testid="booking-calendar-page">
+    <div
+      className={`booking-calendar-page booking-calendar-page--${context.displayMode}`}
+      data-testid="booking-calendar-page"
+    >
       <BookingCalendarControls
         context={context}
         regions={regions}
@@ -109,22 +148,40 @@ export function BookingCalendarPage() {
         onManageRegions={() => setRegionsOpen(true)}
       />
 
-      <BookingCalendarMatrix
-        month={context.month}
-        placementsByDate={placementsByDate}
-        onDateClick={setAgendaDate}
-        onPlacementClick={setSelectedPlacement}
-        onCellQuickAdd={(dateKey) => {
-          setQuickAdd({ date: dateKey, venueId: venues[0]?.id ?? '' });
-          setCreateEventOpen(true);
-        }}
-      />
+      <section className="booking-calendar-body" data-testid="booking-calendar-body">
+        <BookingCalendarMonthNav
+          month={context.month}
+          onMonthChange={(month) => setContext((current) => ({ ...current, month }))}
+        />
 
-      <BookingCalendarMobileStream
-        days={days}
-        placementsByDate={placementsByDate}
-        onPlacementClick={setSelectedPlacement}
-      />
+        <BookingCalendarListView
+          placements={filtered}
+          onPlacementClick={setSelectedPlacement}
+        />
+
+        <BookingCalendarUpcomingSection
+          month={context.month}
+          placements={upcomingFiltered}
+          onPlacementClick={setSelectedPlacement}
+        />
+
+        <BookingCalendarMatrix
+          month={context.month}
+          placementsByDate={placementsByDate}
+          onDateClick={setAgendaDate}
+          onPlacementClick={setSelectedPlacement}
+          onCellQuickAdd={(dateKey) => {
+            setQuickAdd({ date: dateKey, venueId: venues[0]?.id ?? '' });
+            setCreateEventOpen(true);
+          }}
+        />
+
+        <BookingCalendarMobileStream
+          days={days}
+          placementsByDate={placementsByDate}
+          onPlacementClick={setSelectedPlacement}
+        />
+      </section>
 
       <BookingDailyAgendaDrawer
         open={Boolean(agendaDate)}
@@ -141,7 +198,7 @@ export function BookingCalendarPage() {
         open={Boolean(selectedPlacement)}
         placement={selectedPlacement}
         onClose={() => setSelectedPlacement(null)}
-        onUpdated={() => void refetch()}
+        onUpdated={() => void Promise.all([refetch(), refetchUpcoming()])}
       />
 
       <CreateBookingEventModal

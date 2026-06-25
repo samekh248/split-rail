@@ -3,10 +3,14 @@ import {
   buildMonthCalendarWeeks,
   filterPlacementsByView,
   getMonthBounds,
+  getUpcomingPlacementsBounds,
   groupPlacementsByDate,
   groupPlacementsByDateAndVenue,
+  MAX_CALENDAR_QUERY_SPAN_DAYS,
+  pickNextUpcomingPlacements,
   previewConflict,
   sortAgendaPlacements,
+  sortPlacementsForList,
   type BookingPlacement,
   type CalendarViewContext,
 } from '@/lib/bookingCalendar';
@@ -34,6 +38,38 @@ describe('bookingCalendar', () => {
     const bounds = getMonthBounds('2026-06');
     expect(bounds.from).toBe('2026-06-01');
     expect(bounds.to).toBe('2026-06-30');
+  });
+
+  it('getUpcomingPlacementsBounds starts the day after the selected month', () => {
+    const bounds = getUpcomingPlacementsBounds('2026-06');
+    expect(bounds.from).toBe('2026-07-01');
+    expect(bounds.to > bounds.from).toBe(true);
+  });
+
+  it('getUpcomingPlacementsBounds stays within calendar API max span', () => {
+    const bounds = getUpcomingPlacementsBounds('2026-06');
+    const [fromYear, fromMonth, fromDay] = bounds.from.split('-').map(Number);
+    const [toYear, toMonth, toDay] = bounds.to.split('-').map(Number);
+    const fromDate = new Date(fromYear, fromMonth - 1, fromDay);
+    const toDate = new Date(toYear, toMonth - 1, toDay);
+    const daySpan = Math.round((toDate.getTime() - fromDate.getTime()) / 86_400_000);
+
+    expect(daySpan).toBeLessThanOrEqual(MAX_CALENDAR_QUERY_SPAN_DAYS);
+  });
+
+  it('pickNextUpcomingPlacements returns the next events after a month', () => {
+    const upcoming = pickNextUpcomingPlacements(
+      [
+        placement({ eventId: 'e1', eventDate: '2026-06-30' }),
+        placement({ eventId: 'e2', eventDate: '2026-07-05' }),
+        placement({ eventId: 'e3', eventDate: '2026-07-12' }),
+        placement({ eventId: 'e4', eventDate: '2026-08-01' }),
+      ],
+      '2026-06-30',
+      3,
+    );
+
+    expect(upcoming.map((item) => item.eventId)).toEqual(['e2', 'e3', 'e4']);
   });
 
   it('groupPlacementsByDate sorts each day', () => {
@@ -93,6 +129,16 @@ describe('bookingCalendar', () => {
     expect(sorted.map((p) => p.eventId)).toEqual(['e1', 'e2', 'e3']);
   });
 
+  it('sorts placements for list view by date then agenda order', () => {
+    const sorted = sortPlacementsForList([
+      placement({ eventId: 'e2', eventDate: '2026-08-02', doorsTime: '20:00' }),
+      placement({ eventId: 'e1', eventDate: '2026-08-01' }),
+      placement({ eventId: 'e3', eventDate: '2026-08-02', doorsTime: '18:00' }),
+    ]);
+
+    expect(sorted.map((p) => p.eventId)).toEqual(['e1', 'e3', 'e2']);
+  });
+
   it('filters placements by view context client-side', () => {
     const context: CalendarViewContext = {
       viewMode: 'regional',
@@ -100,6 +146,7 @@ describe('bookingCalendar', () => {
       venueId: null,
       month: '2026-06',
       showCancelled: false,
+      displayMode: 'calendar',
     };
 
     const placements = [
