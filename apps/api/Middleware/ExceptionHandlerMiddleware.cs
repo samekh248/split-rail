@@ -39,6 +39,7 @@ public class ExceptionHandlerMiddleware
             LastAdminException lastAdmin => (HttpStatusCode.BadRequest, "validation", lastAdmin.Message, null),
             NotFoundException notFound => (HttpStatusCode.NotFound, "not_found", notFound.Message, null),
             ConflictException conflict => (HttpStatusCode.Conflict, "conflict", conflict.Message, null),
+            BookingConflictException bookingConflict => (HttpStatusCode.Conflict, "conflict", bookingConflict.Message, null),
             LedgerStateException ledgerState => (HttpStatusCode.BadRequest, "ledger_state", ledgerState.Message, null),
             FormulaEvaluationException formula => (HttpStatusCode.UnprocessableEntity, "formula_evaluation", formula.Message, null),
             ConcurrencyConflictException concurrency => (HttpStatusCode.Conflict, "concurrency", concurrency.Message, null),

@@ -104,17 +104,33 @@ public record EventResponse(
     DateTimeOffset? SettledAt = null,
     bool SettlementPdfAvailable = false,
     DateTimeOffset? ReconciledAt = null,
-    Guid? ReconciledByUserId = null);
+    Guid? ReconciledByUserId = null,
+    string BookingPlacementStatus = "CONFIRMED",
+    string? DoorsTime = null,
+    string? LoadInTime = null,
+    string? CurfewTime = null,
+    string? SupportLineup = null,
+    bool WorkspaceAllowed = true);
 
 public record CreateEventRequest(
     string Title,
     string EventDate,
-    string? QboTagName);
+    string? QboTagName,
+    string? BookingPlacementStatus = null,
+    string? DoorsTime = null,
+    string? LoadInTime = null,
+    string? CurfewTime = null,
+    string? SupportLineup = null);
 
 public record UpdateEventRequest(
     string Title,
     string EventDate,
-    string? QboTagName);
+    string? QboTagName,
+    string? BookingPlacementStatus = null,
+    string? DoorsTime = null,
+    string? LoadInTime = null,
+    string? CurfewTime = null,
+    string? SupportLineup = null);
 
 public record CreateLineItemRequest(
     string BlockType,

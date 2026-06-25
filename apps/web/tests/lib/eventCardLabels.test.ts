@@ -1,19 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { getBookingPreviewLabel, BOOKING_PREVIEW_TOOLTIP } from '@/lib/eventCardLabels';
-import { EVENT_A } from '../fixtures/events';
+import { getBookingPreviewLabel, getBookingStatusLabel, BOOKING_PREVIEW_TOOLTIP } from '@/lib/eventCardLabels';
 
 describe('eventCardLabels', () => {
-  it('returns deterministic placeholder label from event id', () => {
-    const label = getBookingPreviewLabel(EVENT_A.eventId);
-    expect(['Hold 1', 'Hold 2', 'Confirmed']).toContain(label);
-    expect(getBookingPreviewLabel(EVENT_A.eventId)).toBe(label);
+  it('returns label from API booking status', () => {
+    expect(getBookingStatusLabel('HOLD_1')).toBe('Hold 1');
+    expect(getBookingStatusLabel('CONFIRMED')).toBe('Confirmed');
   });
 
-  it('defaults when event id missing', () => {
-    expect(getBookingPreviewLabel(undefined)).toBe('Hold 1');
+  it('getBookingPreviewLabel falls back to confirmed', () => {
+    expect(getBookingPreviewLabel('event-id')).toBe('Confirmed');
   });
 
-  it('exports booking preview tooltip copy', () => {
-    expect(BOOKING_PREVIEW_TOOLTIP).toContain('full calendar coming soon');
+  it('exports booking tooltip copy', () => {
+    expect(BOOKING_PREVIEW_TOOLTIP).toContain('Booking placement status');
   });
 });

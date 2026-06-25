@@ -18,7 +18,8 @@ public record EventCardDto(
     bool IsPinned,
     bool HasVarianceConcern,
     int UnmappedCount,
-    DateTimeOffset? LastSyncedAt);
+    DateTimeOffset? LastSyncedAt,
+    string BookingPlacementStatus = "CONFIRMED");
 
 public record UnmappedEventSummaryDto(
     Guid EventId,

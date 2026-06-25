@@ -8,6 +8,7 @@ import {
   isEventWorkspacePath,
   navigateReturnToApp,
   navigateToAcceptInvite,
+  navigateToBooking,
   navigateToCreateVenue,
   navigateToDashboard,
   navigateToVenues,
@@ -33,6 +34,16 @@ describe('appRoute', () => {
   it('getAppPath returns / for root', () => {
     expect(getAppPath()).toBe('/');
     expect(getDashboardPath()).toBe('/');
+  });
+
+  it('getAppPath returns /booking', () => {
+    window.history.pushState({}, '', '/booking');
+    expect(getAppPath()).toBe('/booking');
+  });
+
+  it('navigateToBooking pushes /booking', () => {
+    navigateToBooking();
+    expect(getAppPath()).toBe('/booking');
   });
 
   it('getAppPath returns settings paths', () => {

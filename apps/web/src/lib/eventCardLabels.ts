@@ -1,17 +1,19 @@
-const BOOKING_PREVIEW_LABELS = ['Hold 1', 'Hold 2', 'Confirmed'] as const;
+import type { BookingPlacementStatus } from '@/lib/bookingCalendar';
+import { formatBookingStatusLabel } from '@/lib/bookingCalendar';
 
-/** Placeholder booking badge label per TDD §4.3 (deterministic from event id). */
-export function getBookingPreviewLabel(eventId: string | undefined): string {
-  if (!eventId) {
-    return BOOKING_PREVIEW_LABELS[0];
+export function getBookingStatusLabel(
+  status: string | null | undefined,
+  eventId?: string,
+): string {
+  if (status) {
+    return formatBookingStatusLabel(status as BookingPlacementStatus);
   }
-
-  let hash = 0;
-  for (const char of eventId) {
-    hash = (hash + char.charCodeAt(0)) % BOOKING_PREVIEW_LABELS.length;
-  }
-  return BOOKING_PREVIEW_LABELS[hash]!;
+  return 'Confirmed';
 }
 
-export const BOOKING_PREVIEW_TOOLTIP =
-  'Booking status preview — full calendar coming soon';
+/** @deprecated Use getBookingStatusLabel with API bookingPlacementStatus */
+export function getBookingPreviewLabel(eventId: string | undefined): string {
+  return getBookingStatusLabel('CONFIRMED', eventId);
+}
+
+export const BOOKING_PREVIEW_TOOLTIP = 'Booking placement status';

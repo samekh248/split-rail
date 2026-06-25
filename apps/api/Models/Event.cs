@@ -19,6 +19,11 @@ public class Event
     public string? SettlementPdfUrl { get; set; }
     public uint Xmin { get; set; }
     public DateTimeOffset CreatedAt { get; set; }
+    public BookingPlacementStatus BookingPlacementStatus { get; set; } = BookingPlacementStatus.Confirmed;
+    public TimeOnly? DoorsTime { get; set; }
+    public TimeOnly? LoadInTime { get; set; }
+    public TimeOnly? CurfewTime { get; set; }
+    public string? SupportLineup { get; set; }
 
     public Venue Venue { get; set; } = null!;
     public User? SettledByUser { get; set; }

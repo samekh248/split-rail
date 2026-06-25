@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { FormField } from '@/components/auth/FormField';
 import { validateVenueName } from '@/auth/validation';
 import { useCreateVenue } from '@/api/venues';
+import { useRegions } from '@/api/regions';
 import { useUserProfile } from '@/api/user';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
 import { navigateToVenues } from '@/lib/dashboardRoute';
@@ -22,7 +23,9 @@ export function CreateVenuePage() {
   const { isLoading: profileLoading } = useUserProfile();
   const canManage = useCanManageVenues();
   const createVenue = useCreateVenue();
+  const { data: regions = [] } = useRegions();
   const [venueName, setVenueName] = useState('');
+  const [regionId, setRegionId] = useState('');
   const [fieldError, setFieldError] = useState<string | undefined>();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -45,7 +48,10 @@ export function CreateVenuePage() {
 
     setSubmitError(null);
     try {
-      await createVenue.mutateAsync({ name: venueName.trim() });
+      await createVenue.mutateAsync({
+        name: venueName.trim(),
+        regionId: regionId || null,
+      });
       navigateToVenues();
     } catch (error) {
       setSubmitError(mapCreateError(error));
@@ -83,6 +89,25 @@ export function CreateVenuePage() {
           disabled={createVenue.isPending}
           describedBy={errorId}
         />
+        {regions.length > 0 ? (
+          <label htmlFor="venue-create-region">
+            Region
+            <select
+              id="venue-create-region"
+              data-testid="venue-region-field"
+              value={regionId}
+              onChange={(event) => setRegionId(event.target.value)}
+              required
+            >
+              <option value="">Select region</option>
+              {regions.map((region) => (
+                <option key={region.id} value={region.id ?? ''}>
+                  {region.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <div className="auth-form__actions">
           <button
             type="button"

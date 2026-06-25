@@ -1,5 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getAppPath, navigateToAccounting } from '@/lib/appRoute';
+import {
+  getAppPath,
+  navigateToAccounting,
+  navigateToBooking,
+} from '@/lib/appRoute';
 import {
   GLOBAL_NAV_ITEMS,
   navigateToAccountingWithVenueScope,
@@ -34,11 +38,20 @@ describe('globalNav', () => {
     expect(resolveActiveGlobalNavId('/settings/team')).toBeNull();
   });
 
-  it('enables accounting nav item with /accounting match path', () => {
-    const accounting = GLOBAL_NAV_ITEMS.find((item) => item.id === 'accounting');
-    expect(accounting?.disabled).toBeUndefined();
-    expect(accounting?.matchPaths).toContain('/accounting');
-    expect(accounting?.navigate).toBeTypeOf('function');
+  it('navigateToBooking pushes /booking', () => {
+    navigateToBooking();
+    expect(getAppPath()).toBe('/booking');
+  });
+
+  it('resolves booking nav on /booking', () => {
+    expect(resolveActiveGlobalNavId('/booking')).toBe('booking');
+  });
+
+  it('enables booking nav item with /booking match path', () => {
+    const booking = GLOBAL_NAV_ITEMS.find((item) => item.id === 'booking');
+    expect(booking?.disabled).toBeUndefined();
+    expect(booking?.matchPaths).toContain('/booking');
+    expect(booking?.navigate).toBeTypeOf('function');
   });
 
   it('navigateToAccounting pushes /accounting', () => {

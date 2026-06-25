@@ -51,10 +51,11 @@ export function useCreateEvent(venueId: string | null) {
         method: 'POST',
         body: JSON.stringify(body),
       }),
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       if (venueId) {
         void queryClient.invalidateQueries({ queryKey: eventsQueryKey(venueId) });
       }
+      void queryClient.invalidateQueries({ queryKey: ['calendar'] });
     },
   });
 }
@@ -72,6 +73,7 @@ export function useUpdateEvent(venueId: string | null, eventId: string | null) {
       if (venueId) {
         void queryClient.invalidateQueries({ queryKey: eventsQueryKey(venueId) });
       }
+      void queryClient.invalidateQueries({ queryKey: ['calendar'] });
     },
   });
 }
@@ -88,6 +90,7 @@ export function useDeleteEvent(venueId: string | null) {
       if (venueId) {
         void queryClient.invalidateQueries({ queryKey: eventsQueryKey(venueId) });
       }
+      void queryClient.invalidateQueries({ queryKey: ['calendar'] });
     },
   });
 }

@@ -10,6 +10,7 @@ import { useActiveVenue } from '@/venue/useActiveVenue';
 import { useCanManageEvents } from '@/hooks/useCanManageEvents';
 import {
   buildEventWorkspacePath,
+  navigateToBooking,
   navigateToDashboard,
   replacePath,
   useEventWorkspaceRoute,
@@ -106,6 +107,23 @@ export function EventWorkspacePage() {
     }
     return resolveActiveEventId(events, activeVenueId ?? '');
   }, [urlEventId, events, eventsLoading, activeVenueId]);
+
+  const selectedEvent = useMemo(
+    () => events.find((event) => event.eventId === selectedEventId) ?? null,
+    [events, selectedEventId],
+  );
+
+  useEffect(() => {
+    if (!selectedEvent?.bookingPlacementStatus) {
+      return;
+    }
+    if (
+      selectedEvent.bookingPlacementStatus === 'HOLD_1'
+      || selectedEvent.bookingPlacementStatus === 'HOLD_2'
+    ) {
+      navigateToBooking();
+    }
+  }, [selectedEvent]);
 
   const handleSelectEvent = (eventId: string) => {
     if (!activeVenueId) {

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { FormField } from '@/components/auth/FormField';
 import { validateVenueName } from '@/auth/validation';
 import { useUpdateVenue } from '@/api/venues';
+import { useRegions } from '@/api/regions';
 import type { VenueResponse } from '@/types/generated-api';
 
 export interface VenueEditModalProps {
@@ -29,7 +30,9 @@ export function VenueEditModal({ venue, open, onClose, onSaved }: VenueEditModal
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const updateVenue = useUpdateVenue(venue.id ?? '');
+  const { data: regions = [] } = useRegions();
   const [name, setName] = useState(venue.name ?? '');
+  const [regionId, setRegionId] = useState(venue.regionId ?? '');
   const [fieldError, setFieldError] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
 
@@ -38,6 +41,7 @@ export function VenueEditModal({ venue, open, onClose, onSaved }: VenueEditModal
       return;
     }
     setName(venue.name ?? '');
+    setRegionId(venue.regionId ?? '');
     setFieldError(undefined);
     setError(null);
   }, [venue, open]);
@@ -76,7 +80,10 @@ export function VenueEditModal({ venue, open, onClose, onSaved }: VenueEditModal
 
     setError(null);
     try {
-      await updateVenue.mutateAsync({ name: name.trim() });
+      await updateVenue.mutateAsync({
+        name: name.trim(),
+        regionId: regionId || null,
+      });
       onSaved();
       onClose();
     } catch (err) {
@@ -117,6 +124,25 @@ export function VenueEditModal({ venue, open, onClose, onSaved }: VenueEditModal
           required
           disabled={isPending}
         />
+        {regions.length > 0 ? (
+          <label htmlFor="venue-edit-region">
+            Region
+            <select
+              id="venue-edit-region"
+              data-testid="venue-region-field"
+              value={regionId}
+              onChange={(event) => setRegionId(event.target.value)}
+              required
+            >
+              <option value="">Select region</option>
+              {regions.map((region) => (
+                <option key={region.id} value={region.id ?? ''}>
+                  {region.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : null}
         <div className="team-modal__actions">
           <button type="button" onClick={onClose} disabled={isPending}>
             Cancel

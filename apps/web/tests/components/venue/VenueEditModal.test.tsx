@@ -12,6 +12,10 @@ vi.mock('@/api/venues', () => ({
   useUpdateVenue: () => mockUpdate,
 }));
 
+vi.mock('@/api/regions', () => ({
+  useRegions: () => ({ data: [] }),
+}));
+
 const venue = {
   id: 'ven-1',
   name: 'Hall A',
@@ -44,7 +48,7 @@ describe('VenueEditModal', () => {
     await user.type(screen.getByLabelText('Venue name'), 'Hall A Updated');
     await user.click(screen.getByTestId('venue-edit-save'));
 
-    expect(mockUpdate.mutateAsync).toHaveBeenCalledWith({ name: 'Hall A Updated' });
+    expect(mockUpdate.mutateAsync).toHaveBeenCalledWith({ name: 'Hall A Updated', regionId: null });
     expect(onSaved).toHaveBeenCalled();
     expect(onClose).toHaveBeenCalled();
   });

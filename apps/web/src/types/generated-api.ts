@@ -2555,6 +2555,11 @@ export interface components {
             title?: string | null;
             eventDate?: string | null;
             qboTagName?: string | null;
+            bookingPlacementStatus?: string | null;
+            doorsTime?: string | null;
+            loadInTime?: string | null;
+            curfewTime?: string | null;
+            supportLineup?: string | null;
         };
         CreateInvitationRequest: {
             email?: string | null;
@@ -2585,6 +2590,8 @@ export interface components {
         };
         CreateVenueRequest: {
             name?: string | null;
+            /** Format: uuid */
+            regionId?: string | null;
         };
         DashboardResponse: {
             /** Format: uuid */
@@ -2638,6 +2645,7 @@ export interface components {
             unmappedCount?: number;
             /** Format: date-time */
             lastSyncedAt?: string | null;
+            bookingPlacementStatus?: string | null;
         };
         EventResponse: {
             /** Format: uuid */
@@ -2657,6 +2665,12 @@ export interface components {
             reconciledAt?: string | null;
             /** Format: uuid */
             reconciledByUserId?: string | null;
+            bookingPlacementStatus?: string | null;
+            doorsTime?: string | null;
+            loadInTime?: string | null;
+            curfewTime?: string | null;
+            supportLineup?: string | null;
+            workspaceAllowed?: boolean;
         };
         ExpectedSettlementDto: {
             computedNetPayout?: string | null;
@@ -2970,6 +2984,11 @@ export interface components {
             title?: string | null;
             eventDate?: string | null;
             qboTagName?: string | null;
+            bookingPlacementStatus?: string | null;
+            doorsTime?: string | null;
+            loadInTime?: string | null;
+            curfewTime?: string | null;
+            supportLineup?: string | null;
         };
         UpdateLineItemRequest: {
             rowLabel?: string | null;
@@ -3002,6 +3021,8 @@ export interface components {
         };
         UpdateVenueRequest: {
             name?: string | null;
+            /** Format: uuid */
+            regionId?: string | null;
         };
         UpdateVenueScopesRequest: {
             venueIds?: string[] | null;
@@ -3041,6 +3062,50 @@ export interface components {
             organizationId?: string;
             /** Format: date-time */
             createdAt?: string;
+            /** Format: uuid */
+            regionId?: string | null;
+        };
+        CalendarPlacementDto: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            venueId?: string;
+            venueName?: string | null;
+            /** Format: uuid */
+            regionId?: string | null;
+            regionName?: string | null;
+            title?: string | null;
+            eventDate?: string | null;
+            bookingPlacementStatus?: string | null;
+            doorsTime?: string | null;
+            loadInTime?: string | null;
+            curfewTime?: string | null;
+            supportLineup?: string | null;
+            financialStatus?: string | null;
+            isBudgetLocked?: boolean;
+            qboTagName?: string | null;
+            hasLineItems?: boolean;
+            workspaceAllowed?: boolean;
+        };
+        RegionResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string | null;
+            notes?: string | null;
+            /** Format: uuid */
+            organizationId?: string;
+            /** Format: date-time */
+            createdAt?: string;
+            /** Format: int32 */
+            venueCount?: number;
+        };
+        CreateRegionRequest: {
+            name?: string | null;
+            notes?: string | null;
+        };
+        UpdateRegionRequest: {
+            name?: string | null;
+            notes?: string | null;
         };
         VenueScopeDto: {
             /** Format: uuid */
@@ -3082,6 +3147,8 @@ export type ChangeRoleRequest = components['schemas']['ChangeRoleRequest'];
 export type ChangeRoleResponse = components['schemas']['ChangeRoleResponse'];
 export type CreateArtistRequest = components['schemas']['CreateArtistRequest'];
 export type CreateEventRequest = components['schemas']['CreateEventRequest'];
+export type CalendarPlacementDto = components['schemas']['CalendarPlacementDto'];
+export type CreateRegionRequest = components['schemas']['CreateRegionRequest'];
 export type CreateInvitationRequest = components['schemas']['CreateInvitationRequest'];
 export type CreateLineItemRequest = components['schemas']['CreateLineItemRequest'];
 export type CreateMappingRequest = components['schemas']['CreateMappingRequest'];
@@ -3115,6 +3182,7 @@ export type QboEgressRecordDto = components['schemas']['QboEgressRecordDto'];
 export type RefreshRequest = components['schemas']['RefreshRequest'];
 export type RegisterRequest = components['schemas']['RegisterRequest'];
 export type RegisterResponse = components['schemas']['RegisterResponse'];
+export type RegionResponse = components['schemas']['RegionResponse'];
 export type ResetSeedResponseDto = components['schemas']['ResetSeedResponseDto'];
 export type ReverseSettlementRequest = components['schemas']['ReverseSettlementRequest'];
 export type RoleDetailDto = components['schemas']['RoleDetailDto'];
@@ -3135,6 +3203,7 @@ export type UpdateEventRequest = components['schemas']['UpdateEventRequest'];
 export type UpdateLineItemRequest = components['schemas']['UpdateLineItemRequest'];
 export type UpdateMappingRequest = components['schemas']['UpdateMappingRequest'];
 export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
+export type UpdateRegionRequest = components['schemas']['UpdateRegionRequest'];
 export type UpdateRoleRequest = components['schemas']['UpdateRoleRequest'];
 export type UpdateVenueRequest = components['schemas']['UpdateVenueRequest'];
 export type UpdateVenueScopesRequest = components['schemas']['UpdateVenueScopesRequest'];

@@ -112,17 +112,18 @@ describe('GlobalNav', () => {
     expect(screen.queryByTestId('global-nav-accounting')).not.toBeInTheDocument();
   });
 
-  it('does not navigate when disabled booking placeholder is clicked', async () => {
+  it('navigates to booking when booking item is clicked', async () => {
     const user = userEvent.setup();
     renderNav();
 
     await user.click(screen.getByTestId('global-nav-booking'));
-    expect(getAppPath()).toBe('/');
+    expect(getAppPath()).toBe('/booking');
   });
 
-  it('shows coming soon only on disabled booking item', () => {
+  it('does not show coming soon on enabled booking item', () => {
     renderNav();
-    expect(screen.getAllByText('Coming soon')).toHaveLength(1);
+    const booking = screen.getByTestId('global-nav-booking');
+    expect(booking).not.toHaveTextContent('Coming soon');
   });
 
   it('does not show coming soon on accounting when financial permission is granted', () => {
