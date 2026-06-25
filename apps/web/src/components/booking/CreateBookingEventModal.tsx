@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FormField } from '@/components/auth/FormField';
+import { SelectField } from '@/components/auth/SelectField';
 import { useCreateEvent } from '@/api/events';
 import type { VenueResponse } from '@/types/generated-api';
 
@@ -70,16 +71,16 @@ export function CreateBookingEventModal({
     >
       <form onSubmit={handleSubmit}>
         <h2>Create confirmed event</h2>
-        <label>
-          Venue
-          <select value={venueId} onChange={(event) => setVenueId(event.target.value)}>
-            {venues.map((venue) => (
-              <option key={venue.id} value={venue.id ?? ''}>
-                {venue.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          id="booking-event-venue"
+          label="Venue"
+          value={venueId}
+          options={venues.map((venue) => ({
+            value: venue.id ?? '',
+            label: venue.name ?? 'Unnamed venue',
+          }))}
+          onChange={setVenueId}
+        />
         <FormField label="Date" id="booking-event-date" type="date" value={eventDate} onChange={setEventDate} />
         <FormField label="Title" id="booking-event-title" type="text" value={title} onChange={setTitle} />
         <FormField label="Doors time" id="booking-event-doors" type="time" value={doorsTime} onChange={setDoorsTime} />

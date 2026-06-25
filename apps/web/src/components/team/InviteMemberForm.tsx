@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FormField } from '@/components/auth/FormField';
+import { SelectField } from '@/components/auth/SelectField';
 import { useCreateInvitation } from '@/api/invitations';
 import { useRoles } from '@/api/roles';
 import { useVenues } from '@/api/venues';
@@ -100,25 +101,18 @@ export function InviteMemberForm() {
           autoComplete="email"
           disabled={createInvitation.isPending}
         />
-        <div className="form-field">
-          <label htmlFor="invite-role" className="form-field__label">
-            Role
-          </label>
-          <select
-            id="invite-role"
-            className="form-field__input"
-            value={roleId}
-            onChange={(event) => setRoleId(event.target.value)}
-            disabled={createInvitation.isPending || rolesLoading}
-            required
-          >
-            {roles.map((role) => (
-              <option key={role.id} value={role.id ?? ''}>
-                {role.roleName}
-              </option>
-            ))}
-          </select>
-        </div>
+        <SelectField
+          id="invite-role"
+          label="Role"
+          value={roleId}
+          options={roles.map((role) => ({
+            value: role.id ?? '',
+            label: role.roleName ?? 'Role',
+          }))}
+          onChange={setRoleId}
+          disabled={createInvitation.isPending || rolesLoading}
+          required
+        />
         <fieldset className="invite-form__venues">
           <legend className="form-field__label">Venue access</legend>
           <label className="invite-form__venue-option">

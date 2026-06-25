@@ -1582,6 +1582,10 @@ th {
   background: var(--color-surface-white);
 }
 
+select.form-field__input {
+  cursor: pointer;
+}
+
 .form-field__input:focus-visible {
   outline: 2px solid var(--color-focus-ring);
   outline-offset: 0;
@@ -2543,6 +2547,43 @@ button.welcome-modal__dismiss {
 .venues-page__title {
   margin: 0;
   font-size: 1.5rem;
+}
+
+.venues-page-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem;
+}
+
+.venues-page-controls__field {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.venues-page-controls__label {
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.venues-page-controls__manage-regions {
+  margin-left: auto;
+}
+
+.venues-page-controls__helper {
+  flex: 1 1 100%;
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.venues-grouped-list {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.venues-page__region-empty {
+  margin: 0;
 }
 
 .accounting-overview {

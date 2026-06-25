@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FormField } from '@/components/auth/FormField';
+import { SelectField } from '@/components/auth/SelectField';
 import { useCreateEvent } from '@/api/events';
 import type { VenueResponse } from '@/types/generated-api';
 
@@ -69,26 +70,29 @@ export function CreateHoldModal({
     >
       <form onSubmit={handleSubmit}>
         <h2>Create hold</h2>
-        <label>
-          Venue
-          <select value={venueId} onChange={(event) => setVenueId(event.target.value)}>
-            {venues.map((venue) => (
-              <option key={venue.id} value={venue.id ?? ''}>
-                {venue.name}
-              </option>
-            ))}
-          </select>
-        </label>
+        <SelectField
+          id="booking-hold-venue"
+          label="Venue"
+          value={venueId}
+          options={venues.map((venue) => ({
+            value: venue.id ?? '',
+            label: venue.name ?? 'Unnamed venue',
+          }))}
+          onChange={setVenueId}
+        />
         <FormField label="Date" id="booking-hold-date" type="date" value={eventDate} onChange={setEventDate} />
         <FormField label="Act name" id="booking-hold-title" type="text" value={title} onChange={setTitle} />
-        <label>
-          Tier
-          <select value={tier} onChange={(event) => setTier(event.target.value as typeof tier)}>
-            <option value="auto">Auto</option>
-            <option value="HOLD_1">Hold 1</option>
-            <option value="HOLD_2">Hold 2</option>
-          </select>
-        </label>
+        <SelectField
+          id="booking-hold-tier"
+          label="Tier"
+          value={tier}
+          options={[
+            { value: 'auto', label: 'Auto' },
+            { value: 'HOLD_1', label: 'Hold 1' },
+            { value: 'HOLD_2', label: 'Hold 2' },
+          ]}
+          onChange={(value) => setTier(value as typeof tier)}
+        />
         {error ? <p role="alert">{error}</p> : null}
         <button type="button" onClick={onClose}>
           Cancel

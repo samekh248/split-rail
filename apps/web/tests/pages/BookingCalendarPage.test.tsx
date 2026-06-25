@@ -71,4 +71,14 @@ describe('BookingCalendarPage', () => {
     expect(screen.getByTestId('booking-calendar-page')).toHaveClass('booking-calendar-page--list');
     expect(screen.getByTestId('booking-display-list')).toHaveAttribute('aria-pressed', 'true');
   });
+
+  it('does not render manage regions control', () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByTestId('booking-manage-regions')).not.toBeInTheDocument();
+  });
 });

@@ -9,6 +9,7 @@ import type {
   EventCardDto,
   EventResponse,
   PermissionsDto,
+  RegionResponse,
   VenueResponse,
 } from '@/types/generated-api';
 import { fullAccessProfile, restrictedProfile } from '../fixtures/auth';
@@ -43,6 +44,7 @@ export interface MockWorkspaceFetchOptions {
   createdEvent?: EventResponse;
   createdVenue?: VenueResponse;
   createVenueStatus?: number;
+  regions?: RegionResponse[];
 }
 
 const DEFAULT_CREATED_VENUE: VenueResponse = {
@@ -147,6 +149,7 @@ export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
     createVenueStatus = 201,
     venueQboStatusByVenue = {},
     venueSyncResultByVenue = {},
+    regions = [],
   } = options;
 
   let venueList = [...venues];
@@ -311,6 +314,14 @@ export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
           ok: true,
           status: 200,
           json: () => Promise.resolve(events),
+        };
+      }
+
+      if (url.includes('/api/regions') || url.endsWith('/regions')) {
+        return {
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(regions),
         };
       }
 

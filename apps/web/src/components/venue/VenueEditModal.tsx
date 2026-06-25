@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { FormField } from '@/components/auth/FormField';
+import { SelectField } from '@/components/auth/SelectField';
 import { validateVenueName } from '@/auth/validation';
 import { useUpdateVenue } from '@/api/venues';
 import { useRegions } from '@/api/regions';
@@ -125,23 +126,20 @@ export function VenueEditModal({ venue, open, onClose, onSaved }: VenueEditModal
           disabled={isPending}
         />
         {regions.length > 0 ? (
-          <label htmlFor="venue-edit-region">
-            Region
-            <select
-              id="venue-edit-region"
-              data-testid="venue-region-field"
-              value={regionId}
-              onChange={(event) => setRegionId(event.target.value)}
-              required
-            >
-              <option value="">Select region</option>
-              {regions.map((region) => (
-                <option key={region.id} value={region.id ?? ''}>
-                  {region.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectField
+            id="venue-edit-region"
+            label="Region"
+            value={regionId}
+            placeholder="Select region"
+            options={regions.map((region) => ({
+              value: region.id ?? '',
+              label: region.name ?? 'Unnamed region',
+            }))}
+            onChange={setRegionId}
+            required
+            disabled={isPending}
+            data-testid="venue-region-field"
+          />
         ) : null}
         <div className="team-modal__actions">
           <button type="button" onClick={onClose} disabled={isPending}>

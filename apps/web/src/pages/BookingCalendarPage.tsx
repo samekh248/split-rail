@@ -11,7 +11,6 @@ import { BookingDailyAgendaDrawer } from '@/components/booking/BookingDailyAgend
 import { BookingEventDrawer } from '@/components/booking/BookingEventDrawer';
 import { CreateBookingEventModal } from '@/components/booking/CreateBookingEventModal';
 import { CreateHoldModal } from '@/components/booking/CreateHoldModal';
-import { RegionManagementPanel } from '@/components/booking/RegionManagementPanel';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import {
   filterPlacementsByView,
@@ -92,7 +91,6 @@ export function BookingCalendarPage() {
   const [selectedPlacement, setSelectedPlacement] = useState<BookingPlacement | null>(null);
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [createHoldOpen, setCreateHoldOpen] = useState(false);
-  const [regionsOpen, setRegionsOpen] = useState(false);
   const [quickAdd, setQuickAdd] = useState<{ venueId: string; date: string } | null>(null);
 
   const filtered = useMemo(
@@ -145,7 +143,6 @@ export function BookingCalendarPage() {
           setQuickAdd(null);
           setCreateHoldOpen(true);
         }}
-        onManageRegions={() => setRegionsOpen(true)}
       />
 
       <section className="booking-calendar-body" data-testid="booking-calendar-body">
@@ -219,7 +216,6 @@ export function BookingCalendarPage() {
         onCreated={handlePlacementCreated}
       />
 
-      <RegionManagementPanel open={regionsOpen} onClose={() => setRegionsOpen(false)} />
     </div>
   );
 }

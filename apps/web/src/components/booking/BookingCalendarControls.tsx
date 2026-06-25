@@ -1,8 +1,18 @@
 import type { RegionResponse, VenueResponse } from '@/types/generated-api';
 import type { CalendarViewContext } from '@/lib/bookingCalendar';
+import { SelectField } from '@/components/auth/SelectField';
 import { BookingCalendarDisplayModeToggle } from '@/components/booking/BookingCalendarDisplayModeToggle';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
+
+const VIEW_MODE_OPTIONS = [
+  { value: 'global', label: 'Global' },
+  { value: 'regional', label: 'Regional' },
+  { value: 'venue', label: 'Venue' },
+];
+
+const INLINE_FIELD = 'booking-calendar-controls__field booking-calendar-controls__field--inline';
+const INLINE_LABEL = 'booking-calendar-controls__label';
 
 export interface BookingCalendarControlsProps {
   context: CalendarViewContext;
@@ -11,7 +21,6 @@ export interface BookingCalendarControlsProps {
   onContextChange: (next: CalendarViewContext) => void;
   onCreateEvent: () => void;
   onCreateHold: () => void;
-  onManageRegions: () => void;
 }
 
 export function BookingCalendarControls({
@@ -21,74 +30,69 @@ export function BookingCalendarControls({
   onContextChange,
   onCreateEvent,
   onCreateHold,
-  onManageRegions,
 }: BookingCalendarControlsProps) {
   return (
     <div className="booking-calendar-controls" data-testid="booking-calendar-controls">
       <header className="booking-calendar-controls__header" data-testid="booking-calendar-controls-header">
         <div className="booking-calendar-controls__header-start">
-          <label className="booking-calendar-controls__field booking-calendar-controls__field--inline">
-            <span className="booking-calendar-controls__label">View</span>
-            <select
-              data-testid="booking-view-mode"
-              value={context.viewMode}
-              onChange={(event) =>
-                onContextChange({
-                  ...context,
-                  viewMode: event.target.value as CalendarViewContext['viewMode'],
-                })
-              }
-            >
-              <option value="global">Global</option>
-              <option value="regional">Regional</option>
-              <option value="venue">Venue</option>
-            </select>
-          </label>
+          <SelectField
+            id="booking-view-mode"
+            label="View"
+            value={context.viewMode}
+            options={VIEW_MODE_OPTIONS}
+            onChange={(viewMode) =>
+              onContextChange({
+                ...context,
+                viewMode: viewMode as CalendarViewContext['viewMode'],
+              })
+            }
+            wrapperClassName={INLINE_FIELD}
+            labelClassName={INLINE_LABEL}
+            data-testid="booking-view-mode"
+          />
 
           {context.viewMode === 'regional' ? (
-            <label className="booking-calendar-controls__field booking-calendar-controls__field--inline">
-              <span className="booking-calendar-controls__label">Region</span>
-              <select
-                data-testid="booking-region-filter"
-                value={context.regionId ?? ''}
-                onChange={(event) =>
-                  onContextChange({
-                    ...context,
-                    regionId: event.target.value || null,
-                  })
-                }
-              >
-                <option value="">Select region</option>
-                {regions.map((region) => (
-                  <option key={region.id} value={region.id ?? ''}>
-                    {region.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SelectField
+              id="booking-region-filter"
+              label="Region"
+              value={context.regionId ?? ''}
+              placeholder="Select region"
+              options={regions.map((region) => ({
+                value: region.id ?? '',
+                label: region.name ?? 'Unnamed region',
+              }))}
+              onChange={(regionId) =>
+                onContextChange({
+                  ...context,
+                  regionId: regionId || null,
+                })
+              }
+              wrapperClassName={INLINE_FIELD}
+              labelClassName={INLINE_LABEL}
+              data-testid="booking-region-filter"
+            />
           ) : null}
 
           {context.viewMode === 'venue' ? (
-            <label className="booking-calendar-controls__field booking-calendar-controls__field--inline">
-              <span className="booking-calendar-controls__label">Venue</span>
-              <select
-                data-testid="booking-venue-filter"
-                value={context.venueId ?? ''}
-                onChange={(event) =>
-                  onContextChange({
-                    ...context,
-                    venueId: event.target.value || null,
-                  })
-                }
-              >
-                <option value="">Select venue</option>
-                {venues.map((venue) => (
-                  <option key={venue.id} value={venue.id ?? ''}>
-                    {venue.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SelectField
+              id="booking-venue-filter"
+              label="Venue"
+              value={context.venueId ?? ''}
+              placeholder="Select venue"
+              options={venues.map((venue) => ({
+                value: venue.id ?? '',
+                label: venue.name ?? 'Unnamed venue',
+              }))}
+              onChange={(venueId) =>
+                onContextChange({
+                  ...context,
+                  venueId: venueId || null,
+                })
+              }
+              wrapperClassName={INLINE_FIELD}
+              labelClassName={INLINE_LABEL}
+              data-testid="booking-venue-filter"
+            />
           ) : null}
         </div>
 
@@ -117,9 +121,6 @@ export function BookingCalendarControls({
         </button>
         <button type="button" data-testid="booking-create-hold" onClick={onCreateHold}>
           <FontAwesomeIcon icon={faPlus} /> Create Hold
-        </button>
-        <button type="button" data-testid="booking-manage-regions" onClick={onManageRegions}>
-          Manage regions
         </button>
       </div>
     </div>

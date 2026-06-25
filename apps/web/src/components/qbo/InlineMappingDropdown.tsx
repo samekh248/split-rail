@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useCreateMapping } from '@/api/qbo';
 import { dashboardQueryKey } from '@/api/dashboard';
 import { useQueryClient } from '@tanstack/react-query';
+import { SelectField } from '@/components/auth/SelectField';
 import { ledgerKeys } from '@/api/ledger';
 import { qboKeys } from '@/api/qbo';
 import type { UnmappedTransactionDto } from '@/types/generated-api';
@@ -49,19 +50,19 @@ export function InlineMappingDropdown({
 
   return (
     <div className="inline-mapping-dropdown" data-testid="inline-mapping-dropdown">
-      <select
-        aria-label="Map to ledger row"
+      <SelectField
+        id={`inline-mapping-select-${transaction.id}`}
+        ariaLabel="Map to ledger row"
         value={selectedLineItemId}
-        onChange={(e) => setSelectedLineItemId(e.target.value)}
+        placeholder="Select row…"
+        options={lineItemOptions.map((option) => ({
+          value: option.id,
+          label: option.label,
+        }))}
+        onChange={setSelectedLineItemId}
+        wrapperClassName="inline-mapping-dropdown__select"
         data-testid="inline-mapping-select"
-      >
-        <option value="">Select row…</option>
-        {lineItemOptions.map((option) => (
-          <option key={option.id} value={option.id}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      />
       <button
         type="button"
         disabled={!selectedLineItemId || createMapping.isPending}

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { SelectField } from '@/components/auth/SelectField';
 import { previewNetPayout } from '@/lib/dealMathPreview';
 import { formatMoney } from '@/lib/money';
 import { canMoveArtist } from '@/lib/reorderArtists';
@@ -303,20 +304,17 @@ export function ArtistDealPanel({
             />
           </label>
 
-          <label>
-            Deal type
-            <select
-              value={dealType}
-              data-testid="deal-type-select"
-              onChange={(e) => setDealType(e.target.value as DealType)}
-            >
-              {DEAL_TYPES.map((dt) => (
-                <option key={dt.value} value={dt.value}>
-                  {dt.label}
-                </option>
-              ))}
-            </select>
-          </label>
+          <SelectField
+            id="deal-type-select"
+            label="Deal type"
+            value={dealType}
+            options={DEAL_TYPES.map((dealTypeOption) => ({
+              value: dealTypeOption.value,
+              label: dealTypeOption.label,
+            }))}
+            onChange={(value) => setDealType(value as DealType)}
+            data-testid="deal-type-select"
+          />
 
           <label>
             Base guarantee
