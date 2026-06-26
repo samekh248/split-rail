@@ -51,7 +51,6 @@ export interface TonightHeroBannerProps {
   events: EventCardDto[];
   permissions: PermissionsDto;
   onQuickLink: DashboardZoneEventsProps['onQuickLink'];
-  onPinToggle: DashboardZoneEventsProps['onPinToggle'];
   onCardActivate: DashboardZoneEventsProps['onCardActivate'];
 }
 
@@ -59,7 +58,6 @@ export function TonightHeroBanner({
   events,
   permissions,
   onQuickLink,
-  onPinToggle,
   onCardActivate,
 }: TonightHeroBannerProps) {
   if (events.length === 0) {

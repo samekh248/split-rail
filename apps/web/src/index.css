@@ -64,7 +64,7 @@ body {
 }
 
 /*
- * Typography â€” global defaults (061-global-typography-rules)
+ * Typography — global defaults (061-global-typography-rules)
  *
  * Headings:     h1, h2, h3, .heading-brand
  * UI text:      body, p, label, button, input, td, th
@@ -573,7 +573,7 @@ th {
   object-fit: contain;
 }
 
-/* App shell â€” vertical sidebar navigation */
+/* App shell — vertical sidebar navigation */
 .app-shell {
   min-height: 100vh;
   background: var(--color-bg-cream);
@@ -1699,11 +1699,6 @@ th {
   gap: 0.375rem;
 }
 
-.add-line-item-form__field .form-field__input {
-  width: 100%;
-  box-sizing: border-box;
-}
-
 .add-line-item-form__checkbox {
   display: flex;
   align-items: center;
@@ -1841,11 +1836,6 @@ th {
   margin-top: 1.25rem;
   padding-top: 1.25rem;
   border-top: 1px solid var(--color-border-subtle);
-}
-
-.artist-deal-panel__form .form-field__input {
-  width: 100%;
-  box-sizing: border-box;
 }
 
 .artist-deal-panel__form .select-field {
@@ -2088,6 +2078,8 @@ th {
 }
 
 .form-field__input {
+  width: 100%;
+  box-sizing: border-box;
   padding: 0.625rem 0.75rem;
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-card);
