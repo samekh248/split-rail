@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { VenuesPage } from '@/pages/VenuesPage';
 import { EventWorkspacePage } from '@/pages/EventWorkspacePage';
 import { buildEventWorkspacePath } from '@/lib/appRoute';
 import { EVENT_A } from '../fixtures/events';
@@ -27,6 +28,26 @@ describe('AppShell', () => {
     sessionStorage.clear();
     window.history.pushState({}, '', '/');
     vi.unstubAllGlobals();
+    Object.defineProperty(window, 'matchMedia', {
+      writable: true,
+      value: vi.fn().mockImplementation((query: string) => ({
+        matches: false,
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    });
+  });
+
+  it('hides the header on desktop when no workspace or top bar content is set', async () => {
+    window.history.pushState({}, '', '/venues');
+    render(<VenuesPage />, {
+      wrapper: createShellWrapper({}, { venues: [] }),
+    });
+
+    expect(await screen.findByTestId('venues-page')).toBeInTheDocument();
+    expect(screen.queryByTestId('app-shell-header')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('top-bar')).not.toBeInTheDocument();
   });
 
   it('renders left rail, top bar, and main content regions', async () => {

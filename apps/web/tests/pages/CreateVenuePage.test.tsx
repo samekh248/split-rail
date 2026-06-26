@@ -65,12 +65,13 @@ describe('CreateVenuePage', () => {
     vi.unstubAllGlobals();
   });
 
-  it('renders inside AppShell with organization name in top bar', async () => {
+  it('renders inside AppShell on desktop without empty header chrome', async () => {
     mockWorkspaceFetch();
     render(<CreateVenuePage />, { wrapper: createWrapper() });
 
     expect(await screen.findByTestId('app-shell')).toBeInTheDocument();
-    expect(await screen.findByTestId('top-bar-org-name')).toHaveTextContent('Acme Org');
+    expect(screen.queryByTestId('app-shell-header')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('top-bar-org-name')).not.toBeInTheDocument();
   });
 
   it('creates a venue and navigates to dashboard with active venue', async () => {
