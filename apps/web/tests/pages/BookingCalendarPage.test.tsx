@@ -42,6 +42,7 @@ describe('BookingCalendarPage', () => {
 
     expect(screen.getByTestId('booking-calendar-page')).toBeInTheDocument();
     expect(screen.getByTestId('booking-calendar-controls')).toBeInTheDocument();
+    expect(screen.getByTestId('booking-calendar-legend')).toBeInTheDocument();
     expect(screen.getByTestId('booking-calendar-matrix')).toBeInTheDocument();
   });
 

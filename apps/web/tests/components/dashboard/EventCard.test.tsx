@@ -32,6 +32,7 @@ function renderCard(
     lineItems?: LineItemDto[];
     isPinned?: boolean;
     onPinToggle?: () => void;
+    compact?: boolean;
   },
 ) {
   const onQuickLink = vi.fn();
@@ -43,6 +44,7 @@ function renderCard(
       lineItems={extra?.lineItems}
       isPinned={extra?.isPinned}
       onPinToggle={extra?.onPinToggle}
+      compact={extra?.compact}
     />,
   );
   return { onQuickLink };
@@ -61,6 +63,13 @@ describe('EventCard', () => {
       const badge = screen.getByTestId(`event-card-booking-${EVENT_A.eventId}`);
       expect(badge).toBeInTheDocument();
       expect(badge).toHaveAttribute('title', expect.stringContaining('Booking placement status'));
+      expect(badge).toHaveClass('event-card__booking-badge--confirmed');
+    });
+
+    it('applies booking status colors for hold placements', () => {
+      renderCard({ ...EVENT_A, bookingPlacementStatus: 'HOLD_2' });
+      const badge = screen.getByTestId(`event-card-booking-${EVENT_A.eventId}`);
+      expect(badge).toHaveClass('event-card__booking-badge--hold-2');
     });
 
     it('shows placeholders when title and date are missing', () => {
@@ -253,6 +262,24 @@ describe('EventCard', () => {
       expect(
         screen.getByTestId(`event-card-alert-MISSING_SIGNATURE-${EVENT_A.eventId}`),
       ).toHaveTextContent('Missing signature');
+    });
+  });
+
+  describe('compact layout', () => {
+    it('shows title and status on the first row without pin or quick links', () => {
+      renderCard(
+        { ...EVENT_A, status: 'PRE_SHOW', isBudgetLocked: false, eventDate: futureDate() },
+        FULL_PERMISSIONS,
+        { compact: true, onPinToggle: vi.fn() },
+      );
+
+      const card = screen.getByTestId(`event-card-${EVENT_A.eventId}`);
+      expect(card).toHaveClass('event-card--compact');
+      expect(card.querySelector('.event-card__meta-row')).toBeInTheDocument();
+      expect(screen.getByTestId(`event-card-booking-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.queryByTestId(`event-card-pin-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+      expect(screen.queryByTestId(`event-card-link-deal-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+      expect(screen.queryByTestId(`event-card-link-lock-budget-${EVENT_A.eventId}`)).not.toBeInTheDocument();
     });
   });
 

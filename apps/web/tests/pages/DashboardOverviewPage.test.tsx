@@ -309,25 +309,50 @@ describe('DashboardOverviewPage', () => {
     expect(screen.getByText('Soon')).toBeInTheDocument();
   });
 
-  it('pin toggle calls PUT pin endpoint', async () => {
-    const upcoming = eventOn(offsetDate(1), {
-      eventId: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
-      title: 'Pin Me',
-    });
-    const mock = mockWorkspaceFetch({
+  it('upcoming list cards omit pin control', async () => {
+    const eventId = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+    mockWorkspaceFetch({
       venues: [VENUE_A],
-      eventsByVenue: { [VENUE_A.id]: [upcoming] },
+      dashboardByVenue: {
+        [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+          upcomingEvents: [cardOn(offsetDate(1), { eventId, title: 'Upcoming Only' })],
+        }),
+      },
     });
 
-    const user = userEvent.setup();
     render(<DashboardOverviewPage />, { wrapper: createWrapper() });
 
-    await screen.findByTestId('dashboard-overview');
-    await user.click(screen.getByTestId('event-card-pin-dddddddd-dddd-dddd-dddd-dddddddddddd'));
+    const upcomingSection = await screen.findByTestId('dashboard-zone-upcoming');
+    expect(within(upcomingSection).getByText('Upcoming Only')).toBeInTheDocument();
+    expect(within(upcomingSection).queryByTestId(`event-card-pin-${eventId}`)).not.toBeInTheDocument();
+  });
 
-    await waitFor(() => {
-      expect(mock.pinRequests.some((request) => request.method === 'PUT')).toBe(true);
+  it('pinned cards show pin control and quick links', async () => {
+    const eventId = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      dashboardByVenue: {
+        [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+          pinnedEvents: [
+            cardOn(offsetDate(1), {
+              eventId,
+              title: 'Pinned Show',
+              isPinned: true,
+              status: 'PRE_SHOW',
+              isBudgetLocked: false,
+            }),
+          ],
+        }),
+      },
     });
+
+    render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+    const pinnedSection = await screen.findByTestId('dashboard-zone-pinned');
+    const card = within(pinnedSection).getByTestId(`event-card-${eventId}`);
+    expect(card).not.toHaveClass('event-card--compact');
+    expect(within(pinnedSection).getByTestId(`event-card-pin-${eventId}`)).toBeInTheDocument();
+    expect(within(pinnedSection).getByTestId(`event-card-link-deal-${eventId}`)).toBeInTheDocument();
   });
 
   it('pinned state survives dashboard refetch without localStorage', async () => {
@@ -381,10 +406,11 @@ describe('DashboardOverviewPage', () => {
     });
   });
 
-  it('pin toggle updates UI before network completes', async () => {
-    let resolvePin: (() => void) | undefined;
-    const pinPromise = new Promise<void>((resolve) => {
-      resolvePin = resolve;
+  it('unpin updates pinned zone before network completes', async () => {
+    const eventId = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
+    let resolveUnpin: (() => void) | undefined;
+    const unpinPromise = new Promise<void>((resolve) => {
+      resolveUnpin = resolve;
     });
 
     vi.stubGlobal(
@@ -408,18 +434,14 @@ describe('DashboardOverviewPage', () => {
             json: () =>
               Promise.resolve(
                 dashboardForVenue(VENUE_A.id, {
-                  upcomingEvents: [
-                    cardOn(offsetDate(1), {
-                      eventId: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
-                      title: 'Pin Me',
-                    }),
-                  ],
+                  upcomingEvents: [cardOn(offsetDate(1), { eventId, title: 'Pin Me', isPinned: true })],
+                  pinnedEvents: [cardOn(offsetDate(1), { eventId, title: 'Pin Me', isPinned: true })],
                 }),
               ),
           };
         }
-        if (url.includes('/pin') && init?.method === 'PUT') {
-          await pinPromise;
+        if (url.includes('/pin') && init?.method === 'DELETE') {
+          await unpinPromise;
           return { ok: true, status: 204, json: () => Promise.resolve(undefined) };
         }
         return { ok: true, status: 200, json: () => Promise.resolve({}) };
@@ -430,25 +452,24 @@ describe('DashboardOverviewPage', () => {
     render(<DashboardOverviewPage />, { wrapper: createWrapper() });
 
     const pinnedSection = await screen.findByTestId('dashboard-zone-pinned');
-    await user.click(screen.getByTestId('event-card-pin-dddddddd-dddd-dddd-dddd-dddddddddddd'));
+    await user.click(within(pinnedSection).getByTestId(`event-card-pin-${eventId}`));
 
     await waitFor(() => {
-      expect(within(pinnedSection).getByText('Pin Me')).toBeInTheDocument();
+      expect(within(pinnedSection).getByText('No pinned events')).toBeInTheDocument();
     });
 
-    resolvePin?.();
+    resolveUnpin?.();
   });
 
-  it('failed pin reverts optimistic state and shows error', async () => {
+  it('failed unpin reverts optimistic state and shows error', async () => {
+    const eventId = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
     mockWorkspaceFetch({
       venues: [VENUE_A],
-      eventsByVenue: {
-        [VENUE_A.id]: [
-          eventOn(offsetDate(1), {
-            eventId: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
-            title: 'Pin Me',
-          }),
-        ],
+      dashboardByVenue: {
+        [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+          upcomingEvents: [cardOn(offsetDate(1), { eventId, title: 'Pin Me', isPinned: true })],
+          pinnedEvents: [cardOn(offsetDate(1), { eventId, title: 'Pin Me', isPinned: true })],
+        }),
       },
       pinError: true,
     });
@@ -457,33 +478,45 @@ describe('DashboardOverviewPage', () => {
     render(<DashboardOverviewPage />, { wrapper: createWrapper() });
 
     const pinnedSection = await screen.findByTestId('dashboard-zone-pinned');
-    await user.click(screen.getByTestId('event-card-pin-dddddddd-dddd-dddd-dddd-dddddddddddd'));
+    await user.click(within(pinnedSection).getByTestId(`event-card-pin-${eventId}`));
 
     await waitFor(() => {
       expect(screen.getByTestId('dashboard-pin-error')).toBeInTheDocument();
     });
     await waitFor(() => {
-      expect(within(pinnedSection).getByText('No pinned events')).toBeInTheDocument();
+      expect(within(pinnedSection).getByText('Pin Me')).toBeInTheDocument();
     });
   });
 
   it('navigates to workspace from quick link', async () => {
+    const eventId = 'dddddddd-dddd-dddd-dddd-dddddddddddd';
     const preShow = eventOn(offsetDate(1), {
-      eventId: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+      eventId,
       status: 'PRE_SHOW',
       isBudgetLocked: false,
     });
     mockWorkspaceFetch({
       venues: [VENUE_A],
       eventsByVenue: { [VENUE_A.id]: [preShow] },
+      dashboardByVenue: {
+        [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+          pinnedEvents: [
+            cardOn(offsetDate(1), {
+              eventId,
+              status: 'PRE_SHOW',
+              isBudgetLocked: false,
+              isPinned: true,
+            }),
+          ],
+        }),
+      },
     });
 
     const user = userEvent.setup();
     render(<DashboardOverviewPage />, { wrapper: createWrapper() });
 
-    await user.click(
-      await screen.findByTestId('event-card-link-deal-dddddddd-dddd-dddd-dddd-dddddddddddd'),
-    );
+    const pinnedSection = await screen.findByTestId('dashboard-zone-pinned');
+    await user.click(within(pinnedSection).getByTestId(`event-card-link-deal-${eventId}`));
 
     expect(eventWorkspaceRoute.navigateToEventWorkspace).toHaveBeenCalledWith(
       VENUE_A.id,
@@ -918,9 +951,8 @@ describe('DashboardOverviewPage', () => {
     });
   });
 
-  describe('upcoming events calendar view', () => {
-    it('toggles upcoming zone to mini-calendar without refetching dashboard', async () => {
-      const user = userEvent.setup();
+  describe('upcoming events list', () => {
+    it('renders upcoming events as compact cards', async () => {
       mockWorkspaceFetch({
         venues: [VENUE_A],
         dashboardByVenue: {
@@ -938,47 +970,10 @@ describe('DashboardOverviewPage', () => {
       render(<DashboardOverviewPage />, { wrapper: createWrapper() });
 
       await screen.findByTestId('dashboard-zone-upcoming');
-      const fetchMock = vi.mocked(globalThis.fetch);
-      const dashboardCallsBefore = fetchMock.mock.calls.filter(([url]) =>
-        String(url).includes('/dashboard'),
-      ).length;
-
-      await user.click(screen.getByTestId('upcoming-view-calendar'));
-      expect(screen.getByTestId('upcoming-mini-calendar')).toBeInTheDocument();
-      const dashboardCallsAfterToggle = fetchMock.mock.calls.filter(([url]) =>
-        String(url).includes('/dashboard'),
-      ).length;
-      expect(dashboardCallsAfterToggle).toBe(dashboardCallsBefore);
-
-      await user.click(screen.getByTestId('upcoming-view-list'));
-      expect(screen.getByTestId('event-card-22222222-2222-2222-2222-222222222222')).toBeInTheDocument();
-    });
-
-    it('preserves calendar view mode after remount within session', async () => {
-      const user = userEvent.setup();
-      mockWorkspaceFetch({
-        venues: [VENUE_A],
-        dashboardByVenue: {
-          [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
-            upcomingEvents: [
-              cardOn(offsetDate(2), {
-                eventId: '22222222-2222-2222-2222-222222222222',
-                title: 'Upcoming Show',
-              }),
-            ],
-          }),
-        },
-      });
-
-      const { unmount } = render(<DashboardOverviewPage />, { wrapper: createWrapper() });
-      await screen.findByTestId('dashboard-zone-upcoming');
-      await user.click(screen.getByTestId('upcoming-view-calendar'));
-      unmount();
-
-      render(<DashboardOverviewPage />, { wrapper: createWrapper() });
-      await screen.findByTestId('dashboard-zone-upcoming');
-      expect(screen.getByTestId('upcoming-view-calendar')).toHaveAttribute('aria-pressed', 'true');
-      expect(screen.getByTestId('upcoming-mini-calendar')).toBeInTheDocument();
+      const card = await screen.findByTestId('event-card-22222222-2222-2222-2222-222222222222');
+      expect(card).toHaveClass('event-card--compact');
+      expect(screen.queryByTestId('upcoming-view-calendar')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('upcoming-mini-calendar')).not.toBeInTheDocument();
     });
   });
 });

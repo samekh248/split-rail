@@ -1,9 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faThumbtack, faThumbtackSlash } from '@fortawesome/free-solid-svg-icons';
 import { useDeleteEvent, useUpdateEvent } from '@/api/events';
+import { useDashboard, usePinEvent, useUnpinEvent } from '@/api/dashboard';
+import { useUserProfile } from '@/api/user';
 import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
 import { ModalHeader } from '@/components/shell/ModalHeader';
 import type { BookingPlacement } from '@/lib/bookingCalendar';
 import { placementStatusLabel } from '@/components/booking/BookingCalendarMatrix';
+import type { DashboardResponse } from '@/types/generated-api';
 
 export interface BookingEventDrawerProps {
   open: boolean;
@@ -13,6 +18,21 @@ export interface BookingEventDrawerProps {
 }
 
 type DrawerMode = 'detail' | 'edit';
+
+function isEventPinnedOnDashboard(dashboard: DashboardResponse | undefined, eventId: string): boolean {
+  if (!dashboard || !eventId) {
+    return false;
+  }
+
+  const partitions = [
+    ...(dashboard.pinnedEvents ?? []),
+    ...(dashboard.tonightEvents ?? []),
+    ...(dashboard.upcomingEvents ?? []),
+    ...(dashboard.recentEvents ?? []),
+  ];
+
+  return partitions.some((event) => event.eventId === eventId && event.isPinned === true);
+}
 
 export function BookingEventDrawer({
   open,
@@ -25,9 +45,20 @@ export function BookingEventDrawer({
   const [title, setTitle] = useState('');
   const [eventDate, setEventDate] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [pinError, setPinError] = useState<string | null>(null);
 
+  const { data: profile } = useUserProfile();
+  const { data: dashboard } = useDashboard(placement?.venueId ?? null);
+  const pinEvent = usePinEvent();
+  const unpinEvent = useUnpinEvent();
   const updateEvent = useUpdateEvent(placement?.venueId ?? null, placement?.eventId ?? null);
   const deleteEvent = useDeleteEvent(placement?.venueId ?? null);
+
+  const canPin = profile?.role?.permissions?.canViewFinancials === true;
+  const isPinned = useMemo(
+    () => isEventPinnedOnDashboard(dashboard, placement?.eventId ?? ''),
+    [dashboard, placement?.eventId],
+  );
 
   useEffect(() => {
     if (!placement) {
@@ -37,6 +68,7 @@ export function BookingEventDrawer({
     setEventDate(placement.eventDate);
     setMode('detail');
     setError(null);
+    setPinError(null);
   }, [placement]);
 
   useEffect(() => {
@@ -114,6 +146,40 @@ export function BookingEventDrawer({
     }
   };
 
+  const handlePinToggle = () => {
+    if (!placement?.venueId || !placement.eventId) {
+      return;
+    }
+    setPinError(null);
+    const mutation = isPinned ? unpinEvent : pinEvent;
+    mutation.mutate(
+      { venueId: placement.venueId, eventId: placement.eventId },
+      {
+        onError: (caught) => {
+          setPinError(
+            caught instanceof Error ? caught.message : 'Unable to update pin. Please try again.',
+          );
+        },
+      },
+    );
+  };
+
+  const pinButton = canPin ? (
+    <button
+      type="button"
+      className="event-card__pin"
+      aria-label={isPinned ? 'Unpin event' : 'Pin event'}
+      data-testid={`booking-event-drawer-pin-${placement.eventId}`}
+      onClick={handlePinToggle}
+    >
+      <FontAwesomeIcon
+        icon={isPinned ? faThumbtackSlash : faThumbtack}
+        className="event-card__pin-icon"
+        aria-hidden="true"
+      />
+    </button>
+  ) : null;
+
   return (
     <div
       className="booking-event-drawer"
@@ -129,6 +195,7 @@ export function BookingEventDrawer({
         titleId="booking-event-drawer-title"
         onClose={onClose}
         closeTestId="booking-event-drawer-close"
+        titleAction={pinButton}
       />
 
       {mode === 'detail' ? (
@@ -180,6 +247,7 @@ export function BookingEventDrawer({
         </form>
       )}
       {mode === 'detail' && error ? <p role="alert">{error}</p> : null}
+      {mode === 'detail' && pinError ? <p role="alert">{pinError}</p> : null}
     </div>
   );
 }

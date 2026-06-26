@@ -40,31 +40,33 @@ export function VenuesPageControls({
 
   return (
     <div className="venues-page-controls" data-testid="venues-page-controls">
-      {showRegionFilter ? (
-        <SelectField
-          id="venues-region-filter"
-          label="Region"
-          value={regionFilter}
-          options={filterOptions}
-          onChange={(value) => onRegionFilterChange(value as VenueRegionFilter)}
-          wrapperClassName="venues-page-controls__field"
-          labelClassName="venues-page-controls__label"
-          data-testid="venues-region-filter"
-        />
-      ) : null}
+      <div className="venues-page-controls__fields">
+        {showRegionFilter ? (
+          <SelectField
+            id="venues-region-filter"
+            label="Region"
+            value={regionFilter}
+            options={filterOptions}
+            onChange={(value) => onRegionFilterChange(value as VenueRegionFilter)}
+            wrapperClassName="venues-page-controls__field venues-page-controls__field--inline"
+            labelClassName="venues-page-controls__label"
+            data-testid="venues-region-filter"
+          />
+        ) : null}
 
-      {showDisplayToggle ? (
-        <SelectField
-          id="venues-display-mode"
-          label="Display"
-          value={displayMode}
-          options={DISPLAY_MODE_OPTIONS}
-          onChange={(value) => onDisplayModeChange(value as VenueDisplayMode)}
-          wrapperClassName="venues-page-controls__field"
-          labelClassName="venues-page-controls__label"
-          data-testid="venues-display-mode"
-        />
-      ) : null}
+        {showDisplayToggle ? (
+          <SelectField
+            id="venues-display-mode"
+            label="Display"
+            value={displayMode}
+            options={DISPLAY_MODE_OPTIONS}
+            onChange={(value) => onDisplayModeChange(value as VenueDisplayMode)}
+            wrapperClassName="venues-page-controls__field venues-page-controls__field--inline"
+            labelClassName="venues-page-controls__label"
+            data-testid="venues-display-mode"
+          />
+        ) : null}
+      </div>
 
       {canManageVenues ? (
         <button

@@ -1,9 +1,10 @@
-import type { BookingPlacement } from '@/lib/bookingCalendar';
+import type { BookingPlacement, BookingPlacementStatus } from '@/lib/bookingCalendar';
 import { BookingCalendarPlacementCard } from '@/components/booking/BookingCalendarPlacementCard';
 
 export interface BookingCalendarUpcomingSectionProps {
   month: string;
   placements: BookingPlacement[];
+  highlightedStatus?: BookingPlacementStatus | null;
   onPlacementClick: (placement: BookingPlacement) => void;
 }
 
@@ -18,6 +19,7 @@ function formatMonthLabel(month: string): string {
 export function BookingCalendarUpcomingSection({
   month,
   placements,
+  highlightedStatus = null,
   onPlacementClick,
 }: BookingCalendarUpcomingSectionProps) {
   const monthLabel = formatMonthLabel(month);
@@ -33,6 +35,7 @@ export function BookingCalendarUpcomingSection({
             <li key={placement.eventId} className="booking-calendar-list__item">
               <BookingCalendarPlacementCard
                 placement={placement}
+                highlightedStatus={highlightedStatus}
                 onClick={onPlacementClick}
                 variant="compact"
               />

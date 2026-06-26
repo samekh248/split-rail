@@ -390,6 +390,35 @@ public class DashboardControllerTests : IntegrationTestBase
         health.GetProperty("variance").ValueKind.Should().Be(JsonValueKind.String);
     }
 
+    [Fact]
+    public async Task GetDashboard_CancelledPlacement_ExcludedFromPartitionsButIncludedInActionCenter()
+    {
+        var (client, venueId, token) = await SetupFinancialAdminAsync();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var cancelledUpcoming = await CreateEventViaApiAsync(
+            client, venueId, "Cancelled Upcoming", today.AddDays(3).ToString("yyyy-MM-dd"));
+        var activeUpcoming = await CreateEventViaApiAsync(
+            client, venueId, "Active Upcoming", today.AddDays(4).ToString("yyyy-MM-dd"));
+
+        (await client.PatchAsJsonAsync(
+            $"/api/venues/{venueId}/events/{cancelledUpcoming.EventId}",
+            new UpdateEventRequest(
+                cancelledUpcoming.Title!,
+                cancelledUpcoming.EventDate!,
+                null,
+                "CANCELLED"))).EnsureSuccessStatusCode();
+
+        await SeedUnmappedTransactionDirectAsync(token, cancelledUpcoming.EventId, venueId, "txn-cancelled");
+
+        var dashboard = await GetDashboardAsync(client, venueId);
+
+        dashboard.UpcomingEvents.Select(e => e.EventId).Should().Contain(activeUpcoming.EventId);
+        dashboard.UpcomingEvents.Select(e => e.EventId).Should().NotContain(cancelledUpcoming.EventId);
+        AllEventIds(dashboard).Should().NotContain(cancelledUpcoming.EventId);
+        dashboard.ActionCenter.TotalUnmappedCount.Should().Be(1);
+        dashboard.ActionCenter.EventsWithUnmapped.Should().ContainSingle(e => e.EventId == cancelledUpcoming.EventId);
+    }
+
     private static IEnumerable<EventCardDto> AllEventCards(DashboardResponse dashboard) =>
         dashboard.TonightEvents
             .Concat(dashboard.PinnedEvents)

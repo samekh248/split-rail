@@ -8,7 +8,10 @@ export interface AccountingWorkloadListProps {
 export function AccountingWorkloadList({ events }: AccountingWorkloadListProps) {
   if (events.length === 0) {
     return (
-      <section className="accounting-workload-list accounting-workload-list--empty" data-testid="accounting-workload-list">
+      <section
+        className="accounting-workload-list accounting-workload-list--empty"
+        data-testid="accounting-workload-list"
+      >
         <h2 className="accounting-workload-list__title">Events needing attention</h2>
         <p className="accounting-workload-list__empty">No events need accounting attention right now.</p>
       </section>
@@ -22,8 +25,10 @@ export function AccountingWorkloadList({ events }: AccountingWorkloadListProps) 
         {events.map((event) => (
           <li key={event.eventId} className="accounting-workload-list__item">
             <div className="accounting-workload-list__summary">
-              <span className="accounting-workload-list__title-text">{event.title}</span>
-              <span className="accounting-workload-list__date">{event.eventDate}</span>
+              <div className="accounting-workload-list__details">
+                <span className="accounting-workload-list__title-text">{event.title}</span>
+                <span className="accounting-workload-list__date">{event.eventDate}</span>
+              </div>
               {event.unmappedCount > 0 ? (
                 <span
                   className="accounting-workload-list__badge badge-action-required"
@@ -49,7 +54,7 @@ export function AccountingWorkloadList({ events }: AccountingWorkloadListProps) 
             ) : null}
             <button
               type="button"
-              className="accounting-workload-list__workspace-link"
+              className="accounting-workload-list__workspace-link btn-secondary"
               data-testid={`accounting-workload-link-${event.eventId}`}
               onClick={() => navigateToEventWorkspace(event.venueId, event.eventId, 'sync')}
             >

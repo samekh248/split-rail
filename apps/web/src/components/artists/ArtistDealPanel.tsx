@@ -238,12 +238,23 @@ export function ArtistDealPanel({
 
       <ul className="artist-deal-panel__list">
         {artists.map((artist) => (
-          <li key={artist.id} data-testid={`artist-row-${artist.id}`}>
-            <strong>{artist.artistName}</strong> — {artist.dealType?.replace('_', ' ') ?? 'unknown'}
-            {' · Payout: '}
-            <span data-testid={`payout-${artist.id}`}>
-              {formatMoney(artist.calculatedNetPayout)}
-            </span>
+          <li
+            key={artist.id}
+            className="artist-deal-panel__row"
+            data-testid={`artist-row-${artist.id}`}
+          >
+            <div className="artist-deal-panel__row-main">
+              <strong className="artist-deal-panel__row-name">{artist.artistName}</strong>
+              <span className="artist-deal-panel__row-deal">
+                {artist.dealType?.replace('_', ' ') ?? 'unknown'}
+              </span>
+              <span className="artist-deal-panel__row-payout">
+                Payout:{' '}
+                <span data-testid={`payout-${artist.id}`}>
+                  {formatMoney(artist.calculatedNetPayout)}
+                </span>
+              </span>
+            </div>
             {editable && (
               <span className="artist-deal-panel__actions">
                 {onUpdateArtist && artist.id && (
@@ -294,15 +305,19 @@ export function ArtistDealPanel({
 
       {editable && (
         <div className="artist-deal-panel__form" data-testid="artist-add-form">
-          <label>
-            Artist name
+          <div className="form-field">
+            <label className="form-field__label" htmlFor="artist-name-input">
+              Artist name
+            </label>
             <input
+              id="artist-name-input"
               type="text"
+              className="form-field__input"
               value={artistName}
               data-testid="artist-name-input"
               onChange={(e) => setArtistName(e.target.value)}
             />
-          </label>
+          </div>
 
           <SelectField
             id="deal-type-select"
@@ -316,35 +331,49 @@ export function ArtistDealPanel({
             data-testid="deal-type-select"
           />
 
-          <label>
-            Base guarantee
-            <input
-              type="text"
-              value={baseGuarantee}
-              data-testid="base-guarantee-input"
-              onChange={(e) => setBaseGuarantee(e.target.value)}
-            />
-          </label>
+          <div className="artist-deal-panel__financials">
+            <div className="form-field">
+              <label className="form-field__label" htmlFor="base-guarantee-input">
+                Base guarantee
+              </label>
+              <input
+                id="base-guarantee-input"
+                type="text"
+                className="form-field__input"
+                value={baseGuarantee}
+                data-testid="base-guarantee-input"
+                onChange={(e) => setBaseGuarantee(e.target.value)}
+              />
+            </div>
 
-          <label>
-            Backend %
-            <input
-              type="text"
-              value={backendPercentage}
-              data-testid="backend-percent-input"
-              onChange={(e) => setBackendPercentage(e.target.value)}
-            />
-          </label>
+            <div className="form-field">
+              <label className="form-field__label" htmlFor="backend-percent-input">
+                Backend %
+              </label>
+              <input
+                id="backend-percent-input"
+                type="text"
+                className="form-field__input"
+                value={backendPercentage}
+                data-testid="backend-percent-input"
+                onChange={(e) => setBackendPercentage(e.target.value)}
+              />
+            </div>
 
-          <label>
-            Tax withholding %
-            <input
-              type="text"
-              value={taxWithholding}
-              data-testid="tax-percent-input"
-              onChange={(e) => setTaxWithholding(e.target.value)}
-            />
-          </label>
+            <div className="form-field">
+              <label className="form-field__label" htmlFor="tax-percent-input">
+                Tax withholding %
+              </label>
+              <input
+                id="tax-percent-input"
+                type="text"
+                className="form-field__input"
+                value={taxWithholding}
+                data-testid="tax-percent-input"
+                onChange={(e) => setTaxWithholding(e.target.value)}
+              />
+            </div>
+          </div>
 
           {dealType === 'custom' && (
             <FormulaEditor

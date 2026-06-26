@@ -6,9 +6,7 @@ const indexCssPath = resolve(__dirname, '../../src/index.css');
 
 const IN_SCOPE_CONTAINER_SELECTORS = [
   '.block-section',
-  '.ledger-grid__summary',
   '.artist-deal-panel',
-  '.ledger-grid__artists',
   '.event-card',
 ] as const;
 
@@ -18,7 +16,7 @@ function readIndexCss(): string {
 
 function sharedContainerBlock(css: string): string {
   const start = css.indexOf('/* Shared data containers */');
-  const end = css.indexOf('.ledger-grid__summary {');
+  const end = css.indexOf('.ledger-grid__variance-banner {');
   expect(start, 'Shared data containers comment').toBeGreaterThanOrEqual(0);
   expect(end).toBeGreaterThan(start);
   return css.slice(start, end);

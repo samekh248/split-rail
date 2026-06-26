@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { LedgerGrid } from '@/components/ledger/LedgerGrid';
@@ -87,22 +87,14 @@ describe('LedgerGrid', () => {
     expect(screen.queryByTestId('proforma-readonly-row-1')).not.toBeInTheDocument();
   });
 
-  it('displays artist payout after recalc response', () => {
-    const updatedLedger: LedgerGridResponse = {
-      ...mockLedger,
-      artists: [
-        {
-          ...mockLedger.artists[0],
-          calculatedNetPayout: '6500.00',
-        },
-      ],
-    };
+  it('renders summary stat cards', () => {
+    render(<LedgerGrid ledger={mockLedger} />);
 
-    const { rerender } = render(<LedgerGrid ledger={mockLedger} />);
-    expect(screen.getByTestId('artist-payout-artist-1')).toHaveTextContent('$5,000.00');
-
-    rerender(<LedgerGrid ledger={updatedLedger} />);
-    expect(screen.getByTestId('artist-payout-artist-1')).toHaveTextContent('$6,500.00');
+    const summary = screen.getByTestId('ledger-summary');
+    expect(summary).toBeInTheDocument();
+    expect(within(summary).getByText('Gross')).toBeInTheDocument();
+    expect(within(summary).getByText('Deductions')).toBeInTheDocument();
+    expect(within(summary).getByText('$0.00')).toBeInTheDocument();
   });
 
   it('calls onProformaChange when proforma input blurs', async () => {

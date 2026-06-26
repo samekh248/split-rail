@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useCalendarPlacements } from '@/api/calendar';
 import { useRegions } from '@/api/regions';
 import { BookingCalendarControls } from '@/components/booking/BookingCalendarControls';
+import { BookingCalendarLegend } from '@/components/booking/BookingCalendarLegend';
 import { BookingCalendarMonthNav } from '@/components/booking/BookingCalendarMonthNav';
 import { BookingCalendarListView } from '@/components/booking/BookingCalendarListView';
 import { BookingCalendarUpcomingSection } from '@/components/booking/BookingCalendarUpcomingSection';
@@ -23,6 +24,7 @@ import {
   toDateKey,
   type BookingPlacement,
   type CalendarViewContext,
+  type BookingPlacementStatus,
 } from '@/lib/bookingCalendar';
 import {
   readBookingCalendarDisplayMode,
@@ -94,6 +96,7 @@ export function BookingCalendarPage() {
   const [createHoldOpen, setCreateHoldOpen] = useState(false);
   const [placementTypeOpen, setPlacementTypeOpen] = useState(false);
   const [quickAdd, setQuickAdd] = useState<{ venueId: string; date: string } | null>(null);
+  const [highlightedStatus, setHighlightedStatus] = useState<BookingPlacementStatus | null>(null);
 
   const filtered = useMemo(
     () => filterPlacementsByView(placements.map(toBookingPlacement), context),
@@ -128,7 +131,7 @@ export function BookingCalendarPage() {
   };
 
   return (
-    <div
+    <main
       className={`booking-calendar-page booking-calendar-page--${context.displayMode}`}
       data-testid="booking-calendar-page"
     >
@@ -139,26 +142,44 @@ export function BookingCalendarPage() {
         onContextChange={setContext}
       />
 
-      <section className="booking-calendar-body" data-testid="booking-calendar-body">
+      <section
+        className={[
+          'booking-calendar-body',
+          highlightedStatus ? 'booking-calendar-body--legend-hover' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')}
+        data-testid="booking-calendar-body"
+        data-legend-highlight={highlightedStatus ?? undefined}
+      >
         <BookingCalendarMonthNav
           month={context.month}
           onMonthChange={(month) => setContext((current) => ({ ...current, month }))}
         />
 
+        <BookingCalendarLegend
+          showCancelled={context.showCancelled}
+          highlightedStatus={highlightedStatus}
+          onHighlightStatus={setHighlightedStatus}
+        />
+
         <BookingCalendarListView
           placements={filtered}
+          highlightedStatus={highlightedStatus}
           onPlacementClick={setSelectedPlacement}
         />
 
         <BookingCalendarUpcomingSection
           month={context.month}
           placements={upcomingFiltered}
+          highlightedStatus={highlightedStatus}
           onPlacementClick={setSelectedPlacement}
         />
 
         <BookingCalendarMatrix
           month={context.month}
           placementsByDate={placementsByDate}
+          highlightedStatus={highlightedStatus}
           onDateClick={setAgendaDate}
           onPlacementClick={setSelectedPlacement}
           onCellQuickAdd={(dateKey) => {
@@ -170,6 +191,7 @@ export function BookingCalendarPage() {
         <BookingCalendarMobileStream
           days={days}
           placementsByDate={placementsByDate}
+          highlightedStatus={highlightedStatus}
           onPlacementClick={setSelectedPlacement}
         />
       </section>
@@ -233,6 +255,6 @@ export function BookingCalendarPage() {
         onCreated={handlePlacementCreated}
       />
 
-    </div>
+    </main>
   );
 }

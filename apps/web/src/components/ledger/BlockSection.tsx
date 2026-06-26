@@ -82,7 +82,8 @@ export function BlockSection({
         />
       )}
 
-      <table className="ledger-table">
+      <div className="block-section__table-wrap">
+        <table className="ledger-table">
         <thead>
           <tr>
             <th>Row</th>
@@ -123,6 +124,7 @@ export function BlockSection({
           </tr>
         </tfoot>
       </table>
+      </div>
     </section>
   );
 }

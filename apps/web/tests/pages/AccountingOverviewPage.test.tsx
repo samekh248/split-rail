@@ -153,6 +153,13 @@ describe('AccountingOverviewPage', () => {
           actionCenter: { totalUnmappedCount: 3, events: [] },
         },
       },
+      venueQboStatusByVenue: {
+        [VENUE_A.id!]: {
+          venueId: VENUE_A.id!,
+          qboConnected: true,
+          lastSyncedAt: '2026-06-18T12:00:00Z',
+        },
+      },
     });
 
     const user = userEvent.setup();
@@ -163,7 +170,7 @@ describe('AccountingOverviewPage', () => {
     expect(navigateSpy).toHaveBeenCalledWith(VENUE_A.id, 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee', 'sync');
   });
 
-  it('shows sync all for users with trigger permission', async () => {
+  it('shows sync all for users with trigger permission when QuickBooks is connected', async () => {
     mockWorkspaceFetch({
       profile: {
         email: 'admin@example.com',
@@ -180,11 +187,51 @@ describe('AccountingOverviewPage', () => {
           actionCenter: { totalUnmappedCount: 0, events: [] },
         },
       },
+      venueQboStatusByVenue: {
+        [VENUE_A.id!]: {
+          venueId: VENUE_A.id!,
+          qboConnected: true,
+          lastSyncedAt: '2026-06-18T12:00:00Z',
+        },
+      },
     });
 
     render(<AccountingOverviewPage />, { wrapper: createWrapper() });
 
     expect(await screen.findByTestId('sync-all-button')).toBeInTheDocument();
+  });
+
+  it('hides sync all and workload when QuickBooks is not connected', async () => {
+    mockWorkspaceFetch({
+      profile: {
+        email: 'admin@example.com',
+        organization: { id: 'org-1', name: 'Acme' },
+        role: { permissions: { canViewFinancials: true, canTriggerQboSync: true } },
+      },
+      venues: [VENUE_A],
+      dashboardByVenue: {
+        [VENUE_A.id!]: {
+          pinnedEvents: [],
+          tonightEvents: [],
+          upcomingEvents: [],
+          recentEvents: [card()],
+          actionCenter: { totalUnmappedCount: 3, events: [] },
+        },
+      },
+      venueQboStatusByVenue: {
+        [VENUE_A.id!]: {
+          venueId: VENUE_A.id!,
+          qboConnected: false,
+          lastSyncedAt: null,
+        },
+      },
+    });
+
+    render(<AccountingOverviewPage />, { wrapper: createWrapper() });
+
+    expect(await screen.findByTestId('venue-qbo-status-connected')).toHaveTextContent('Not connected');
+    expect(screen.queryByTestId('sync-all-button')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('accounting-workload-list')).not.toBeInTheDocument();
   });
 
   it('denies unauthorized users who deep-link to accounting', async () => {

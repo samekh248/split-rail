@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
+import { LoadingPlaceholder } from '@/components/shell/LoadingPlaceholder';
 import { UnassignedTransactionsDrawer } from '@/components/dashboard/UnassignedTransactionsDrawer';
 import type { ActionCenterDto, VenueResponse } from '@/types/generated-api';
 
@@ -33,7 +34,13 @@ export function UnassignedTransactionsBanner({
   }, [venueScopeKey]);
 
   if (isLoading) {
-    return null;
+    return (
+      <LoadingPlaceholder
+        variant="banner"
+        label="Loading unassigned transactions"
+        data-testid="unassigned-transactions-loading"
+      />
+    );
   }
 
   const showBanner = totalUnmappedCount > 0;
