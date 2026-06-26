@@ -27,4 +27,9 @@ public class QboSyncOptions
     public string IntuitRevokeUrl { get; set; } = "https://developer.api.intuit.com/v2/oauth2/tokens/revoke";
 
     public string IntuitApiBaseUrl { get; set; } = "https://quickbooks.api.intuit.com/v3/company";
+
+    /// <summary>development | staging | production — drives sandbox vs production Intuit URLs.</summary>
+    public string EnvironmentProfile { get; set; } = "development";
+
+    public bool UsesSandboxIntuit => !string.Equals(EnvironmentProfile, "production", StringComparison.OrdinalIgnoreCase);
 }

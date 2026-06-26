@@ -28,11 +28,19 @@ public class FakeQboTransactionClient : IQboTransactionClient
         string accessToken,
         string realmId,
         string tagName,
+        DateTimeOffset? updatedSince = null,
         CancellationToken cancellationToken = default)
     {
-        if (SeedData.TryGetValue(tagName, out var transactions))
+        if (!SeedData.TryGetValue(tagName, out var transactions))
+            return Task.FromResult<IReadOnlyList<QboFetchedTransaction>>([]);
+
+        if (updatedSince is null)
             return Task.FromResult(transactions);
 
-        return Task.FromResult<IReadOnlyList<QboFetchedTransaction>>([]);
+        var sinceDate = DateOnly.FromDateTime(updatedSince.Value.UtcDateTime);
+        var filtered = transactions
+            .Where(txn => txn.TransactionDate >= sinceDate)
+            .ToList();
+        return Task.FromResult<IReadOnlyList<QboFetchedTransaction>>(filtered);
     }
 }

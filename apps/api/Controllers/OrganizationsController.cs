@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SplitRail.Api.Authorization;
 using SplitRail.Api.DTOs.Organizations;
+using SplitRail.Api.DTOs.Qbo;
 using SplitRail.Api.Services;
 
 namespace SplitRail.Api.Controllers;
@@ -13,9 +14,15 @@ namespace SplitRail.Api.Controllers;
 public class OrganizationsController : ControllerBase
 {
     private readonly OrganizationService _organizationService;
+    private readonly QboSyncService _qboSyncService;
 
-    public OrganizationsController(OrganizationService organizationService) =>
+    public OrganizationsController(
+        OrganizationService organizationService,
+        QboSyncService qboSyncService)
+    {
         _organizationService = organizationService;
+        _qboSyncService = qboSyncService;
+    }
 
     [HttpPost]
     public async Task<ActionResult<OrganizationResponse>> Create(
@@ -34,6 +41,13 @@ public class OrganizationsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<OrganizationResponse>>> List(CancellationToken cancellationToken) =>
         Ok(await _organizationService.ListForUserAsync(cancellationToken));
+
+    [HttpGet("{organizationId:guid}/qbo/summary")]
+    [RequirePermission(PermissionNames.ViewFinancials)]
+    public async Task<ActionResult<OrganizationQboSummaryDto>> GetQboSummary(
+        Guid organizationId,
+        CancellationToken cancellationToken) =>
+        Ok(await _qboSyncService.GetOrganizationQboSummaryAsync(organizationId, cancellationToken));
 
     [HttpPut("{organizationId:guid}")]
     [RequirePermission(PermissionNames.ManagePermissions)]

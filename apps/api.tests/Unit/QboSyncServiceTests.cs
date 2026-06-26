@@ -509,6 +509,7 @@ public class QboSyncServiceTests
             Microsoft.Extensions.Options.Options.Create(new SplitRail.Api.Configuration.QboSyncOptions()),
             NullLogger<QboTokenService>.Instance);
         var venueService = new VenueService(db, tenantContext, NullLogger<VenueService>.Instance);
+        var trackingMappingService = new QboTrackingMappingService(db, venueService, tenantContext);
         var service = new QboSyncService(
             db,
             tokenService,
@@ -518,6 +519,8 @@ public class QboSyncServiceTests
             new QboSyncCorrectionService(db),
             new FrozenEventMutationAuditor(NullLogger<FrozenEventMutationAuditor>.Instance),
             new QboSyncConcurrencyGate(),
+            new QboPayloadFilter(),
+            trackingMappingService,
             NullLogger<QboSyncService>.Instance);
         return (service, db, tenantContext);
     }

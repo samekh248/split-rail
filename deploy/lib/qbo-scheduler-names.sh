@@ -25,7 +25,7 @@ resolve_qbo_scheduler_names() {
   export SCHEDULER_JOB_NAME SCHEDULER_SA_ID SCHEDULER_SA_EMAIL
 }
 
-SCHEDULER_CRON="0 */6 * * *"
+SCHEDULER_CRON="*/15 * * * *"
 SCHEDULER_TIME_ZONE="UTC"
 SCHEDULER_HTTP_METHOD="POST"
 SCHEDULER_TRIGGER_PATH="/api/internal/qbo-sync-trigger"

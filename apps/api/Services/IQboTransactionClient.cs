@@ -6,5 +6,6 @@ public interface IQboTransactionClient
         string accessToken,
         string realmId,
         string tagName,
+        DateTimeOffset? updatedSince = null,
         CancellationToken cancellationToken = default);
 }

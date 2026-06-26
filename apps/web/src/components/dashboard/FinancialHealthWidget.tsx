@@ -7,6 +7,7 @@ import type { FinancialHealthDto } from '@/types/generated-api';
 export interface FinancialHealthWidgetProps {
   financialHealth?: FinancialHealthDto;
   isLoading: boolean;
+  showQboMetrics?: boolean;
 }
 
 function formatWeekDate(isoDate: string | null | undefined): string {
@@ -28,7 +29,11 @@ function formatWeekRange(weekStart?: string | null, weekEnd?: string | null): st
   return `${formatWeekDate(weekStart)} – ${formatWeekDate(weekEnd)}`;
 }
 
-export function FinancialHealthWidget({ financialHealth, isLoading }: FinancialHealthWidgetProps) {
+export function FinancialHealthWidget({
+  financialHealth,
+  isLoading,
+  showQboMetrics = true,
+}: FinancialHealthWidgetProps) {
   if (isLoading) {
     return (
       <LoadingPlaceholder
@@ -42,6 +47,9 @@ export function FinancialHealthWidget({ financialHealth, isLoading }: FinancialH
   if (!financialHealth) {
     return null;
   }
+
+  const qboMetricsVisible =
+    showQboMetrics && Object.prototype.hasOwnProperty.call(financialHealth, 'actualQboDeposits');
 
   return (
     <section className="financial-health-widget" data-testid="financial-health-widget">
@@ -59,18 +67,26 @@ export function FinancialHealthWidget({ financialHealth, isLoading }: FinancialH
             {formatMoney(financialHealth.projectedNetGross)}
           </dd>
         </div>
-        <div className="financial-health-widget__metric">
-          <dt className="financial-health-widget__label">Actual QBO deposits</dt>
-          <dd className="financial-health-widget__value" data-testid="financial-health-actual">
-            {formatMoney(financialHealth.actualQboDeposits)}
-          </dd>
-        </div>
-        <div className="financial-health-widget__metric">
-          <dt className="financial-health-widget__label">Variance</dt>
-          <dd className="financial-health-widget__value" data-testid="financial-health-variance">
-            {formatMoney(financialHealth.variance)}
-          </dd>
-        </div>
+        {qboMetricsVisible ? (
+          <>
+            <div className="financial-health-widget__metric">
+              <dt className="financial-health-widget__label">Actual QBO deposits</dt>
+              <dd className="financial-health-widget__value" data-testid="financial-health-actual">
+                {formatMoney(financialHealth.actualQboDeposits)}
+              </dd>
+            </div>
+            <div className="financial-health-widget__metric">
+              <dt className="financial-health-widget__label">Variance</dt>
+              <dd className="financial-health-widget__value" data-testid="financial-health-variance">
+                {formatMoney(financialHealth.variance)}
+              </dd>
+            </div>
+          </>
+        ) : (
+          <p className="financial-health-widget__cta" data-testid="financial-health-qbo-cta">
+            Connect QuickBooks in Settings → Integrations to compare projected vs actual deposits.
+          </p>
+        )}
       </dl>
     </section>
   );

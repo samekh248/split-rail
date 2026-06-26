@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using SplitRail.Api.Authorization;
 using SplitRail.Api.Configuration;
+using SplitRail.Api.DTOs.Qbo;
 using SplitRail.Api.Exceptions;
 using SplitRail.Api.Services;
 
@@ -37,19 +38,21 @@ public class QboOAuthController : ControllerBase
     }
 
     [HttpGet("connect")]
-    [RequirePermission(PermissionNames.MapQboAccounts)]
+    [RequireAdminRole]
     public async Task<IActionResult> Connect(Guid venueId, CancellationToken cancellationToken)
     {
         await EnsureVenueAccessibleAsync(venueId, cancellationToken);
+        return Redirect(BuildAuthUrl(venueId));
+    }
 
-        var state = _stateProtector.Protect($"{venueId}:{Guid.NewGuid():N}");
-        var authUrl =
-            $"{_options.IntuitAuthBaseUrl}?client_id={Uri.EscapeDataString(_options.ClientId)}" +
-            $"&redirect_uri={Uri.EscapeDataString(_options.RedirectUri)}" +
-            "&response_type=code&scope=com.intuit.quickbooks.accounting" +
-            $"&state={Uri.EscapeDataString(state)}";
-
-        return Redirect(authUrl);
+    [HttpGet("connect-url")]
+    [RequireAdminRole]
+    public async Task<ActionResult<QboConnectUrlDto>> GetConnectUrl(
+        Guid venueId,
+        CancellationToken cancellationToken)
+    {
+        await EnsureVenueAccessibleAsync(venueId, cancellationToken);
+        return Ok(new QboConnectUrlDto(BuildAuthUrl(venueId)));
     }
 
     [HttpGet("/api/qbo/callback")]
@@ -76,16 +79,26 @@ public class QboOAuthController : ControllerBase
             _tenantContext.UserId,
             cancellationToken);
 
-        return Redirect($"/?venueId={venueId}&qboConnected=true");
+        return Redirect($"/settings/integrations?venueId={venueId}&qboConnected=true");
     }
 
     [HttpPost("disconnect")]
-    [RequirePermission(PermissionNames.MapQboAccounts)]
+    [RequireAdminRole]
     public async Task<IActionResult> Disconnect(Guid venueId, CancellationToken cancellationToken)
     {
         await EnsureVenueAccessibleAsync(venueId, cancellationToken);
         await _tokenService.DisconnectAsync(venueId, cancellationToken);
         return NoContent();
+    }
+
+    private string BuildAuthUrl(Guid venueId)
+    {
+        var state = _stateProtector.Protect($"{venueId}:{Guid.NewGuid():N}");
+        return
+            $"{_options.IntuitAuthBaseUrl}?client_id={Uri.EscapeDataString(_options.ClientId)}" +
+            $"&redirect_uri={Uri.EscapeDataString(_options.RedirectUri)}" +
+            "&response_type=code&scope=com.intuit.quickbooks.accounting" +
+            $"&state={Uri.EscapeDataString(state)}";
     }
 
     private async Task EnsureVenueAccessibleAsync(Guid venueId, CancellationToken cancellationToken)

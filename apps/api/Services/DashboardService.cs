@@ -15,17 +15,23 @@ public class DashboardService
     private readonly ApplicationDbContext _db;
     private readonly ITenantContext _tenantContext;
     private readonly VenueService _venueService;
+    private readonly QboTokenService _tokenService;
+    private readonly IQboPayloadFilter _payloadFilter;
     private readonly ILogger<DashboardService> _logger;
 
     public DashboardService(
         ApplicationDbContext db,
         ITenantContext tenantContext,
         VenueService venueService,
+        QboTokenService tokenService,
+        IQboPayloadFilter payloadFilter,
         ILogger<DashboardService> logger)
     {
         _db = db;
         _tenantContext = tenantContext;
         _venueService = venueService;
+        _tokenService = tokenService;
+        _payloadFilter = payloadFilter;
         _logger = logger;
     }
 
@@ -89,8 +95,11 @@ public class DashboardService
 
         var actionCenter = BuildActionCenter(allCards);
         var financialHealth = DashboardFinancialHealthHelper.BuildFinancialHealthDto(events, today);
+        var connected = await _tokenService.IsConnectedAsync(venueId, cancellationToken);
 
-        return new DashboardResponse(venueId, tonight, pinned, recent, upcoming, actionCenter, financialHealth);
+        return _payloadFilter.Apply(
+            new DashboardResponse(venueId, tonight, pinned, recent, upcoming, actionCenter, financialHealth),
+            connected);
     }
 
     private static ActionCenterDto BuildActionCenter(IReadOnlyList<EventCardDto> cards)

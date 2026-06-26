@@ -1,9 +1,9 @@
 import { existsSync } from 'node:fs';
 
-/** Scheduler job must fire every 6 hours (FR-001). */
+/** Scheduler job must fire every 15 minutes for timezone dispatch (spec 076). */
 export function assertSchedulerCronSchedule(scriptText: string): void {
-  if (!scriptText.includes('0 */6 * * *') && !scriptText.includes('SCHEDULER_CRON')) {
-    throw new Error('scheduler provision script must use cron schedule 0 */6 * * *');
+  if (!scriptText.includes('*/15 * * * *') && !scriptText.includes('SCHEDULER_CRON')) {
+    throw new Error('scheduler provision script must use cron schedule */15 * * * *');
   }
 }
 
@@ -31,8 +31,8 @@ export function assertSchedulerScriptParity(repoRoot: string, shRelative: string
 
 /** Validate script must check schedule, URI, and OIDC configuration (FR-013). */
 export function assertValidateSchedulerScriptStructure(scriptText: string): void {
-  if (!scriptText.includes('SCHEDULER_CRON') && !scriptText.includes('0 */6 * * *')) {
-    throw new Error('validate-qbo-scheduler script must reference 6-hour schedule');
+  if (!scriptText.includes('SCHEDULER_CRON') && !scriptText.includes('*/15 * * * *')) {
+    throw new Error('validate-qbo-scheduler script must reference 15-minute schedule');
   }
   if (!scriptText.includes('oidc') && !scriptText.includes('OIDC')) {
     throw new Error('validate-qbo-scheduler script must validate OIDC configuration');

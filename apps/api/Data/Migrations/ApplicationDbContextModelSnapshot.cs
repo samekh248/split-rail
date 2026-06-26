@@ -399,6 +399,14 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnType("character varying(255)")
                         .HasColumnName("name");
 
+                    b.Property<string>("TimeZoneId")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasDefaultValue("America/Denver")
+                        .HasColumnName("time_zone_id");
+
                     b.HasKey("Id");
 
                     b.ToTable("organizations", (string)null);
@@ -624,6 +632,67 @@ namespace SplitRail.Api.Data.Migrations
                     b.ToTable("qbo_sync_ledger", (string)null);
                 });
 
+            modelBuilder.Entity("SplitRail.Api.Models.QboTrackingMapping", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("OrganizationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("organization_id");
+
+                    b.Property<string>("QboTrackingId")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("qbo_tracking_id");
+
+                    b.Property<string>("QboTrackingName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("qbo_tracking_name");
+
+                    b.Property<string>("QboTrackingType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("qbo_tracking_type");
+
+                    b.Property<Guid>("TargetEntityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_entity_id");
+
+                    b.Property<string>("TargetTier")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("target_tier");
+
+                    b.Property<Guid>("VenueId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("venue_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrganizationId");
+
+                    b.HasIndex("VenueId", "QboTrackingId", "TargetTier", "TargetEntityId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_qbo_tracking_mappings_venue_tracking_target");
+
+                    b.ToTable("qbo_tracking_mappings", (string)null);
+                });
+
             modelBuilder.Entity("SplitRail.Api.Models.QboVenueCredential", b =>
                 {
                     b.Property<Guid>("Id")
@@ -631,6 +700,11 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("CompanyName")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("company_name");
 
                     b.Property<DateTimeOffset>("ConnectedAt")
                         .ValueGeneratedOnAdd()
@@ -651,6 +725,12 @@ namespace SplitRail.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("encrypted_refresh_token");
+
+                    b.Property<bool>("IsExpired")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_expired");
 
                     b.Property<string>("RealmId")
                         .IsRequired()
@@ -1130,6 +1210,25 @@ namespace SplitRail.Api.Data.Migrations
                     b.Navigation("Event");
 
                     b.Navigation("MappedLineItem");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.QboTrackingMapping", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.Organization", "Organization")
+                        .WithMany()
+                        .HasForeignKey("OrganizationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SplitRail.Api.Models.Venue", "Venue")
+                        .WithMany()
+                        .HasForeignKey("VenueId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Organization");
+
+                    b.Navigation("Venue");
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.QboVenueCredential", b =>

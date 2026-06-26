@@ -36,8 +36,12 @@ public record FinancialHealthDto(
     string WeekStart,
     string WeekEnd,
     [property: JsonConverter(typeof(DecimalStringJsonConverter))] decimal ProjectedNetGross,
-    [property: JsonConverter(typeof(DecimalStringJsonConverter))] decimal ActualQboDeposits,
-    [property: JsonConverter(typeof(DecimalStringJsonConverter))] decimal Variance);
+    [property: JsonConverter(typeof(DecimalStringJsonConverter))]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    decimal? ActualQboDeposits = null,
+    [property: JsonConverter(typeof(DecimalStringJsonConverter))]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    decimal? Variance = null);
 
 public record DashboardResponse(
     Guid VenueId,

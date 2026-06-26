@@ -9,6 +9,7 @@ import {
   navigateToTeamSettings,
 } from '@/lib/appRoute';
 import { useCanManageTeam } from '@/hooks/useCanManageTeam';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 export interface SettingsNavProps {
   variant?: 'sidebar' | 'horizontal';
@@ -30,6 +31,7 @@ export function SettingsNav({
 }: SettingsNavProps) {
   const currentPath = getAppPath();
   const canManageTeam = useCanManageTeam();
+  const isAdmin = useIsAdmin();
   const isSidebar = variant === 'sidebar';
   const iconsOnly = isSidebar && !showLabels;
 
@@ -56,12 +58,16 @@ export function SettingsNav({
       path: '/settings/organization',
       onClick: navigateToOrganizationSettings,
     },
-    {
-      id: 'integrations',
-      label: 'Integrations',
-      path: '/settings/integrations',
-      onClick: navigateToIntegrationsSettings,
-    },
+    ...(isAdmin
+      ? [
+          {
+            id: 'integrations',
+            label: 'Integrations',
+            path: '/settings/integrations' as const,
+            onClick: navigateToIntegrationsSettings,
+          },
+        ]
+      : []),
   ];
 
   const handleReturnToApp = () => {

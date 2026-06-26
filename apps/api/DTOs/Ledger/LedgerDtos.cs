@@ -38,7 +38,9 @@ public record EditabilityDto(
 public record BlockTotalsDto(
     [property: JsonConverter(typeof(DecimalStringJsonConverter))] decimal Proforma,
     [property: JsonConverter(typeof(DecimalStringJsonConverter))] decimal Settlement,
-    [property: JsonConverter(typeof(DecimalStringJsonConverter))] decimal QboActual);
+    [property: JsonConverter(typeof(DecimalStringJsonConverter))]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    decimal? QboActual = null);
 
 public record LineItemDto(
     Guid Id,
@@ -47,13 +49,18 @@ public record LineItemDto(
     bool IsArtistDeduction,
     [property: JsonConverter(typeof(DecimalStringJsonConverter))] decimal ProformaValue,
     [property: JsonConverter(typeof(DecimalStringJsonConverter))] decimal SettlementValue,
-    [property: JsonConverter(typeof(DecimalStringJsonConverter))] decimal QboActualValue,
-    [property: JsonConverter(typeof(DecimalStringJsonConverter))] decimal Variance,
     bool VarianceFlagged,
     string? Notes,
     bool IsHiddenFromPromoter,
     string RowVersion,
-    bool HasQboCorrection = false);
+    [property: JsonConverter(typeof(DecimalStringJsonConverter))]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    decimal? QboActualValue = null,
+    [property: JsonConverter(typeof(DecimalStringJsonConverter))]
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    decimal? Variance = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    bool? HasQboCorrection = null);
 
 public record EventArtistDto(
     Guid Id,

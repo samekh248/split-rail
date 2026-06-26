@@ -9,6 +9,7 @@ import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { SettingsLandingPage } from '@/pages/SettingsLandingPage';
 import { PlaceholderSettingsPage } from '@/pages/PlaceholderSettingsPage';
+import { IntegrationsSettingsRoute } from '@/pages/IntegrationsSettingsRoute';
 import { TeamSettingsPage } from '@/pages/TeamSettingsPage';
 import { AcceptInvitePage } from '@/pages/AcceptInvitePage';
 import { OrganizationCreateStep } from '@/components/onboarding/OrganizationCreateStep';
@@ -112,7 +113,7 @@ export default function App() {
   if (appPath === '/settings/integrations') {
     return (
       <AuthenticatedShell sidebarNavigation="settings">
-        <PlaceholderSettingsPage title="Integrations" />
+        <IntegrationsSettingsRoute />
       </AuthenticatedShell>
     );
   }

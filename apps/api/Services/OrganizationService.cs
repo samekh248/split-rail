@@ -147,7 +147,6 @@ public class OrganizationService
             CanLockBudget = true,
             CanEditSettlement = true,
             CanSignSettlement = true,
-            CanTriggerQboSync = true,
             CanViewFinancials = true
         },
         new()
@@ -163,8 +162,6 @@ public class OrganizationService
             Id = Guid.NewGuid(),
             OrganizationId = organizationId,
             RoleName = RoleNames.ExternalBookkeeper,
-            CanTriggerQboSync = true,
-            CanMapQboAccounts = true,
             CanViewFinancials = true
         }
     ];

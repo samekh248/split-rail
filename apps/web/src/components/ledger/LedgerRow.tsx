@@ -18,6 +18,7 @@ interface LedgerRowProps {
   onDeductionChange?: (id: string, isDeduction: boolean) => void;
   onDeleteLineItem?: (id: string, label: string) => void;
   onMoveLineItem?: (id: string, direction: MoveDirection) => void;
+  showQboColumns?: boolean;
 }
 
 function isEditable(level: string | null | undefined): boolean {
@@ -37,6 +38,7 @@ export function LedgerRow({
   onDeductionChange,
   onDeleteLineItem,
   onMoveLineItem,
+  showQboColumns = true,
 }: LedgerRowProps) {
   const proformaEditable = isEditable(editability.proforma);
   const settlementEditable = isEditable(editability.settlement);
@@ -144,17 +146,21 @@ export function LedgerRow({
           </span>
         )}
       </td>
-      <td className="ledger-row__qbo" data-testid={`qbo-${row.id}`}>
-        {formatMoney(row.qboActualValue)}
-        {row.hasQboCorrection && row.id ? (
-          <QboCorrectionBadge lineItemId={row.id} />
-        ) : null}
-      </td>
-      <VarianceCell
-        qboActual={row.qboActualValue}
-        settlement={row.settlementValue}
-        serverVariance={row.variance}
-      />
+      {showQboColumns && (
+        <>
+          <td className="ledger-row__qbo" data-testid={`qbo-${row.id}`}>
+            {formatMoney(row.qboActualValue)}
+            {row.hasQboCorrection && row.id ? (
+              <QboCorrectionBadge lineItemId={row.id} />
+            ) : null}
+          </td>
+          <VarianceCell
+            qboActual={row.qboActualValue}
+            settlement={row.settlementValue}
+            serverVariance={row.variance}
+          />
+        </>
+      )}
       <td className="ledger-row__notes">
         {proformaEditable || settlementEditable ? (
           <input

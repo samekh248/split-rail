@@ -5021,3 +5021,73 @@ textarea.form-field__input {
     display: flex;
   }
 }
+
+/* QBO Integrations (spec 076) */
+.integrations-settings__toast {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  background: color-mix(in srgb, var(--color-accent-primary) 12%, var(--color-surface));
+  color: var(--color-text-primary);
+}
+
+.integrations-settings__venue-select {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  max-width: 20rem;
+}
+
+.qbo-integration-card,
+.qbo-mapping-console {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+}
+
+.qbo-integration-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.qbo-integration-card__badge--connected {
+  color: var(--color-success);
+}
+
+.qbo-integration-card__badge--expired {
+  color: var(--color-warning);
+}
+
+.qbo-integration-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.qbo-mapping-console__tabs {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.qbo-mapping-console__tab--active {
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.qbo-mapping-table table {
+  width: 100%;
+  margin-top: 0.75rem;
+}
+
+.financial-health-widget__cta {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: 0.95rem;
+}

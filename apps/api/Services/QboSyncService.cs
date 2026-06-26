@@ -19,6 +19,8 @@ public class QboSyncService
     private readonly QboSyncCorrectionService _correctionService;
     private readonly FrozenEventMutationAuditor _frozenEventAuditor;
     private readonly IQboSyncConcurrencyGate _concurrencyGate;
+    private readonly IQboPayloadFilter _payloadFilter;
+    private readonly QboTrackingMappingService _trackingMappingService;
     private readonly ILogger<QboSyncService> _logger;
 
     public QboSyncService(
@@ -30,6 +32,8 @@ public class QboSyncService
         QboSyncCorrectionService correctionService,
         FrozenEventMutationAuditor frozenEventAuditor,
         IQboSyncConcurrencyGate concurrencyGate,
+        IQboPayloadFilter payloadFilter,
+        QboTrackingMappingService trackingMappingService,
         ILogger<QboSyncService> logger)
     {
         _db = db;
@@ -40,6 +44,8 @@ public class QboSyncService
         _correctionService = correctionService;
         _frozenEventAuditor = frozenEventAuditor;
         _concurrencyGate = concurrencyGate;
+        _payloadFilter = payloadFilter;
+        _trackingMappingService = trackingMappingService;
         _logger = logger;
     }
 
@@ -58,15 +64,16 @@ public class QboSyncService
             .FirstOrDefaultAsync(e => e.Id == eventId && e.VenueId == venueId, cancellationToken)
             ?? throw new NotFoundException("Event not found.");
 
-        if (string.IsNullOrWhiteSpace(evt.QboTagName))
-            throw new ValidationException("Event has no QBO tag name configured.");
+        var trackingName = await ResolveEventTrackingNameAsync(evt, cancellationToken);
+        if (string.IsNullOrWhiteSpace(trackingName))
+            throw new ValidationException("Event has no QBO tracking mapping configured.");
 
         var (accessToken, realmId) = await _tokenService.GetValidAccessTokenAsync(venueId, cancellationToken);
         var transactions = await _transactionClient.FetchTransactionsByTagAsync(
             accessToken,
             realmId,
-            evt.QboTagName,
-            cancellationToken);
+            trackingName,
+            cancellationToken: cancellationToken);
 
         return await ProcessTransactionsAsync(evt, transactions, cancellationToken);
     }
@@ -74,6 +81,7 @@ public class QboSyncService
     public async Task<SyncResultDto> SyncEventInternalAsync(
         Guid venueId,
         Guid eventId,
+        DateTimeOffset? updatedSince = null,
         CancellationToken cancellationToken = default)
     {
         var evt = await _db.Events
@@ -82,7 +90,8 @@ public class QboSyncService
             .FirstOrDefaultAsync(e => e.Id == eventId && e.VenueId == venueId, cancellationToken)
             ?? throw new NotFoundException("Event not found.");
 
-        if (string.IsNullOrWhiteSpace(evt.QboTagName))
+        var trackingName = await ResolveEventTrackingNameAsync(evt, cancellationToken);
+        if (string.IsNullOrWhiteSpace(trackingName))
             return EmptyResult(eventId);
 
         if (!await _tokenService.IsConnectedAsync(venueId, cancellationToken))
@@ -92,7 +101,8 @@ public class QboSyncService
         var transactions = await _transactionClient.FetchTransactionsByTagAsync(
             accessToken,
             realmId,
-            evt.QboTagName,
+            trackingName,
+            updatedSince,
             cancellationToken);
 
         return await ProcessTransactionsAsync(evt, transactions, cancellationToken);
@@ -128,13 +138,105 @@ public class QboSyncService
 
         var connected = await _tokenService.IsConnectedAsync(venueId, cancellationToken);
 
-        return new SyncStatusDto(
+        var status = new SyncStatusDto(
             eventId,
             lastEntry?.SyncedAt,
             lastEntry?.SyncBatchId,
             mappedCount,
             unmappedCount,
             connected);
+
+        return _payloadFilter.Apply(status);
+    }
+
+    public async Task<VenueQboIntegrationDto> GetVenueQboIntegrationAsync(
+        Guid venueId,
+        CancellationToken cancellationToken = default)
+    {
+        if (_tenantContext.UserId is Guid userId &&
+            !await _venueService.IsVenueAccessibleAsync(userId, venueId, cancellationToken))
+            throw new NotFoundException("Venue not found.");
+
+        var credential = await _tokenService.GetCredentialAsync(venueId, cancellationToken);
+        var connectionState = ResolveConnectionState(credential);
+        var connected = connectionState == QboConnectionStates.Connected;
+
+        var lastSyncedAt = await _db.QboSyncLedgers
+            .AsNoTracking()
+            .Where(l => l.Event.VenueId == venueId)
+            .OrderByDescending(l => l.SyncedAt)
+            .Select(l => (DateTimeOffset?)l.SyncedAt)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var canPurgeCache = connectionState == QboConnectionStates.Disconnected &&
+            await HasCachedQboDataAsync(venueId, cancellationToken);
+
+        return new VenueQboIntegrationDto(
+            venueId,
+            connected,
+            connectionState,
+            credential?.CompanyName,
+            credential?.RealmId,
+            lastSyncedAt,
+            canPurgeCache);
+    }
+
+    public async Task<OrganizationQboSummaryDto> GetOrganizationQboSummaryAsync(
+        Guid organizationId,
+        CancellationToken cancellationToken = default)
+    {
+        if (_tenantContext.UserId is not Guid userId)
+            throw new AuthenticationException();
+
+        if (_tenantContext.OrganizationId != organizationId)
+            throw new NotFoundException("Organization not found.");
+
+        var venueIds = await _db.Venues
+            .AsNoTracking()
+            .Where(v => v.OrganizationId == organizationId)
+            .Select(v => v.Id)
+            .ToListAsync(cancellationToken);
+
+        var accessibleVenueIds = new List<Guid>();
+        foreach (var venueId in venueIds)
+        {
+            if (await _venueService.IsVenueAccessibleAsync(userId, venueId, cancellationToken))
+                accessibleVenueIds.Add(venueId);
+        }
+
+        var connectedVenueCount = await _db.QboVenueCredentials
+            .AsNoTracking()
+            .CountAsync(c => accessibleVenueIds.Contains(c.VenueId) && !c.IsExpired, cancellationToken);
+
+        return new OrganizationQboSummaryDto(
+            organizationId,
+            connectedVenueCount > 0,
+            connectedVenueCount,
+            accessibleVenueIds.Count);
+    }
+
+    private static string ResolveConnectionState(QboVenueCredential? credential)
+    {
+        if (credential is null)
+            return QboConnectionStates.Disconnected;
+
+        return credential.IsExpired
+            ? QboConnectionStates.Expired
+            : QboConnectionStates.Connected;
+    }
+
+    private async Task<bool> HasCachedQboDataAsync(Guid venueId, CancellationToken cancellationToken)
+    {
+        if (await _db.QboAccountMappings.AnyAsync(m => m.VenueId == venueId, cancellationToken))
+            return true;
+        if (await _db.QboTrackingMappings.AnyAsync(m => m.VenueId == venueId, cancellationToken))
+            return true;
+        if (await _db.UnmappedQboTransactions.AnyAsync(u => u.VenueId == venueId, cancellationToken))
+            return true;
+
+        return await _db.QboSyncLedgers
+            .AsNoTracking()
+            .AnyAsync(l => l.Event.VenueId == venueId, cancellationToken);
     }
 
     public async Task<VenueQboStatusDto> GetVenueQboStatusAsync(
@@ -167,7 +269,7 @@ public class QboSyncService
 
         var events = await _db.Events
             .AsNoTracking()
-            .Where(e => e.VenueId == venueId && e.QboTagName != "")
+            .Where(e => e.VenueId == venueId)
             .Select(e => new { e.Id, e.Title })
             .ToListAsync(cancellationToken);
 
@@ -178,6 +280,12 @@ public class QboSyncService
         {
             try
             {
+                var trackingName = await _trackingMappingService.ResolveTrackingNameForEventAsync(
+                    evt.Id,
+                    cancellationToken);
+                if (string.IsNullOrWhiteSpace(trackingName))
+                    continue;
+
                 await SyncEventAsync(venueId, evt.Id, cancellationToken);
                 results.Add(new VenueSyncEventResultDto(evt.Id, evt.Title, true, null));
                 succeeded++;
@@ -205,33 +313,98 @@ public class QboSyncService
         try
         {
             var venueIds = await _db.QboVenueCredentials
-            .AsNoTracking()
-            .Select(c => c.VenueId)
-            .ToListAsync(cancellationToken);
-
-        var synced = 0;
-        foreach (var venueId in venueIds)
-        {
-            var eventIds = await _db.Events
                 .AsNoTracking()
-                .Where(e => e.VenueId == venueId && e.QboTagName != "")
-                .Select(e => e.Id)
+                .Select(c => c.VenueId)
                 .ToListAsync(cancellationToken);
 
-            foreach (var eventId in eventIds)
-            {
-                await SyncEventInternalAsync(venueId, eventId, cancellationToken);
-                synced++;
-            }
-        }
-
-        return synced;
+            return await SyncVenueEventsInternalAsync(venueIds, updatedSince: null, cancellationToken);
         }
         finally
         {
             _concurrencyGate.Release();
         }
     }
+
+    public async Task<int> SyncNightlyEligibleEventsAsync(
+        Guid? organizationId = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (!await _concurrencyGate.TryEnterAsync(cancellationToken))
+        {
+            _logger.LogInformation(
+                "Skipped overlapping QBO nightly sync batch: outcome={Outcome}",
+                "skipped-concurrent");
+            return 0;
+        }
+
+        try
+        {
+            var utcNow = DateTimeOffset.UtcNow;
+            var lookbackSince = utcNow.AddHours(-48);
+
+            var orgQuery = _db.Organizations.AsNoTracking();
+            if (organizationId is Guid orgId)
+                orgQuery = orgQuery.Where(o => o.Id == orgId);
+
+            var organizations = await orgQuery.ToListAsync(cancellationToken);
+            var eligibleOrgIds = organizations
+                .Where(o => NightlyDispatchSelector.IsOrganizationEligible(o.TimeZoneId, utcNow))
+                .Select(o => o.Id)
+                .ToList();
+
+            if (eligibleOrgIds.Count == 0)
+                return 0;
+
+            var venueIds = await _db.Venues
+                .AsNoTracking()
+                .Where(v => eligibleOrgIds.Contains(v.OrganizationId))
+                .Join(
+                    _db.QboVenueCredentials.AsNoTracking().Where(c => !c.IsExpired),
+                    v => v.Id,
+                    c => c.VenueId,
+                    (v, _) => v.Id)
+                .ToListAsync(cancellationToken);
+
+            return await SyncVenueEventsInternalAsync(venueIds, lookbackSince, cancellationToken);
+        }
+        finally
+        {
+            _concurrencyGate.Release();
+        }
+    }
+
+    private async Task<int> SyncVenueEventsInternalAsync(
+        IReadOnlyList<Guid> venueIds,
+        DateTimeOffset? updatedSince,
+        CancellationToken cancellationToken)
+    {
+        var synced = 0;
+        foreach (var venueId in venueIds)
+        {
+            var eventIds = await _db.Events
+                .AsNoTracking()
+                .Where(e => e.VenueId == venueId)
+                .Select(e => e.Id)
+                .ToListAsync(cancellationToken);
+
+            foreach (var eventId in eventIds)
+            {
+                var trackingName = await _trackingMappingService.ResolveTrackingNameForEventAsync(
+                    eventId,
+                    cancellationToken);
+                if (string.IsNullOrWhiteSpace(trackingName))
+                    continue;
+
+                await SyncEventInternalAsync(venueId, eventId, updatedSince, cancellationToken);
+                synced++;
+            }
+        }
+
+        return synced;
+    }
+
+    private Task<string?> ResolveEventTrackingNameAsync(Event evt, CancellationToken cancellationToken) =>
+        _trackingMappingService.ResolveTrackingNameForEventAsync(evt.Id, cancellationToken);
 
     internal async Task<SyncResultDto> ProcessTransactionsAsync(
         Event evt,
