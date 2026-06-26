@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createShellWrapper } from '../shell/shellTestUtils';
 
@@ -19,11 +19,7 @@ describe('AppShell theme', () => {
       'src',
       '/brand/sr-text.png',
     );
-    expect(screen.getByTestId('top-bar-brand')).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(screen.getByTestId('top-bar-org-name')).toHaveTextContent('Acme Org');
-    });
+    expect(screen.queryByTestId('app-shell-header')).not.toBeInTheDocument();
   });
 
   it('wraps content in cream canvas app shell', () => {
