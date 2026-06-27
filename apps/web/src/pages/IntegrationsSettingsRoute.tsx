@@ -1,16 +1,25 @@
 import { useEffect } from 'react';
 import { navigateToSettings } from '@/lib/appRoute';
 import { IntegrationsSettingsPage } from '@/pages/IntegrationsSettingsPage';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useUserProfile } from '@/api/user';
 
 export function IntegrationsSettingsRoute() {
-  const isAdmin = useIsAdmin();
+  const { data: profile, isPending } = useUserProfile();
+  const isAdmin = profile?.role?.roleName === 'Admin';
 
   useEffect(() => {
-    if (!isAdmin) {
+    if (!isPending && !isAdmin) {
       navigateToSettings();
     }
-  }, [isAdmin]);
+  }, [isPending, isAdmin]);
+
+  if (isPending) {
+    return (
+      <p role="status" data-testid="integrations-settings-resolving">
+        Loading…
+      </p>
+    );
+  }
 
   if (!isAdmin) {
     return (

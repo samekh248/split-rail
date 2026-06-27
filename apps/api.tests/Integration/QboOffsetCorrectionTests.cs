@@ -148,6 +148,7 @@ public class QboOffsetCorrectionTests : IntegrationTestBase
     public async Task GetLedger_HasQboCorrection_TrueWhenOffsetMapped()
     {
         var (client, venueId, token) = await SetupFinancialAdminAsync();
+        await SeedQboCredentialDirectAsync(token, venueId);
         var evt = await CreateEventViaApiAsync(client, venueId);
         var lineItemId = await SeedLineItemDirectAsync(token, evt.EventId);
         await SeedOffsetLedgerEntryDirectAsync(token, evt.EventId, lineItemId, "TXN-1", "ACC-1", -25m);
@@ -165,6 +166,7 @@ public class QboOffsetCorrectionTests : IntegrationTestBase
     public async Task GetLedger_HasQboCorrection_FalseWhenOriginalOnly()
     {
         var (client, venueId, token) = await SetupFinancialAdminAsync();
+        await SeedQboCredentialDirectAsync(token, venueId);
         var evt = await CreateEventViaApiAsync(client, venueId);
         var lineItemId = await SeedLineItemDirectAsync(token, evt.EventId);
         await SeedSyncLedgerEntryDirectAsync(token, evt.EventId, "TXN-1", "ACC-1", 100m, lineItemId);

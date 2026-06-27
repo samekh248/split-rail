@@ -1092,6 +1092,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/organizations/{organizationId}/qbo/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    organizationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["OrganizationQboSummaryDto"];
+                        "application/json": components["schemas"]["OrganizationQboSummaryDto"];
+                        "text/json": components["schemas"]["OrganizationQboSummaryDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/organizations/{organizationId}": {
         parameters: {
             query?: never;
@@ -1167,7 +1206,10 @@ export interface paths {
         put?: never;
         post: {
             parameters: {
-                query?: never;
+                query?: {
+                    mode?: string;
+                    organizationId?: string;
+                };
                 header?: {
                     "X-Internal-Sync-Key"?: string;
                 };
@@ -1185,6 +1227,45 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/qbo/integration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["VenueQboIntegrationDto"];
+                        "application/json": components["schemas"]["VenueQboIntegrationDto"];
+                        "text/json": components["schemas"]["VenueQboIntegrationDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1403,6 +1484,214 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/venues/{venueId}/qbo/purge-cache": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/qbo/tracking-catalog": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["QboTrackingCatalogDto"];
+                        "application/json": components["schemas"]["QboTrackingCatalogDto"];
+                        "text/json": components["schemas"]["QboTrackingCatalogDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/qbo/tracking-mappings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["QboTrackingMappingsResponse"];
+                        "application/json": components["schemas"]["QboTrackingMappingsResponse"];
+                        "text/json": components["schemas"]["QboTrackingMappingsResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateTrackingMappingRequest"];
+                    "text/json": components["schemas"]["CreateTrackingMappingRequest"];
+                    "application/*+json": components["schemas"]["CreateTrackingMappingRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["QboTrackingMappingDto"];
+                        "application/json": components["schemas"]["QboTrackingMappingDto"];
+                        "text/json": components["schemas"]["QboTrackingMappingDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/qbo/tracking-mappings/{mappingId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    mappingId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateTrackingMappingRequest"];
+                    "text/json": components["schemas"]["UpdateTrackingMappingRequest"];
+                    "application/*+json": components["schemas"]["UpdateTrackingMappingRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["QboTrackingMappingDto"];
+                        "application/json": components["schemas"]["QboTrackingMappingDto"];
+                        "text/json": components["schemas"]["QboTrackingMappingDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    mappingId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/venues/{venueId}/qbo/connect": {
         parameters: {
             query?: never;
@@ -1427,6 +1716,45 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/qbo/connect-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["QboConnectUrlDto"];
+                        "application/json": components["schemas"]["QboConnectUrlDto"];
+                        "text/json": components["schemas"]["QboConnectUrlDto"];
+                    };
                 };
             };
         };
@@ -2699,7 +3027,7 @@ export interface components {
         BlockTotalsDto: {
             proforma?: string;
             settlement?: string;
-            qboActual?: string;
+            qboActual?: string | null;
         };
         CalendarPlacementDto: {
             /** Format: uuid */
@@ -2784,6 +3112,14 @@ export interface components {
         CreateRegionRequest: {
             name?: string | null;
             notes?: string | null;
+        };
+        CreateTrackingMappingRequest: {
+            qboTrackingType?: string | null;
+            qboTrackingId?: string | null;
+            qboTrackingName?: string | null;
+            targetTier?: string | null;
+            /** Format: uuid */
+            targetEntityId?: string;
         };
         CreateVenueRequest: {
             name?: string | null;
@@ -2882,8 +3218,8 @@ export interface components {
             weekStart?: string | null;
             weekEnd?: string | null;
             projectedNetGross?: string;
-            actualQboDeposits?: string;
-            variance?: string;
+            actualQboDeposits?: string | null;
+            variance?: string | null;
         };
         InvitationResponse: {
             /** Format: uuid */
@@ -2951,13 +3287,13 @@ export interface components {
             isArtistDeduction?: boolean;
             proformaValue?: string;
             settlementValue?: string;
-            qboActualValue?: string;
-            variance?: string;
             varianceFlagged?: boolean;
             notes?: string | null;
             isHiddenFromPromoter?: boolean;
             rowVersion?: string | null;
-            hasQboCorrection?: boolean;
+            qboActualValue?: string | null;
+            variance?: string | null;
+            hasQboCorrection?: boolean | null;
         };
         LoginRequest: {
             email?: string | null;
@@ -2987,6 +3323,15 @@ export interface components {
             adminUserId?: string;
             /** Format: uuid */
             scopedUserId?: string;
+        };
+        OrganizationQboSummaryDto: {
+            /** Format: uuid */
+            organizationId?: string;
+            isQboConnected?: boolean;
+            /** Format: int32 */
+            connectedVenueCount?: number;
+            /** Format: int32 */
+            totalVenueCount?: number;
         };
         OrganizationResponse: {
             /** Format: uuid */
@@ -3026,11 +3371,40 @@ export interface components {
             venueId?: string;
             mappings?: components["schemas"]["QboAccountMappingDto"][] | null;
         };
+        QboConnectUrlDto: {
+            authUrl?: string | null;
+        };
         QboEgressRecordDto: {
             method?: string | null;
             host?: string | null;
             /** Format: date-time */
             timestamp?: string;
+        };
+        QboTrackingCatalogDto: {
+            items?: components["schemas"]["QboTrackingRefDto"][] | null;
+        };
+        QboTrackingMappingDto: {
+            /** Format: uuid */
+            id?: string;
+            qboTrackingType?: string | null;
+            qboTrackingId?: string | null;
+            qboTrackingName?: string | null;
+            targetTier?: string | null;
+            /** Format: uuid */
+            targetEntityId?: string;
+            targetDisplayName?: string | null;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        QboTrackingMappingsResponse: {
+            /** Format: uuid */
+            venueId?: string;
+            mappings?: components["schemas"]["QboTrackingMappingDto"][] | null;
+        };
+        QboTrackingRefDto: {
+            type?: string | null;
+            id?: string | null;
+            name?: string | null;
         };
         RefreshRequest: {
             refreshToken?: string | null;
@@ -3136,9 +3510,9 @@ export interface components {
             /** Format: uuid */
             lastSyncBatchId?: string | null;
             /** Format: int32 */
-            totalMappedTransactions?: number;
+            totalMappedTransactions?: number | null;
             /** Format: int32 */
-            totalUnmappedTransactions?: number;
+            totalUnmappedTransactions?: number | null;
             qboConnected?: boolean;
         };
         UnmappedCountDto: {
@@ -3232,6 +3606,11 @@ export interface components {
             canMapQboAccounts?: boolean | null;
             canViewFinancials?: boolean | null;
         };
+        UpdateTrackingMappingRequest: {
+            targetTier?: string | null;
+            /** Format: uuid */
+            targetEntityId?: string;
+        };
         UpdateVenueRequest: {
             name?: string | null;
             /** Format: uuid */
@@ -3259,6 +3638,17 @@ export interface components {
             organization?: components["schemas"]["OrganizationSummaryDto"];
             role?: components["schemas"]["RoleDetailDto"];
             venueScopes?: components["schemas"]["VenueScopeDto"][] | null;
+        };
+        VenueQboIntegrationDto: {
+            /** Format: uuid */
+            venueId?: string;
+            qboConnected?: boolean;
+            connectionState?: string | null;
+            companyName?: string | null;
+            realmId?: string | null;
+            /** Format: date-time */
+            lastSyncedAt?: string | null;
+            canPurgeCache?: boolean;
         };
         VenueQboStatusDto: {
             /** Format: uuid */
@@ -3324,6 +3714,7 @@ export type CreateLineItemRequest = components['schemas']['CreateLineItemRequest
 export type CreateMappingRequest = components['schemas']['CreateMappingRequest'];
 export type CreateOrganizationRequest = components['schemas']['CreateOrganizationRequest'];
 export type CreateRegionRequest = components['schemas']['CreateRegionRequest'];
+export type CreateTrackingMappingRequest = components['schemas']['CreateTrackingMappingRequest'];
 export type CreateVenueRequest = components['schemas']['CreateVenueRequest'];
 export type DashboardResponse = components['schemas']['DashboardResponse'];
 export type EditabilityDto = components['schemas']['EditabilityDto'];
@@ -3344,12 +3735,18 @@ export type LoginRequest = components['schemas']['LoginRequest'];
 export type MutateSettledEventRequestDto = components['schemas']['MutateSettledEventRequestDto'];
 export type MutateSettledEventResponseDto = components['schemas']['MutateSettledEventResponseDto'];
 export type OrgSeedContextDto = components['schemas']['OrgSeedContextDto'];
+export type OrganizationQboSummaryDto = components['schemas']['OrganizationQboSummaryDto'];
 export type OrganizationResponse = components['schemas']['OrganizationResponse'];
 export type OrganizationSummaryDto = components['schemas']['OrganizationSummaryDto'];
 export type PermissionsDto = components['schemas']['PermissionsDto'];
 export type QboAccountMappingDto = components['schemas']['QboAccountMappingDto'];
 export type QboAccountMappingsResponse = components['schemas']['QboAccountMappingsResponse'];
+export type QboConnectUrlDto = components['schemas']['QboConnectUrlDto'];
 export type QboEgressRecordDto = components['schemas']['QboEgressRecordDto'];
+export type QboTrackingCatalogDto = components['schemas']['QboTrackingCatalogDto'];
+export type QboTrackingMappingDto = components['schemas']['QboTrackingMappingDto'];
+export type QboTrackingMappingsResponse = components['schemas']['QboTrackingMappingsResponse'];
+export type QboTrackingRefDto = components['schemas']['QboTrackingRefDto'];
 export type RefreshRequest = components['schemas']['RefreshRequest'];
 export type RegionResponse = components['schemas']['RegionResponse'];
 export type RegisterRequest = components['schemas']['RegisterRequest'];
@@ -3376,11 +3773,13 @@ export type UpdateMappingRequest = components['schemas']['UpdateMappingRequest']
 export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
 export type UpdateRegionRequest = components['schemas']['UpdateRegionRequest'];
 export type UpdateRoleRequest = components['schemas']['UpdateRoleRequest'];
+export type UpdateTrackingMappingRequest = components['schemas']['UpdateTrackingMappingRequest'];
 export type UpdateVenueRequest = components['schemas']['UpdateVenueRequest'];
 export type UpdateVenueScopesRequest = components['schemas']['UpdateVenueScopesRequest'];
 export type UpdateVenueScopesResponse = components['schemas']['UpdateVenueScopesResponse'];
 export type UserListResponse = components['schemas']['UserListResponse'];
 export type UserProfileResponse = components['schemas']['UserProfileResponse'];
+export type VenueQboIntegrationDto = components['schemas']['VenueQboIntegrationDto'];
 export type VenueQboStatusDto = components['schemas']['VenueQboStatusDto'];
 export type VenueResponse = components['schemas']['VenueResponse'];
 export type VenueScopeDto = components['schemas']['VenueScopeDto'];

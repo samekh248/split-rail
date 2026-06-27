@@ -22,8 +22,8 @@ public class SwaggerMoneySchemaTests : IntegrationTestBase
 
         AssertMoneyProperty(properties, "proformaValue", nullable: false);
         AssertMoneyProperty(properties, "settlementValue", nullable: false);
-        AssertMoneyProperty(properties, "qboActualValue", nullable: false);
-        AssertMoneyProperty(properties, "variance", nullable: false);
+        AssertMoneyProperty(properties, "qboActualValue", nullable: true);
+        AssertMoneyProperty(properties, "variance", nullable: true);
 
         var sortOrder = properties.GetProperty("sortOrder");
         sortOrder.GetProperty("type").GetString().Should().Be("integer");

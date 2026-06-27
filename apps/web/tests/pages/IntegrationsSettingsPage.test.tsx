@@ -4,8 +4,8 @@ import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { IntegrationsSettingsRoute } from '@/pages/IntegrationsSettingsRoute';
 
-vi.mock('@/hooks/useIsAdmin', () => ({
-  useIsAdmin: vi.fn(),
+vi.mock('@/api/user', () => ({
+  useUserProfile: vi.fn(),
 }));
 
 vi.mock('@/venue/useActiveVenue', () => ({
@@ -35,7 +35,7 @@ vi.mock('@/hooks/useCanManageTeam', () => ({
   useCanManageTeam: () => true,
 }));
 
-import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { useUserProfile } from '@/api/user';
 
 function wrapper({ children }: { children: ReactNode }) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -44,14 +44,20 @@ function wrapper({ children }: { children: ReactNode }) {
 
 describe('IntegrationsSettingsRoute', () => {
   it('redirect message for non-admin viewers', () => {
-    vi.mocked(useIsAdmin).mockReturnValue(false);
+    vi.mocked(useUserProfile).mockReturnValue({
+      isPending: false,
+      data: { role: { roleName: 'Member' } },
+    } as ReturnType<typeof useUserProfile>);
     render(<IntegrationsSettingsRoute />, { wrapper });
 
     expect(screen.getByTestId('integrations-access-denied')).toBeInTheDocument();
   });
 
   it('renders integrations page for admin', () => {
-    vi.mocked(useIsAdmin).mockReturnValue(true);
+    vi.mocked(useUserProfile).mockReturnValue({
+      isPending: false,
+      data: { role: { roleName: 'Admin' } },
+    } as ReturnType<typeof useUserProfile>);
     render(<IntegrationsSettingsRoute />, { wrapper });
 
     expect(screen.getByTestId('qbo-integration-card')).toBeInTheDocument();

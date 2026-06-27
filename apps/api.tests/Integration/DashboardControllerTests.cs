@@ -75,8 +75,8 @@ public class DashboardControllerTests : IntegrationTestBase
         dashboard.ActionCenter.TotalUnmappedCount.Should().Be(0);
         dashboard.ActionCenter.EventsWithUnmapped.Should().BeEmpty();
         dashboard.FinancialHealth.ProjectedNetGross.Should().Be(0m);
-        dashboard.FinancialHealth.ActualQboDeposits.Should().Be(0m);
-        dashboard.FinancialHealth.Variance.Should().Be(0m);
+        dashboard.FinancialHealth.ActualQboDeposits.Should().BeNull();
+        dashboard.FinancialHealth.Variance.Should().BeNull();
     }
 
     [Fact]
@@ -289,6 +289,7 @@ public class DashboardControllerTests : IntegrationTestBase
     public async Task GetDashboard_FinancialHealth_WeekFilterAndTotals()
     {
         var (client, venueId, token) = await SetupFinancialAdminAsync();
+        await SeedQboCredentialDirectAsync(token, venueId);
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var (weekStart, weekEnd) = DashboardFinancialHealthHelper.GetCalendarWeek(today);
 
@@ -350,8 +351,8 @@ public class DashboardControllerTests : IntegrationTestBase
         var dashboard = await GetDashboardAsync(client, venueId);
 
         dashboard.FinancialHealth.ProjectedNetGross.Should().Be(0m);
-        dashboard.FinancialHealth.ActualQboDeposits.Should().Be(0m);
-        dashboard.FinancialHealth.Variance.Should().Be(0m);
+        dashboard.FinancialHealth.ActualQboDeposits.Should().BeNull();
+        dashboard.FinancialHealth.Variance.Should().BeNull();
     }
 
     [Fact]
@@ -372,6 +373,7 @@ public class DashboardControllerTests : IntegrationTestBase
     public async Task GetDashboard_FinancialHealth_MoneyFieldsAreJsonStrings()
     {
         var (client, venueId, token) = await SetupFinancialAdminAsync();
+        await SeedQboCredentialDirectAsync(token, venueId);
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var (weekStart, _) = DashboardFinancialHealthHelper.GetCalendarWeek(today);
         var evt = await CreateEventViaApiAsync(
