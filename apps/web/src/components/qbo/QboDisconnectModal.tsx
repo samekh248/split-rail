@@ -19,7 +19,7 @@ export function QboDisconnectModal({ pending, onConfirm, onCancel }: QboDisconne
           </button>
           <button
             type="button"
-            className="btn-primary"
+            className="btn-primary--compact"
             data-testid="qbo-disconnect-confirm"
             disabled={pending}
             onClick={onConfirm}

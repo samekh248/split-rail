@@ -5128,6 +5128,17 @@ textarea.form-field__input {
   max-width: 20rem;
 }
 
+.modal__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.modal__actions .btn-primary--compact {
+  padding: 0.375rem 0.75rem;
+}
+
 .financial-health-widget__cta {
   margin: 0;
   color: var(--color-text-secondary);

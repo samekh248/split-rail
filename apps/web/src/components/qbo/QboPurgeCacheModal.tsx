@@ -23,7 +23,7 @@ export function QboPurgeCacheModal({ venueId, onSuccess, onCancel }: QboPurgeCac
           </button>
           <button
             type="button"
-            className="btn-primary"
+            className="btn-primary--compact"
             data-testid="qbo-purge-confirm"
             disabled={purgeMutation.isPending}
             onClick={() => {
