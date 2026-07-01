@@ -1,67 +1,85 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { SettingsLayout } from '@/components/settings/SettingsLayout';
 import { QboIntegrationCard } from '@/components/qbo/QboIntegrationCard';
 import { QboMappingConsole } from '@/components/qbo/QboMappingConsole';
+import { LoadingPlaceholder } from '@/components/shell/LoadingPlaceholder';
+import { replacePath } from '@/lib/appRoute';
 import { useVenueQboIntegration } from '@/api/qbo';
 import { parseQboConnectionState } from '@/lib/qboConnectionState';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 
 export function IntegrationsSettingsPage() {
-  const { venues, activeVenueId, isLoading, activateVenueId } = useActiveVenue();
-
-  const searchParams = useMemo(
-    () => new URLSearchParams(window.location.search),
-    [],
-  );
-  const queryVenueId = searchParams.get('venueId');
-  const qboConnected = searchParams.get('qboConnected') === 'true';
+  const { venues, isLoading, activateVenueId } = useActiveVenue();
+  const [showConnectedToast, setShowConnectedToast] = useState(false);
+  const [oauthVenueId, setOauthVenueId] = useState<string | null>(null);
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const qboJustConnected = params.get('qboConnected') === 'true';
+    const queryVenueId = params.get('venueId');
+
     if (queryVenueId) {
       activateVenueId(queryVenueId);
+      setOauthVenueId(queryVenueId);
     }
-  }, [queryVenueId, activateVenueId]);
 
-  const selectedVenueId = activeVenueId ?? venues[0]?.id ?? '';
-  const showVenueSelector = venues.length > 1;
-  const integrationQuery = useVenueQboIntegration(selectedVenueId);
+    if (qboJustConnected) {
+      setShowConnectedToast(true);
+    }
+
+    if (qboJustConnected || queryVenueId) {
+      params.delete('qboConnected');
+      params.delete('venueId');
+      const query = params.toString();
+      replacePath(query ? `/settings/integrations?${query}` : '/settings/integrations');
+    }
+  }, [activateVenueId]);
+
+  const integrationVenueId = useMemo(() => {
+    if (oauthVenueId && venues.some((venue) => venue.id === oauthVenueId)) {
+      return oauthVenueId;
+    }
+    return venues[0]?.id ?? '';
+  }, [oauthVenueId, venues]);
+
+  const integrationQuery = useVenueQboIntegration(integrationVenueId);
   const connectionState = parseQboConnectionState(integrationQuery.data?.connectionState);
   const showMappingConsole =
     connectionState === 'Connected' || connectionState === 'Expired';
 
   return (
     <SettingsLayout title="Integrations">
-      {qboConnected && (
-        <p className="integrations-settings__toast" role="status" data-testid="qbo-connected-toast">
+      <p className="settings-landing__intro">
+        Connect QuickBooks Online for your organization and manage how Split-Rail maps QBO
+        data to events and venues.
+      </p>
+
+      {showConnectedToast && (
+        <p
+          className="team-section__banner team-section__banner--success"
+          role="status"
+          data-testid="qbo-connected-toast"
+        >
           QuickBooks connected successfully.
         </p>
       )}
 
-      {showVenueSelector && (
-        <label className="integrations-settings__venue-select">
-          <span>Venue</span>
-          <select
-            value={selectedVenueId}
-            data-testid="integrations-venue-select"
-            onChange={(event) => activateVenueId(event.target.value)}
-          >
-            {venues.map((venue) => (
-              <option key={venue.id} value={venue.id}>
-                {venue.name}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-
-      {!isLoading && selectedVenueId ? (
+      {isLoading ? (
+        <LoadingPlaceholder
+          variant="zone"
+          label="Loading venues"
+          data-testid="integrations-settings-loading"
+        />
+      ) : venues.length === 0 ? (
+        <p className="team-section__empty" data-testid="integrations-settings-empty">
+          No venues available. Create a venue before connecting QuickBooks.
+        </p>
+      ) : integrationVenueId ? (
         <>
-          <QboIntegrationCard venueId={selectedVenueId} />
-          {showMappingConsole && <QboMappingConsole venueId={selectedVenueId} />}
+          <QboIntegrationCard venueId={integrationVenueId} />
+          {showMappingConsole && <QboMappingConsole venueId={integrationVenueId} />}
         </>
-      ) : (
-        <p data-testid="integrations-settings-loading">Loading venues…</p>
-      )}
+      ) : null}
     </SettingsLayout>
   );
 }
