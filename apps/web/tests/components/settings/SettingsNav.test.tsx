@@ -9,13 +9,19 @@ vi.mock('@/hooks/useCanManageTeam', () => ({
   useCanManageTeam: vi.fn(),
 }));
 
+vi.mock('@/hooks/useIsAdmin', () => ({
+  useIsAdmin: vi.fn(),
+}));
+
 import { useCanManageTeam } from '@/hooks/useCanManageTeam';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 describe('SettingsNav', () => {
   beforeEach(() => {
     sessionStorage.clear();
     window.history.pushState({}, '', '/settings');
     vi.mocked(useCanManageTeam).mockReturnValue(true);
+    vi.mocked(useIsAdmin).mockReturnValue(true);
   });
 
   it('renders sidebar navigation with return link and settings sections', () => {
@@ -36,6 +42,13 @@ describe('SettingsNav', () => {
 
     expect(screen.queryByRole('button', { name: 'Team' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Organization' })).toBeInTheDocument();
+  });
+
+  it('hides Integrations link for non-admin users', () => {
+    vi.mocked(useIsAdmin).mockReturnValue(false);
+    render(<SettingsNav variant="sidebar" />);
+
+    expect(screen.queryByRole('button', { name: 'Integrations' })).not.toBeInTheDocument();
   });
 
   it('navigates to organization settings from nav item', async () => {

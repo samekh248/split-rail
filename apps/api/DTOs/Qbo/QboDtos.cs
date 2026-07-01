@@ -16,9 +16,55 @@ public record SyncStatusDto(
     Guid EventId,
     DateTimeOffset? LastSyncedAt,
     Guid? LastSyncBatchId,
-    int TotalMappedTransactions,
-    int TotalUnmappedTransactions,
+    int? TotalMappedTransactions,
+    int? TotalUnmappedTransactions,
     bool QboConnected);
+
+public record QboTrackingRefDto(string Type, string Id, string Name);
+
+public record QboTrackingCatalogDto(IReadOnlyList<QboTrackingRefDto> Items);
+
+public record QboTrackingMappingDto(
+    Guid Id,
+    string QboTrackingType,
+    string QboTrackingId,
+    string QboTrackingName,
+    string TargetTier,
+    Guid TargetEntityId,
+    string? TargetDisplayName,
+    DateTimeOffset CreatedAt);
+
+public record QboTrackingMappingsResponse(
+    Guid VenueId,
+    IReadOnlyList<QboTrackingMappingDto> Mappings);
+
+public record CreateTrackingMappingRequest(
+    string QboTrackingType,
+    string QboTrackingId,
+    string QboTrackingName,
+    string TargetTier,
+    Guid TargetEntityId);
+
+public record UpdateTrackingMappingRequest(
+    string TargetTier,
+    Guid TargetEntityId);
+
+public record VenueQboIntegrationDto(
+    Guid VenueId,
+    bool QboConnected,
+    string ConnectionState,
+    string? CompanyName,
+    string? RealmId,
+    DateTimeOffset? LastSyncedAt,
+    bool CanPurgeCache);
+
+public record QboConnectUrlDto(string AuthUrl);
+
+public record OrganizationQboSummaryDto(
+    Guid OrganizationId,
+    bool IsQboConnected,
+    int ConnectedVenueCount,
+    int TotalVenueCount);
 
 public record QboAccountMappingDto(
     Guid Id,

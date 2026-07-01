@@ -40,7 +40,14 @@ public class QboTokenService
     public async Task<bool> IsConnectedAsync(Guid venueId, CancellationToken cancellationToken = default) =>
         await _db.QboVenueCredentials
             .AsNoTracking()
-            .AnyAsync(c => c.VenueId == venueId, cancellationToken);
+            .AnyAsync(c => c.VenueId == venueId && !c.IsExpired, cancellationToken);
+
+    public async Task<QboVenueCredential?> GetCredentialAsync(
+        Guid venueId,
+        CancellationToken cancellationToken = default) =>
+        await _db.QboVenueCredentials
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.VenueId == venueId, cancellationToken);
 
     public async Task<(string AccessToken, string RealmId)> GetValidAccessTokenAsync(
         Guid venueId,
@@ -85,6 +92,7 @@ public class QboTokenService
         existing.TokenExpiresAt = expiresAt;
         existing.ConnectedAt = DateTimeOffset.UtcNow;
         existing.ConnectedByUserId = connectedByUserId;
+        existing.IsExpired = false;
 
         await _db.SaveChangesAsync(cancellationToken);
 
@@ -172,6 +180,8 @@ public class QboTokenService
             var response = await client.SendAsync(request, cancellationToken);
             if (!response.IsSuccessStatusCode)
             {
+                credential.IsExpired = true;
+                await _db.SaveChangesAsync(cancellationToken);
                 throw new QboTokenRefreshException(
                     "Failed to refresh QBO access token.",
                     venueId,

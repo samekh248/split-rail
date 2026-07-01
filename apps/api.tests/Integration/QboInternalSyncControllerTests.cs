@@ -26,6 +26,16 @@ public class QboInternalSyncControllerTests : IntegrationTestBase
         var response = await Client.SendAsync(request);
         response.StatusCode.Should().Be(HttpStatusCode.Unauthorized);
     }
+
+    [Fact]
+    public async Task TriggerSync_WithNightlyMode_ReturnsAccepted()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "/api/internal/qbo-sync-trigger?mode=nightly");
+        request.Headers.Add("X-Internal-Sync-Key", "test-internal-key");
+
+        var response = await Client.SendAsync(request);
+        response.StatusCode.Should().Be(HttpStatusCode.Accepted);
+    }
 }
 
 public class QboInternalSyncLoggingTests : IntegrationTestBase

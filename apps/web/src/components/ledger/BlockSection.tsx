@@ -19,6 +19,7 @@ interface BlockSectionProps {
   editability: EditabilityDto;
   isBudgetLocked?: boolean;
   canEditStructure?: boolean;
+  showQboColumns?: boolean;
   onProformaChange?: (id: string, value: string) => void;
   onSettlementChange?: (id: string, value: string) => void;
   onNotesChange?: (id: string, notes: string) => void;
@@ -34,6 +35,7 @@ export function BlockSection({
   editability,
   isBudgetLocked = false,
   canEditStructure = false,
+  showQboColumns = true,
   onProformaChange,
   onSettlementChange,
   onNotesChange,
@@ -89,8 +91,12 @@ export function BlockSection({
             <th>Row</th>
             <th>Proforma</th>
             <th>Settlement</th>
-            <th>QBO Actual</th>
-            <th>Variance</th>
+            {showQboColumns && (
+              <>
+                <th>QBO Actual</th>
+                <th>Variance</th>
+              </>
+            )}
             <th>Notes</th>
             {canEditStructure && <th>Actions</th>}
           </tr>
@@ -103,6 +109,7 @@ export function BlockSection({
               blockType={blockType}
               editability={editability}
               canEditStructure={canEditStructure}
+              showQboColumns={showQboColumns}
               blockRows={rows}
               onProformaChange={onProformaChange}
               onSettlementChange={onSettlementChange}
@@ -119,8 +126,13 @@ export function BlockSection({
             <td>Totals</td>
             <td>{formatMoney(totals?.proforma)}</td>
             <td>{formatMoney(totals?.settlement)}</td>
-            <td>{formatMoney(totals?.qboActual)}</td>
-            <td colSpan={canEditStructure ? 3 : 2} />
+            {showQboColumns && (
+              <>
+                <td>{formatMoney(totals?.qboActual)}</td>
+                <td colSpan={1} />
+              </>
+            )}
+            <td colSpan={canEditStructure ? (showQboColumns ? 2 : 1) : showQboColumns ? 1 : 1} />
           </tr>
         </tfoot>
       </table>

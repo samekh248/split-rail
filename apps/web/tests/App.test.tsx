@@ -86,6 +86,19 @@ function mockAuthenticatedFetch(options?: {
           json: () => Promise.resolve(profileWithOrg()),
         });
       }
+      if (url.includes('/qbo/integration')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              venueId: venues[0]?.id ?? 'venue-1',
+              qboConnected: false,
+              connectionState: 'Disconnected',
+              canPurgeCache: false,
+            }),
+        });
+      }
       const dashboardMatch = url.match(/\/venues\/([^/]+)\/dashboard$/);
       if (dashboardMatch) {
         const venueId = dashboardMatch[1]!;
@@ -96,7 +109,7 @@ function mockAuthenticatedFetch(options?: {
           json: () => Promise.resolve(buildDashboard(venueId, venueEvents)),
         });
       }
-      if (url.includes('/venues') && !url.includes('/events')) {
+      if (url.includes('/venues') && !url.includes('/events') && !url.includes('/qbo/')) {
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -270,11 +283,11 @@ describe('App', () => {
     expect(screen.getByText(/Organization settings are not available yet/)).toBeInTheDocument();
   });
 
-  it('renders integrations placeholder when authenticated on /settings/integrations', async () => {
+  it('renders integrations settings when authenticated admin on /settings/integrations', async () => {
     localStorage.setItem('accessToken', 'token');
     localStorage.setItem('refreshToken', 'refresh');
     window.history.pushState({}, '', '/settings/integrations');
-    mockAuthenticatedFetch();
+    mockAuthenticatedFetch({ venues: [VENUE_A] });
 
     render(
       <AuthProvider>
@@ -283,8 +296,8 @@ describe('App', () => {
       { wrapper: createWrapper() },
     );
 
-    expect(await screen.findByRole('heading', { name: 'Coming soon' })).toBeInTheDocument();
-    expect(screen.getByText(/Integrations settings are not available yet/)).toBeInTheDocument();
+    expect(await screen.findByTestId('qbo-integration-card')).toBeInTheDocument();
+    expect(screen.getByTestId('qbo-connect-button')).toBeInTheDocument();
   });
 
   it('renders accept invite for authenticated user on accept-invite route', async () => {

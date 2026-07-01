@@ -38,7 +38,11 @@ export function LedgerGrid({
   const blocks = ledger.blocks ?? [];
   const summary = ledger.summary;
   const status = ledger.status ?? 'PRE_SHOW';
-  const hasVarianceAlerts = blocks.some((block) =>
+  const showQboColumns = blocks.some((block) =>
+    (block.rows ?? []).some((row) => Object.prototype.hasOwnProperty.call(row, 'qboActualValue')) ||
+    Object.prototype.hasOwnProperty.call(block.blockTotals ?? {}, 'qboActual'),
+  );
+  const hasVarianceAlerts = showQboColumns && blocks.some((block) =>
     (block.rows ?? []).some((row) =>
       resolveVarianceDisplay({
         qboActual: row.qboActualValue,
@@ -116,6 +120,7 @@ export function LedgerGrid({
             editability={editability}
             isBudgetLocked={ledger.isBudgetLocked ?? false}
             canEditStructure={canEditStructure}
+            showQboColumns={showQboColumns}
             onProformaChange={onProformaChange}
             onSettlementChange={onSettlementChange}
             onNotesChange={onNotesChange}

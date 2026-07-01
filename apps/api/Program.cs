@@ -43,6 +43,15 @@ builder.Services.Configure<QboSyncOptions>(options =>
     options.SchedulerTokenAudience = builder.Configuration["QboSync:SchedulerTokenAudience"] ?? options.SchedulerTokenAudience;
     if (builder.Environment.IsProduction())
         options.EnableInProcessTimer = qboSyncSection.GetValue("EnableInProcessTimer", false);
+
+    options.EnvironmentProfile = builder.Environment.IsProduction()
+        ? "production"
+        : builder.Environment.IsStaging()
+            ? "staging"
+            : "development";
+
+    if (options.UsesSandboxIntuit)
+        options.IntuitApiBaseUrl = "https://sandbox-quickbooks.api.intuit.com/v3/company";
 });
 
 builder.Services.Configure<DataProtectionOptions>(
@@ -162,9 +171,13 @@ builder.Services.AddAuthorization(options =>
         policy.AddAuthenticationSchemes(InternalSyncTriggerAuthenticator.GoogleSchedulerScheme);
         policy.Requirements.Add(new SchedulerTriggerRequirement());
     });
+
+    options.AddPolicy(AdminRolePolicy.Name, policy =>
+        policy.Requirements.Add(new AdminRoleRequirement()));
 });
 
 builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
+builder.Services.AddScoped<IAuthorizationHandler, AdminRoleAuthorizationHandler>();
 builder.Services.AddScoped<IAuthorizationHandler, SchedulerTriggerAuthorizationHandler>();
 builder.Services.AddScoped<IInternalSyncTriggerAuthenticator, InternalSyncTriggerAuthenticator>();
 builder.Services.AddScoped<ITenantContext, TenantContext>();
@@ -203,6 +216,11 @@ builder.Services.AddSingleton<IQboSyncConcurrencyGate, QboSyncConcurrencyGate>()
 builder.Services.AddScoped<QboSyncCorrectionService>();
 builder.Services.AddScoped<QboSyncService>();
 builder.Services.AddScoped<QboMappingService>();
+builder.Services.AddScoped<QboTrackingMappingService>();
+builder.Services.AddScoped<QboPurgeService>();
+builder.Services.AddSingleton<IQboVenueSyncRateLimiter, QboVenueSyncRateLimiter>();
+builder.Services.AddScoped<IQboMetadataClient, QboMetadataClient>();
+builder.Services.AddScoped<IQboPayloadFilter, QboPayloadFilter>();
 builder.Services.AddScoped<SplitRail.Api.Services.SignatureValidator>();
 builder.Services.AddScoped<ISettlementPdfRenderer, SettlementPdfRenderer>();
 builder.Services.AddScoped<SettlementPdfRenderer>();

@@ -15,6 +15,8 @@ public class LedgerService
     private readonly VenueService _venueService;
     private readonly DealMathEngine _dealMathEngine;
     private readonly FrozenEventMutationAuditor _frozenEventAuditor;
+    private readonly QboTokenService _tokenService;
+    private readonly IQboPayloadFilter _payloadFilter;
     private readonly ILogger<LedgerService> _logger;
 
     public LedgerService(
@@ -23,6 +25,8 @@ public class LedgerService
         VenueService venueService,
         DealMathEngine dealMathEngine,
         FrozenEventMutationAuditor frozenEventAuditor,
+        QboTokenService tokenService,
+        IQboPayloadFilter payloadFilter,
         ILogger<LedgerService> logger)
     {
         _db = db;
@@ -30,6 +34,8 @@ public class LedgerService
         _venueService = venueService;
         _dealMathEngine = dealMathEngine;
         _frozenEventAuditor = frozenEventAuditor;
+        _tokenService = tokenService;
+        _payloadFilter = payloadFilter;
         _logger = logger;
     }
 
@@ -48,7 +54,9 @@ public class LedgerService
             .Select(l => l.MappedLineItemId!.Value)
             .Distinct()
             .ToListAsync(cancellationToken);
-        return BuildLedgerGrid(evt, hidePromoterRows, correctionLineItemIds.ToHashSet());
+        var connected = await _tokenService.IsConnectedAsync(venueId, cancellationToken);
+        var grid = BuildLedgerGrid(evt, hidePromoterRows, correctionLineItemIds.ToHashSet());
+        return _payloadFilter.Apply(grid, connected);
     }
 
     public async Task<LedgerGridResponse> RecalculateAsync(
@@ -602,12 +610,12 @@ public class LedgerService
             li.IsArtistDeduction,
             li.ProformaValue,
             li.SettlementValue,
-            li.QboActualValue,
-            variance,
             Math.Abs(variance) > 0m,
             li.Notes,
             li.IsHiddenFromPromoter,
             RowVersionFormat.ToRowVersion(li.Xmin),
+            li.QboActualValue,
+            variance,
             hasQboCorrection);
     }
 

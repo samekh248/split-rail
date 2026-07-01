@@ -31,6 +31,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<FinancialLineItem> FinancialLineItems => Set<FinancialLineItem>();
     public DbSet<EventArtist> EventArtists => Set<EventArtist>();
     public DbSet<QboAccountMapping> QboAccountMappings => Set<QboAccountMapping>();
+    public DbSet<QboTrackingMapping> QboTrackingMappings => Set<QboTrackingMapping>();
     public DbSet<QboVenueCredential> QboVenueCredentials => Set<QboVenueCredential>();
     public DbSet<QboSyncLedger> QboSyncLedgers => Set<QboSyncLedger>();
     public DbSet<UnmappedQboTransaction> UnmappedQboTransactions => Set<UnmappedQboTransaction>();
@@ -55,6 +56,7 @@ public class ApplicationDbContext : DbContext
         ConfigureFinancialLineItem(modelBuilder);
         ConfigureEventArtist(modelBuilder);
         ConfigureQboAccountMapping(modelBuilder);
+        ConfigureQboTrackingMapping(modelBuilder);
         ConfigureQboVenueCredential(modelBuilder);
         ConfigureQboSyncLedger(modelBuilder);
         ConfigureUnmappedQboTransaction(modelBuilder);
@@ -109,6 +111,10 @@ public class ApplicationDbContext : DbContext
             _tenantContext.OrganizationId == null ||
             e.Venue.OrganizationId == _tenantContext.OrganizationId);
 
+        modelBuilder.Entity<QboTrackingMapping>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.OrganizationId == _tenantContext.OrganizationId);
+
         modelBuilder.Entity<QboVenueCredential>().HasQueryFilter(e =>
             _tenantContext.OrganizationId == null ||
             e.Venue.OrganizationId == _tenantContext.OrganizationId);
@@ -152,6 +158,12 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.ArchivedAt)
                 .HasColumnName("archived_at");
+
+            entity.Property(e => e.TimeZoneId)
+                .HasColumnName("time_zone_id")
+                .HasMaxLength(100)
+                .HasDefaultValue("America/Denver")
+                .IsRequired();
         });
     }
 
@@ -758,6 +770,62 @@ public class ApplicationDbContext : DbContext
         });
     }
 
+    private static void ConfigureQboTrackingMapping(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<QboTrackingMapping>(entity =>
+        {
+            entity.ToTable("qbo_tracking_mappings");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.OrganizationId).HasColumnName("organization_id");
+            entity.Property(e => e.VenueId).HasColumnName("venue_id");
+
+            entity.Property(e => e.QboTrackingType)
+                .HasColumnName("qbo_tracking_type")
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(e => e.QboTrackingId)
+                .HasColumnName("qbo_tracking_id")
+                .HasMaxLength(100)
+                .IsRequired();
+
+            entity.Property(e => e.QboTrackingName)
+                .HasColumnName("qbo_tracking_name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.TargetTier)
+                .HasColumnName("target_tier")
+                .HasMaxLength(20)
+                .IsRequired();
+
+            entity.Property(e => e.TargetEntityId).HasColumnName("target_entity_id");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasIndex(e => new { e.VenueId, e.QboTrackingId, e.TargetTier, e.TargetEntityId })
+                .IsUnique()
+                .HasDatabaseName("IX_qbo_tracking_mappings_venue_tracking_target");
+
+            entity.HasOne(e => e.Organization)
+                .WithMany()
+                .HasForeignKey(e => e.OrganizationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Venue)
+                .WithMany()
+                .HasForeignKey(e => e.VenueId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
     private static void ConfigureQboVenueCredential(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<QboVenueCredential>(entity =>
@@ -775,6 +843,14 @@ public class ApplicationDbContext : DbContext
                 .HasColumnName("realm_id")
                 .HasMaxLength(50)
                 .IsRequired();
+
+            entity.Property(e => e.CompanyName)
+                .HasColumnName("company_name")
+                .HasMaxLength(255);
+
+            entity.Property(e => e.IsExpired)
+                .HasColumnName("is_expired")
+                .HasDefaultValue(false);
 
             entity.Property(e => e.EncryptedAccessToken)
                 .HasColumnName("encrypted_access_token")

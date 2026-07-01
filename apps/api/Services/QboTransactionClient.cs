@@ -36,15 +36,19 @@ public class QboTransactionClient : IQboTransactionClient
         string accessToken,
         string realmId,
         string tagName,
+        DateTimeOffset? updatedSince = null,
         CancellationToken cancellationToken = default)
     {
         var client = _httpClientFactory.CreateClient("QboApi");
         var results = new List<QboFetchedTransaction>();
         var seenIds = new HashSet<string>(StringComparer.Ordinal);
 
+        var since = updatedSince ?? DateTimeOffset.UnixEpoch;
+        var sinceClause = since.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ss'Z'", CultureInfo.InvariantCulture);
+
         foreach (var entityType in TransactionEntityTypes)
         {
-            var query = $"SELECT * FROM {entityType} WHERE MetaData.LastUpdatedTime > '1970-01-01'";
+            var query = $"SELECT * FROM {entityType} WHERE MetaData.LastUpdatedTime > '{sinceClause}'";
             var url =
                 $"{_options.IntuitApiBaseUrl}/{realmId}/query?query={Uri.EscapeDataString(query)}&minorversion=65";
 

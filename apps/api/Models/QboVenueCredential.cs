@@ -5,6 +5,8 @@ public class QboVenueCredential
     public Guid Id { get; set; }
     public Guid VenueId { get; set; }
     public string RealmId { get; set; } = string.Empty;
+    public string? CompanyName { get; set; }
+    public bool IsExpired { get; set; }
     public string EncryptedAccessToken { get; set; } = string.Empty;
     public string EncryptedRefreshToken { get; set; } = string.Empty;
     public DateTimeOffset TokenExpiresAt { get; set; }

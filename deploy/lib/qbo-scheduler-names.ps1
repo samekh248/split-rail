@@ -27,7 +27,7 @@ function Resolve-QboSchedulerNames {
     $script:SCHEDULER_SA_EMAIL = "$($script:SCHEDULER_SA_ID)@$GcpProject.iam.gserviceaccount.com"
 }
 
-$script:SCHEDULER_CRON = '0 */6 * * *'
+$script:SCHEDULER_CRON = '*/15 * * * *'
 $script:SCHEDULER_TIME_ZONE = 'UTC'
 $script:SCHEDULER_HTTP_METHOD = 'POST'
 $script:SCHEDULER_TRIGGER_PATH = '/api/internal/qbo-sync-trigger'
