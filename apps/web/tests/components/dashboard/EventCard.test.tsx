@@ -33,6 +33,7 @@ function renderCard(
     isPinned?: boolean;
     onPinToggle?: () => void;
     compact?: boolean;
+    showProgressBar?: boolean;
   },
 ) {
   const onQuickLink = vi.fn();
@@ -45,6 +46,7 @@ function renderCard(
       isPinned={extra?.isPinned}
       onPinToggle={extra?.onPinToggle}
       compact={extra?.compact}
+      showProgressBar={extra?.showProgressBar}
     />,
   );
   return { onQuickLink };
@@ -83,14 +85,18 @@ describe('EventCard', () => {
       expect(screen.getByTestId(`event-card-date-${EVENT_A.eventId}`)).toHaveTextContent('Date TBD');
     });
 
-    it('renders lifecycle progress bar as the last child of the card', () => {
-      renderCard({
-        ...EVENT_A,
-        status: 'PRE_SHOW',
-        isBudgetLocked: false,
-        eventDate: futureDate(),
-        bookingPlacementStatus: 'CONFIRMED',
-      });
+    it('renders lifecycle progress bar in the pinned dashboard section as the last child', () => {
+      renderCard(
+        {
+          ...EVENT_A,
+          status: 'PRE_SHOW',
+          isBudgetLocked: false,
+          eventDate: futureDate(),
+          bookingPlacementStatus: 'CONFIRMED',
+        },
+        FULL_PERMISSIONS,
+        { showProgressBar: true },
+      );
 
       const card = screen.getByTestId(`event-card-${EVENT_A.eventId}`);
       const progressBar = screen.getByTestId(`event-card-progress-${EVENT_A.eventId}`);
@@ -98,10 +104,24 @@ describe('EventCard', () => {
       expect(card.lastElementChild).toBe(progressBar);
     });
 
-    it('shows progress bar when quick links are permission-filtered', () => {
+    it('hides lifecycle progress bar outside the pinned dashboard section', () => {
+      renderCard({
+        ...EVENT_A,
+        status: 'PRE_SHOW',
+        isBudgetLocked: false,
+        eventDate: futureDate(),
+        bookingPlacementStatus: 'CONFIRMED',
+        isPinned: true,
+      });
+
+      expect(screen.queryByTestId(`event-card-progress-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+    });
+
+    it('shows progress bar in the pinned section when quick links are permission-filtered', () => {
       renderCard(
         { ...EVENT_A, status: 'PRE_SHOW', isBudgetLocked: true, eventDate: futureDate() },
         { canViewFinancials: true, canEditSettlement: false, canSignSettlement: false },
+        { showProgressBar: true },
       );
       expect(screen.getByTestId(`event-card-progress-${EVENT_A.eventId}`)).toBeInTheDocument();
       expect(screen.getByTestId(`event-card-link-workspace-${EVENT_A.eventId}`)).toBeInTheDocument();
@@ -304,7 +324,23 @@ describe('EventCard', () => {
       expect(screen.queryByTestId(`event-card-pin-${EVENT_A.eventId}`)).not.toBeInTheDocument();
       expect(screen.queryByTestId(`event-card-link-deal-${EVENT_A.eventId}`)).not.toBeInTheDocument();
       expect(screen.queryByTestId(`event-card-link-lock-budget-${EVENT_A.eventId}`)).not.toBeInTheDocument();
-      expect(screen.getByTestId(`event-card-progress-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.queryByTestId(`event-card-progress-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+    });
+
+    it('hides progress bar on compact cards outside the pinned section even when pinned', () => {
+      renderCard(
+        {
+          ...EVENT_A,
+          status: 'PRE_SHOW',
+          isBudgetLocked: false,
+          eventDate: futureDate(),
+          isPinned: true,
+        },
+        FULL_PERMISSIONS,
+        { compact: true, isPinned: true },
+      );
+
+      expect(screen.queryByTestId(`event-card-progress-${EVENT_A.eventId}`)).not.toBeInTheDocument();
     });
   });
 
@@ -336,6 +372,7 @@ describe('EventCard', () => {
           permissions={FULL_PERMISSIONS}
           onQuickLink={vi.fn()}
           onActivate={onActivate}
+          showProgressBar
         />,
       );
 

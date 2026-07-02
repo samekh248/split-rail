@@ -9,6 +9,7 @@ export interface DashboardZoneEventsProps {
   className?: string;
   filterSlot?: ReactNode;
   compact?: boolean;
+  showProgressBar?: boolean;
   events: EventCardDto[];
   permissions: PermissionsDto;
   onQuickLink: (venueId: string, eventId: string, focus?: WorkspaceFocus) => void;
@@ -23,6 +24,7 @@ export function DashboardZoneEvents({
   className,
   filterSlot,
   compact = true,
+  showProgressBar = false,
   events,
   permissions,
   onQuickLink,
@@ -59,6 +61,7 @@ export function DashboardZoneEvents({
                 }
                 onActivate={() => onCardActivate(venueId, eventId)}
                 compact={compact}
+                showProgressBar={showProgressBar}
               />
             );
           })}

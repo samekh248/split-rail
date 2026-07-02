@@ -16,6 +16,7 @@ export function PinnedEventsSection(props: ZoneProps) {
       emptyMessage="No pinned events"
       testId="dashboard-zone-pinned"
       compact={false}
+      showProgressBar
       {...props}
     />
   );

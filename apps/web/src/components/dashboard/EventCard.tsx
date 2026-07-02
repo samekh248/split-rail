@@ -25,6 +25,7 @@ export interface EventCardProps {
   onPinToggle?: () => void;
   onActivate?: () => void;
   compact?: boolean;
+  showProgressBar?: boolean;
 }
 
 function isEventCardDto(event: EventCardEvent): event is EventCardDto {
@@ -55,6 +56,7 @@ export function EventCard({
   onPinToggle,
   onActivate,
   compact = false,
+  showProgressBar = false,
 }: EventCardProps) {
   const eventId = event.eventId ?? 'unknown';
   const venueId = event.venueId ?? '';
@@ -193,12 +195,14 @@ export function EventCard({
           {quickLinksNav}
         </>
       )}
-      <EventCardProgressBar
-        eventId={eventId}
-        bookingPlacementStatus={bookingStatus}
-        eventDate={event.eventDate}
-        compact={compact}
-      />
+      {showProgressBar && (
+        <EventCardProgressBar
+          eventId={eventId}
+          bookingPlacementStatus={bookingStatus}
+          eventDate={event.eventDate}
+          compact={compact}
+        />
+      )}
     </article>
   );
 }
