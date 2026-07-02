@@ -79,6 +79,7 @@ export function TonightHeroBanner({
               onQuickLink={onQuickLink}
               onActivate={() => onCardActivate(venueId, eventId)}
               compact
+              showProgressBar
             />
           );
         })}

@@ -21,37 +21,42 @@ export function QboAccountMappingTable({ venueId }: QboAccountMappingTableProps)
 
   return (
     <div className="qbo-mapping-table" data-testid="qbo-account-mapping-table">
-      <label className="qbo-mapping-table__filter">
-        Filter
+      <div className="form-field qbo-mapping-table__filter">
+        <label htmlFor="qbo-account-mapping-filter" className="form-field__label">
+          Filter mappings
+        </label>
         <input
+          id="qbo-account-mapping-filter"
+          className="form-field__input"
           type="search"
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
           data-testid="qbo-account-mapping-filter"
         />
-      </label>
-      <table>
-        <thead>
-          <tr>
-            <th>QBO account</th>
-            <th>Mapped category</th>
-            <th>Line item</th>
-          </tr>
-        </thead>
-        <tbody>
-          {mappings.map((mapping) => (
-            <tr key={mapping.id} data-testid="qbo-account-mapping-row">
-              <td>{mapping.qboAccountName}</td>
-              <td>{mapping.mappedCategoryLabel}</td>
-              <td>{mapping.mappedLineItemId ?? '—'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {mappings.length === 0 && (
-        <p className="qbo-mapping-table__empty" data-testid="qbo-account-mapping-empty">
+      </div>
+      {mappings.length === 0 ? (
+        <p className="team-section__empty" data-testid="qbo-account-mapping-empty">
           No account mappings yet.
         </p>
+      ) : (
+        <table className="team-table">
+          <thead>
+            <tr>
+              <th scope="col">QBO account</th>
+              <th scope="col">Mapped category</th>
+              <th scope="col">Line item</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mappings.map((mapping) => (
+              <tr key={mapping.id} data-testid="qbo-account-mapping-row">
+                <td>{mapping.qboAccountName}</td>
+                <td>{mapping.mappedCategoryLabel}</td>
+                <td>{mapping.mappedLineItemId ?? '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

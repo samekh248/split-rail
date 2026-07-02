@@ -58,11 +58,11 @@ export function QboIntegrationCard({ venueId }: QboIntegrationCardProps) {
   };
 
   return (
-    <section className="qbo-integration-card" data-testid="qbo-integration-card">
-      <header className="qbo-integration-card__header">
-        <h2 className="qbo-integration-card__title">QuickBooks Online</h2>
+    <section className="team-section qbo-integration-card" data-testid="qbo-integration-card">
+      <div className="qbo-integration-card__header">
+        <h2 className="team-section__title qbo-integration-card__title">QuickBooks Online</h2>
         <StateBadge state={state} />
-      </header>
+      </div>
 
       <p className="qbo-integration-card__explainer">
         Split-Rail pulls cleared banking records from QuickBooks in read-only mode to power
@@ -71,15 +71,15 @@ export function QboIntegrationCard({ venueId }: QboIntegrationCardProps) {
 
       {state === 'Connected' && integration && (
         <dl className="qbo-integration-card__meta" data-testid="qbo-integration-connected-meta">
-          <div>
+          <div className="qbo-integration-card__meta-item">
             <dt>Company</dt>
             <dd>{integration.companyName ?? '—'}</dd>
           </div>
-          <div>
+          <div className="qbo-integration-card__meta-item">
             <dt>Realm ID</dt>
             <dd>{integration.realmId ?? '—'}</dd>
           </div>
-          <div>
+          <div className="qbo-integration-card__meta-item">
             <dt>Last sync</dt>
             <dd>{formatSyncedAt(integration.lastSyncedAt)}</dd>
           </div>
@@ -87,7 +87,10 @@ export function QboIntegrationCard({ venueId }: QboIntegrationCardProps) {
       )}
 
       {state === 'Expired' && (
-        <p className="qbo-integration-card__expired" data-testid="qbo-integration-expired-message">
+        <p
+          className="team-section__banner team-section__banner--error"
+          data-testid="qbo-integration-expired-message"
+        >
           Your QuickBooks authorization expired. Reconnect to resume syncing.
         </p>
       )}
@@ -171,7 +174,7 @@ export function QboIntegrationCard({ venueId }: QboIntegrationCardProps) {
 function StateBadge({ state }: { state: ReturnType<typeof parseQboConnectionState> }) {
   if (state === 'Connected') {
     return (
-      <span className="qbo-integration-card__badge qbo-integration-card__badge--connected">
+      <span className="venue-qbo-status-card__status venue-qbo-status-card__status--connected">
         Connected
       </span>
     );
@@ -179,15 +182,15 @@ function StateBadge({ state }: { state: ReturnType<typeof parseQboConnectionStat
   if (state === 'Expired') {
     return (
       <span
-        className="qbo-integration-card__badge qbo-integration-card__badge--expired"
+        className="venue-qbo-status-card__status qbo-integration-card__badge--expired"
         data-testid="qbo-integration-expired-badge"
       >
-        <FontAwesomeIcon icon={faTriangleExclamation} aria-hidden="true" /> Connection Expired
+        <FontAwesomeIcon icon={faTriangleExclamation} aria-hidden="true" /> Connection expired
       </span>
     );
   }
   return (
-    <span className="qbo-integration-card__badge qbo-integration-card__badge--disconnected">
+    <span className="venue-qbo-status-card__status venue-qbo-status-card__status--disconnected">
       Disconnected
     </span>
   );

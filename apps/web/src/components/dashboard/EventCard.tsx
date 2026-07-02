@@ -10,6 +10,7 @@ import type { BookingPlacementStatus } from '@/lib/bookingCalendar';
 import { resolveQuickLinks, type WorkspaceFocus } from '@/lib/eventCardQuickLinks';
 import { eventHasNegativeVariance } from '@/lib/eventCardVariance';
 import type { EventCardDto, EventResponse, LineItemDto, PermissionsDto } from '@/types/generated-api';
+import { EventCardProgressBar } from '@/components/dashboard/EventCardProgressBar';
 
 export type { WorkspaceFocus };
 
@@ -24,6 +25,7 @@ export interface EventCardProps {
   onPinToggle?: () => void;
   onActivate?: () => void;
   compact?: boolean;
+  showProgressBar?: boolean;
 }
 
 function isEventCardDto(event: EventCardEvent): event is EventCardDto {
@@ -54,6 +56,7 @@ export function EventCard({
   onPinToggle,
   onActivate,
   compact = false,
+  showProgressBar = false,
 }: EventCardProps) {
   const eventId = event.eventId ?? 'unknown';
   const venueId = event.venueId ?? '';
@@ -191,6 +194,14 @@ export function EventCard({
           <div className="event-card__badges">{badges}</div>
           {quickLinksNav}
         </>
+      )}
+      {showProgressBar && (
+        <EventCardProgressBar
+          eventId={eventId}
+          bookingPlacementStatus={bookingStatus}
+          eventDate={event.eventDate}
+          compact={compact}
+        />
       )}
     </article>
   );
