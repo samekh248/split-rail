@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BookingCalendarPage } from '@/pages/BookingCalendarPage';
 import { clearBookingCalendarDisplayModeCookie } from '@/lib/bookingCalendarViewStorage';
@@ -27,10 +27,18 @@ vi.mock('@/api/calendar', () => ({
   useCalendarPlacements: () => ({ data: [], refetch: vi.fn() }),
 }));
 
+const BOOKING_CALENDAR_TEST_DATE = new Date(2026, 5, 15);
+
 describe('BookingCalendarPage', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(BOOKING_CALENDAR_TEST_DATE);
     clearBookingCalendarDisplayModeCookie();
     window.history.pushState({}, '', '/booking');
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('renders booking calendar shell', () => {
