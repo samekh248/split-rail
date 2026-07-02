@@ -85,7 +85,7 @@ describe('EventCard', () => {
       expect(screen.getByTestId(`event-card-date-${EVENT_A.eventId}`)).toHaveTextContent('Date TBD');
     });
 
-    it('renders lifecycle progress bar in the pinned dashboard section as the last child', () => {
+    it('renders lifecycle progress bar on dashboard event cards as the last child', () => {
       renderCard(
         {
           ...EVENT_A,
@@ -104,7 +104,7 @@ describe('EventCard', () => {
       expect(card.lastElementChild).toBe(progressBar);
     });
 
-    it('hides lifecycle progress bar outside the pinned dashboard section', () => {
+    it('hides lifecycle progress bar when showProgressBar is not enabled', () => {
       renderCard({
         ...EVENT_A,
         status: 'PRE_SHOW',
@@ -117,7 +117,7 @@ describe('EventCard', () => {
       expect(screen.queryByTestId(`event-card-progress-${EVENT_A.eventId}`)).not.toBeInTheDocument();
     });
 
-    it('shows progress bar in the pinned section when quick links are permission-filtered', () => {
+    it('shows progress bar when quick links are permission-filtered', () => {
       renderCard(
         { ...EVENT_A, status: 'PRE_SHOW', isBudgetLocked: true, eventDate: futureDate() },
         { canViewFinancials: true, canEditSettlement: false, canSignSettlement: false },
@@ -327,7 +327,7 @@ describe('EventCard', () => {
       expect(screen.queryByTestId(`event-card-progress-${EVENT_A.eventId}`)).not.toBeInTheDocument();
     });
 
-    it('hides progress bar on compact cards outside the pinned section even when pinned', () => {
+    it('renders progress bar on compact dashboard event cards', () => {
       renderCard(
         {
           ...EVENT_A,
@@ -337,10 +337,10 @@ describe('EventCard', () => {
           isPinned: true,
         },
         FULL_PERMISSIONS,
-        { compact: true, isPinned: true },
+        { compact: true, isPinned: true, showProgressBar: true },
       );
 
-      expect(screen.queryByTestId(`event-card-progress-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+      expect(screen.getByTestId(`event-card-progress-${EVENT_A.eventId}`)).toBeInTheDocument();
     });
   });
 

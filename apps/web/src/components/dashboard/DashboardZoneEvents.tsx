@@ -24,7 +24,7 @@ export function DashboardZoneEvents({
   className,
   filterSlot,
   compact = true,
-  showProgressBar = false,
+  showProgressBar = true,
   events,
   permissions,
   onQuickLink,
