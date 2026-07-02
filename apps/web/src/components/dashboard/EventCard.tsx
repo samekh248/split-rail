@@ -10,6 +10,7 @@ import type { BookingPlacementStatus } from '@/lib/bookingCalendar';
 import { resolveQuickLinks, type WorkspaceFocus } from '@/lib/eventCardQuickLinks';
 import { eventHasNegativeVariance } from '@/lib/eventCardVariance';
 import type { EventCardDto, EventResponse, LineItemDto, PermissionsDto } from '@/types/generated-api';
+import { EventCardProgressBar } from '@/components/dashboard/EventCardProgressBar';
 
 export type { WorkspaceFocus };
 
@@ -192,6 +193,12 @@ export function EventCard({
           {quickLinksNav}
         </>
       )}
+      <EventCardProgressBar
+        eventId={eventId}
+        bookingPlacementStatus={bookingStatus}
+        eventDate={event.eventDate}
+        compact={compact}
+      />
     </article>
   );
 }

@@ -283,6 +283,7 @@ th {
   [class*='booking-calendar-legend__'],
   [class*='booking-placement-type-modal__'],
   [class*='event-combobox__'],
+  [class*='event-card__progress-bubble'],
   [class*='venue-switcher__'],
   .settings-nav__item
 ) {
@@ -345,6 +346,7 @@ th {
   [class*='booking-calendar-legend__'],
   [class*='booking-placement-type-modal__'],
   [class*='event-combobox__'],
+  [class*='event-card__progress-bubble'],
   [class*='venue-switcher__'],
   .settings-nav__item
 ):hover:not(:disabled) {
@@ -399,6 +401,7 @@ th {
   [class*='booking-calendar-legend__'],
   [class*='booking-placement-type-modal__'],
   [class*='event-combobox__'],
+  [class*='event-card__progress-bubble'],
   [class*='venue-switcher__'],
   .settings-nav__item
 ):disabled {
@@ -454,6 +457,7 @@ th {
   [class*='booking-calendar-legend__'],
   [class*='booking-placement-type-modal__'],
   [class*='event-combobox__'],
+  [class*='event-card__progress-bubble'],
   [class*='venue-switcher__'],
   .settings-nav__item
 ):focus-visible {
@@ -2893,6 +2897,136 @@ button.welcome-modal__dismiss {
 .event-card--compact .event-card__date {
   font-size: 0.8125rem;
   white-space: nowrap;
+}
+
+.event-card__progress {
+  --event-card-progress-bubble-size: 7px;
+  --event-card-progress-bubble-upcoming: color-mix(in srgb, var(--color-primary-brown) 14%, var(--color-bg-cream));
+  --event-card-progress-bubble-cancelled: color-mix(in srgb, var(--color-primary-brown) 10%, var(--color-bg-cream));
+  margin-top: 0.25rem;
+  padding-top: 0.875rem;
+  padding-bottom: 0.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-border-subtle) 18%, transparent);
+}
+
+.event-card__progress-track {
+  position: relative;
+  height: var(--event-card-progress-bubble-size);
+}
+
+.event-card__progress-rail {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 3px;
+  transform: translateY(-50%);
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-primary-brown) 7%, var(--color-bg-cream));
+  overflow: hidden;
+}
+
+.event-card__progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 200ms ease;
+}
+
+.event-card__progress--cancelled .event-card__progress-fill {
+  width: 0 !important;
+  display: none;
+}
+
+.event-card__progress-milestones {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  pointer-events: none;
+}
+
+.event-card__progress-milestone {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.event-card__progress-bubble {
+  appearance: none;
+  display: block;
+  box-sizing: border-box;
+  width: var(--event-card-progress-bubble-size);
+  height: var(--event-card-progress-bubble-size);
+  min-width: var(--event-card-progress-bubble-size);
+  min-height: var(--event-card-progress-bubble-size);
+  max-width: var(--event-card-progress-bubble-size);
+  max-height: var(--event-card-progress-bubble-size);
+  margin: 0;
+  padding: 0;
+  line-height: 0;
+  font-size: 0;
+  border-radius: 50%;
+  border: 1px solid var(--color-surface-white);
+  background: var(--event-card-progress-bubble-upcoming);
+  cursor: pointer;
+  pointer-events: auto;
+  overflow: hidden;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.event-card__progress-bubble--completed,
+.event-card__progress-bubble--active {
+  border-color: var(--color-surface-white);
+}
+
+.event-card__progress-bubble--upcoming {
+  border-color: var(--color-surface-white);
+  background: var(--event-card-progress-bubble-upcoming);
+}
+
+.event-card__progress-bubble--cancelled {
+  border-color: var(--color-surface-white);
+  background: var(--event-card-progress-bubble-cancelled);
+}
+
+.event-card__progress-bubble:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.event-card__progress-tooltip {
+  position: absolute;
+  bottom: calc(100% + 0.5rem);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--radius-button);
+  background: var(--color-primary-brown);
+  color: var(--color-bg-cream);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.event-card__progress--compact {
+  --event-card-progress-bubble-size: 6px;
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.375rem;
+}
+
+.event-card__progress--compact .event-card__progress-rail {
+  height: 2px;
+}
+
+.dashboard-overview .event-card__progress {
+  border-top-color: color-mix(in srgb, var(--color-border-subtle) 12%, transparent);
 }
 
 .financial-health-widget {

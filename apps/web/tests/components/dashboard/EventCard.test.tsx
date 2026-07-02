@@ -82,6 +82,30 @@ describe('EventCard', () => {
       renderCard({ ...EVENT_A, eventDate: 'not-a-date' });
       expect(screen.getByTestId(`event-card-date-${EVENT_A.eventId}`)).toHaveTextContent('Date TBD');
     });
+
+    it('renders lifecycle progress bar as the last child of the card', () => {
+      renderCard({
+        ...EVENT_A,
+        status: 'PRE_SHOW',
+        isBudgetLocked: false,
+        eventDate: futureDate(),
+        bookingPlacementStatus: 'CONFIRMED',
+      });
+
+      const card = screen.getByTestId(`event-card-${EVENT_A.eventId}`);
+      const progressBar = screen.getByTestId(`event-card-progress-${EVENT_A.eventId}`);
+      expect(progressBar).toBeInTheDocument();
+      expect(card.lastElementChild).toBe(progressBar);
+    });
+
+    it('shows progress bar when quick links are permission-filtered', () => {
+      renderCard(
+        { ...EVENT_A, status: 'PRE_SHOW', isBudgetLocked: true, eventDate: futureDate() },
+        { canViewFinancials: true, canEditSettlement: false, canSignSettlement: false },
+      );
+      expect(screen.getByTestId(`event-card-progress-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`event-card-link-workspace-${EVENT_A.eventId}`)).toBeInTheDocument();
+    });
   });
 
   describe('US2 — quick links', () => {
@@ -280,6 +304,7 @@ describe('EventCard', () => {
       expect(screen.queryByTestId(`event-card-pin-${EVENT_A.eventId}`)).not.toBeInTheDocument();
       expect(screen.queryByTestId(`event-card-link-deal-${EVENT_A.eventId}`)).not.toBeInTheDocument();
       expect(screen.queryByTestId(`event-card-link-lock-budget-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+      expect(screen.getByTestId(`event-card-progress-${EVENT_A.eventId}`)).toBeInTheDocument();
     });
   });
 
@@ -299,6 +324,42 @@ describe('EventCard', () => {
     it('parent can persist pin state via pinnedEventStorage', () => {
       setEventPinned(EVENT_A.venueId!, EVENT_A.eventId!, true);
       expect(isEventPinned(EVENT_A.venueId!, EVENT_A.eventId!)).toBe(true);
+    });
+  });
+
+  describe('card activation', () => {
+    it('invokes onActivate when clicking card body but not buttons', () => {
+      const onActivate = vi.fn();
+      render(
+        <EventCard
+          event={EVENT_A}
+          permissions={FULL_PERMISSIONS}
+          onQuickLink={vi.fn()}
+          onActivate={onActivate}
+        />,
+      );
+
+      fireEvent.click(screen.getByText('Show A'));
+      expect(onActivate).toHaveBeenCalledTimes(1);
+
+      fireEvent.click(screen.getByTestId(`event-card-progress-bubble-confirmed-${EVENT_A.eventId}`));
+      expect(onActivate).toHaveBeenCalledTimes(1);
+    });
+
+    it('invokes onActivate on Enter when focus is on the card', () => {
+      const onActivate = vi.fn();
+      render(
+        <EventCard
+          event={EVENT_A}
+          permissions={FULL_PERMISSIONS}
+          onQuickLink={vi.fn()}
+          onActivate={onActivate}
+        />,
+      );
+
+      const card = screen.getByTestId(`event-card-${EVENT_A.eventId}`);
+      fireEvent.keyDown(card, { key: 'Enter' });
+      expect(onActivate).toHaveBeenCalledTimes(1);
     });
   });
 });
