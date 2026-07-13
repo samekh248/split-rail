@@ -53,7 +53,9 @@ The service account behind `GCP_SA_KEY` needs:
 | Secret Manager Secret Accessor | Read `db-password` for migrations |
 | Cloud SQL Client | Cloud SQL Auth Proxy during migrate step |
 | Service Account User (if deploying with a runtime SA) | Cloud Run revision updates |
-| Cloud Run viewer / `run.services.get` | Read service URL for scheduler validation |
+| Cloud Run viewer / `run.services.get` | Read service URL for scheduler provision |
+| Cloud Scheduler Admin | Create/update `split-rail-qbo-sync-prod` job |
+| Service Account Admin (or pre-create SA) | Create `split-rail-qbo-scheduler-prod` if missing |
 
 Firebase Hosting uses `FIREBASE_TOKEN` (separate from the GCP SA). Ensure the Firebase account has Hosting deploy access on project `split-rail`.
 
