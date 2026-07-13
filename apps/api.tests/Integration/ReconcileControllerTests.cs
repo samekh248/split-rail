@@ -57,7 +57,10 @@ public class ReconcileControllerTests : IntegrationTestBase
     {
         var (client, venueId, token) = await SetupFinancialAdminAsync();
         var (userId, _) = ParseTokenClaims(token);
-        var evt = await CreateEventViaApiAsync(client, venueId);
+        // Use today so the card appears in TonightEvents (hardcoded defaults fall out of
+        // Tonight/Recent/Upcoming windows once calendar time moves past them).
+        var today = DateOnly.FromDateTime(DateTime.UtcNow).ToString("yyyy-MM-dd");
+        var evt = await CreateEventViaApiAsync(client, venueId, "Reconciled Show", today, $"EVENT-{today}");
         await SetSettledEventDirectAsync(token, evt.EventId, userId);
 
         await client.PostAsync($"/api/venues/{venueId}/events/{evt.EventId}/reconcile", null);
