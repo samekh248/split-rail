@@ -369,7 +369,7 @@ jobs:
 
       - name: Deploy production API
         run: |
-          chmod +x deploy/production/deploy-api.sh deploy/lib/*.sh
+          chmod +x deploy/production/deploy-api.sh deploy/lib/*.sh deploy/infra/provision-qbo-scheduler.sh
           export DB_PASSWORD="$(gcloud secrets versions access latest --secret=db-password --project="${GCP_PROJECT}")"
           ./deploy/production/deploy-api.sh
 

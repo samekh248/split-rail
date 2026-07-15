@@ -14,11 +14,13 @@ echo "Validating settlement archive buckets before deploy..."
 export ENV=prod
 "${REPO_ROOT}/deploy/lib/validate-settlement-buckets.sh"
 
-echo "Validating QBO scheduler job before deploy..."
+echo "Ensuring QBO scheduler job exists before deploy..."
 export ENV=prod
 CLOUD_RUN_URL="${CLOUD_RUN_URL:-$(gcloud run services describe "${SERVICE_NAME}" --project="${GCP_PROJECT}" --region="${GCP_REGION}" --format='value(status.url)')}"
 export CLOUD_RUN_URL
-"${REPO_ROOT}/deploy/lib/validate-qbo-scheduler.sh"
+# Create-or-update idempotently so first CI deploy does not fail on a missing job.
+# provision-qbo-scheduler.sh ends with validate-qbo-scheduler.sh.
+"${REPO_ROOT}/deploy/infra/provision-qbo-scheduler.sh"
 
 echo "Building migration bundle..."
 dotnet ef migrations bundle \

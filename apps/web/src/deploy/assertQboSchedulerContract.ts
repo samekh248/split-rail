@@ -50,8 +50,8 @@ export function assertProductionSchedulerEnvVars(scriptText: string): void {
   if (!scriptText.includes('QboSync__SchedulerTokenAudience')) {
     throw new Error('production deploy must set QboSync__SchedulerTokenAudience');
   }
-  if (!scriptText.includes('validate-qbo-scheduler')) {
-    throw new Error('production deploy must invoke validate-qbo-scheduler before deploy');
+  if (!scriptText.includes('provision-qbo-scheduler')) {
+    throw new Error('production deploy must invoke provision-qbo-scheduler before deploy');
   }
 }
 

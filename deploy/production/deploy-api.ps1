@@ -19,7 +19,7 @@ $env:ENV = 'prod'
 & (Join-Path $LibDir 'validate-settlement-buckets.ps1')
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
-Write-Host 'Validating QBO scheduler job before deploy...'
+Write-Host 'Ensuring QBO scheduler job exists before deploy...'
 $env:ENV = 'prod'
 if ([string]::IsNullOrWhiteSpace($env:CLOUD_RUN_URL)) {
     $env:CLOUD_RUN_URL = Invoke-GcloudOrThrow run services describe $ServiceName `
@@ -27,7 +27,9 @@ if ([string]::IsNullOrWhiteSpace($env:CLOUD_RUN_URL)) {
         --region $GcpRegion `
         --format 'value(status.url)'
 }
-& (Join-Path $LibDir 'validate-qbo-scheduler.ps1')
+# Create-or-update idempotently so first CI deploy does not fail on a missing job.
+# provision-qbo-scheduler.ps1 ends with validate-qbo-scheduler.ps1.
+& (Join-Path $RepoRoot 'deploy\infra\provision-qbo-scheduler.ps1')
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host 'Building migration bundle...'
