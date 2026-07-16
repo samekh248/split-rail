@@ -57,6 +57,20 @@ The service account behind `GCP_SA_KEY` (`github-deployer@...`) needs:
 | Cloud Scheduler Admin | Create/update `split-rail-qbo-sync-prod` |
 | Service Account Admin (or pre-create SA) | Create scheduler SA if missing |
 
+### Grant Cloud Run runtime actAs (required for deploy)
+
+`gcloud run deploy` needs the deploy SA to act as the runtime SA:
+
+```powershell
+$DeploySa = "github-deployer@split-rail.iam.gserviceaccount.com"
+$RuntimeSa = "800439099052-compute@developer.gserviceaccount.com"
+
+gcloud iam service-accounts add-iam-policy-binding $RuntimeSa `
+  --project=split-rail `
+  --member="serviceAccount:$DeploySa" `
+  --role="roles/iam.serviceAccountUser"
+```
+
 ### Cloud Run runtime service account
 
 The default compute SA that runs the container also needs:
