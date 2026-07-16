@@ -354,7 +354,8 @@ public class FrozenEventPersistenceGuardTests : IntegrationTestBase
     private IEnumerable<TestLogCollector.LogEntry> GetFrozenAuditLogs() =>
         LogCollector!.Entries.Where(e =>
             e.Level == LogLevel.Warning &&
-            e.Message.Contains("Rejected frozen event mutation", StringComparison.Ordinal));
+            e.Message.Contains("Rejected frozen event mutation", StringComparison.Ordinal))
+            .ToList();
 
     private static object? GetStateValue(TestLogCollector.LogEntry entry, string key) =>
         entry.State.FirstOrDefault(kvp => kvp.Key == key).Value;
