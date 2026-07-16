@@ -349,6 +349,9 @@ jobs:
       - name: Install dotnet-ef
         run: dotnet tool install --global dotnet-ef
 
+      - name: Restore API packages
+        run: dotnet restore apps/api/split-rail-api.csproj
+
       - name: Install Cloud SQL Auth Proxy
         run: |
           curl -fsSL -o cloud-sql-proxy \

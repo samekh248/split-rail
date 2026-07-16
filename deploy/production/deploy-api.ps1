@@ -33,8 +33,11 @@ if ([string]::IsNullOrWhiteSpace($env:CLOUD_RUN_URL)) {
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 Write-Host 'Building migration bundle...'
+$ApiProject = Join-Path $RepoRoot 'apps\api\split-rail-api.csproj'
+dotnet restore $ApiProject
+if ($LASTEXITCODE -ne 0) { throw 'dotnet restore failed' }
 dotnet ef migrations bundle `
-    --project (Join-Path $RepoRoot 'apps\api\split-rail-api.csproj') `
+    --project $ApiProject `
     --configuration Release `
     --output $BundlePath `
     --self-contained

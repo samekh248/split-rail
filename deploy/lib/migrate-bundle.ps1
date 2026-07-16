@@ -14,8 +14,11 @@ function Build-BundleIfMissing {
     }
 
     Write-Host 'Building EF migration bundle...'
+    $ApiProject = Join-Path $RepoRoot 'apps\api\split-rail-api.csproj'
+    dotnet restore $ApiProject
+    if ($LASTEXITCODE -ne 0) { throw 'dotnet restore failed' }
     dotnet ef migrations bundle `
-        --project (Join-Path $RepoRoot 'apps\api\split-rail-api.csproj') `
+        --project $ApiProject `
         --configuration Release `
         --output $BundlePath `
         --self-contained

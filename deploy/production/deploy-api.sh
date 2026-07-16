@@ -23,6 +23,7 @@ export CLOUD_RUN_URL
 "${REPO_ROOT}/deploy/infra/provision-qbo-scheduler.sh"
 
 echo "Building migration bundle..."
+dotnet restore "${REPO_ROOT}/apps/api/split-rail-api.csproj"
 dotnet ef migrations bundle \
   --project "${REPO_ROOT}/apps/api/split-rail-api.csproj" \
   --configuration Release \
