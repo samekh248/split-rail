@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
+  assertApiCloudRunRewrite,
   assertGlobalCspHeader,
   assertGlobalHeaderRule,
   assertPublicRoot,
@@ -25,6 +26,10 @@ function readParsedFirebaseConfig() {
 describe('firebase hosting SPA routing', () => {
   it('firebaseJson_hasSpaRewrite', () => {
     expect(() => assertSpaRewrite(readParsedFirebaseConfig())).not.toThrow();
+  });
+
+  it('firebaseJson_rewritesApiToCloudRunBeforeSpa', () => {
+    expect(() => assertApiCloudRunRewrite(readParsedFirebaseConfig())).not.toThrow();
   });
 
   it('firebaseJson_publicRootIsDist', () => {

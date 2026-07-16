@@ -39,6 +39,25 @@ describe('api client', () => {
     await expect(apiFetch('/test')).resolves.toBeUndefined();
   });
 
+  it('apiFetch rejects HTML success responses from misconfigured hosting', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        status: 200,
+        headers: {
+          get: (name: string) =>
+            name.toLowerCase() === 'content-type' ? 'text/html; charset=utf-8' : null,
+        },
+        json: () => Promise.resolve({}),
+      }),
+    );
+
+    await expect(apiFetch('/organizations')).rejects.toThrow(
+      'Firebase Hosting rewrites /api/** to Cloud Run',
+    );
+  });
+
   it('apiFetch throws with API detail on error responses', async () => {
     vi.stubGlobal(
       'fetch',

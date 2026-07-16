@@ -151,6 +151,13 @@ async function apiFetch<T>(path: string, init?: ApiFetchInit): Promise<T> {
     return undefined as T;
   }
 
+  const contentType = response.headers?.get?.('content-type') ?? '';
+  if (contentType.toLowerCase().includes('text/html')) {
+    throw new Error(
+      '502: API returned HTML instead of JSON. Check that Firebase Hosting rewrites /api/** to Cloud Run.',
+    );
+  }
+
   return (await response.json()) as T;
 }
 

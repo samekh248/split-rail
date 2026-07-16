@@ -410,3 +410,17 @@ jobs:
           HOSTING_URL="https://${FIREBASE_PROJECT}.web.app"
           echo "Checking hosting at ${HOSTING_URL}/"
           curl -sf "${HOSTING_URL}/" | grep -q 'id="root"'
+          echo "Checking Hosting /api rewrite proxies to Cloud Run (expect 401, not SPA HTML)"
+          STATUS="$(curl -sS -o /tmp/hosting-api-body -w '%{http_code}' \
+            -X POST "${HOSTING_URL}/api/organizations" \
+            -H 'Content-Type: application/json' \
+            -d '{"name":"Smoke Org"}')"
+          if [ "${STATUS}" != "401" ]; then
+            echo "Expected HTTP 401 from /api/organizations via Hosting, got ${STATUS}"
+            head -c 400 /tmp/hosting-api-body || true
+            exit 1
+          fi
+          if grep -qi '<!doctype html' /tmp/hosting-api-body; then
+            echo "Hosting returned SPA HTML for /api/** — Cloud Run rewrite missing or misordered"
+            exit 1
+          fi
