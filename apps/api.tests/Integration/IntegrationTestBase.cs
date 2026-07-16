@@ -616,7 +616,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected IEnumerable<TestLogCollector.LogEntry> GetFrozenAuditLogs() =>
         LogCollector!.Entries.Where(e =>
             e.Level == LogLevel.Warning &&
-            e.Message.Contains("Rejected frozen event mutation", StringComparison.Ordinal));
+            e.Message.Contains("Rejected frozen event mutation", StringComparison.Ordinal))
+            .ToList();
 
     protected void AssertFrozenAuditLog(
         Guid eventId,

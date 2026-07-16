@@ -4,11 +4,33 @@ namespace SplitRail.Api.Tests.TestSupport;
 
 public sealed class TestLogCollector : ILoggerProvider, IDisposable
 {
-    public IList<LogEntry> Entries { get; } = new List<LogEntry>();
+    private readonly object _gate = new();
+    private readonly List<LogEntry> _entries = new();
+
+    /// <summary>
+    /// Snapshot of collected entries. Always returns a copy so callers can enumerate
+    /// safely while loggers continue writing (integration tests run with concurrent logging).
+    /// </summary>
+    public IReadOnlyList<LogEntry> Entries
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _entries.ToArray();
+            }
+        }
+    }
 
     public ILogger CreateLogger(string categoryName) => new TestLogger(this, categoryName);
 
-    public void Clear() => Entries.Clear();
+    public void Clear()
+    {
+        lock (_gate)
+        {
+            _entries.Clear();
+        }
+    }
 
     public void Dispose()
     {
@@ -43,14 +65,17 @@ public sealed class TestLogCollector : ILoggerProvider, IDisposable
                 ? keyValues.ToList()
                 : new List<KeyValuePair<string, object?>>();
 
-            collector.Entries.Add(new LogEntry
+            lock (collector._gate)
             {
-                Level = logLevel,
-                Category = category,
-                Message = message,
-                Exception = exception,
-                State = stateValues
-            });
+                collector._entries.Add(new LogEntry
+                {
+                    Level = logLevel,
+                    Category = category,
+                    Message = message,
+                    Exception = exception,
+                    State = stateValues
+                });
+            }
         }
     }
 
