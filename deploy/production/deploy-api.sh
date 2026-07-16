@@ -44,6 +44,8 @@ export BUNDLE_PATH
 SETTLEMENT_ENV="SettlementArchive__BucketName=split-rail-settlements-prod,SettlementArchive__StagingBucketName=split-rail-settlements-staging-prod,SettlementArchive__RetentionYears=7,SettlementArchive__EnforceRetentionValidation=true"
 SCHEDULER_SA_EMAIL="split-rail-qbo-scheduler-prod@${GCP_PROJECT}.iam.gserviceaccount.com"
 QBO_SCHEDULER_ENV="QboSync__SchedulerServiceAccountEmail=${SCHEDULER_SA_EMAIL},QboSync__SchedulerTokenAudience=${CLOUD_RUN_URL}"
+# Production Data Protection key ring (spec 047) — required or the container crashes before binding :8080.
+DP_ENV="DataProtection__Bucket=split-rail-dp-keys-prod,DataProtection__ObjectPrefix=dp-keys/,DataProtection__KmsKeyName=projects/${GCP_PROJECT}/locations/global/keyRings/dataprotection/cryptoKeys/masterkey,DataProtection__ApplicationName=split-rail-api"
 
 echo "Deploying Cloud Run API service ${SERVICE_NAME}..."
 gcloud run deploy "${SERVICE_NAME}" \
@@ -52,7 +54,7 @@ gcloud run deploy "${SERVICE_NAME}" \
   --project "${GCP_PROJECT}" \
   --add-cloudsql-instances="${PROD_INSTANCE}" \
   --set-secrets="DB_PASSWORD=db-password:latest,Jwt__Secret=jwt-signing-key:latest,QBO_CLIENT_ID=qbo-client-id:latest,QBO_CLIENT_SECRET=qbo-client-secret:latest" \
-  --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,${SETTLEMENT_ENV},${QBO_SCHEDULER_ENV}" \
+  --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,${SETTLEMENT_ENV},${QBO_SCHEDULER_ENV},${DP_ENV}" \
   --quiet
 
 echo "Production API deploy complete."

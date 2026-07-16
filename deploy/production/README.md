@@ -44,7 +44,7 @@ Copy the token into GitHub **Settings → Secrets and variables → Actions → 
 
 ## IAM for deploy service account
 
-The service account behind `GCP_SA_KEY` needs:
+The service account behind `GCP_SA_KEY` (`github-deployer@...`) needs:
 
 | Permission / role | Used for |
 |-------------------|----------|
@@ -52,10 +52,49 @@ The service account behind `GCP_SA_KEY` needs:
 | Cloud Run Admin | Deploy `split-rail-api` |
 | Secret Manager Secret Accessor | Read `db-password` for migrations |
 | Cloud SQL Client | Cloud SQL Auth Proxy during migrate step |
-| Service Account User (if deploying with a runtime SA) | Cloud Run revision updates |
-| Cloud Run viewer / `run.services.get` | Read service URL for scheduler provision |
-| Cloud Scheduler Admin | Create/update `split-rail-qbo-sync-prod` job |
-| Service Account Admin (or pre-create SA) | Create `split-rail-qbo-scheduler-prod` if missing |
+| Service Account User on runtime SA (`PROJECT_NUMBER-compute@developer.gserviceaccount.com`) | `gcloud run deploy` actAs |
+| Service Account User on `split-rail-qbo-scheduler-prod@...` | Scheduler OIDC job create/update |
+| Cloud Scheduler Admin | Create/update `split-rail-qbo-sync-prod` |
+| Service Account Admin (or pre-create SA) | Create scheduler SA if missing |
+
+### Cloud Run runtime service account
+
+The default compute SA that runs the container also needs:
+
+| Permission | Used for |
+|------------|----------|
+| Secret Manager Secret Accessor on `db-password`, `jwt-signing-key`, `qbo-client-id`, `qbo-client-secret` | `--set-secrets` mounts |
+| Cloud SQL Client | Connect via Cloud SQL connector |
+| Storage Object Admin on `gs://split-rail-dp-keys-prod` | Data Protection key ring |
+| Cloud KMS CryptoKey Encrypter/Decrypter on `.../cryptoKeys/masterkey` | Protect DP keys |
+| Storage access on settlement buckets | Settlement archive |
+
+### Provision Data Protection resources (one-time)
+
+```powershell
+# Bucket for DP key ring XML
+gcloud storage buckets create gs://split-rail-dp-keys-prod `
+  --project=split-rail `
+  --location=us-central1 `
+  --uniform-bucket-level-access
+
+# KMS key ring + key (skip create if already exists)
+gcloud kms keyrings create dataprotection --location=global --project=split-rail
+gcloud kms keys create masterkey `
+  --location=global `
+  --keyring=dataprotection `
+  --purpose=encryption `
+  --project=split-rail
+
+$RuntimeSa = "800439099052-compute@developer.gserviceaccount.com"
+gsutil iam ch "serviceAccount:${RuntimeSa}:objectAdmin" gs://split-rail-dp-keys-prod
+gcloud kms keys add-iam-policy-binding masterkey `
+  --location=global `
+  --keyring=dataprotection `
+  --member="serviceAccount:$RuntimeSa" `
+  --role="roles/cloudkms.cryptoKeyEncrypterDecrypter" `
+  --project=split-rail
+```
 
 Firebase Hosting uses `FIREBASE_TOKEN` (separate from the GCP SA). Ensure the Firebase account has Hosting deploy access on project `split-rail`.
 

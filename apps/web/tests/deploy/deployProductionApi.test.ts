@@ -81,6 +81,14 @@ describe('production API deploy contract', () => {
     assertProductionSchedulerEnvVars(script);
   });
 
+  it('deployProductionApi_dataProtectionEnvVars', () => {
+    const script = readDeployScript('deploy/production/deploy-api.sh', repoRoot);
+    expect(script).toContain('DataProtection__Bucket');
+    expect(script).toContain('DataProtection__ObjectPrefix');
+    expect(script).toContain('DataProtection__KmsKeyName');
+    expect(script).toContain('split-rail-dp-keys-prod');
+  });
+
   it('deployProductionApi_noInternalTriggerKeySecret', () => {
     const script = readDeployScript('deploy/production/deploy-api.sh', repoRoot);
     assertNoInternalTriggerKeySecret(script);
