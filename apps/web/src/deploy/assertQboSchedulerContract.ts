@@ -40,6 +40,10 @@ export function assertValidateSchedulerScriptStructure(scriptText: string): void
   if (!scriptText.includes('qbo-sync-trigger') && !scriptText.includes('SCHEDULER_TRIGGER_PATH')) {
     throw new Error('validate-qbo-scheduler script must validate qbo-sync-trigger URI');
   }
+  // `if "$@"` cannot run `[[` (shell keyword) and fails with "[[: command not found".
+  if (/if\s+"\$@"/.test(scriptText)) {
+    throw new Error('validate-qbo-scheduler must not evaluate checks via if "$@"; compare strings directly');
+  }
 }
 
 /** Production deploy must wire scheduler OIDC configuration (spec 057). */
