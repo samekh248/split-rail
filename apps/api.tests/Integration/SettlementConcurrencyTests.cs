@@ -25,7 +25,7 @@ public class SettlementConcurrencyTests : IntegrationTestBase
         var statuses = responses.Select(r => r.StatusCode).ToArray();
         statuses.Should().Contain(HttpStatusCode.OK,
             because: $"one finalize must win; got [{string.Join(", ", statuses)}]");
-        statuses.Should().Contain(s => s is HttpStatusCode.Conflict or HttpStatusCode.BadRequest,
+        statuses.Should().Contain(s => s == HttpStatusCode.Conflict || s == HttpStatusCode.BadRequest,
             because: $"the loser must conflict; got [{string.Join(", ", statuses)}]");
         ArchiveStore.StoredObjectCount.Should().Be(1);
         ArchiveStore.StagedObjectCount.Should().Be(0);
