@@ -20,11 +20,13 @@ public class SettlementConcurrencyTests : IntegrationTestBase
 
         var task1 = client.PostAsJsonAsync(url, request);
         var task2 = client.PostAsJsonAsync(url, request);
-        await Task.WhenAll(task1, task2);
+        var responses = await Task.WhenAll(task1, task2);
 
-        var statuses = new[] { task1.Result.StatusCode, task2.Result.StatusCode };
-        statuses.Should().Contain(HttpStatusCode.OK);
-        statuses.Should().Contain(s => s == HttpStatusCode.Conflict || s == HttpStatusCode.BadRequest);
+        var statuses = responses.Select(r => r.StatusCode).ToArray();
+        statuses.Should().Contain(HttpStatusCode.OK,
+            because: $"one finalize must win; got [{string.Join(", ", statuses)}]");
+        statuses.Should().Contain(s => s is HttpStatusCode.Conflict or HttpStatusCode.BadRequest,
+            because: $"the loser must conflict; got [{string.Join(", ", statuses)}]");
         ArchiveStore.StoredObjectCount.Should().Be(1);
         ArchiveStore.StagedObjectCount.Should().Be(0);
     }

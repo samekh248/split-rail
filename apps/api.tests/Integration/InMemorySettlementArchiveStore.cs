@@ -4,6 +4,7 @@ namespace SplitRail.Api.Tests.Integration;
 
 public class InMemorySettlementArchiveStore : ISettlementArchiveStore
 {
+    private readonly object _gate = new();
     private readonly Dictionary<string, byte[]> _objects = new(StringComparer.Ordinal);
     private readonly Dictionary<string, byte[]> _stagedObjects = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _retentionUntil = new(StringComparer.Ordinal);
@@ -21,13 +22,26 @@ public class InMemorySettlementArchiveStore : ISettlementArchiveStore
 
     public bool ThrowOnPromote { get; set; }
 
-    public IReadOnlyList<string> SignedUrlRequests => _signedUrlRequests;
+    public IReadOnlyList<string> SignedUrlRequests
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _signedUrlRequests.ToList();
+            }
+        }
+    }
 
     public Task UploadAsync(string objectPath, byte[] pdfBytes, CancellationToken cancellationToken = default)
     {
-        EnsurePathAvailable(objectPath);
-        _objects[objectPath] = pdfBytes.ToArray();
-        ApplyRetentionLock(objectPath);
+        lock (_gate)
+        {
+            EnsurePathAvailable(objectPath);
+            _objects[objectPath] = pdfBytes.ToArray();
+            ApplyRetentionLock(objectPath);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -36,7 +50,11 @@ public class InMemorySettlementArchiveStore : ISettlementArchiveStore
         if (ThrowOnStage)
             throw new SplitRail.Api.Exceptions.SettlementArchiveException("Simulated stage upload failure.");
 
-        _stagedObjects[stagingPath] = pdfBytes.ToArray();
+        lock (_gate)
+        {
+            _stagedObjects[stagingPath] = pdfBytes.ToArray();
+        }
+
         return Task.CompletedTask;
     }
 
@@ -45,19 +63,27 @@ public class InMemorySettlementArchiveStore : ISettlementArchiveStore
         if (ThrowOnPromote)
             throw new SplitRail.Api.Exceptions.SettlementArchiveException("Simulated promote failure.");
 
-        if (!_stagedObjects.TryGetValue(stagingPath, out var bytes))
-            throw new SplitRail.Api.Exceptions.SettlementArchiveException("Staged settlement document not found.");
+        lock (_gate)
+        {
+            if (!_stagedObjects.TryGetValue(stagingPath, out var bytes))
+                throw new SplitRail.Api.Exceptions.SettlementArchiveException("Staged settlement document not found.");
 
-        EnsurePathAvailable(finalPath);
-        _objects[finalPath] = bytes.ToArray();
-        _stagedObjects.Remove(stagingPath);
-        ApplyRetentionLock(finalPath);
+            EnsurePathAvailable(finalPath);
+            _objects[finalPath] = bytes.ToArray();
+            _stagedObjects.Remove(stagingPath);
+            ApplyRetentionLock(finalPath);
+        }
+
         return Task.CompletedTask;
     }
 
     public Task DeleteStagedAsync(string stagingPath, CancellationToken cancellationToken = default)
     {
-        _stagedObjects.Remove(stagingPath);
+        lock (_gate)
+        {
+            _stagedObjects.Remove(stagingPath);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -66,7 +92,11 @@ public class InMemorySettlementArchiveStore : ISettlementArchiveStore
         TimeSpan ttl,
         CancellationToken cancellationToken = default)
     {
-        _signedUrlRequests.Add(objectPath);
+        lock (_gate)
+        {
+            _signedUrlRequests.Add(objectPath);
+        }
+
         var expiresAt = DateTimeOffset.UtcNow.Add(ttl);
         var url = $"https://storage.test/{objectPath}?expires={expiresAt.ToUnixTimeSeconds()}";
         return Task.FromResult((url, expiresAt));
@@ -74,43 +104,100 @@ public class InMemorySettlementArchiveStore : ISettlementArchiveStore
 
     public Task<DateTimeOffset?> GetRetentionUntilAsync(
         string objectPath,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(_retentionUntil.TryGetValue(objectPath, out var until) ? until : (DateTimeOffset?)null);
+        CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+        {
+            return Task.FromResult(_retentionUntil.TryGetValue(objectPath, out var until) ? until : (DateTimeOffset?)null);
+        }
+    }
 
-    public bool IsRetentionLocked(string objectPath) =>
-        _retentionUntil.TryGetValue(objectPath, out var until) && until > DateTimeOffset.UtcNow;
+    public bool IsRetentionLocked(string objectPath)
+    {
+        lock (_gate)
+        {
+            return _retentionUntil.TryGetValue(objectPath, out var until) && until > DateTimeOffset.UtcNow;
+        }
+    }
 
     public bool TryDelete(string objectPath)
     {
-        if (IsRetentionLocked(objectPath))
-            return false;
+        lock (_gate)
+        {
+            if (_retentionUntil.TryGetValue(objectPath, out var until) && until > DateTimeOffset.UtcNow)
+                return false;
 
-        _retentionUntil.Remove(objectPath);
-        return _objects.Remove(objectPath);
+            _retentionUntil.Remove(objectPath);
+            return _objects.Remove(objectPath);
+        }
     }
 
     public bool TryOverwrite(string objectPath, byte[] pdfBytes)
     {
-        if (_objects.ContainsKey(objectPath))
-            return false;
+        lock (_gate)
+        {
+            if (_objects.ContainsKey(objectPath))
+                return false;
 
-        _objects[objectPath] = pdfBytes.ToArray();
-        ApplyRetentionLock(objectPath);
-        return true;
+            _objects[objectPath] = pdfBytes.ToArray();
+            ApplyRetentionLock(objectPath);
+            return true;
+        }
     }
 
-    public byte[]? GetStoredPdf(string objectPath) =>
-        _objects.TryGetValue(objectPath, out var bytes) ? bytes : null;
+    public byte[]? GetStoredPdf(string objectPath)
+    {
+        lock (_gate)
+        {
+            return _objects.TryGetValue(objectPath, out var bytes) ? bytes : null;
+        }
+    }
 
     public byte[]? TryGetStoredPdf(string objectPath) => GetStoredPdf(objectPath);
 
-    public IReadOnlyCollection<string> StoredObjectPaths => _objects.Keys.ToList();
+    public IReadOnlyCollection<string> StoredObjectPaths
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _objects.Keys.ToList();
+            }
+        }
+    }
 
-    public int StoredObjectCount => _objects.Count;
+    public int StoredObjectCount
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _objects.Count;
+            }
+        }
+    }
 
-    public int StagedObjectCount => _stagedObjects.Count;
+    public int StagedObjectCount
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _stagedObjects.Count;
+            }
+        }
+    }
 
-    public int RetentionLockedCount => _retentionUntil.Count;
+    public int RetentionLockedCount
+    {
+        get
+        {
+            lock (_gate)
+            {
+                return _retentionUntil.Count;
+            }
+        }
+    }
 
     private void EnsurePathAvailable(string objectPath)
     {
