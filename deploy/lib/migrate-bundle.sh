@@ -21,6 +21,7 @@ build_bundle_if_missing() {
     return 0
   fi
   echo "Building EF migration bundle..."
+  dotnet restore "${REPO_ROOT}/apps/api/split-rail-api.csproj"
   dotnet ef migrations bundle \
     --project "${REPO_ROOT}/apps/api/split-rail-api.csproj" \
     --configuration Release \

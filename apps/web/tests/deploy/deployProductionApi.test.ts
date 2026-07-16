@@ -36,6 +36,7 @@ describe('production API deploy contract', () => {
     const script = readDeployScript('deploy/production/deploy-api.sh', repoRoot);
     assertMigrationBeforeCloudRunDeploy(script);
     expect(script).toContain('migrate-bundle.sh');
+    expect(script).toMatch(/dotnet restore[\s\S]*migrations bundle/);
   });
 
   it('deployProductionApi_secretManagerAndConnector', () => {
