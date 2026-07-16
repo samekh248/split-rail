@@ -307,5 +307,15 @@ describe('authApi', () => {
     it('maps 500 without detail to server guidance', () => {
       expect(mapAuthError(new Error('500: Internal Server Error'))).toContain('API and database');
     });
+
+    it('maps 502 with hosting misconfiguration detail', () => {
+      expect(
+        mapAuthError(
+          new Error(
+            '502: API returned HTML instead of JSON. Check that Firebase Hosting rewrites /api/** to Cloud Run.',
+          ),
+        ),
+      ).toContain('Firebase Hosting rewrites /api/**');
+    });
   });
 });

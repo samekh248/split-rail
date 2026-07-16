@@ -7,9 +7,25 @@ Automated production releases run from GitHub Actions on push to `main` (after C
 1. **CI gates** — `coverage-gate` and `contract-type-drift` must pass.
 2. **API** — build/push container image → EF migrations → `deploy-api.sh` (Cloud Run).
 3. **Web** — build `apps/web/dist` → `deploy-web-hosting.sh` (Firebase Hosting).
-4. **Smoke** — curl Cloud Run Swagger and Firebase Hosting root.
+4. **Smoke** — curl Cloud Run Swagger, Firebase Hosting root, and Hosting `/api/**` rewrite (expects API `401`, not SPA HTML).
 
 Workflow: [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml) (`deploy-production` job).
+
+## Firebase Hosting → Cloud Run API rewrite
+
+The web client calls same-origin `/api/...`. Production Hosting must proxy those paths to Cloud Run **before** the SPA catch-all:
+
+```json
+{
+  "source": "/api/**",
+  "run": {
+    "serviceId": "split-rail-api",
+    "region": "us-central1"
+  }
+}
+```
+
+Configured in [`apps/web/firebase.json`](../../apps/web/firebase.json). Without this rewrite, `/api/*` returns `index.html` and auth/onboarding fails with a generic client error.
 
 ## Enable production deploy
 

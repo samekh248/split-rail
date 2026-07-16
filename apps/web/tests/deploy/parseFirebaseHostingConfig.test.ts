@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PRODUCTION_CONTENT_SECURITY_POLICY } from '../../src/security/contentSecurityPolicy';
 import {
+  assertApiCloudRunRewrite,
   assertGlobalCspHeader,
   assertGlobalHeaderRule,
   assertPublicRoot,
@@ -11,7 +12,13 @@ import {
 const validConfig = {
   hosting: {
     public: 'dist',
-    rewrites: [{ source: '**', destination: '/index.html' }],
+    rewrites: [
+      {
+        source: '/api/**',
+        run: { serviceId: 'split-rail-api', region: 'us-central1' },
+      },
+      { source: '**', destination: '/index.html' },
+    ],
     headers: [
       {
         source: '/**',
@@ -36,6 +43,38 @@ describe('parseFirebaseHostingConfig', () => {
     expect(() =>
       assertSpaRewrite({ hosting: { public: 'dist', rewrites: [] } }),
     ).toThrow('SPA rewrite');
+  });
+
+  it('assertApiCloudRunRewrite_throwsWhenMissing', () => {
+    expect(() =>
+      assertApiCloudRunRewrite({
+        hosting: {
+          public: 'dist',
+          rewrites: [{ source: '**', destination: '/index.html' }],
+        },
+      }),
+    ).toThrow('/api/**');
+  });
+
+  it('assertApiCloudRunRewrite_throwsWhenAfterSpaRewrite', () => {
+    expect(() =>
+      assertApiCloudRunRewrite({
+        hosting: {
+          public: 'dist',
+          rewrites: [
+            { source: '**', destination: '/index.html' },
+            {
+              source: '/api/**',
+              run: { serviceId: 'split-rail-api', region: 'us-central1' },
+            },
+          ],
+        },
+      }),
+    ).toThrow('before SPA');
+  });
+
+  it('assertApiCloudRunRewrite_acceptsValidOrder', () => {
+    expect(() => assertApiCloudRunRewrite(validConfig)).not.toThrow();
   });
 
   it('assertPublicRoot_throwsWhenWrong', () => {

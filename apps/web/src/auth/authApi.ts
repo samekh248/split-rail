@@ -39,8 +39,8 @@ export function mapAuthError(error: unknown): string {
   if (message.startsWith('403:')) {
     return message.replace(/^403:\s*/, '') || 'Access denied.';
   }
-  if (message.startsWith('500:')) {
-    const detail = message.replace(/^500:\s*/, '');
+  if (message.startsWith('500:') || message.startsWith('502:')) {
+    const detail = message.replace(/^50[02]:\s*/, '');
     if (detail && detail !== 'Internal Server Error') {
       return detail;
     }
