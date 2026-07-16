@@ -28,9 +28,39 @@ function Build-BundleIfMissing {
 function Invoke-MigrationBundle {
     param([string]$ConnectionString)
 
+    $apiDir = Join-Path $RepoRoot 'apps\api'
+    $bundleDir = Split-Path -Parent $BundlePath
+    if (-not (Test-Path -LiteralPath $bundleDir)) {
+        New-Item -ItemType Directory -Path $bundleDir -Force | Out-Null
+    }
+
+    # Self-contained EF bundles look for appsettings beside the binary and/or in cwd.
+    Copy-Item -Force (Join-Path $apiDir 'appsettings.json') (Join-Path $bundleDir 'appsettings.json')
+    $devSettings = Join-Path $apiDir 'appsettings.Development.json'
+    if (Test-Path -LiteralPath $devSettings) {
+        Copy-Item -Force $devSettings (Join-Path $bundleDir 'appsettings.Development.json')
+    }
+
     Write-Host 'Applying migrations...'
-    & $BundlePath --connection $ConnectionString
-    if ($LASTEXITCODE -ne 0) { throw 'Migration bundle failed' }
+    # Published bundles default ASPNETCORE_ENVIRONMENT to Production; force Development so
+    # host bootstrap can load design-time config. --connection still overrides the database.
+    $prevEnv = $env:ASPNETCORE_ENVIRONMENT
+    if ([string]::IsNullOrWhiteSpace($env:ASPNETCORE_ENVIRONMENT)) {
+        $env:ASPNETCORE_ENVIRONMENT = 'Development'
+    }
+    try {
+        Push-Location $apiDir
+        & $BundlePath --connection $ConnectionString
+        if ($LASTEXITCODE -ne 0) { throw 'Migration bundle failed' }
+    }
+    finally {
+        Pop-Location
+        if ($null -eq $prevEnv) {
+            Remove-Item Env:ASPNETCORE_ENVIRONMENT -ErrorAction SilentlyContinue
+        } else {
+            $env:ASPNETCORE_ENVIRONMENT = $prevEnv
+        }
+    }
 }
 
 function Wait-ProxyPort {

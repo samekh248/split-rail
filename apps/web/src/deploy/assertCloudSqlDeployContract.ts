@@ -96,4 +96,10 @@ export function assertMigrateBundleScript(scriptText: string): void {
   if (!scriptText.includes('set -e')) {
     throw new Error('migrate-bundle.sh must fail fast (set -e)');
   }
+  if (!scriptText.includes('appsettings.json')) {
+    throw new Error('migrate-bundle.sh must stage appsettings.json beside the EF bundle');
+  }
+  if (!/ASPNETCORE_ENVIRONMENT/.test(scriptText)) {
+    throw new Error('migrate-bundle.sh must set ASPNETCORE_ENVIRONMENT for bundle host bootstrap');
+  }
 }
