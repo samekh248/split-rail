@@ -4,6 +4,7 @@ namespace SplitRail.Api.Services;
 
 public class InMemorySettlementArchiveStore : ISettlementArchiveStore
 {
+    private readonly object _gate = new();
     private readonly Dictionary<string, byte[]> _objects = new(StringComparer.Ordinal);
     private readonly Dictionary<string, byte[]> _stagedObjects = new(StringComparer.Ordinal);
     private readonly Dictionary<string, DateTimeOffset> _retentionUntil = new(StringComparer.Ordinal);
@@ -12,33 +13,49 @@ public class InMemorySettlementArchiveStore : ISettlementArchiveStore
 
     public Task UploadAsync(string objectPath, byte[] pdfBytes, CancellationToken cancellationToken = default)
     {
-        EnsurePathAvailable(objectPath);
-        _objects[objectPath] = pdfBytes.ToArray();
-        ApplyRetentionLock(objectPath);
+        lock (_gate)
+        {
+            EnsurePathAvailable(objectPath);
+            _objects[objectPath] = pdfBytes.ToArray();
+            ApplyRetentionLock(objectPath);
+        }
+
         return Task.CompletedTask;
     }
 
     public Task StageAsync(string stagingPath, byte[] pdfBytes, CancellationToken cancellationToken = default)
     {
-        _stagedObjects[stagingPath] = pdfBytes.ToArray();
+        lock (_gate)
+        {
+            _stagedObjects[stagingPath] = pdfBytes.ToArray();
+        }
+
         return Task.CompletedTask;
     }
 
     public Task PromoteAsync(string stagingPath, string finalPath, CancellationToken cancellationToken = default)
     {
-        if (!_stagedObjects.TryGetValue(stagingPath, out var bytes))
-            throw new SettlementArchiveException("Staged settlement document not found.");
+        lock (_gate)
+        {
+            if (!_stagedObjects.TryGetValue(stagingPath, out var bytes))
+                throw new SettlementArchiveException("Staged settlement document not found.");
 
-        EnsurePathAvailable(finalPath);
-        _objects[finalPath] = bytes.ToArray();
-        _stagedObjects.Remove(stagingPath);
-        ApplyRetentionLock(finalPath);
+            EnsurePathAvailable(finalPath);
+            _objects[finalPath] = bytes.ToArray();
+            _stagedObjects.Remove(stagingPath);
+            ApplyRetentionLock(finalPath);
+        }
+
         return Task.CompletedTask;
     }
 
     public Task DeleteStagedAsync(string stagingPath, CancellationToken cancellationToken = default)
     {
-        _stagedObjects.Remove(stagingPath);
+        lock (_gate)
+        {
+            _stagedObjects.Remove(stagingPath);
+        }
+
         return Task.CompletedTask;
     }
 
@@ -47,8 +64,11 @@ public class InMemorySettlementArchiveStore : ISettlementArchiveStore
         TimeSpan ttl,
         CancellationToken cancellationToken = default)
     {
-        if (!_objects.ContainsKey(objectPath))
-            throw new SettlementArchiveException("Settlement document not found.");
+        lock (_gate)
+        {
+            if (!_objects.ContainsKey(objectPath))
+                throw new SettlementArchiveException("Settlement document not found.");
+        }
 
         var expiresAt = DateTimeOffset.UtcNow.Add(ttl);
         var url = $"/api/test-seed/settlement-pdf/{Uri.EscapeDataString(objectPath)}";
@@ -57,33 +77,54 @@ public class InMemorySettlementArchiveStore : ISettlementArchiveStore
 
     public Task<DateTimeOffset?> GetRetentionUntilAsync(
         string objectPath,
-        CancellationToken cancellationToken = default) =>
-        Task.FromResult(_retentionUntil.TryGetValue(objectPath, out var until) ? until : (DateTimeOffset?)null);
+        CancellationToken cancellationToken = default)
+    {
+        lock (_gate)
+        {
+            return Task.FromResult(_retentionUntil.TryGetValue(objectPath, out var until) ? until : (DateTimeOffset?)null);
+        }
+    }
 
-    public bool IsRetentionLocked(string objectPath) =>
-        _retentionUntil.TryGetValue(objectPath, out var until) && until > DateTimeOffset.UtcNow;
+    public bool IsRetentionLocked(string objectPath)
+    {
+        lock (_gate)
+        {
+            return _retentionUntil.TryGetValue(objectPath, out var until) && until > DateTimeOffset.UtcNow;
+        }
+    }
 
     public bool TryDelete(string objectPath)
     {
-        if (IsRetentionLocked(objectPath))
-            return false;
+        lock (_gate)
+        {
+            if (_retentionUntil.TryGetValue(objectPath, out var until) && until > DateTimeOffset.UtcNow)
+                return false;
 
-        _retentionUntil.Remove(objectPath);
-        return _objects.Remove(objectPath);
+            _retentionUntil.Remove(objectPath);
+            return _objects.Remove(objectPath);
+        }
     }
 
     public bool TryOverwrite(string objectPath, byte[] pdfBytes)
     {
-        if (_objects.ContainsKey(objectPath))
-            return false;
+        lock (_gate)
+        {
+            if (_objects.ContainsKey(objectPath))
+                return false;
 
-        _objects[objectPath] = pdfBytes.ToArray();
-        ApplyRetentionLock(objectPath);
-        return true;
+            _objects[objectPath] = pdfBytes.ToArray();
+            ApplyRetentionLock(objectPath);
+            return true;
+        }
     }
 
-    public byte[]? GetStoredPdf(string objectPath) =>
-        _objects.TryGetValue(objectPath, out var bytes) ? bytes : null;
+    public byte[]? GetStoredPdf(string objectPath)
+    {
+        lock (_gate)
+        {
+            return _objects.TryGetValue(objectPath, out var bytes) ? bytes : null;
+        }
+    }
 
     public byte[]? TryGetStoredPdf(string objectPath) => GetStoredPdf(objectPath);
 
