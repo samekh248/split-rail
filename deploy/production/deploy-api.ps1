@@ -60,6 +60,7 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 $SettlementEnv = 'SettlementArchive__BucketName=split-rail-settlements-prod,SettlementArchive__StagingBucketName=split-rail-settlements-staging-prod,SettlementArchive__RetentionYears=7,SettlementArchive__EnforceRetentionValidation=true'
 $SchedulerSaEmail = "split-rail-qbo-scheduler-prod@$GcpProject.iam.gserviceaccount.com"
 $QboSchedulerEnv = "QboSync__SchedulerServiceAccountEmail=$SchedulerSaEmail,QboSync__SchedulerTokenAudience=$($env:CLOUD_RUN_URL)"
+$DpEnv = "DataProtection__Bucket=split-rail-dp-keys-prod,DataProtection__ObjectPrefix=dp-keys/,DataProtection__KmsKeyName=projects/$GcpProject/locations/global/keyRings/dataprotection/cryptoKeys/masterkey,DataProtection__ApplicationName=split-rail-api"
 $SetSecrets = 'DB_PASSWORD=db-password:latest,Jwt__Secret=jwt-signing-key:latest,QBO_CLIENT_ID=qbo-client-id:latest,QBO_CLIENT_SECRET=qbo-client-secret:latest'
 
 Write-Host "Deploying Cloud Run API service $ServiceName..."
@@ -69,7 +70,7 @@ Invoke-GcloudOrThrow run deploy $ServiceName `
     --project $GcpProject `
     --add-cloudsql-instances=$ProdInstance `
     --set-secrets=$SetSecrets `
-    --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,$SettlementEnv,$QboSchedulerEnv" `
+    --set-env-vars "ASPNETCORE_ENVIRONMENT=Production,$SettlementEnv,$QboSchedulerEnv,$DpEnv" `
     --quiet | Out-Null
 
 Write-Host 'Production API deploy complete.'
