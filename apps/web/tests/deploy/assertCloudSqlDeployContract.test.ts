@@ -83,10 +83,14 @@ describe('assertCloudSqlDeployContract helpers', () => {
   });
 
   it('assertMigrateBundleScript_requiresProxyAndBundle', () => {
-    const good = 'set -euo pipefail\ncloud-sql-proxy\nefbundle';
+    const good =
+      'set -euo pipefail\ncloud-sql-proxy\nefbundle\nappsettings.json\nASPNETCORE_ENVIRONMENT=Development';
     expect(() => assertMigrateBundleScript(good)).not.toThrow();
     expect(() => assertMigrateBundleScript('no proxy')).toThrow('Auth Proxy');
     expect(() => assertMigrateBundleScript('cloud-sql-proxy only')).toThrow('migration bundle');
     expect(() => assertMigrateBundleScript('cloud-sql-proxy efbundle no set')).toThrow('set -e');
+    expect(() =>
+      assertMigrateBundleScript('set -e\ncloud-sql-proxy\nefbundle\nASPNETCORE_ENVIRONMENT'),
+    ).toThrow('appsettings.json');
   });
 });

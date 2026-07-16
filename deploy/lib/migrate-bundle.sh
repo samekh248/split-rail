@@ -31,8 +31,26 @@ build_bundle_if_missing() {
 
 run_bundle() {
   local connection_string="$1"
+  local api_dir="${REPO_ROOT}/apps/api"
+  local bundle_dir
+  bundle_dir="$(cd "$(dirname "${BUNDLE_PATH}")" && pwd)"
+
+  # Self-contained EF bundles look for appsettings beside the binary and/or in cwd.
+  # CI runs from the repo root, so copy config next to the bundle and execute from apps/api.
+  mkdir -p "${bundle_dir}"
+  cp -f "${api_dir}/appsettings.json" "${bundle_dir}/appsettings.json"
+  if [[ -f "${api_dir}/appsettings.Development.json" ]]; then
+    cp -f "${api_dir}/appsettings.Development.json" "${bundle_dir}/appsettings.Development.json"
+  fi
+
   echo "Applying migrations..."
-  "${BUNDLE_PATH}" --connection "${connection_string}"
+  # Published bundles default ASPNETCORE_ENVIRONMENT to Production; force Development so
+  # host bootstrap can load design-time config. --connection still overrides the database.
+  (
+    cd "${api_dir}"
+    ASPNETCORE_ENVIRONMENT="${ASPNETCORE_ENVIRONMENT:-Development}" \
+      "${BUNDLE_PATH}" --connection "${connection_string}"
+  )
 }
 
 if [ "${SKIP_CLOUD_SQL_PROXY:-false}" = "true" ]; then
