@@ -69,7 +69,15 @@ public class SettlementService
             ValidateFinalizePreconditions(previewEvent);
 
             var snapshot = BuildSnapshot(previewEvent);
-            var pdfBytes = _pdfRenderer.Render(snapshot, strokes);
+            byte[] pdfBytes;
+            try
+            {
+                pdfBytes = _pdfRenderer.Render(snapshot, strokes);
+            }
+            catch (Exception ex) when (ex is not SettlementArchiveException and not ApiException)
+            {
+                throw new SettlementArchiveException("Failed to render settlement PDF.");
+            }
 
             var settlementId = Guid.NewGuid();
             stagingPath = BuildStagingPath(previewEvent, settlementId);
@@ -219,11 +227,87 @@ public class SettlementService
         if (string.IsNullOrWhiteSpace(evt.SettlementPdfUrl))
             throw new NotFoundException("Settlement PDF is not available for this event.");
 
-        var objectPath = ExtractObjectPath(evt.SettlementPdfUrl);
         var ttl = TimeSpan.FromMinutes(_archiveOptions.SignedUrlTtlMinutes);
-        var (url, expiresAt) = await _archiveStore.CreateSignedUrlAsync(objectPath, ttl, cancellationToken);
+        var expiresAt = DateTimeOffset.UtcNow.Add(ttl);
 
-        return new SettlementPdfLinkDto(url, expiresAt);
+        if (_archiveStore is InMemorySettlementArchiveStore)
+        {
+            return new SettlementPdfLinkDto(
+                $"/api/venues/{venueId}/events/{eventId}/settlement-pdf/file",
+                expiresAt);
+        }
+
+        var objectPath = ExtractObjectPath(evt.SettlementPdfUrl);
+        var (url, signedExpiresAt) = await _archiveStore.CreateSignedUrlAsync(objectPath, ttl, cancellationToken);
+
+        return new SettlementPdfLinkDto(url, signedExpiresAt);
+    }
+
+    public async Task<byte[]> GetPdfFileAsync(
+        Guid venueId,
+        Guid eventId,
+        CancellationToken cancellationToken = default)
+    {
+        if (_tenantContext.UserId is not Guid userId)
+            throw new AuthenticationException();
+
+        if (!await _venueService.IsVenueAccessibleAsync(userId, venueId, cancellationToken))
+            throw new NotFoundException("Event not found.");
+
+        var evt = await _db.Events
+            .AsNoTracking()
+            .Include(e => e.Venue)
+                .ThenInclude(v => v.Organization)
+            .Include(e => e.LineItems)
+            .Include(e => e.Artists)
+            .FirstOrDefaultAsync(e => e.Id == eventId && e.VenueId == venueId, cancellationToken)
+            ?? throw new NotFoundException("Event not found.");
+
+        if (string.IsNullOrWhiteSpace(evt.SettlementPdfUrl))
+            throw new NotFoundException("Settlement PDF is not available for this event.");
+
+        if (_archiveStore is not InMemorySettlementArchiveStore inMemory)
+            throw new NotFoundException("Settlement PDF download is not available for this event.");
+
+        var objectPath = ExtractObjectPath(evt.SettlementPdfUrl);
+        var bytes = inMemory.GetStoredPdf(objectPath);
+        if (bytes is null)
+        {
+            bytes = RenderSettlementPdfFromPersistedState(evt);
+            if (bytes is null)
+                throw new NotFoundException("Settlement PDF is not available for this event.");
+
+            inMemory.TryOverwrite(objectPath, bytes);
+            _logger.LogInformation(
+                "Regenerated settlement PDF for event {EventId} after in-memory archive miss",
+                eventId);
+        }
+
+        return bytes;
+    }
+
+    internal byte[]? RenderSettlementPdfFromPersistedState(Event evt)
+    {
+        if (evt.Status is not (EventStatus.Settled or EventStatus.Reconciled))
+            return null;
+
+        if (string.IsNullOrWhiteSpace(evt.ArtistSignatureData) || evt.Venue is null)
+            return null;
+
+        try
+        {
+            var strokes = _signatureValidator.ValidateAndParse(evt.ArtistSignatureData);
+            var snapshot = BuildSnapshot(evt);
+            return _pdfRenderer.Render(snapshot, strokes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(
+                ex,
+                "Failed to regenerate settlement PDF for event {EventId}",
+                evt.Id);
+            return null;
+        }
     }
 
     public async Task<EventResponse> ReconcileAsync(

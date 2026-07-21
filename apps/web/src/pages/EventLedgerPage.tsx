@@ -304,10 +304,6 @@ export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProp
           status={ledger.status as EventStatus}
           settlementPdfAvailable={ledger.settlementPdfAvailable}
         />
-
-        {ledger.isBudgetLocked && ledger.status === 'PRE_SHOW' && (
-          <FinalizeSettlementPanel venueId={venueId} eventId={eventId} />
-        )}
       </div>
 
       <LedgerGrid
@@ -386,6 +382,10 @@ export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProp
           await recalculate.mutateAsync();
         }}
       />
+
+      {ledger.isBudgetLocked && ledger.status === 'PRE_SHOW' && (
+        <FinalizeSettlementPanel venueId={venueId} eventId={eventId} />
+      )}
     </main>
   );
 }

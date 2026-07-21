@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { AccountingWorkloadList } from '@/components/accounting/AccountingWorkloadList';
 import { EventCard } from '@/components/dashboard/EventCard';
@@ -43,7 +43,7 @@ const EVENT_WITH_ALERTS: EventCardDto = {
 };
 
 describe('badge migration (SPLR-90)', () => {
-  it('EventCard bottleneck alert chips use badge-action-required', () => {
+  it('EventCard required actions render as quick links instead of alert chips', () => {
     render(
       <EventCard
         event={EVENT_WITH_ALERTS}
@@ -52,21 +52,28 @@ describe('badge migration (SPLR-90)', () => {
       />,
     );
 
-    const alertChip = screen.getByTestId(
-      `event-card-alert-MISSING_SIGNATURE-${EVENT_WITH_ALERTS.eventId}`,
-    );
-    expect(alertChip).toHaveClass('badge-action-required');
+    expect(screen.getByTestId(`event-card-link-signature-${EVENT_WITH_ALERTS.eventId}`)).toBeInTheDocument();
+    expect(
+      screen.queryByTestId(`event-card-alert-MISSING_SIGNATURE-${EVENT_WITH_ALERTS.eventId}`),
+    ).not.toBeInTheDocument();
   });
 
   it('EventCard variance badge does not use badge-action-required', () => {
     render(
       <EventCard
-        event={EVENT_WITH_ALERTS}
+        event={{
+          ...EVENT_WITH_ALERTS,
+          hasVarianceConcern: false,
+        }}
         permissions={FULL_PERMISSIONS}
         onQuickLink={vi.fn()}
+        lineItems={[{ qboActualValue: '40.00', settlementValue: '50.00', variance: '-10.00' }]}
       />,
     );
 
+    fireEvent.mouseEnter(
+      screen.getByTestId(`event-card-badge-count-${EVENT_WITH_ALERTS.eventId}`).parentElement!,
+    );
     const varianceBadge = screen.getByTestId(
       `event-card-variance-${EVENT_WITH_ALERTS.eventId}`,
     );

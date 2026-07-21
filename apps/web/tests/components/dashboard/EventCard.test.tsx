@@ -52,6 +52,14 @@ function renderCard(
   return { onQuickLink };
 }
 
+function openBadgePopover(eventId: string) {
+  const stack = screen.getByTestId(`event-card-badge-count-${eventId}`).parentElement;
+  if (!stack) {
+    throw new Error('Badge stack not found');
+  }
+  fireEvent.mouseEnter(stack);
+}
+
 describe('EventCard', () => {
   beforeEach(() => {
     clearAllPinnedEvents();
@@ -156,15 +164,32 @@ describe('EventCard', () => {
       expect(screen.getByTestId(`event-card-link-deal-${EVENT_A.eventId}`)).toBeInTheDocument();
     });
 
-    it('shows Night Of quick links', () => {
+    it('shows Night Of quick links when no action bottlenecks are present', () => {
       renderCard({
         ...EVENT_A,
         status: 'PRE_SHOW',
         isBudgetLocked: true,
+        settlementPdfAvailable: true,
         eventDate: futureDate(),
       });
       expect(screen.getByTestId(`event-card-link-settlement-${EVENT_A.eventId}`)).toBeInTheDocument();
       expect(screen.getByTestId(`event-card-link-signature-${EVENT_A.eventId}`)).toBeInTheDocument();
+    });
+
+    it('shows only Capture Signature when missing signature is the bottleneck', () => {
+      renderCard({
+        ...EVENT_A,
+        status: 'PRE_SHOW',
+        isBudgetLocked: true,
+        settlementPdfAvailable: false,
+        eventDate: futureDate(),
+      });
+      expect(screen.getByTestId(`event-card-link-signature-${EVENT_A.eventId}`)).toHaveTextContent(
+        'Capture Signature',
+      );
+      expect(
+        screen.queryByTestId(`event-card-link-settlement-${EVENT_A.eventId}`),
+      ).not.toBeInTheDocument();
     });
 
     it('shows Post-Show quick links', () => {
@@ -175,7 +200,9 @@ describe('EventCard', () => {
         eventDate: pastDate(),
       });
       expect(screen.getByTestId(`event-card-link-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
-      expect(screen.getByTestId(`event-card-link-sync-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(
+        screen.queryByTestId(`event-card-link-sync-${EVENT_A.eventId}`),
+      ).not.toBeInTheDocument();
     });
 
     it('shows Open workspace fallback for unknown phase', () => {
@@ -190,6 +217,7 @@ describe('EventCard', () => {
         ...EVENT_A,
         status: 'PRE_SHOW',
         isBudgetLocked: true,
+        settlementPdfAvailable: true,
         eventDate: futureDate(),
       });
 
@@ -225,6 +253,7 @@ describe('EventCard', () => {
       renderCard(EVENT_A, FULL_PERMISSIONS, {
         lineItems: [{ qboActualValue: '40.00', settlementValue: '50.00', variance: '-10.00' }],
       });
+      openBadgePopover(EVENT_A.eventId!);
       expect(screen.getByTestId(`event-card-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
     });
 
@@ -233,23 +262,29 @@ describe('EventCard', () => {
         lineItems: [{ qboActualValue: '50.00', settlementValue: '50.00', variance: '0.00' }],
       });
       expect(screen.queryByTestId(`event-card-variance-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+      expect(screen.queryByTestId(`event-card-badge-count-${EVENT_A.eventId}`)).not.toBeInTheDocument();
     });
 
     it('hides variance badge when lineItems omitted', () => {
       renderCard(EVENT_A);
       expect(screen.queryByTestId(`event-card-variance-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+      expect(screen.queryByTestId(`event-card-badge-count-${EVENT_A.eventId}`)).not.toBeInTheDocument();
     });
 
-    it('shows variance badge when hasVarianceConcern true', () => {
+    it('shows variance badge when hasVarianceConcern true without a variance action link', () => {
       renderCard({
         ...EVENT_A,
+        status: 'PRE_SHOW',
+        isBudgetLocked: false,
+        eventDate: futureDate(),
         hasVarianceConcern: true,
         unmappedCount: 0,
       });
+      openBadgePopover(EVENT_A.eventId!);
       expect(screen.getByTestId(`event-card-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
     });
 
-    it('shows variance badge for SETTLED event when hasVarianceConcern true', () => {
+    it('shows variance action link instead of badge when hasVarianceConcern is true on Post-Show', () => {
       renderCard({
         ...EVENT_A,
         status: 'SETTLED',
@@ -258,7 +293,21 @@ describe('EventCard', () => {
         hasVarianceConcern: true,
         unmappedCount: 0,
       });
-      expect(screen.getByTestId(`event-card-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`event-card-link-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.queryByTestId(`event-card-variance-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+    });
+
+    it('shows variance action link for SETTLED event when hasVarianceConcern true', () => {
+      renderCard({
+        ...EVENT_A,
+        status: 'SETTLED',
+        isBudgetLocked: true,
+        eventDate: pastDate(),
+        hasVarianceConcern: true,
+        unmappedCount: 0,
+      });
+      expect(screen.getByTestId(`event-card-link-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.queryByTestId(`event-card-variance-${EVENT_A.eventId}`)).not.toBeInTheDocument();
     });
 
     it('hides variance badge for SETTLED event when hasVarianceConcern false', () => {
@@ -273,7 +322,7 @@ describe('EventCard', () => {
       expect(screen.queryByTestId(`event-card-variance-${EVENT_A.eventId}`)).not.toBeInTheDocument();
     });
 
-    it('shows variance badge for RECONCILED event when hasVarianceConcern true', () => {
+    it('shows variance action link for RECONCILED event when hasVarianceConcern true', () => {
       renderCard({
         ...EVENT_A,
         status: 'RECONCILED',
@@ -282,30 +331,71 @@ describe('EventCard', () => {
         hasVarianceConcern: true,
         unmappedCount: 0,
       });
-      expect(screen.getByTestId(`event-card-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`event-card-link-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.queryByTestId(`event-card-variance-${EVENT_A.eventId}`)).not.toBeInTheDocument();
     });
 
-    it('shows unmapped bottleneck when unmappedCount > 0', () => {
+    it('shows unmapped accounts as a phase quick link fallback when no mapped action exists', () => {
       renderCard({
         ...EVENT_A,
         unmappedCount: 2,
         hasVarianceConcern: false,
       });
-      expect(
-        screen.getByTestId(`event-card-alert-UNMAPPED_QBO-${EVENT_A.eventId}`),
-      ).toHaveTextContent('2 unmapped accounts');
+      expect(screen.getByTestId(`event-card-link-deal-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.queryByTestId(`event-card-alert-UNMAPPED_QBO-${EVENT_A.eventId}`)).not.toBeInTheDocument();
     });
 
-    it('shows bottleneck alert chips', () => {
+    it('shows Capture Signature link instead of a missing signature tag', () => {
       renderCard({
         ...EVENT_A,
         status: 'PRE_SHOW',
         isBudgetLocked: true,
         settlementPdfAvailable: false,
       });
+      expect(screen.getByTestId(`event-card-booking-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.queryByTestId(`event-card-badge-count-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+      expect(screen.getByTestId(`event-card-link-signature-${EVENT_A.eventId}`)).toHaveTextContent(
+        'Capture Signature',
+      );
       expect(
-        screen.getByTestId(`event-card-alert-MISSING_SIGNATURE-${EVENT_A.eventId}`),
-      ).toHaveTextContent('Missing signature');
+        screen.queryByTestId(`event-card-alert-MISSING_SIGNATURE-${EVENT_A.eventId}`),
+      ).not.toBeInTheDocument();
+    });
+
+    it('shows a single tag inline when only the booking badge is present', () => {
+      renderCard(EVENT_A);
+      expect(screen.getByTestId(`event-card-booking-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.queryByTestId(`event-card-badge-count-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+    });
+
+    it('shows tag count and popover list when booking and variance badges are present', () => {
+      renderCard(EVENT_A, FULL_PERMISSIONS, {
+        lineItems: [{ qboActualValue: '40.00', settlementValue: '50.00', variance: '-10.00' }],
+      });
+
+      expect(screen.getByTestId(`event-card-badge-count-${EVENT_A.eventId}`)).toHaveTextContent('2');
+      expect(screen.getByTestId(`event-card-badge-featured-${EVENT_A.eventId}`)).toHaveTextContent(
+        'Confirmed',
+      );
+      expect(screen.queryByTestId(`event-card-booking-${EVENT_A.eventId}`)).not.toBeInTheDocument();
+
+      openBadgePopover(EVENT_A.eventId!);
+      expect(screen.getByTestId(`event-card-badge-popover-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`event-card-booking-${EVENT_A.eventId}`)).toBeInTheDocument();
+      expect(screen.getByTestId(`event-card-variance-${EVENT_A.eventId}`)).toBeInTheDocument();
+    });
+
+    it('features booking status on upcoming events with multiple status badges', () => {
+      renderCard(EVENT_A, FULL_PERMISSIONS, {
+        lineItems: [{ qboActualValue: '40.00', settlementValue: '50.00', variance: '-10.00' }],
+      });
+
+      expect(screen.getByTestId(`event-card-badge-count-${EVENT_A.eventId}`)).toHaveClass(
+        'event-card__badge-count--status',
+      );
+      expect(screen.getByTestId(`event-card-badge-featured-${EVENT_A.eventId}`)).toHaveTextContent(
+        'Confirmed',
+      );
     });
   });
 

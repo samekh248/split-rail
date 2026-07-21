@@ -299,9 +299,11 @@ public class TestSeedingService
 
     public byte[]? GetSettlementPdfBytes(string objectPath)
     {
-        EnsureEnabled();
         var normalizedPath = SettlementService.ExtractObjectPath(objectPath);
-        return _archiveStore.TryGetStoredPdf(normalizedPath);
+        if (_archiveStore is not InMemorySettlementArchiveStore inMemory)
+            return null;
+
+        return inMemory.GetStoredPdf(normalizedPath);
     }
 
     private async Task<OrgSeedContextDto> SeedOrganizationAsync(

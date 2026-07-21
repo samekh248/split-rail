@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { resolveQuickLinks } from '@/lib/eventCardQuickLinks';
+import { resolveEventCardQuickLinks, resolveQuickLinks } from '@/lib/eventCardQuickLinks';
+import type { BottleneckAlert } from '@/lib/eventLifecycle';
 import type { PermissionsDto } from '@/types/generated-api';
 
 const FULL_PERMISSIONS: PermissionsDto = {
@@ -67,5 +68,33 @@ describe('resolveQuickLinks', () => {
   it('returns empty when no permissions including fallback', () => {
     const links = resolveQuickLinks('Unknown', {});
     expect(links).toHaveLength(0);
+  });
+});
+
+describe('resolveEventCardQuickLinks', () => {
+  it('returns only the signature link when missing signature is the bottleneck', () => {
+    const alerts: BottleneckAlert[] = [{ kind: 'MISSING_SIGNATURE', label: 'Missing signature' }];
+    const links = resolveEventCardQuickLinks('NightOf', FULL_PERMISSIONS, alerts);
+    expect(links.map((l) => l.label)).toEqual(['Capture Signature']);
+  });
+
+  it('returns phase links when no bottleneck alerts are present', () => {
+    const links = resolveEventCardQuickLinks('NightOf', FULL_PERMISSIONS, []);
+    expect(links.map((l) => l.label)).toEqual(['Settlement Wizard', 'Capture Signature']);
+  });
+
+  it('returns phase links when bottlenecks have no mapped action link', () => {
+    const alerts: BottleneckAlert[] = [{ kind: 'UNMAPPED_QBO', label: '2 unmapped accounts' }];
+    const links = resolveEventCardQuickLinks('PreShow', FULL_PERMISSIONS, alerts);
+    expect(links.map((l) => l.label)).toEqual(['Edit Deal Builder', 'Lock Budget']);
+  });
+
+  it('returns multiple action links when multiple bottlenecks map to links', () => {
+    const alerts: BottleneckAlert[] = [
+      { kind: 'VARIANCE_REVIEW', label: 'Variance review needed' },
+      { kind: 'SETTLED_NOT_SYNCED', label: 'Not synced to QBO' },
+    ];
+    const links = resolveEventCardQuickLinks('PostShow', FULL_PERMISSIONS, alerts);
+    expect(links.map((l) => l.label)).toEqual(['View QBO Variance', 'One-Click QBO Sync']);
   });
 });

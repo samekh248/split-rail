@@ -43,6 +43,17 @@ public class SettlementController : ControllerBase
         CancellationToken cancellationToken) =>
         Ok(await _settlementService.GetPdfLinkAsync(venueId, eventId, cancellationToken));
 
+    [HttpGet("settlement-pdf/file")]
+    [RequirePermission(PermissionNames.ViewFinancials)]
+    public async Task<IActionResult> DownloadSettlementPdfFile(
+        Guid venueId,
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        var pdfBytes = await _settlementService.GetPdfFileAsync(venueId, eventId, cancellationToken);
+        return File(pdfBytes, "application/pdf", $"settlement-{eventId}.pdf");
+    }
+
     [HttpPost("reconcile")]
     [RequirePermission(PermissionNames.TriggerQboSync)]
     public async Task<ActionResult<EventResponse>> Reconcile(

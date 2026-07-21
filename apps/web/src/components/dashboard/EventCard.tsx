@@ -7,10 +7,11 @@ import {
 } from '@/lib/eventCardSummary';
 import { BOOKING_PREVIEW_TOOLTIP, eventCardBookingBadgeClass, getBookingStatusLabel } from '@/lib/eventCardLabels';
 import type { BookingPlacementStatus } from '@/lib/bookingCalendar';
-import { resolveQuickLinks, type WorkspaceFocus } from '@/lib/eventCardQuickLinks';
+import { resolveEventCardQuickLinks, type WorkspaceFocus } from '@/lib/eventCardQuickLinks';
 import { eventHasNegativeVariance } from '@/lib/eventCardVariance';
 import type { EventCardDto, EventResponse, LineItemDto, PermissionsDto } from '@/types/generated-api';
 import { EventCardProgressBar } from '@/components/dashboard/EventCardProgressBar';
+import { EventCardBadgeList, type EventCardTag } from '@/components/dashboard/EventCardBadgeList';
 
 export type { WorkspaceFocus };
 
@@ -62,12 +63,14 @@ export function EventCard({
   const venueId = event.venueId ?? '';
   const title = event.title?.trim() || 'Untitled event';
   const phase = deriveLifecyclePhase(event);
-  const quickLinks = resolveQuickLinks(phase, permissions);
   const summaryAlerts = isEventCardDto(event) ? deriveBottleneckAlertsFromSummary(event) : [];
   const bottleneckAlerts = mergeBottleneckAlerts(summaryAlerts, deriveBottleneckAlerts(event));
+  const quickLinks = resolveEventCardQuickLinks(phase, permissions, bottleneckAlerts);
+  const showsVarianceLink = quickLinks.some((link) => link.testId === 'variance');
   const showVariance =
-    (isEventCardDto(event) && event.hasVarianceConcern === true)
-    || (lineItems != null && eventHasNegativeVariance(lineItems));
+    !showsVarianceLink
+    && ((isEventCardDto(event) && event.hasVarianceConcern === true)
+      || (lineItems != null && eventHasNegativeVariance(lineItems)));
   const pinnedState = isPinned ?? (isEventCardDto(event) ? event.isPinned === true : false);
   const bookingStatus =
     'bookingPlacementStatus' in event ? event.bookingPlacementStatus : null;
@@ -96,41 +99,26 @@ export function EventCard({
     </nav>
   ) : null;
 
-  const bookingBadge = (
-    <span
-      className={['event-card__booking-badge', bookingBadgeClass].join(' ')}
-      title={BOOKING_PREVIEW_TOOLTIP}
-      data-testid={`event-card-booking-${eventId}`}
-    >
-      {bookingLabel}
-    </span>
-  );
+  const tags: EventCardTag[] = [
+    {
+      key: 'booking',
+      label: bookingLabel,
+      testId: `event-card-booking-${eventId}`,
+      className: ['event-card__booking-badge', bookingBadgeClass].join(' '),
+      title: BOOKING_PREVIEW_TOOLTIP,
+    },
+  ];
 
-  const secondaryBadges = (
-    <>
-      {showVariance && (
-        <span className="event-card__variance-badge" data-testid={`event-card-variance-${eventId}`}>
-          Variance
-        </span>
-      )}
-      {bottleneckAlerts.map((alert) => (
-        <span
-          key={alert.kind}
-          className="event-card__alert-chip badge-action-required"
-          data-testid={`event-card-alert-${alert.kind}-${eventId}`}
-        >
-          {alert.label}
-        </span>
-      ))}
-    </>
-  );
+  if (showVariance) {
+    tags.push({
+      key: 'variance',
+      label: 'Variance',
+      testId: `event-card-variance-${eventId}`,
+      className: 'event-card__variance-badge',
+    });
+  }
 
-  const badges = (
-    <>
-      {bookingBadge}
-      {secondaryBadges}
-    </>
-  );
+  const showSingleTagInCompactHeader = compact && tags.length === 1;
 
   return (
     <article
@@ -158,11 +146,19 @@ export function EventCard({
       tabIndex={onActivate ? 0 : undefined}
     >
       <header className="event-card__header">
-        <h3 className="event-card__title">{title}</h3>
-        {compact ? (
-          bookingBadge
+        <div className="event-card__heading">
+          <h3 className="event-card__title">{title}</h3>
+          {!compact && (
+            <p className="event-card__date" data-testid={`event-card-date-${eventId}`}>
+              {formatEventDate(event.eventDate)}
+            </p>
+          )}
+        </div>
+        {showSingleTagInCompactHeader ? (
+          <EventCardBadgeList tags={tags} eventId={eventId} eventDate={event.eventDate} />
         ) : (
-          onPinToggle && (
+          !compact
+          && onPinToggle && (
             <button
               type="button"
               className="event-card__pin"
@@ -184,14 +180,15 @@ export function EventCard({
           <span className="event-card__date" data-testid={`event-card-date-${eventId}`}>
             {formatEventDate(event.eventDate)}
           </span>
-          {secondaryBadges}
+          {tags.length > 1 && (
+            <EventCardBadgeList tags={tags} eventId={eventId} eventDate={event.eventDate} />
+          )}
         </div>
       ) : (
         <>
-          <p className="event-card__date" data-testid={`event-card-date-${eventId}`}>
-            {formatEventDate(event.eventDate)}
-          </p>
-          <div className="event-card__badges">{badges}</div>
+          <div className="event-card__badges">
+            <EventCardBadgeList tags={tags} eventId={eventId} eventDate={event.eventDate} />
+          </div>
           {quickLinksNav}
         </>
       )}

@@ -1,5 +1,5 @@
 import type { PermissionsDto } from '@/types/generated-api';
-import type { DashboardLifecyclePhase } from '@/lib/eventLifecycle';
+import type { BottleneckAlert, DashboardLifecyclePhase } from '@/lib/eventLifecycle';
 
 export type WorkspaceFocus = 'deal' | 'settlement' | 'signature' | 'variance' | 'sync';
 
@@ -59,4 +59,39 @@ export function resolveQuickLinks(
   }
 
   return permitted;
+}
+
+const BOTTLENECK_ACTION_LINK_TEST_IDS: Partial<Record<BottleneckAlert['kind'], string>> = {
+  MISSING_SIGNATURE: 'signature',
+  SETTLED_NOT_SYNCED: 'sync',
+  VARIANCE_REVIEW: 'variance',
+};
+
+/**
+ * When bottleneck alerts are present, show only the quick links for required actions
+ * instead of every link for the lifecycle phase.
+ */
+export function resolveEventCardQuickLinks(
+  phase: DashboardLifecyclePhase,
+  permissions: PermissionsDto,
+  bottleneckAlerts: BottleneckAlert[],
+): QuickLinkDefinition[] {
+  const phaseLinks = resolveQuickLinks(phase, permissions);
+
+  if (bottleneckAlerts.length === 0) {
+    return phaseLinks;
+  }
+
+  const requiredTestIds = new Set(
+    bottleneckAlerts
+      .map((alert) => BOTTLENECK_ACTION_LINK_TEST_IDS[alert.kind])
+      .filter((testId): testId is string => Boolean(testId)),
+  );
+
+  if (requiredTestIds.size === 0) {
+    return phaseLinks;
+  }
+
+  const actionLinks = phaseLinks.filter((link) => requiredTestIds.has(link.testId));
+  return actionLinks.length > 0 ? actionLinks : phaseLinks;
 }
