@@ -2858,8 +2858,7 @@ button.welcome-modal__dismiss {
 }
 
 .event-card__badge-count .event-card__booking-badge,
-.event-card__badge-count .event-card__alert-chip,
-.event-card__badge-count .event-card__variance-badge {
+.event-card__badge-count .event-card__alert-chip {
   flex-shrink: 0;
 }
 
@@ -2956,6 +2955,10 @@ button.welcome-modal__dismiss {
   color: var(--color-accent-orange-hover);
   background: var(--color-warning-bg);
   border-radius: 9999px;
+}
+
+.event-card__badge-count .event-card__variance-badge {
+  flex-shrink: 0;
 }
 
 .event-card__alert-chip {
