@@ -6,6 +6,7 @@
     <AssemblyName>split-rail-api</AssemblyName>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>38140117-1684-404b-b1c0-9c58729c32bf</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
