@@ -59,6 +59,11 @@ describe('preview database deploy contract', () => {
     expect(script).toContain('splitrail-preview');
   });
 
+  it('provisionPreviewDb_usesEnterpriseEditionForLegacyTier', () => {
+    const script = readDeployScript('deploy/lib/provision-preview-db.sh', repoRoot);
+    expect(script).toContain('--edition=ENTERPRISE');
+  });
+
   it('deployPreview_omitsSettlementArchiveBucketEnvVars', () => {
     const script = readDeployScript('deploy/preview/deploy-preview.sh', repoRoot);
     assertPreviewOmitsSettlementArchiveEnvVars(script);

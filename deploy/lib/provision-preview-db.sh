@@ -31,6 +31,7 @@ if ! gcloud sql instances describe "${INSTANCE_NAME}" \
   gcloud sql instances create "${INSTANCE_NAME}" \
     --database-version=POSTGRES_16 \
     --tier=db-f1-micro \
+    --edition=ENTERPRISE \
     --region="${GCP_REGION}" \
     --project="${GCP_PROJECT}" \
     --storage-auto-increase \
