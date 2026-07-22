@@ -76,6 +76,7 @@ public class SettlementService
             }
             catch (Exception ex) when (ex is not SettlementArchiveException and not ApiException)
             {
+                _logger.LogError(ex, "Failed to render settlement PDF for event {EventId}", eventId);
                 throw new SettlementArchiveException("Failed to render settlement PDF.");
             }
 

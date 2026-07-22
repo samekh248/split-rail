@@ -161,8 +161,8 @@ public class SettlementPdfRenderer : ISettlementPdfRenderer
         var amountCell = table.Cell().Padding(4).AlignRight();
         if (bold)
         {
-            labelCell.Background(Colors.Grey.Lighten3);
-            amountCell.Background(Colors.Grey.Lighten3);
+            labelCell = labelCell.Background(Colors.Grey.Lighten3);
+            amountCell = amountCell.Background(Colors.Grey.Lighten3);
             labelCell.Text(label).Bold();
             amountCell.Text(amount).Bold();
             return;
