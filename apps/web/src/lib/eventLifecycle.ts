@@ -43,7 +43,7 @@ function isSameCalendarDay(a: Date, b: Date): boolean {
   );
 }
 
-function isPastEventDate(eventDate: string | null | undefined, now: Date): boolean {
+export function isPastEventDate(eventDate: string | null | undefined, now: Date): boolean {
   const parsed = parseEventDate(eventDate);
   if (!parsed) {
     return false;

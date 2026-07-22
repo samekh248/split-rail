@@ -72,6 +72,53 @@ public class SettlementServiceTests
     }
 
     [Fact]
+    public void RenderSettlementPdfFromPersistedState_RegeneratesPdfForSettledEvent()
+    {
+        var archive = new SplitRail.Api.Services.InMemorySettlementArchiveStore();
+        var service = CreateService(CreateDbContext(), archive);
+        var evt = new Event
+        {
+            Id = Guid.NewGuid(),
+            VenueId = Guid.NewGuid(),
+            Status = EventStatus.Settled,
+            IsBudgetLocked = true,
+            Title = "Friday Show",
+            EventDate = new DateOnly(2026, 7, 4),
+            ArtistSignatureData = IntegrationTestHelper.ValidSignatureBase64(),
+            SettlementPdfUrl = "gs://bucket/settlements/org/venue/event/settlement.pdf",
+            Venue = new Venue
+            {
+                Name = "Main Hall",
+                Organization = new Organization { Name = "Test Org" }
+            },
+            LineItems =
+            [
+                new FinancialLineItem
+                {
+                    BlockType = BlockType.Revenue.ToStorage(),
+                    RowLabel = "GA",
+                    SettlementValue = 10000m
+                }
+            ],
+            Artists =
+            [
+                new EventArtist
+                {
+                    ArtistName = "Headliner",
+                    PerformanceOrder = 1,
+                    DealType = DealType.Guarantee.ToStorage(),
+                    CalculatedNetPayout = 5000m
+                }
+            ]
+        };
+
+        var pdfBytes = service.RenderSettlementPdfFromPersistedState(evt);
+
+        pdfBytes.Should().NotBeNullOrEmpty();
+        pdfBytes!.Take(4).Should().BeEquivalentTo(new byte[] { 0x25, 0x50, 0x44, 0x46 });
+    }
+
+    [Fact]
     public async Task InMemoryArchiveStore_StagePromoteDelete_LeavesNoStagedObjects()
     {
         var store = new InMemoryArchiveStoreForUnit();

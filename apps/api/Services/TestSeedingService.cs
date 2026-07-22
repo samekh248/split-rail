@@ -299,7 +299,6 @@ public class TestSeedingService
 
     public byte[]? GetSettlementPdfBytes(string objectPath)
     {
-        EnsureEnabled();
         var normalizedPath = SettlementService.ExtractObjectPath(objectPath);
         return _archiveStore.TryGetStoredPdf(normalizedPath);
     }

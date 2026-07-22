@@ -26,7 +26,7 @@ export function FinalizeSettlementPanel({
       <h3>Finalize Settlement</h3>
       <p>Draw the artist signature below, then confirm to freeze the event.</p>
 
-      <SignaturePad onChange={setSignatureData} />
+      <SignaturePad onChange={setSignatureData} disabled={finalize.isPending} />
 
       <label className="finalize-settlement-panel__confirm">
         <input
