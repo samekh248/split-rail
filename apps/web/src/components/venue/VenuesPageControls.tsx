@@ -11,10 +11,8 @@ export interface VenuesPageControlsProps {
   regionFilter: VenueRegionFilter;
   displayMode: VenueDisplayMode;
   filterOptions: RegionFilterOption[];
-  showRegionFilter: boolean;
-  showDisplayToggle: boolean;
+  hasRegions: boolean;
   canManageVenues: boolean;
-  noRegionsHelperText?: string;
   onRegionFilterChange: (value: VenueRegionFilter) => void;
   onDisplayModeChange: (value: VenueDisplayMode) => void;
   onManageRegions: () => void;
@@ -24,24 +22,27 @@ export function VenuesPageControls({
   regionFilter,
   displayMode,
   filterOptions,
-  showRegionFilter,
-  showDisplayToggle,
+  hasRegions,
   canManageVenues,
-  noRegionsHelperText,
   onRegionFilterChange,
   onDisplayModeChange,
   onManageRegions,
 }: VenuesPageControlsProps) {
-  const showToolbar = showRegionFilter || showDisplayToggle || canManageVenues || noRegionsHelperText;
+  const showToolbar = hasRegions || canManageVenues;
 
   if (!showToolbar) {
     return null;
   }
 
   return (
-    <div className="venues-page-controls" data-testid="venues-page-controls">
-      <div className="venues-page-controls__fields">
-        {showRegionFilter ? (
+    <div
+      className={
+        hasRegions ? 'venues-page-controls' : 'venues-page-controls venues-page-controls--bare'
+      }
+      data-testid="venues-page-controls"
+    >
+      {hasRegions ? (
+        <div className="venues-page-controls__fields">
           <SelectField
             id="venues-region-filter"
             label="Region"
@@ -52,9 +53,7 @@ export function VenuesPageControls({
             labelClassName="venues-page-controls__label"
             data-testid="venues-region-filter"
           />
-        ) : null}
 
-        {showDisplayToggle ? (
           <SelectField
             id="venues-display-mode"
             label="Display"
@@ -65,8 +64,8 @@ export function VenuesPageControls({
             labelClassName="venues-page-controls__label"
             data-testid="venues-display-mode"
           />
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       {canManageVenues ? (
         <button
@@ -75,14 +74,8 @@ export function VenuesPageControls({
           data-testid="venues-manage-regions"
           onClick={onManageRegions}
         >
-          Manage regions
+          {hasRegions ? 'Manage regions' : 'Create your first region'}
         </button>
-      ) : null}
-
-      {noRegionsHelperText ? (
-        <p className="venues-page-controls__helper" data-testid="venues-no-regions-helper">
-          {noRegionsHelperText}
-        </p>
       ) : null}
     </div>
   );

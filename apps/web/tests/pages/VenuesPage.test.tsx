@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VenuesPage } from '@/pages/VenuesPage';
+import { regionsQueryKey } from '@/api/regions';
 import { AppShell } from '@/components/shell/AppShell';
 import { AuthContext, type AuthContextValue } from '@/auth/AuthContext';
 import { VenueProvider } from '@/venue/VenueContext';
@@ -43,10 +44,11 @@ const VENUE_UNASSIGNED = {
   regionId: null,
 };
 
-function createWrapper() {
-  const queryClient = new QueryClient({
+function createWrapper(
+  queryClient: QueryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
-  });
+  }),
+) {
   const authValue = {
     phase: 'authenticated',
     profile: null,
@@ -96,14 +98,15 @@ describe('VenuesPage', () => {
     expect(screen.getByTestId('venues-add-venue')).toBeInTheDocument();
   });
 
-  it('shows empty state with add CTA for admin', async () => {
+  it('shows empty state with a single add-venue CTA for admin', async () => {
     mockWorkspaceFetch({ venues: [] });
     const user = userEvent.setup();
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
-    expect(await screen.findByTestId('venues-empty-add-venue')).toBeInTheDocument();
-    await user.click(screen.getByTestId('venues-empty-add-venue'));
+    await screen.findByText('No venues yet');
+    expect(screen.getAllByRole('button', { name: 'Add venue' })).toHaveLength(1);
+    await user.click(screen.getByTestId('venues-add-venue'));
     expect(getAppPath()).toBe('/venues/new');
   });
 
@@ -113,7 +116,6 @@ describe('VenuesPage', () => {
     render(<VenuesPage />, { wrapper: createWrapper() });
 
     expect(await screen.findByText('No venues yet')).toBeInTheDocument();
-    expect(screen.queryByTestId('venues-empty-add-venue')).not.toBeInTheDocument();
     expect(screen.queryByTestId('venues-add-venue')).not.toBeInTheDocument();
   });
 
@@ -266,5 +268,96 @@ describe('VenuesPage', () => {
     render(<VenuesPage />, { wrapper: createWrapper() });
     expect(await screen.findByTestId('venues-grouped-list')).toBeInTheDocument();
     expect(screen.getByTestId('venues-region-filter')).toHaveTextContent('West');
+  });
+
+  it('hides region filter, display toggle, and any "Unassigned" heading when the organization has zero regions', async () => {
+    mockWorkspaceFetch({ venues: [VENUE_A] });
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await screen.findByText('Hall A');
+    expect(screen.queryByTestId('venues-region-filter')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('venues-display-mode')).not.toBeInTheDocument();
+    expect(screen.queryByText('Unassigned')).not.toBeInTheDocument();
+    expect(screen.getByTestId('venue-list-table')).toBeInTheDocument();
+  });
+
+  it('shows exactly one create-regions prompt for admins when there are zero regions', async () => {
+    mockWorkspaceFetch({ venues: [VENUE_A] });
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await screen.findByText('Hall A');
+    expect(screen.getAllByTestId('venues-manage-regions')).toHaveLength(1);
+    expect(screen.queryByTestId('venues-no-regions-helper')).not.toBeInTheDocument();
+  });
+
+  it('groups the create-regions prompt with Add venue in one header action cluster when there are zero regions', async () => {
+    mockWorkspaceFetch({ venues: [VENUE_A] });
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await screen.findByText('Hall A');
+    const header = screen.getByTestId('venues-page').querySelector('header');
+    expect(header).not.toBeNull();
+    expect(header).toContainElement(screen.getByTestId('venues-manage-regions'));
+    expect(header).toContainElement(screen.getByTestId('venues-add-venue'));
+  });
+
+  it('shows no region-related controls for members when there are zero regions', async () => {
+    mockWorkspaceFetch({ profile: workspaceMemberProfile, venues: [VENUE_A] });
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await screen.findByText('Hall A');
+    expect(screen.queryAllByTestId('venues-manage-regions')).toHaveLength(0);
+    expect(screen.queryByTestId('venues-region-filter')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('venues-display-mode')).not.toBeInTheDocument();
+  });
+
+  it('falls back to the unified list when regions drop to zero while mounted', async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    mockWorkspaceFetch({ venues: [VENUE_A], regions: [REGION_WEST, REGION_EAST] });
+
+    render(<VenuesPage />, { wrapper: createWrapper(queryClient) });
+
+    await screen.findByTestId('venues-region-filter');
+    expect(screen.getByTestId('venues-display-mode')).toBeInTheDocument();
+
+    queryClient.setQueryData(regionsQueryKey(), []);
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('venues-region-filter')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('venues-display-mode')).not.toBeInTheDocument();
+    });
+    expect(screen.getByTestId('venue-list-table')).toBeInTheDocument();
+  });
+
+  it('keeps header, controls, and body wrapper stable when switching display modes', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A, VENUE_B],
+      regions: [REGION_WEST, REGION_EAST],
+    });
+    const user = userEvent.setup();
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await screen.findByTestId('venues-page-controls');
+    expect(screen.getByTestId('venues-page')).toBeInTheDocument();
+    expect(screen.getByTestId('venues-page-body')).toBeInTheDocument();
+
+    await pickSelectFieldOption(user, 'venues-display-mode', 'grouped');
+    expect(screen.getByTestId('venues-page')).toBeInTheDocument();
+    expect(screen.getByTestId('venues-page-controls')).toBeInTheDocument();
+    expect(screen.getByTestId('venues-page-body')).toBeInTheDocument();
+    expect(screen.getByTestId('venues-grouped-list')).toBeInTheDocument();
+
+    await pickSelectFieldOption(user, 'venues-display-mode', 'flat');
+    expect(screen.getByTestId('venues-page')).toBeInTheDocument();
+    expect(screen.getByTestId('venues-page-controls')).toBeInTheDocument();
+    expect(screen.getByTestId('venues-page-body')).toBeInTheDocument();
+    expect(screen.getByTestId('venue-list-table')).toBeInTheDocument();
   });
 });

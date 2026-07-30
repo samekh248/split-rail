@@ -58,6 +58,26 @@ describe('VenueListGrouped', () => {
     expect(screen.getByTestId('venues-region-empty-region-b')).toHaveTextContent('No venues');
   });
 
+  it('marks the unassigned section distinct from named regions', () => {
+    render(
+      <VenueListGrouped
+        sections={SECTIONS}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('venues-region-section-unassigned')).toHaveClass(
+      'venues-group--unassigned',
+    );
+    expect(screen.getByTestId('venues-region-section-region-a')).not.toHaveClass(
+      'venues-group--unassigned',
+    );
+    expect(screen.getByTestId('venues-region-section-region-b')).not.toHaveClass(
+      'venues-group--unassigned',
+    );
+  });
+
   it('does not render a region column in grouped tables', () => {
     render(
       <VenueListGrouped

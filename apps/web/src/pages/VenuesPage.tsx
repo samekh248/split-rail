@@ -84,12 +84,19 @@ export function VenuesPage() {
   const showFilterEmpty =
     !isPending && !isError && venues.length > 0 && filteredVenues.length === 0;
   const showVenueList = !isPending && !isError && venues.length > 0 && filteredVenues.length > 0;
-  const showRegionFilter = regions.length > 0;
-  const showDisplayToggle = venues.length > 0;
-  const noRegionsHelperText =
-    !regionsLoading && regions.length === 0 && canManageVenues
-      ? 'Create regions with Manage regions to organize venues by territory.'
-      : undefined;
+  const hasRegions = !regionsLoading && regions.length > 0;
+  const effectiveDisplayMode: VenueDisplayMode = hasRegions ? displayMode : 'flat';
+  const showControls = !isPending && !isError && !regionsLoading;
+  const controlsProps = {
+    regionFilter,
+    displayMode,
+    filterOptions,
+    hasRegions,
+    canManageVenues: !profileLoading && canManageVenues,
+    onRegionFilterChange: setRegionFilter,
+    onDisplayModeChange: setDisplayMode,
+    onManageRegions: () => setRegionsPanelOpen(true),
+  };
 
   const handleDeleteConfirm = async () => {
     if (!deletingVenue?.id) {
@@ -117,32 +124,22 @@ export function VenuesPage() {
     <main className="venues-page" data-testid="venues-page">
       <header className="venues-page__header">
         <h1 className="venues-page__title">Venues</h1>
-        {!profileLoading && canManageVenues ? (
-          <button
-            type="button"
-            className="venues-page__add btn-primary--compact"
-            data-testid="venues-add-venue"
-            onClick={() => navigateToCreateVenue()}
-          >
-            Add venue
-          </button>
-        ) : null}
+        <div className="venues-page__actions">
+          {showControls && !hasRegions ? <VenuesPageControls {...controlsProps} /> : null}
+          {!profileLoading && canManageVenues ? (
+            <button
+              type="button"
+              className="venues-page__add btn-primary--compact"
+              data-testid="venues-add-venue"
+              onClick={() => navigateToCreateVenue()}
+            >
+              Add venue
+            </button>
+          ) : null}
+        </div>
       </header>
 
-      {!isPending && !isError ? (
-        <VenuesPageControls
-          regionFilter={regionFilter}
-          displayMode={displayMode}
-          filterOptions={filterOptions}
-          showRegionFilter={showRegionFilter}
-          showDisplayToggle={showDisplayToggle}
-          canManageVenues={!profileLoading && canManageVenues}
-          noRegionsHelperText={noRegionsHelperText}
-          onRegionFilterChange={setRegionFilter}
-          onDisplayModeChange={setDisplayMode}
-          onManageRegions={() => setRegionsPanelOpen(true)}
-        />
-      ) : null}
+      {showControls && hasRegions ? <VenuesPageControls {...controlsProps} /> : null}
 
       {isPending ? (
         <LoadingPlaceholder
@@ -177,16 +174,6 @@ export function VenuesPage() {
                 ? 'Your organization does not have any venues yet. Ask someone with venue management access to add one before you can begin.'
                 : 'Your organization is set up. Add a venue to start managing events and ledgers.'}
           </p>
-          {!profileLoading && canManageVenues ? (
-            <button
-              type="button"
-              className="dashboard-empty__cta"
-              data-testid="venues-empty-add-venue"
-              onClick={() => navigateToCreateVenue()}
-            >
-              Add venue
-            </button>
-          ) : null}
         </section>
       ) : null}
 
@@ -202,14 +189,14 @@ export function VenuesPage() {
         </section>
       ) : null}
 
-      {showVenueList && displayMode === 'flat' ? (
+      {showVenueList ? (
         <section className="venues-page__body" data-testid="venues-page-body">
-          <VenueList venues={filteredVenues} {...listHandlers} />
+          {effectiveDisplayMode === 'flat' ? (
+            <VenueList venues={filteredVenues} {...listHandlers} />
+          ) : (
+            <VenueListGrouped sections={groupedSections} {...listHandlers} />
+          )}
         </section>
-      ) : null}
-
-      {showVenueList && displayMode === 'grouped' ? (
-        <VenueListGrouped sections={groupedSections} {...listHandlers} />
       ) : null}
 
       {editingVenue ? (
