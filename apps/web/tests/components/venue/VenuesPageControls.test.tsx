@@ -11,14 +11,13 @@ const FILTER_OPTIONS = [
 ];
 
 describe('VenuesPageControls', () => {
-  it('renders region filter when showRegionFilter is true', () => {
+  it('renders region filter and display toggle when hasRegions is true', () => {
     render(
       <VenuesPageControls
         regionFilter="all"
         displayMode="flat"
         filterOptions={FILTER_OPTIONS}
-        showRegionFilter
-        showDisplayToggle
+        hasRegions
         canManageVenues
         onRegionFilterChange={vi.fn()}
         onDisplayModeChange={vi.fn()}
@@ -27,16 +26,16 @@ describe('VenuesPageControls', () => {
     );
 
     expect(screen.getByTestId('venues-region-filter')).toHaveTextContent('All regions');
+    expect(screen.getByTestId('venues-display-mode')).toBeInTheDocument();
   });
 
-  it('hides region filter when showRegionFilter is false', () => {
+  it('hides region filter and display toggle when hasRegions is false', () => {
     render(
       <VenuesPageControls
         regionFilter="all"
         displayMode="flat"
         filterOptions={[]}
-        showRegionFilter={false}
-        showDisplayToggle={false}
+        hasRegions={false}
         canManageVenues
         onRegionFilterChange={vi.fn()}
         onDisplayModeChange={vi.fn()}
@@ -45,6 +44,24 @@ describe('VenuesPageControls', () => {
     );
 
     expect(screen.queryByTestId('venues-region-filter')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('venues-display-mode')).not.toBeInTheDocument();
+  });
+
+  it('renders nothing when there are no regions and the user cannot manage venues', () => {
+    const { container } = render(
+      <VenuesPageControls
+        regionFilter="all"
+        displayMode="flat"
+        filterOptions={[]}
+        hasRegions={false}
+        canManageVenues={false}
+        onRegionFilterChange={vi.fn()}
+        onDisplayModeChange={vi.fn()}
+        onManageRegions={vi.fn()}
+      />,
+    );
+
+    expect(container).toBeEmptyDOMElement();
   });
 
   it('calls onManageRegions when manage button is clicked', () => {
@@ -54,8 +71,7 @@ describe('VenuesPageControls', () => {
         regionFilter="all"
         displayMode="flat"
         filterOptions={FILTER_OPTIONS}
-        showRegionFilter
-        showDisplayToggle
+        hasRegions
         canManageVenues
         onRegionFilterChange={vi.fn()}
         onDisplayModeChange={vi.fn()}
@@ -75,8 +91,7 @@ describe('VenuesPageControls', () => {
         regionFilter="all"
         displayMode="flat"
         filterOptions={FILTER_OPTIONS}
-        showRegionFilter
-        showDisplayToggle
+        hasRegions
         canManageVenues={false}
         onRegionFilterChange={vi.fn()}
         onDisplayModeChange={onDisplayModeChange}
@@ -88,22 +103,39 @@ describe('VenuesPageControls', () => {
     expect(onDisplayModeChange).toHaveBeenCalledWith('grouped');
   });
 
-  it('shows no-regions helper text when provided', () => {
+  it('shows exactly one integrated create-regions prompt when there are zero regions', () => {
     render(
       <VenuesPageControls
         regionFilter="all"
         displayMode="flat"
         filterOptions={[]}
-        showRegionFilter={false}
-        showDisplayToggle={false}
+        hasRegions={false}
         canManageVenues
-        noRegionsHelperText="Create regions with Manage regions to organize venues by territory."
         onRegionFilterChange={vi.fn()}
         onDisplayModeChange={vi.fn()}
         onManageRegions={vi.fn()}
       />,
     );
 
-    expect(screen.getByTestId('venues-no-regions-helper')).toHaveTextContent('Create regions');
+    expect(screen.getAllByTestId('venues-manage-regions')).toHaveLength(1);
+    expect(screen.getByTestId('venues-manage-regions')).toHaveTextContent('Create your first region');
+    expect(screen.queryByTestId('venues-no-regions-helper')).not.toBeInTheDocument();
+  });
+
+  it('labels the button "Manage regions" when regions already exist', () => {
+    render(
+      <VenuesPageControls
+        regionFilter="all"
+        displayMode="flat"
+        filterOptions={FILTER_OPTIONS}
+        hasRegions
+        canManageVenues
+        onRegionFilterChange={vi.fn()}
+        onDisplayModeChange={vi.fn()}
+        onManageRegions={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('venues-manage-regions')).toHaveTextContent('Manage regions');
   });
 });

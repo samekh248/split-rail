@@ -32,15 +32,14 @@ export function VenueListGrouped({
   return (
     <div className="venues-grouped-list" data-testid="venues-grouped-list">
       {sections.map((section) => (
-        <section
+        <div
           key={section.sectionKey}
-          className="venues-group"
+          className={
+            section.sectionKey === 'unassigned' ? 'venues-group venues-group--unassigned' : 'venues-group'
+          }
           data-testid={`venues-region-section-${section.sectionKey}`}
-          aria-labelledby={`venues-region-heading-${section.sectionKey}`}
         >
-          <h2 id={`venues-region-heading-${section.sectionKey}`} className="venues-group__heading">
-            {section.title}
-          </h2>
+          <h2 className="venues-group__heading">{section.title}</h2>
 
           {section.venues.length === 0 ? (
             <p
@@ -92,7 +91,7 @@ export function VenueListGrouped({
               </table>
             </div>
           )}
-        </section>
+        </div>
       ))}
     </div>
   );

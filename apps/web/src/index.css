@@ -3855,6 +3855,7 @@ button.welcome-modal__dismiss {
 
 .venues-page__header {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
@@ -3869,6 +3870,12 @@ button.welcome-modal__dismiss {
   color: var(--color-primary-brown);
 }
 
+.venues-page__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .venues-page-controls {
   display: flex;
   flex-wrap: wrap;
@@ -3879,6 +3886,14 @@ button.welcome-modal__dismiss {
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-soft);
+}
+
+.venues-page-controls--bare {
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .venues-page-controls__fields {
@@ -3916,14 +3931,6 @@ button.welcome-modal__dismiss {
 
 .venues-page-controls__manage-regions {
   margin-left: auto;
-}
-
-.venues-page-controls__helper {
-  flex: 1 1 100%;
-  margin: 0;
-  font-size: 0.875rem;
-  line-height: 1.5;
-  color: var(--color-text-muted);
 }
 
 .venues-page__body {
@@ -4034,15 +4041,15 @@ button.welcome-modal__dismiss {
 .venues-grouped-list {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
 }
 
-.venues-group {
-  background: var(--color-surface-white);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--radius-card);
-  box-shadow: var(--shadow-soft);
-  padding: 1.25rem 1.5rem;
+.venues-group + .venues-group {
+  margin-top: 1.25rem;
+}
+
+.venues-group + .venues-group:not(.venues-group--unassigned) {
+  border-top: 1px solid var(--color-border-subtle);
+  padding-top: 1.25rem;
 }
 
 .venues-group__heading {
@@ -4053,11 +4060,26 @@ button.welcome-modal__dismiss {
   color: var(--color-primary-brown);
 }
 
+.venues-group--unassigned {
+  background: var(--color-bg-cream);
+  border: 1px dashed var(--color-border-subtle);
+  border-radius: var(--radius-card);
+  padding: 1rem 1.25rem;
+}
+
+.venues-group--unassigned .venues-group__heading {
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
 .venues-group__empty {
   margin: 0;
-  padding: 0;
+  padding: 1rem;
   color: var(--color-text-muted);
   font-size: 0.875rem;
+  background: var(--color-bg-cream);
+  border: 1px dashed var(--color-border-subtle);
+  border-radius: var(--radius-card);
   text-align: center;
 }
 
