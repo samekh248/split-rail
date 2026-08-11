@@ -29,7 +29,7 @@ All paths are relative to the repository root, under the existing `apps/web` fro
 
 **Purpose**: Confirm the existing frontend environment is ready; no new dependencies are needed for this presentation-only feature.
 
-- [ ] T001 Confirm branch `080-header-venue-region-filter` is checked out and `cd apps/web && npm install` is up to date (no new dependencies are added by this feature)
+- [X] T001 Confirm branch `080-header-venue-region-filter` is checked out and `cd apps/web && npm install` is up to date (no new dependencies are added by this feature)
 
 ---
 
@@ -39,7 +39,7 @@ All paths are relative to the repository root, under the existing `apps/web` fro
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T002 In `apps/web/src/components/venue/VenueSwitcher.tsx`, import and call `useRegions()` (from `@/api/regions`) and `filterVenuesByRegion`/`buildRegionFilterOptions` (from `@/lib/venueListView`); add local `regionFilter` state (`useState<VenueRegionFilter>('all')`, default `'all'`, no storage read/write per research.md D5); compute `showRegionFilter = !regionsLoading && regions.length > 0` and `filterOptions = buildRegionFilterOptions(venues, regions)`
+- [X] T002 In `apps/web/src/components/venue/VenueSwitcher.tsx`, import and call `useRegions()` (from `@/api/regions`) and `filterVenuesByRegion`/`buildRegionFilterOptions` (from `@/lib/venueListView`); add local `regionFilter` state (`useState<VenueRegionFilter>('all')`, default `'all'`, no storage read/write per research.md D5); compute `showRegionFilter = !regionsLoading && regions.length > 0` and `filterOptions = buildRegionFilterOptions(venues, regions)`
 
 **Checkpoint**: Foundation ready — region data, filter state, and the visibility gate are available; user story implementation can now begin
 
@@ -55,15 +55,15 @@ All paths are relative to the repository root, under the existing `apps/web` fro
 
 > Write these tests FIRST, ensure they FAIL before implementation
 
-- [ ] T003 [P] [US1] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting `data-testid="venue-switcher-region-filter"` renders when `regions` is non-empty, and selecting a specific region narrows the rendered `venue-option-{id}` entries to that region's venues plus `venue-option-all`
-- [ ] T004 [P] [US1] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting that clicking/selecting a `venue-option-{id}` entry from a filtered list calls the same `setActiveVenue` path (mock `useActiveVenue`) with that venue's id as when no filter is applied
-- [ ] T005 [P] [US1] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting that resetting the filter to "All regions" restores every accessible venue to the option list
+- [X] T003 [P] [US1] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting `data-testid="venue-switcher-region-filter"` renders when `regions` is non-empty, and selecting a specific region narrows the rendered `venue-option-{id}` entries to that region's venues plus `venue-option-all`
+- [X] T004 [P] [US1] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting that clicking/selecting a `venue-option-{id}` entry from a filtered list calls the same `setActiveVenue` path (mock `useActiveVenue`) with that venue's id as when no filter is applied
+- [X] T005 [P] [US1] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting that resetting the filter to "All regions" restores every accessible venue to the option list
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] In `apps/web/src/components/venue/VenueSwitcher.tsx`, render the region filter control (`<select data-testid="venue-switcher-region-filter">` using `filterOptions` from T002) inside the open dropdown menu, above the venue options, gated on `showRegionFilter`; `onChange` updates local `regionFilter` state only (depends on T002)
-- [ ] T007 [US1] In `apps/web/src/components/venue/VenueSwitcher.tsx`, compute `filteredVenues = filterVenuesByRegion(venues, regionFilter)` and build the `kind: 'venue'` options from `filteredVenues` instead of the raw `venues` array; leave the `kind: 'all'` option (`ALL_VENUES_LABEL`) unaffected by `regionFilter` (depends on T002, T006)
-- [ ] T008 [P] [US1] In `apps/web/src/index.css`, add `.venue-switcher__region-filter` styles sized/spaced to fit inside the existing `.venue-switcher__menu` popover
+- [X] T006 [US1] In `apps/web/src/components/venue/VenueSwitcher.tsx`, render the region filter control (`<select data-testid="venue-switcher-region-filter">` using `filterOptions` from T002) inside the open dropdown menu, above the venue options, gated on `showRegionFilter`; `onChange` updates local `regionFilter` state only (depends on T002)
+- [X] T007 [US1] In `apps/web/src/components/venue/VenueSwitcher.tsx`, compute `filteredVenues = filterVenuesByRegion(venues, regionFilter)` and build the `kind: 'venue'` options from `filteredVenues` instead of the raw `venues` array; leave the `kind: 'all'` option (`ALL_VENUES_LABEL`) unaffected by `regionFilter` (depends on T002, T006)
+- [X] T008 [P] [US1] In `apps/web/src/index.css`, add `.venue-switcher__region-filter` styles sized/spaced to fit inside the existing `.venue-switcher__menu` popover
 
 **Checkpoint**: User Story 1 is fully functional and independently testable — filtering narrows the flat list and selection works identically to today
 
@@ -77,16 +77,16 @@ All paths are relative to the repository root, under the existing `apps/web` fro
 
 ### Tests for User Story 2 (REQUIRED) ⚠️
 
-- [ ] T009 [P] [US2] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting that with `regionFilter === 'all'` and regions present, venues render under `data-testid="venue-switcher-section-{sectionKey}"` heading rows in alphabetical region-name order, each followed by its venues
-- [ ] T010 [P] [US2] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting an "Unassigned" section (`venue-switcher-section-unassigned`) renders only when at least one accessible venue has no `regionId`, and is absent otherwise
-- [ ] T011 [P] [US2] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting `venue-option-all` always renders first, before any section heading, regardless of `regionFilter`
-- [ ] T012 [P] [US2] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting `ArrowDown`/`ArrowUp` traversal and `Enter` selection skip over `kind: 'header'` entries entirely (never highlighted, never selectable)
+- [X] T009 [P] [US2] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting that with `regionFilter === 'all'` and regions present, venues render under `data-testid="venue-switcher-section-{sectionKey}"` heading rows in alphabetical region-name order, each followed by its venues
+- [X] T010 [P] [US2] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting an "Unassigned" section (`venue-switcher-section-unassigned`) renders only when at least one accessible venue has no `regionId`, and is absent otherwise
+- [X] T011 [P] [US2] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting `venue-option-all` always renders first, before any section heading, regardless of `regionFilter`
+- [X] T012 [P] [US2] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting `ArrowDown`/`ArrowUp` traversal and `Enter` selection skip over `kind: 'header'` entries entirely (never highlighted, never selectable)
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] In `apps/web/src/components/venue/VenueSwitcher.tsx`, extend the `VenueOption` union with a non-selectable `{ kind: 'header'; label: string }` variant; update the `ArrowDown`/`ArrowUp` highlight-index logic and `Enter`/click handling to skip `kind: 'header'` entries (research.md D4)
-- [ ] T014 [US2] In `apps/web/src/components/venue/VenueSwitcher.tsx`, when `showRegionFilter && regionFilter === 'all'`, replace the flat `filteredVenues`-based option list (from T007) with sections built via `buildGroupedSections(venues, regions, 'all')`, filtered to drop sections with zero venues (research.md D3), flattened into alternating `kind: 'header'` + `kind: 'venue'` entries; leave the specific-region-filter path (`regionFilter !== 'all'`) on the flat list from US1 (depends on T007, T013)
-- [ ] T015 [P] [US2] In `apps/web/src/index.css`, add `.venue-switcher__section-heading` styles (non-interactive row) plus a muted modifier for the "Unassigned" heading, distinguishing it from named-region headings
+- [X] T013 [US2] In `apps/web/src/components/venue/VenueSwitcher.tsx`, extend the `VenueOption` union with a non-selectable `{ kind: 'header'; label: string }` variant; update the `ArrowDown`/`ArrowUp` highlight-index logic and `Enter`/click handling to skip `kind: 'header'` entries (research.md D4)
+- [X] T014 [US2] In `apps/web/src/components/venue/VenueSwitcher.tsx`, when `showRegionFilter && regionFilter === 'all'`, replace the flat `filteredVenues`-based option list (from T007) with sections built via `buildGroupedSections(venues, regions, 'all')`, filtered to drop sections with zero venues (research.md D3), flattened into alternating `kind: 'header'` + `kind: 'venue'` entries; leave the specific-region-filter path (`regionFilter !== 'all'`) on the flat list from US1 (depends on T007, T013)
+- [X] T015 [P] [US2] In `apps/web/src/index.css`, add `.venue-switcher__section-heading` styles (non-interactive row) plus a muted modifier for the "Unassigned" heading, distinguishing it from named-region headings
 
 **Checkpoint**: User Stories 1 AND 2 both work independently
 
@@ -100,13 +100,13 @@ All paths are relative to the repository root, under the existing `apps/web` fro
 
 ### Tests for User Story 3 (REQUIRED) ⚠️
 
-- [ ] T016 [P] [US3] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting that with `regions = []`, `venue-switcher-region-filter` is absent and the dropdown renders the same flat, ungrouped option list as before this feature
-- [ ] T017 [P] [US3] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting that filtering to a specific region (or "Unassigned") with zero matching venues renders `data-testid="venue-switcher-empty"` with an explanatory message, and no stray `venue-option-*` entries
+- [X] T016 [P] [US3] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting that with `regions = []`, `venue-switcher-region-filter` is absent and the dropdown renders the same flat, ungrouped option list as before this feature
+- [X] T017 [P] [US3] In `apps/web/tests/venue/VenueSwitcher.test.tsx`, add a failing test asserting that filtering to a specific region (or "Unassigned") with zero matching venues renders `data-testid="venue-switcher-empty"` with an explanatory message, and no stray `venue-option-*` entries
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] In `apps/web/src/components/venue/VenueSwitcher.tsx`, when `regionFilter !== 'all'` and the resulting `filteredVenues`/section is empty, render an inline `data-testid="venue-switcher-empty"` message in place of the (empty) option list (depends on T007, T014)
-- [ ] T019 [P] [US3] In `apps/web/src/index.css`, add `.venue-switcher__empty` styling consistent with existing empty-state treatments elsewhere in the app
+- [X] T018 [US3] In `apps/web/src/components/venue/VenueSwitcher.tsx`, when `regionFilter !== 'all'` and the resulting `filteredVenues`/section is empty, render an inline `data-testid="venue-switcher-empty"` message in place of the (empty) option list (depends on T007, T014)
+- [X] T019 [P] [US3] In `apps/web/src/index.css`, add `.venue-switcher__empty` styling consistent with existing empty-state treatments elsewhere in the app
 
 **Checkpoint**: All three user stories are independently functional
 
@@ -116,10 +116,10 @@ All paths are relative to the repository root, under the existing `apps/web` fro
 
 **Purpose**: Final verification across all stories
 
-- [ ] T020 [P] Run `cd apps/web && npm run test:coverage` and confirm ≥80% line/branch coverage on `VenueSwitcher.tsx`; no backend changes are made by this feature, so `apps/api` coverage is unaffected
-- [ ] T021 Run the manual validation checklist in `specs/080-header-venue-region-filter/quickstart.md` end-to-end (zero-regions org, filter, grouping, empty-result edge cases)
-- [ ] T022 [P] Run `cd apps/web && npm run build` to confirm no TypeScript errors were introduced
-- [ ] T023 [P] Confirm `apps/web/src/lib/venueListView.ts` and `apps/web/tests/lib/venueListView.test.ts` are unchanged — this feature consumes those selectors as-is (research.md D2)
+- [X] T020 [P] Run `cd apps/web && npm run test:coverage` and confirm ≥80% line/branch coverage on `VenueSwitcher.tsx`; no backend changes are made by this feature, so `apps/api` coverage is unaffected (result: 90.53% lines, 84.94% branches)
+- [ ] T021 Run the manual validation checklist in `specs/080-header-venue-region-filter/quickstart.md` end-to-end (zero-regions org, filter, grouping, empty-result edge cases) — **not run**: requires an authenticated, seeded backend (org/regions/venues) that wasn't stood up in this session; substituted with the full Vitest + RTL suite (T003-T017), which exercises every quickstart scenario against the real `VenueProvider`/`QueryClient` tree
+- [X] T022 [P] Run `cd apps/web && npm run build` to confirm no TypeScript errors were introduced
+- [X] T023 [P] Confirm `apps/web/src/lib/venueListView.ts` and `apps/web/tests/lib/venueListView.test.ts` are unchanged — this feature consumes those selectors as-is (research.md D2)
 
 ---
 
