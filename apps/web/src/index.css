@@ -4092,12 +4092,25 @@ button.welcome-modal__dismiss {
   padding-top: 1.25rem;
 }
 
-.venues-group__heading {
+.venues-group__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
   margin: 0 0 1rem;
+}
+
+.venues-group__heading {
+  margin: 0;
   font-size: 1.125rem;
   font-weight: 600;
   font-family: var(--font-brand);
   color: var(--color-primary-brown);
+}
+
+.venues-group__add {
+  flex: 0 0 auto;
 }
 
 .venues-group--unassigned {

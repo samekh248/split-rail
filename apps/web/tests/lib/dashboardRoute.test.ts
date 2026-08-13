@@ -39,7 +39,7 @@ describe('dashboardRoute', () => {
     const { result } = renderHook(() => useDashboardRoute());
     expect(result.current).toBe('/');
 
-    act(() => navigateToCreateVenue());
+    act(() => navigateToCreateVenue('region-a'));
     expect(window.location.pathname).toBe('/venues/new');
     expect(result.current).toBe('/venues/new');
   });

@@ -107,4 +107,63 @@ describe('VenueListGrouped', () => {
     expect(onEdit).toHaveBeenCalledWith(VENUE);
     expect(onDelete).toHaveBeenCalledWith(VENUE);
   });
+
+  it('renders an Add venue button for named regions when the user can manage venues', () => {
+    render(
+      <VenueListGrouped
+        sections={SECTIONS}
+        canManage
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onAddVenue={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('venues-add-venue-region-a')).toHaveTextContent('Add venue');
+    expect(screen.getByTestId('venues-add-venue-region-b')).toHaveTextContent('Add venue');
+  });
+
+  it('does not render an Add venue button for the unassigned section', () => {
+    render(
+      <VenueListGrouped
+        sections={SECTIONS}
+        canManage
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onAddVenue={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByTestId('venues-add-venue-unassigned')).not.toBeInTheDocument();
+  });
+
+  it('does not render Add venue buttons when the user cannot manage venues', () => {
+    render(
+      <VenueListGrouped
+        sections={SECTIONS}
+        canManage={false}
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onAddVenue={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByTestId('venues-add-venue-region-a')).not.toBeInTheDocument();
+  });
+
+  it('calls onAddVenue with the section region id when clicked', () => {
+    const onAddVenue = vi.fn();
+    render(
+      <VenueListGrouped
+        sections={SECTIONS}
+        canManage
+        onEdit={vi.fn()}
+        onDelete={vi.fn()}
+        onAddVenue={onAddVenue}
+      />,
+    );
+
+    fireEvent.click(screen.getByTestId('venues-add-venue-region-a'));
+    expect(onAddVenue).toHaveBeenCalledWith('region-a');
+  });
 });

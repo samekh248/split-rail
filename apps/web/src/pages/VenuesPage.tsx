@@ -16,12 +16,9 @@ import {
   buildRegionFilterOptions,
   filterVenuesByRegion,
   sortVenuesByName,
-  type VenueDisplayMode,
 } from '@/lib/venueListView';
 import {
-  readVenuesPageDisplayMode,
   readVenuesPageRegionFilter,
-  writeVenuesPageDisplayMode,
   writeVenuesPageRegionFilter,
   type VenueRegionFilter,
 } from '@/lib/venueListViewStorage';
@@ -49,9 +46,6 @@ export function VenuesPage() {
   const [regionFilter, setRegionFilter] = useState<VenueRegionFilter>(
     () => readVenuesPageRegionFilter() ?? 'all',
   );
-  const [displayMode, setDisplayMode] = useState<VenueDisplayMode>(
-    () => readVenuesPageDisplayMode() ?? 'flat',
-  );
   const [regionsPanelOpen, setRegionsPanelOpen] = useState(false);
   const [editingVenue, setEditingVenue] = useState<VenueResponse | null>(null);
   const [deletingVenue, setDeletingVenue] = useState<VenueResponse | null>(null);
@@ -60,10 +54,6 @@ export function VenuesPage() {
   useEffect(() => {
     writeVenuesPageRegionFilter(regionFilter);
   }, [regionFilter]);
-
-  useEffect(() => {
-    writeVenuesPageDisplayMode(displayMode);
-  }, [displayMode]);
 
   const filterOptions = useMemo(
     () => buildRegionFilterOptions(venues, regions),
@@ -80,21 +70,16 @@ export function VenuesPage() {
     [venues, regions, regionFilter],
   );
 
-  const showEmpty = !isPending && !isError && venues.length === 0;
-  const showFilterEmpty =
-    !isPending && !isError && venues.length > 0 && filteredVenues.length === 0;
-  const showVenueList = !isPending && !isError && venues.length > 0 && filteredVenues.length > 0;
   const hasRegions = !regionsLoading && regions.length > 0;
-  const effectiveDisplayMode: VenueDisplayMode = hasRegions ? displayMode : 'flat';
+  const showEmpty = !isPending && !isError && !hasRegions && venues.length === 0;
+  const showVenueList = !isPending && !isError && (hasRegions || venues.length > 0);
   const showControls = !isPending && !isError && !regionsLoading;
   const controlsProps = {
     regionFilter,
-    displayMode,
     filterOptions,
     hasRegions,
     canManageVenues: !profileLoading && canManageVenues,
     onRegionFilterChange: setRegionFilter,
-    onDisplayModeChange: setDisplayMode,
     onManageRegions: () => setRegionsPanelOpen(true),
   };
 
@@ -126,16 +111,6 @@ export function VenuesPage() {
         <h1 className="venues-page__title">Venues</h1>
         <div className="venues-page__actions">
           {showControls && !hasRegions ? <VenuesPageControls {...controlsProps} /> : null}
-          {!profileLoading && canManageVenues ? (
-            <button
-              type="button"
-              className="venues-page__add btn-primary--compact"
-              data-testid="venues-add-venue"
-              onClick={() => navigateToCreateVenue()}
-            >
-              Add venue
-            </button>
-          ) : null}
         </div>
       </header>
 
@@ -169,32 +144,24 @@ export function VenuesPage() {
           </h2>
           <p className="dashboard-empty__text">
             {!profileLoading && canManageVenues
-              ? 'Your organization is set up. Add a venue to start managing events and ledgers.'
+              ? 'Create a region to start adding venues.'
               : !profileLoading
-                ? 'Your organization does not have any venues yet. Ask someone with venue management access to add one before you can begin.'
-                : 'Your organization is set up. Add a venue to start managing events and ledgers.'}
-          </p>
-        </section>
-      ) : null}
-
-      {showFilterEmpty ? (
-        <section className="dashboard-empty" aria-labelledby="venues-filter-empty-heading">
-          <h2 id="venues-filter-empty-heading" className="dashboard-empty__heading">
-            No venues in this region
-          </h2>
-          <p className="dashboard-empty__text">
-            No venues match the selected region filter. Try choosing a different region or All
-            regions.
+                ? 'Your organization does not have any venues yet. Ask someone with venue management access to set up a region and add venues before you can begin.'
+                : 'Create a region to start adding venues.'}
           </p>
         </section>
       ) : null}
 
       {showVenueList ? (
         <section className="venues-page__body" data-testid="venues-page-body">
-          {effectiveDisplayMode === 'flat' ? (
-            <VenueList venues={filteredVenues} {...listHandlers} />
+          {hasRegions ? (
+            <VenueListGrouped
+              sections={groupedSections}
+              onAddVenue={(regionId) => navigateToCreateVenue(regionId)}
+              {...listHandlers}
+            />
           ) : (
-            <VenueListGrouped sections={groupedSections} {...listHandlers} />
+            <VenueList venues={filteredVenues} {...listHandlers} />
           )}
         </section>
       ) : null}

@@ -4,6 +4,7 @@ export {
   type EventWorkspaceRouteParams,
   buildEventWorkspacePath,
   getAppPath,
+  getCreateVenueRegionIdFromUrl,
   getDashboardPath,
   getInviteTokenFromUrl,
   isEventWorkspacePath,

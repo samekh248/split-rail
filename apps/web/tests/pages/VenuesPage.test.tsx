@@ -88,26 +88,25 @@ describe('VenuesPage', () => {
     vi.unstubAllGlobals();
   });
 
-  it('renders venue list for admin', async () => {
+  it('renders venue list for admin with zero regions and no add-venue action anywhere', async () => {
     mockWorkspaceFetch({ venues: [VENUE_A] });
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
     expect(await screen.findByTestId('venues-page')).toBeInTheDocument();
     expect(await screen.findByTestId('venue-list-table')).toBeInTheDocument();
-    expect(screen.getByTestId('venues-add-venue')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add venue' })).not.toBeInTheDocument();
   });
 
-  it('shows empty state with a single add-venue CTA for admin', async () => {
+  it('blocks venue creation and points to region setup when there are zero regions and zero venues', async () => {
     mockWorkspaceFetch({ venues: [] });
-    const user = userEvent.setup();
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
     await screen.findByText('No venues yet');
-    expect(screen.getAllByRole('button', { name: 'Add venue' })).toHaveLength(1);
-    await user.click(screen.getByTestId('venues-add-venue'));
-    expect(getAppPath()).toBe('/venues/new');
+    expect(screen.getByText('Create a region to start adding venues.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add venue' })).not.toBeInTheDocument();
+    expect(screen.getByTestId('venues-manage-regions')).toHaveTextContent('Create your first region');
   });
 
   it('shows read-only empty state for member', async () => {
@@ -116,7 +115,7 @@ describe('VenuesPage', () => {
     render(<VenuesPage />, { wrapper: createWrapper() });
 
     expect(await screen.findByText('No venues yet')).toBeInTheDocument();
-    expect(screen.queryByTestId('venues-add-venue')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add venue' })).not.toBeInTheDocument();
   });
 
   it('hides edit and delete for read-only users', async () => {
@@ -153,14 +152,27 @@ describe('VenuesPage', () => {
     });
   });
 
-  it('navigates to create page from header CTA', async () => {
-    mockWorkspaceFetch({ venues: [VENUE_A], profile: workspaceAdminProfile });
+  it('navigates to the region-scoped create page from a region\'s Add venue button', async () => {
+    mockWorkspaceFetch({ venues: [VENUE_A], regions: [REGION_WEST, REGION_EAST] });
     const user = userEvent.setup();
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
-    await user.click(await screen.findByTestId('venues-add-venue'));
+    await user.click(await screen.findByTestId(`venues-add-venue-${REGION_WEST.id}`));
     expect(getAppPath()).toBe('/venues/new');
+    expect(window.location.search).toBe(`?regionId=${REGION_WEST.id}`);
+  });
+
+  it('does not render an Add venue button on the Unassigned section', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A, VENUE_UNASSIGNED],
+      regions: [REGION_WEST, REGION_EAST],
+    });
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await screen.findByTestId('venues-region-section-unassigned');
+    expect(screen.queryByTestId('venues-add-venue-unassigned')).not.toBeInTheDocument();
   });
 
   it('shows error state with retry', async () => {
@@ -227,35 +239,32 @@ describe('VenuesPage', () => {
     expect(filter).toBeInTheDocument();
   });
 
-  it('shows filter-empty state when no venues match', async () => {
+  it('shows an inline empty message with an Add venue action when a region filter matches no venues', async () => {
     document.cookie = 'venuesPageRegionFilter=region-b; Path=/; SameSite=Lax';
     mockWorkspaceFetch({ venues: [VENUE_A], regions: [REGION_WEST, REGION_EAST] });
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
-    expect(await screen.findByText('No venues in this region')).toBeInTheDocument();
+    expect(await screen.findByTestId('venues-region-empty-region-b')).toHaveTextContent('No venues');
+    expect(screen.getByTestId(`venues-add-venue-${REGION_EAST.id}`)).toBeInTheDocument();
     expect(screen.queryByTestId('venue-list-table')).not.toBeInTheDocument();
   });
 
-  it('switches to grouped view', async () => {
+  it('renders the grouped view by default whenever the organization has regions', async () => {
     mockWorkspaceFetch({
       venues: [VENUE_A],
       regions: [REGION_WEST, REGION_EAST],
     });
-    const user = userEvent.setup();
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
-    await screen.findByTestId('venues-display-mode');
-    await pickSelectFieldOption(user, 'venues-display-mode', 'grouped');
-    expect(screen.getByTestId('venues-grouped-list')).toBeInTheDocument();
+    expect(await screen.findByTestId('venues-grouped-list')).toBeInTheDocument();
     expect(screen.getByTestId('venues-region-empty-region-b')).toHaveTextContent('No venues');
     expect(screen.queryByTestId('venue-list-table')).not.toBeInTheDocument();
   });
 
-  it('restores filter and display mode from cookies on remount', async () => {
+  it('restores the region filter from cookies on remount', async () => {
     document.cookie = 'venuesPageRegionFilter=region-a; Path=/; SameSite=Lax';
-    document.cookie = 'venuesPageDisplayMode=grouped; Path=/; SameSite=Lax';
     mockWorkspaceFetch({
       venues: [VENUE_A, VENUE_B],
       regions: [REGION_WEST, REGION_EAST],
@@ -270,14 +279,13 @@ describe('VenuesPage', () => {
     expect(screen.getByTestId('venues-region-filter')).toHaveTextContent('West');
   });
 
-  it('hides region filter, display toggle, and any "Unassigned" heading when the organization has zero regions', async () => {
+  it('hides region filter and any "Unassigned" heading when the organization has zero regions', async () => {
     mockWorkspaceFetch({ venues: [VENUE_A] });
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
     await screen.findByText('Hall A');
     expect(screen.queryByTestId('venues-region-filter')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('venues-display-mode')).not.toBeInTheDocument();
     expect(screen.queryByText('Unassigned')).not.toBeInTheDocument();
     expect(screen.getByTestId('venue-list-table')).toBeInTheDocument();
   });
@@ -292,7 +300,7 @@ describe('VenuesPage', () => {
     expect(screen.queryByTestId('venues-no-regions-helper')).not.toBeInTheDocument();
   });
 
-  it('groups the create-regions prompt with Add venue in one header action cluster when there are zero regions', async () => {
+  it('shows only the create-regions prompt in the header, with no Add venue action, when there are zero regions', async () => {
     mockWorkspaceFetch({ venues: [VENUE_A] });
 
     render(<VenuesPage />, { wrapper: createWrapper() });
@@ -301,7 +309,7 @@ describe('VenuesPage', () => {
     const header = screen.getByTestId('venues-page').querySelector('header');
     expect(header).not.toBeNull();
     expect(header).toContainElement(screen.getByTestId('venues-manage-regions'));
-    expect(header).toContainElement(screen.getByTestId('venues-add-venue'));
+    expect(screen.queryByRole('button', { name: 'Add venue' })).not.toBeInTheDocument();
   });
 
   it('shows no region-related controls for members when there are zero regions', async () => {
@@ -312,7 +320,6 @@ describe('VenuesPage', () => {
     await screen.findByText('Hall A');
     expect(screen.queryAllByTestId('venues-manage-regions')).toHaveLength(0);
     expect(screen.queryByTestId('venues-region-filter')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('venues-display-mode')).not.toBeInTheDocument();
   });
 
   it('falls back to the unified list when regions drop to zero while mounted', async () => {
@@ -324,40 +331,13 @@ describe('VenuesPage', () => {
     render(<VenuesPage />, { wrapper: createWrapper(queryClient) });
 
     await screen.findByTestId('venues-region-filter');
-    expect(screen.getByTestId('venues-display-mode')).toBeInTheDocument();
+    expect(screen.getByTestId('venues-grouped-list')).toBeInTheDocument();
 
     queryClient.setQueryData(regionsQueryKey(), []);
 
     await waitFor(() => {
       expect(screen.queryByTestId('venues-region-filter')).not.toBeInTheDocument();
-      expect(screen.queryByTestId('venues-display-mode')).not.toBeInTheDocument();
     });
-    expect(screen.getByTestId('venue-list-table')).toBeInTheDocument();
-  });
-
-  it('keeps header, controls, and body wrapper stable when switching display modes', async () => {
-    mockWorkspaceFetch({
-      venues: [VENUE_A, VENUE_B],
-      regions: [REGION_WEST, REGION_EAST],
-    });
-    const user = userEvent.setup();
-
-    render(<VenuesPage />, { wrapper: createWrapper() });
-
-    await screen.findByTestId('venues-page-controls');
-    expect(screen.getByTestId('venues-page')).toBeInTheDocument();
-    expect(screen.getByTestId('venues-page-body')).toBeInTheDocument();
-
-    await pickSelectFieldOption(user, 'venues-display-mode', 'grouped');
-    expect(screen.getByTestId('venues-page')).toBeInTheDocument();
-    expect(screen.getByTestId('venues-page-controls')).toBeInTheDocument();
-    expect(screen.getByTestId('venues-page-body')).toBeInTheDocument();
-    expect(screen.getByTestId('venues-grouped-list')).toBeInTheDocument();
-
-    await pickSelectFieldOption(user, 'venues-display-mode', 'flat');
-    expect(screen.getByTestId('venues-page')).toBeInTheDocument();
-    expect(screen.getByTestId('venues-page-controls')).toBeInTheDocument();
-    expect(screen.getByTestId('venues-page-body')).toBeInTheDocument();
     expect(screen.getByTestId('venue-list-table')).toBeInTheDocument();
   });
 });
