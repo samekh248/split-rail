@@ -1,7 +1,7 @@
 import type { RegionResponse, VenueResponse } from '@/types/generated-api';
 import type { VenueRegionFilter } from '@/lib/venueListViewStorage';
 
-export type { VenueDisplayMode, VenueRegionFilter } from '@/lib/venueListViewStorage';
+export type { VenueRegionFilter } from '@/lib/venueListViewStorage';
 
 export interface RegionFilterOption {
   value: VenueRegionFilter;

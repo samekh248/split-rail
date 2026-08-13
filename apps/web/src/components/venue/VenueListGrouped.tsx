@@ -6,6 +6,7 @@ export interface VenueListGroupedProps {
   canManage?: boolean;
   onEdit: (venue: VenueResponse) => void;
   onDelete: (venue: VenueResponse) => void;
+  onAddVenue?: (regionId: string) => void;
 }
 
 function formatCreatedAt(createdAt?: string | null): string {
@@ -28,6 +29,7 @@ export function VenueListGrouped({
   canManage = false,
   onEdit,
   onDelete,
+  onAddVenue,
 }: VenueListGroupedProps) {
   return (
     <div className="venues-grouped-list" data-testid="venues-grouped-list">
@@ -39,7 +41,19 @@ export function VenueListGrouped({
           }
           data-testid={`venues-region-section-${section.sectionKey}`}
         >
-          <h2 className="venues-group__heading">{section.title}</h2>
+          <div className="venues-group__header">
+            <h2 className="venues-group__heading">{section.title}</h2>
+            {canManage && onAddVenue && section.sectionKey !== 'unassigned' ? (
+              <button
+                type="button"
+                className="venues-group__add btn-primary--compact"
+                data-testid={`venues-add-venue-${section.sectionKey}`}
+                onClick={() => onAddVenue(section.sectionKey)}
+              >
+                Add venue
+              </button>
+            ) : null}
+          </div>
 
           {section.venues.length === 0 ? (
             <p

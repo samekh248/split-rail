@@ -109,12 +109,19 @@ export function getInviteTokenFromUrl(): string | null {
   return new URLSearchParams(window.location.search).get('token');
 }
 
+export function getCreateVenueRegionIdFromUrl(): string | null {
+  if (getAppPath() !== '/venues/new') {
+    return null;
+  }
+  return new URLSearchParams(window.location.search).get('regionId');
+}
+
 export function navigateToVenues(): void {
   pushPath('/venues');
 }
 
-export function navigateToCreateVenue(): void {
-  pushPath('/venues/new');
+export function navigateToCreateVenue(regionId: string): void {
+  pushPath(`/venues/new?regionId=${encodeURIComponent(regionId)}`);
 }
 
 export function navigateToDashboard(): void {

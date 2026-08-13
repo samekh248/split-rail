@@ -1,12 +1,11 @@
 import { useEffect, useState } from 'react';
 import { FormField } from '@/components/auth/FormField';
-import { SelectField } from '@/components/auth/SelectField';
 import { validateVenueName } from '@/auth/validation';
 import { useCreateVenue } from '@/api/venues';
 import { useRegions } from '@/api/regions';
 import { useUserProfile } from '@/api/user';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
-import { navigateToVenues } from '@/lib/dashboardRoute';
+import { getCreateVenueRegionIdFromUrl, navigateToVenues } from '@/lib/dashboardRoute';
 
 function mapCreateError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
@@ -24,26 +23,29 @@ export function CreateVenuePage() {
   const { isLoading: profileLoading } = useUserProfile();
   const canManage = useCanManageVenues();
   const createVenue = useCreateVenue();
-  const { data: regions = [] } = useRegions();
+  const { data: regions = [], isLoading: regionsLoading } = useRegions();
   const [venueName, setVenueName] = useState('');
-  const [regionId, setRegionId] = useState('');
   const [fieldError, setFieldError] = useState<string | undefined>();
   const [submitError, setSubmitError] = useState<string | null>(null);
 
+  const regionId = getCreateVenueRegionIdFromUrl();
+  const targetRegion = regions.find((region) => region.id === regionId) ?? null;
+  const isReady = !profileLoading && !regionsLoading;
+
   useEffect(() => {
-    if (profileLoading) {
+    if (!isReady) {
       return;
     }
-    if (!canManage) {
+    if (!canManage || !targetRegion) {
       navigateToVenues();
     }
-  }, [canManage, profileLoading]);
+  }, [canManage, isReady, targetRegion]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     const validationError = validateVenueName(venueName);
     setFieldError(validationError);
-    if (validationError) {
+    if (validationError || !targetRegion?.id) {
       return;
     }
 
@@ -51,7 +53,7 @@ export function CreateVenuePage() {
     try {
       await createVenue.mutateAsync({
         name: venueName.trim(),
-        regionId: regionId || null,
+        regionId: targetRegion.id,
       });
       navigateToVenues();
     } catch (error) {
@@ -61,7 +63,7 @@ export function CreateVenuePage() {
 
   const errorId = submitError ? 'venue-create-error' : undefined;
 
-  if (profileLoading) {
+  if (!isReady) {
     return (
       <div className="create-venue-page" role="status" aria-live="polite">
         Loading…
@@ -69,7 +71,7 @@ export function CreateVenuePage() {
     );
   }
 
-  if (!canManage) {
+  if (!canManage || !targetRegion) {
     return null;
   }
 
@@ -77,7 +79,7 @@ export function CreateVenuePage() {
     <div className="create-venue-page">
       <h1 className="create-venue-page__title">Add venue</h1>
       <p className="create-venue-page__subtitle">
-        Create a venue to start managing events and ledgers.
+        Add a venue to {targetRegion.name ?? 'this region'}.
       </p>
       <form className="auth-form" onSubmit={handleSubmit} noValidate>
         {submitError ? (
@@ -98,22 +100,6 @@ export function CreateVenuePage() {
           disabled={createVenue.isPending}
           describedBy={errorId}
         />
-        {regions.length > 0 ? (
-          <SelectField
-            id="venue-create-region"
-            label="Region"
-            value={regionId}
-            placeholder="Select region"
-            options={regions.map((region) => ({
-              value: region.id ?? '',
-              label: region.name ?? 'Unnamed region',
-            }))}
-            onChange={setRegionId}
-            required
-            disabled={createVenue.isPending}
-            data-testid="venue-region-field"
-          />
-        ) : null}
         <div className="auth-form__actions">
           <button
             type="button"

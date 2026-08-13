@@ -369,7 +369,7 @@ describe('EventCard', () => {
     });
 
     it('shows tag count and popover list when booking and variance badges are present', () => {
-      renderCard(EVENT_A, FULL_PERMISSIONS, {
+      renderCard({ ...EVENT_A, eventDate: futureDate() }, FULL_PERMISSIONS, {
         lineItems: [{ qboActualValue: '40.00', settlementValue: '50.00', variance: '-10.00' }],
       });
 
@@ -386,7 +386,7 @@ describe('EventCard', () => {
     });
 
     it('features booking status on upcoming events with multiple status badges', () => {
-      renderCard(EVENT_A, FULL_PERMISSIONS, {
+      renderCard({ ...EVENT_A, eventDate: futureDate() }, FULL_PERMISSIONS, {
         lineItems: [{ qboActualValue: '40.00', settlementValue: '50.00', variance: '-10.00' }],
       });
 

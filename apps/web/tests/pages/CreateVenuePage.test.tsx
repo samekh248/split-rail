@@ -16,11 +16,15 @@ import {
   workspaceMemberProfile,
 } from '../utils/mockWorkspaceFetch';
 
+const REGION_WEST = { id: 'region-a', name: 'West', notes: null, venueCount: 0 };
+const REGION_EAST = { id: 'region-b', name: 'East', notes: null, venueCount: 0 };
+
 const CREATED_VENUE = {
   id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
   name: 'The Roxy',
   organizationId: 'org-1',
   createdAt: '2026-06-17T00:00:00Z',
+  regionId: REGION_WEST.id,
 };
 
 function createWrapper() {
@@ -61,12 +65,12 @@ describe('CreateVenuePage', () => {
   beforeEach(() => {
     localStorage.clear();
     sessionStorage.clear();
-    window.history.pushState({}, '', '/venues/new');
+    window.history.pushState({}, '', `/venues/new?regionId=${REGION_WEST.id}`);
     vi.unstubAllGlobals();
   });
 
   it('renders inside AppShell on desktop without empty header chrome', async () => {
-    mockWorkspaceFetch();
+    mockWorkspaceFetch({ regions: [REGION_WEST] });
     render(<CreateVenuePage />, { wrapper: createWrapper() });
 
     expect(await screen.findByTestId('app-shell')).toBeInTheDocument();
@@ -74,21 +78,61 @@ describe('CreateVenuePage', () => {
     expect(screen.queryByTestId('top-bar-org-name')).not.toBeInTheDocument();
   });
 
-  it('creates a venue and navigates to dashboard with active venue', async () => {
-    mockWorkspaceFetch({ createdVenue: CREATED_VENUE });
+  it('shows the target region name and creates a venue tied to it', async () => {
+    mockWorkspaceFetch({ regions: [REGION_WEST, REGION_EAST], createdVenue: CREATED_VENUE });
     const user = userEvent.setup();
+    const fetchMock = vi.mocked(globalThis.fetch);
 
     render(<CreateVenuePage />, { wrapper: createWrapper() });
 
-    await user.type(await screen.findByLabelText('Venue name'), 'The Roxy');
+    expect(await screen.findByText(/West/)).toBeInTheDocument();
+    expect(screen.queryByTestId('venue-region-field')).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('Venue name'), 'The Roxy');
     await user.click(screen.getByRole('button', { name: 'Create venue' }));
 
     await waitFor(() => expect(getAppPath()).toBe('/venues'));
     await waitFor(() => expect(getActiveVenueId()).toBe(CREATED_VENUE.id));
+
+    const postCall = fetchMock.mock.calls.find((call) => call[1]?.method === 'POST');
+    expect(postCall).toBeDefined();
+    expect(JSON.parse(String(postCall?.[1]?.body))).toEqual({
+      name: 'The Roxy',
+      regionId: REGION_WEST.id,
+    });
   });
 
   it('silently redirects when user lacks permission', async () => {
-    mockWorkspaceFetch({ profile: workspaceMemberProfile });
+    mockWorkspaceFetch({ regions: [REGION_WEST], profile: workspaceMemberProfile });
+
+    render(<CreateVenuePage />, { wrapper: createWrapper() });
+
+    await waitFor(() => expect(getAppPath()).toBe('/venues'));
+    expect(screen.queryByLabelText('Venue name')).not.toBeInTheDocument();
+  });
+
+  it('redirects to venues when no regionId is present in the URL', async () => {
+    window.history.pushState({}, '', '/venues/new');
+    mockWorkspaceFetch({ regions: [REGION_WEST] });
+
+    render(<CreateVenuePage />, { wrapper: createWrapper() });
+
+    await waitFor(() => expect(getAppPath()).toBe('/venues'));
+    expect(screen.queryByLabelText('Venue name')).not.toBeInTheDocument();
+  });
+
+  it('redirects to venues when the regionId does not match any known region', async () => {
+    window.history.pushState({}, '', '/venues/new?regionId=does-not-exist');
+    mockWorkspaceFetch({ regions: [REGION_WEST] });
+
+    render(<CreateVenuePage />, { wrapper: createWrapper() });
+
+    await waitFor(() => expect(getAppPath()).toBe('/venues'));
+    expect(screen.queryByLabelText('Venue name')).not.toBeInTheDocument();
+  });
+
+  it('redirects to venues when the organization has zero regions', async () => {
+    mockWorkspaceFetch({ regions: [] });
 
     render(<CreateVenuePage />, { wrapper: createWrapper() });
 
@@ -97,7 +141,7 @@ describe('CreateVenuePage', () => {
   });
 
   it('shows inline validation for empty name without posting', async () => {
-    mockWorkspaceFetch();
+    mockWorkspaceFetch({ regions: [REGION_WEST] });
     const user = userEvent.setup();
     const fetchMock = vi.mocked(globalThis.fetch);
 
@@ -110,7 +154,7 @@ describe('CreateVenuePage', () => {
   });
 
   it('shows inline validation for over-max-length name without posting', async () => {
-    mockWorkspaceFetch();
+    mockWorkspaceFetch({ regions: [REGION_WEST] });
     const user = userEvent.setup();
     const fetchMock = vi.mocked(globalThis.fetch);
     const overMaxName = 'x'.repeat(VENUE_NAME_MAX_LENGTH + 1);
@@ -141,6 +185,9 @@ describe('CreateVenuePage', () => {
         if (url.includes('/users/me')) {
           return { ok: true, status: 200, json: () => Promise.resolve(workspaceAdminProfile) };
         }
+        if (url.includes('/api/regions')) {
+          return { ok: true, status: 200, json: () => Promise.resolve([REGION_WEST]) };
+        }
         if (url.includes('/api/venues') && init?.method === 'POST') {
           return postPromise;
         }
@@ -163,7 +210,7 @@ describe('CreateVenuePage', () => {
   });
 
   it('shows error banner on server failure and retains entered name', async () => {
-    mockWorkspaceFetch({ createVenueStatus: 500 });
+    mockWorkspaceFetch({ regions: [REGION_WEST], createVenueStatus: 500 });
     const user = userEvent.setup();
 
     render(<CreateVenuePage />, { wrapper: createWrapper() });
@@ -176,7 +223,7 @@ describe('CreateVenuePage', () => {
   });
 
   it('cancel navigates to dashboard without creating', async () => {
-    mockWorkspaceFetch();
+    mockWorkspaceFetch({ regions: [REGION_WEST] });
     const user = userEvent.setup();
     const fetchMock = vi.mocked(globalThis.fetch);
 

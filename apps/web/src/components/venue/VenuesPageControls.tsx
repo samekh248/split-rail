@@ -1,31 +1,22 @@
 import { SelectField } from '@/components/auth/SelectField';
-import type { RegionFilterOption, VenueDisplayMode } from '@/lib/venueListView';
+import type { RegionFilterOption } from '@/lib/venueListView';
 import type { VenueRegionFilter } from '@/lib/venueListViewStorage';
-
-const DISPLAY_MODE_OPTIONS = [
-  { value: 'flat', label: 'List' },
-  { value: 'grouped', label: 'By region' },
-];
 
 export interface VenuesPageControlsProps {
   regionFilter: VenueRegionFilter;
-  displayMode: VenueDisplayMode;
   filterOptions: RegionFilterOption[];
   hasRegions: boolean;
   canManageVenues: boolean;
   onRegionFilterChange: (value: VenueRegionFilter) => void;
-  onDisplayModeChange: (value: VenueDisplayMode) => void;
   onManageRegions: () => void;
 }
 
 export function VenuesPageControls({
   regionFilter,
-  displayMode,
   filterOptions,
   hasRegions,
   canManageVenues,
   onRegionFilterChange,
-  onDisplayModeChange,
   onManageRegions,
 }: VenuesPageControlsProps) {
   const showToolbar = hasRegions || canManageVenues;
@@ -52,17 +43,6 @@ export function VenuesPageControls({
             wrapperClassName="venues-page-controls__field venues-page-controls__field--inline"
             labelClassName="venues-page-controls__label"
             data-testid="venues-region-filter"
-          />
-
-          <SelectField
-            id="venues-display-mode"
-            label="Display"
-            value={displayMode}
-            options={DISPLAY_MODE_OPTIONS}
-            onChange={(value) => onDisplayModeChange(value as VenueDisplayMode)}
-            wrapperClassName="venues-page-controls__field venues-page-controls__field--inline"
-            labelClassName="venues-page-controls__label"
-            data-testid="venues-display-mode"
           />
         </div>
       ) : null}

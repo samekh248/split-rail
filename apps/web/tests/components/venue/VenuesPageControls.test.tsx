@@ -1,8 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { VenuesPageControls } from '@/components/venue/VenuesPageControls';
-import { pickSelectFieldOption } from '../../utils/selectField';
 
 const FILTER_OPTIONS = [
   { value: 'all' as const, label: 'All regions' },
@@ -11,52 +9,44 @@ const FILTER_OPTIONS = [
 ];
 
 describe('VenuesPageControls', () => {
-  it('renders region filter and display toggle when hasRegions is true', () => {
+  it('renders region filter when hasRegions is true', () => {
     render(
       <VenuesPageControls
         regionFilter="all"
-        displayMode="flat"
         filterOptions={FILTER_OPTIONS}
         hasRegions
         canManageVenues
         onRegionFilterChange={vi.fn()}
-        onDisplayModeChange={vi.fn()}
         onManageRegions={vi.fn()}
       />,
     );
 
     expect(screen.getByTestId('venues-region-filter')).toHaveTextContent('All regions');
-    expect(screen.getByTestId('venues-display-mode')).toBeInTheDocument();
   });
 
-  it('hides region filter and display toggle when hasRegions is false', () => {
+  it('hides region filter when hasRegions is false', () => {
     render(
       <VenuesPageControls
         regionFilter="all"
-        displayMode="flat"
         filterOptions={[]}
         hasRegions={false}
         canManageVenues
         onRegionFilterChange={vi.fn()}
-        onDisplayModeChange={vi.fn()}
         onManageRegions={vi.fn()}
       />,
     );
 
     expect(screen.queryByTestId('venues-region-filter')).not.toBeInTheDocument();
-    expect(screen.queryByTestId('venues-display-mode')).not.toBeInTheDocument();
   });
 
   it('renders nothing when there are no regions and the user cannot manage venues', () => {
     const { container } = render(
       <VenuesPageControls
         regionFilter="all"
-        displayMode="flat"
         filterOptions={[]}
         hasRegions={false}
         canManageVenues={false}
         onRegionFilterChange={vi.fn()}
-        onDisplayModeChange={vi.fn()}
         onManageRegions={vi.fn()}
       />,
     );
@@ -69,12 +59,10 @@ describe('VenuesPageControls', () => {
     render(
       <VenuesPageControls
         regionFilter="all"
-        displayMode="flat"
         filterOptions={FILTER_OPTIONS}
         hasRegions
         canManageVenues
         onRegionFilterChange={vi.fn()}
-        onDisplayModeChange={vi.fn()}
         onManageRegions={onManageRegions}
       />,
     );
@@ -83,36 +71,14 @@ describe('VenuesPageControls', () => {
     expect(onManageRegions).toHaveBeenCalled();
   });
 
-  it('changes display mode via select', async () => {
-    const onDisplayModeChange = vi.fn();
-    const user = userEvent.setup();
-    render(
-      <VenuesPageControls
-        regionFilter="all"
-        displayMode="flat"
-        filterOptions={FILTER_OPTIONS}
-        hasRegions
-        canManageVenues={false}
-        onRegionFilterChange={vi.fn()}
-        onDisplayModeChange={onDisplayModeChange}
-        onManageRegions={vi.fn()}
-      />,
-    );
-
-    await pickSelectFieldOption(user, 'venues-display-mode', 'grouped');
-    expect(onDisplayModeChange).toHaveBeenCalledWith('grouped');
-  });
-
   it('shows exactly one integrated create-regions prompt when there are zero regions', () => {
     render(
       <VenuesPageControls
         regionFilter="all"
-        displayMode="flat"
         filterOptions={[]}
         hasRegions={false}
         canManageVenues
         onRegionFilterChange={vi.fn()}
-        onDisplayModeChange={vi.fn()}
         onManageRegions={vi.fn()}
       />,
     );
@@ -126,12 +92,10 @@ describe('VenuesPageControls', () => {
     render(
       <VenuesPageControls
         regionFilter="all"
-        displayMode="flat"
         filterOptions={FILTER_OPTIONS}
         hasRegions
         canManageVenues
         onRegionFilterChange={vi.fn()}
-        onDisplayModeChange={vi.fn()}
         onManageRegions={vi.fn()}
       />,
     );

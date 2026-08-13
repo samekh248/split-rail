@@ -1,9 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   clearVenuesPageViewCookies,
-  readVenuesPageDisplayMode,
   readVenuesPageRegionFilter,
-  writeVenuesPageDisplayMode,
   writeVenuesPageRegionFilter,
 } from '@/lib/venueListViewStorage';
 
@@ -26,21 +24,5 @@ describe('venueListViewStorage', () => {
     expect(readVenuesPageRegionFilter()).toBe('all');
     writeVenuesPageRegionFilter('unassigned');
     expect(readVenuesPageRegionFilter()).toBe('unassigned');
-  });
-
-  it('returns null when no display mode cookie is set', () => {
-    expect(readVenuesPageDisplayMode()).toBeNull();
-  });
-
-  it('persists flat and grouped display modes', () => {
-    writeVenuesPageDisplayMode('flat');
-    expect(readVenuesPageDisplayMode()).toBe('flat');
-    writeVenuesPageDisplayMode('grouped');
-    expect(readVenuesPageDisplayMode()).toBe('grouped');
-  });
-
-  it('ignores invalid cookie values', () => {
-    document.cookie = 'venuesPageDisplayMode=grid; Path=/; SameSite=Lax';
-    expect(readVenuesPageDisplayMode()).toBeNull();
   });
 });

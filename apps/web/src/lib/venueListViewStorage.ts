@@ -1,9 +1,6 @@
-export type VenueDisplayMode = 'flat' | 'grouped';
-
 export type VenueRegionFilter = 'all' | 'unassigned' | string;
 
 const REGION_FILTER_COOKIE = 'venuesPageRegionFilter';
-const DISPLAY_MODE_COOKIE = 'venuesPageDisplayMode';
 const ONE_YEAR_SECONDS = 60 * 60 * 24 * 365;
 
 function readCookie(name: string): string | null {
@@ -29,7 +26,6 @@ export function clearVenuesPageViewCookies(): void {
   }
 
   document.cookie = `${REGION_FILTER_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
-  document.cookie = `${DISPLAY_MODE_COOKIE}=; Max-Age=0; Path=/; SameSite=Lax`;
 }
 
 export function readVenuesPageRegionFilter(): VenueRegionFilter | null {
@@ -45,16 +41,4 @@ export function readVenuesPageRegionFilter(): VenueRegionFilter | null {
 
 export function writeVenuesPageRegionFilter(value: VenueRegionFilter): void {
   writeCookie(REGION_FILTER_COOKIE, value);
-}
-
-export function readVenuesPageDisplayMode(): VenueDisplayMode | null {
-  const value = readCookie(DISPLAY_MODE_COOKIE);
-  if (value === 'flat' || value === 'grouped') {
-    return value;
-  }
-  return null;
-}
-
-export function writeVenuesPageDisplayMode(value: VenueDisplayMode): void {
-  writeCookie(DISPLAY_MODE_COOKIE, value);
 }
