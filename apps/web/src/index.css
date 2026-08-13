@@ -94,6 +94,12 @@ th {
   color: var(--color-bg-cream);
 }
 
+.btn-icon-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 /* Shared buttons */
 .btn-primary,
 .auth-form__submit,
@@ -2356,6 +2362,7 @@ select.form-field__input {
 .event-form-panel__actions,
 .event-delete-confirm__actions {
   display: flex;
+  justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 1rem;
 }
@@ -2771,8 +2778,33 @@ button.welcome-modal__dismiss {
 
 .team-modal__actions {
   display: flex;
+  justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 1rem;
+}
+
+.team-modal__actions--split {
+  justify-content: space-between;
+}
+
+.venue-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2.25rem;
+}
+
+.venue-modal-form .modal-header {
+  margin-bottom: 0;
+}
+
+.venue-modal-form .team-confirm__text,
+.venue-modal-form .team-modal__error {
+  margin: 0;
+}
+
+.venue-modal-form .team-modal__actions {
+  margin-top: 0;
 }
 
 .team-confirm {
@@ -2800,7 +2832,33 @@ button.welcome-modal__dismiss {
 
 .team-confirm__actions {
   display: flex;
+  justify-content: flex-end;
   gap: 0.75rem;
+}
+
+.region-delete-resolution__choices {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.region-delete-resolution__choice {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--color-primary-brown);
+}
+
+.region-delete-resolution__destination {
+  margin-left: 1.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-button);
+  font-family: var(--font-ui);
+  background: var(--color-surface-white);
+  color: var(--color-primary-brown);
 }
 
 @media (max-width: 768px) {
@@ -4054,6 +4112,14 @@ button.welcome-modal__dismiss {
   border-top-right-radius: var(--radius-button);
 }
 
+.venues-table thead th.venues-table__actions-col {
+  text-align: right;
+}
+
+.venues-table .team-table__actions {
+  justify-content: flex-end;
+}
+
 .venues-table tbody td {
   padding: 0.75rem;
   border-bottom: 1px solid color-mix(in srgb, var(--color-border-subtle) 50%, transparent);
@@ -4134,6 +4200,51 @@ button.welcome-modal__dismiss {
   border: 1px dashed var(--color-border-subtle);
   border-radius: var(--radius-card);
   text-align: center;
+}
+
+.venues-drop-target {
+  outline: 2px solid var(--color-success);
+  outline-offset: 4px;
+  background: var(--color-success-bg);
+  border-radius: var(--radius-card);
+}
+
+.venue-drag-error {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-error-bg);
+  border: 1px solid var(--color-error);
+  border-radius: var(--radius-card);
+  color: var(--color-error);
+  font-size: 0.875rem;
+}
+
+.venues-table__handle-col {
+  width: 1.75rem;
+}
+
+.venues-table__handle-cell {
+  width: 1.75rem;
+  padding-right: 0;
+}
+
+.venue-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  color: var(--color-text-muted);
+  cursor: grab;
+}
+
+.venue-drag-handle[draggable='false'] {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.venues-table__row--pending {
+  opacity: 0.6;
 }
 
 .accounting-overview {
@@ -5339,6 +5450,14 @@ button.welcome-modal__dismiss {
   margin-bottom: 0.25rem;
 }
 
+.region-panel__table th.region-panel__actions-col {
+  text-align: right;
+}
+
+.region-panel__table .team-table__actions {
+  justify-content: flex-end;
+}
+
 .region-panel__empty {
   margin: 0;
   color: var(--color-text-muted);
@@ -5486,6 +5605,7 @@ textarea.form-field__input {
 .modal__actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: space-between;
   gap: 0.75rem;
   margin-top: 1rem;
 }

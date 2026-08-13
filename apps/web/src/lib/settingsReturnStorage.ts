@@ -15,7 +15,7 @@ export function readSettingsReturnPath(): SettingsReturnPath {
     if (!stored) {
       return '/';
     }
-    if (stored === '/venues/new' || stored === '/venues') {
+    if (stored === '/venues') {
       return stored;
     }
     if (stored === '/') {
@@ -46,7 +46,7 @@ export function captureSettingsReturnPath(currentPath: AppPath | string): void {
     writeSettingsReturnPath(String(currentPath));
     return;
   }
-  if (currentPath === '/venues/new' || currentPath === '/venues') {
+  if (currentPath === '/venues') {
     writeSettingsReturnPath(currentPath);
     return;
   }

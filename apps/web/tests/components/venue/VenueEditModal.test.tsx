@@ -40,7 +40,13 @@ describe('VenueEditModal', () => {
     const user = userEvent.setup();
 
     render(
-      <VenueEditModal venue={venue} open onClose={onClose} onSaved={onSaved} />,
+      <VenueEditModal
+        venue={venue}
+        open
+        onClose={onClose}
+        onSaved={onSaved}
+        onDeleteRequest={vi.fn()}
+      />,
       { wrapper: Wrapper },
     );
 
@@ -57,7 +63,13 @@ describe('VenueEditModal', () => {
     const user = userEvent.setup();
 
     render(
-      <VenueEditModal venue={venue} open onClose={vi.fn()} onSaved={vi.fn()} />,
+      <VenueEditModal
+        venue={venue}
+        open
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+        onDeleteRequest={vi.fn()}
+      />,
       { wrapper: Wrapper },
     );
 
@@ -72,7 +84,13 @@ describe('VenueEditModal', () => {
     const user = userEvent.setup();
 
     render(
-      <VenueEditModal venue={venue} open onClose={vi.fn()} onSaved={vi.fn()} />,
+      <VenueEditModal
+        venue={venue}
+        open
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+        onDeleteRequest={vi.fn()}
+      />,
       { wrapper: Wrapper },
     );
 
@@ -91,7 +109,13 @@ describe('VenueEditModal', () => {
     const user = userEvent.setup();
 
     render(
-      <VenueEditModal venue={venue} open onClose={vi.fn()} onSaved={vi.fn()} />,
+      <VenueEditModal
+        venue={venue}
+        open
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+        onDeleteRequest={vi.fn()}
+      />,
       { wrapper: Wrapper },
     );
 
@@ -107,11 +131,54 @@ describe('VenueEditModal', () => {
     const user = userEvent.setup();
 
     render(
-      <VenueEditModal venue={venue} open onClose={onClose} onSaved={vi.fn()} />,
+      <VenueEditModal
+        venue={venue}
+        open
+        onClose={onClose}
+        onSaved={vi.fn()}
+        onDeleteRequest={vi.fn()}
+      />,
       { wrapper: Wrapper },
     );
 
     await user.click(screen.getByRole('button', { name: 'Close' }));
     expect(onClose).toHaveBeenCalled();
+  });
+
+  it('shows a Delete venue button that calls onDeleteRequest', async () => {
+    const onDeleteRequest = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <VenueEditModal
+        venue={venue}
+        open
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+        onDeleteRequest={onDeleteRequest}
+      />,
+      { wrapper: Wrapper },
+    );
+
+    await user.click(screen.getByTestId('venue-edit-delete'));
+    expect(onDeleteRequest).toHaveBeenCalled();
+    expect(mockUpdate.mutateAsync).not.toHaveBeenCalled();
+  });
+
+  it('disables the Delete venue button while a save is pending', () => {
+    mockUpdate.isPending = true;
+    render(
+      <VenueEditModal
+        venue={venue}
+        open
+        onClose={vi.fn()}
+        onSaved={vi.fn()}
+        onDeleteRequest={vi.fn()}
+      />,
+      { wrapper: Wrapper },
+    );
+
+    expect(screen.getByTestId('venue-edit-delete')).toBeDisabled();
+    mockUpdate.isPending = false;
   });
 });

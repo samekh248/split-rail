@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { ModalHeader } from '@/components/shell/ModalHeader';
 import type { VenueResponse } from '@/types/generated-api';
 
@@ -78,11 +80,12 @@ export function DeleteVenueConfirm({
         <div className="team-confirm__actions">
           <button
             type="button"
-            className="team-confirm__danger"
+            className="team-confirm__danger btn-icon-label"
             data-testid="delete-venue-confirm-button"
             onClick={() => void onConfirm()}
             disabled={isPending}
           >
+            {isPending ? null : <FontAwesomeIcon icon={faTrash} aria-hidden="true" />}
             {isPending ? 'Deleting…' : 'Delete venue'}
           </button>
         </div>

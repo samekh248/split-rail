@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFloppyDisk, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FormField } from '@/components/auth/FormField';
 import { SelectField } from '@/components/auth/SelectField';
 import { ModalHeader } from '@/components/shell/ModalHeader';
@@ -12,6 +14,7 @@ export interface VenueEditModalProps {
   open: boolean;
   onClose: () => void;
   onSaved: () => void;
+  onDeleteRequest: () => void;
 }
 
 function mapUpdateError(error: unknown): string {
@@ -28,7 +31,13 @@ function mapUpdateError(error: unknown): string {
   return 'Unable to save changes. Please try again.';
 }
 
-export function VenueEditModal({ venue, open, onClose, onSaved }: VenueEditModalProps) {
+export function VenueEditModal({
+  venue,
+  open,
+  onClose,
+  onSaved,
+  onDeleteRequest,
+}: VenueEditModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const updateVenue = useUpdateVenue(venue.id ?? '');
@@ -99,7 +108,7 @@ export function VenueEditModal({ venue, open, onClose, onSaved }: VenueEditModal
     <div className="welcome-modal__backdrop" onClick={onClose} role="presentation">
       <div
         ref={dialogRef}
-        className="welcome-modal team-modal"
+        className="welcome-modal team-modal venue-modal-form"
         role="dialog"
         aria-modal="true"
         aria-labelledby="venue-edit-title"
@@ -145,14 +154,25 @@ export function VenueEditModal({ venue, open, onClose, onSaved }: VenueEditModal
             data-testid="venue-region-field"
           />
         ) : null}
-        <div className="team-modal__actions">
+        <div className="team-modal__actions team-modal__actions--split">
           <button
             type="button"
-            className="team-modal__save"
+            className="team-confirm__danger btn-icon-label"
+            data-testid="venue-edit-delete"
+            onClick={onDeleteRequest}
+            disabled={isPending}
+          >
+            <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
+            Delete venue
+          </button>
+          <button
+            type="button"
+            className="team-modal__save btn-icon-label"
             data-testid="venue-edit-save"
             onClick={() => void handleSave()}
             disabled={isPending}
           >
+            {isPending ? null : <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />}
             {isPending ? 'Saving…' : 'Save'}
           </button>
         </div>

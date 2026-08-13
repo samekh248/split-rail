@@ -55,6 +55,21 @@ export function useUpdateVenue(venueId: string) {
   });
 }
 
+export function useReassignVenueRegion() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ venueId, ...body }: UpdateVenueRequest & { venueId: string }) =>
+      apiFetch<VenueResponse>(`/venues/${venueId}`, {
+        method: 'PUT',
+        body: JSON.stringify(body),
+        skipVenueContext: true,
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['venues'] });
+    },
+  });
+}
+
 export function useDeleteVenue() {
   const queryClient = useQueryClient();
   const { activeVenueId } = useActiveVenue();

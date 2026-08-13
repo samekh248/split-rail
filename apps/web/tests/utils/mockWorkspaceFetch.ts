@@ -342,6 +342,27 @@ export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
         };
       }
 
+      const venuePutMatch = url.match(/\/venues\/([^/]+)$/);
+      if (venuePutMatch && method === 'PUT') {
+        const venueId = venuePutMatch[1]!;
+        const body = init?.body ? JSON.parse(String(init.body)) : {};
+        const existing = venueList.find((venue) => venue.id === venueId);
+        if (!existing) {
+          return {
+            ok: false,
+            status: 404,
+            json: () => Promise.resolve({ detail: 'Venue not found' }),
+          };
+        }
+        const updated: VenueResponse = { ...existing, name: body.name, regionId: body.regionId ?? null };
+        venueList = venueList.map((venue) => (venue.id === venueId ? updated : venue));
+        return {
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(updated),
+        };
+      }
+
       if (url.match(/\/venues$/) && method === 'GET') {
         return {
           ok: venuesOk,

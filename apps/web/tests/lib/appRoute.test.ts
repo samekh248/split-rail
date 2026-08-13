@@ -3,14 +3,12 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
   buildEventWorkspacePath,
   getAppPath,
-  getCreateVenueRegionIdFromUrl,
   getDashboardPath,
   getInviteTokenFromUrl,
   isEventWorkspacePath,
   navigateReturnToApp,
   navigateToAcceptInvite,
   navigateToBooking,
-  navigateToCreateVenue,
   navigateToDashboard,
   navigateToVenues,
   navigateToIntegrationsSettings,
@@ -143,37 +141,14 @@ describe('appRoute', () => {
     expect(result.current).toBe('/venues');
   });
 
-  it('navigateToCreateVenue updates path, encodes the region id, and hook state', () => {
-    const { result } = renderHook(() => useAppRoute());
-    act(() => navigateToCreateVenue('region a'));
-    expect(window.location.pathname).toBe('/venues/new');
-    expect(window.location.search).toBe('?regionId=region%20a');
-    expect(result.current).toBe('/venues/new');
-  });
-
-  it('getCreateVenueRegionIdFromUrl parses regionId on /venues/new', () => {
-    window.history.pushState({}, '', '/venues/new?regionId=region-a');
-    expect(getCreateVenueRegionIdFromUrl()).toBe('region-a');
-  });
-
-  it('getCreateVenueRegionIdFromUrl returns null on other paths', () => {
-    window.history.pushState({}, '', '/venues?regionId=region-a');
-    expect(getCreateVenueRegionIdFromUrl()).toBeNull();
-  });
-
-  it('getCreateVenueRegionIdFromUrl returns null when regionId is absent', () => {
-    window.history.pushState({}, '', '/venues/new');
-    expect(getCreateVenueRegionIdFromUrl()).toBeNull();
-  });
-
   it('navigateToSettings captures return path and navigateReturnToApp restores it', () => {
-    window.history.pushState({}, '', '/venues/new');
+    window.history.pushState({}, '', '/venues');
     const { result } = renderHook(() => useAppRoute());
     act(() => navigateToSettings());
     expect(result.current).toBe('/settings');
-    expect(readSettingsReturnPath()).toBe('/venues/new');
+    expect(readSettingsReturnPath()).toBe('/venues');
     act(() => navigateReturnToApp());
-    expect(result.current).toBe('/venues/new');
+    expect(result.current).toBe('/venues');
   });
 
   it('navigateToSettings and navigateToTeamSettings update path', () => {

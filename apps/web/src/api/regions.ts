@@ -1,6 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
-import type { CreateRegionRequest, RegionResponse, UpdateRegionRequest } from '@/types/generated-api';
+import type {
+  CreateRegionRequest,
+  DeleteRegionRequest,
+  RegionResponse,
+  UpdateRegionRequest,
+} from '@/types/generated-api';
 
 export function regionsQueryKey() {
   return ['regions'] as const;
@@ -38,8 +43,14 @@ export function useUpdateRegion(regionId: string) {
 export function useDeleteRegion() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (regionId: string) =>
-      apiFetch<void>(`/regions/${regionId}`, { method: 'DELETE' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: regionsQueryKey() }),
+    mutationFn: ({ regionId, ...body }: DeleteRegionRequest & { regionId: string }) =>
+      apiFetch<void>(`/regions/${regionId}`, {
+        method: 'DELETE',
+        body: JSON.stringify(body),
+      }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: regionsQueryKey() });
+      void queryClient.invalidateQueries({ queryKey: ['venues'] });
+    },
   });
 }

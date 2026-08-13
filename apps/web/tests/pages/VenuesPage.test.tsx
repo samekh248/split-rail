@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -118,14 +118,13 @@ describe('VenuesPage', () => {
     expect(screen.queryByRole('button', { name: 'Add venue' })).not.toBeInTheDocument();
   });
 
-  it('hides edit and delete for read-only users', async () => {
+  it('hides edit for read-only users', async () => {
     mockWorkspaceFetch({ profile: workspaceMemberProfile, venues: [VENUE_A] });
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
     await screen.findByText('Hall A');
     expect(screen.queryByTestId(`edit-venue-${VENUE_A.id}`)).not.toBeInTheDocument();
-    expect(screen.queryByTestId(`delete-venue-${VENUE_A.id}`)).not.toBeInTheDocument();
   });
 
   it('opens edit modal from list', async () => {
@@ -138,29 +137,81 @@ describe('VenuesPage', () => {
     expect(screen.getByTestId('venue-edit-modal')).toBeInTheDocument();
   });
 
-  it('deletes a venue from confirm dialog', async () => {
+  it('deletes a venue via the delete button inside the edit modal', async () => {
     mockWorkspaceFetch({ venues: [VENUE_A] });
     const user = userEvent.setup();
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
-    await user.click(await screen.findByTestId(`delete-venue-${VENUE_A.id}`));
+    await user.click(await screen.findByTestId(`edit-venue-${VENUE_A.id}`));
+    expect(screen.getByTestId('venue-edit-modal')).toBeInTheDocument();
+
+    await user.click(screen.getByTestId('venue-edit-delete'));
+    expect(await screen.findByTestId('delete-venue-confirm')).toBeInTheDocument();
+
     await user.click(screen.getByTestId('delete-venue-confirm-button'));
 
     await waitFor(() => {
       expect(screen.queryByTestId('delete-venue-confirm')).not.toBeInTheDocument();
+      expect(screen.queryByTestId('venue-edit-modal')).not.toBeInTheDocument();
     });
   });
 
-  it('navigates to the region-scoped create page from a region\'s Add venue button', async () => {
+  it('canceling delete from the edit modal returns to the edit form', async () => {
+    mockWorkspaceFetch({ venues: [VENUE_A] });
+    const user = userEvent.setup();
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await user.click(await screen.findByTestId(`edit-venue-${VENUE_A.id}`));
+    await user.click(screen.getByTestId('venue-edit-delete'));
+    const confirmDialog = await screen.findByTestId('delete-venue-confirm');
+
+    await user.click(within(confirmDialog).getByRole('button', { name: 'Close' }));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('delete-venue-confirm')).not.toBeInTheDocument();
+    });
+    expect(screen.getByTestId('venue-edit-modal')).toBeInTheDocument();
+  });
+
+  it("opens the Add venue modal from a region's Add venue button without navigating away", async () => {
     mockWorkspaceFetch({ venues: [VENUE_A], regions: [REGION_WEST, REGION_EAST] });
     const user = userEvent.setup();
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
     await user.click(await screen.findByTestId(`venues-add-venue-${REGION_WEST.id}`));
-    expect(getAppPath()).toBe('/venues/new');
-    expect(window.location.search).toBe(`?regionId=${REGION_WEST.id}`);
+
+    const modal = await screen.findByTestId('venue-add-modal');
+    expect(within(modal).getByText(new RegExp(REGION_WEST.name))).toBeInTheDocument();
+    expect(getAppPath()).toBe('/venues');
+  });
+
+  it('creates a venue via the Add venue modal tied to the correct region', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      regions: [REGION_WEST, REGION_EAST],
+      createdVenue: {
+        id: 'dddddddd-dddd-dddd-dddd-dddddddddddd',
+        name: 'The Roxy',
+        organizationId: 'org-1',
+        createdAt: '2026-06-04T00:00:00Z',
+        regionId: REGION_WEST.id,
+      },
+    });
+    const user = userEvent.setup();
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await user.click(await screen.findByTestId(`venues-add-venue-${REGION_WEST.id}`));
+    await user.type(screen.getByLabelText('Venue name'), 'The Roxy');
+    await user.click(screen.getByTestId('venue-add-save'));
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('venue-add-modal')).not.toBeInTheDocument();
+    });
+    expect(getAppPath()).toBe('/venues');
   });
 
   it('does not render an Add venue button on the Unassigned section', async () => {
@@ -195,6 +246,28 @@ describe('VenuesPage', () => {
     expect(await screen.findByTestId('venues-manage-regions')).toBeInTheDocument();
     await user.click(screen.getByTestId('venues-manage-regions'));
     expect(screen.getByTestId('booking-region-panel')).toBeInTheDocument();
+  });
+
+  it('drag-and-drop reassigns a venue to a different region end-to-end (US1)', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A, VENUE_B],
+      regions: [REGION_WEST, REGION_EAST],
+    });
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await screen.findByTestId(`venue-drag-handle-${VENUE_A.id}`);
+    fireEvent.dragStart(screen.getByTestId(`venue-drag-handle-${VENUE_A.id}`));
+    fireEvent.drop(screen.getByTestId(`venues-region-table-${REGION_EAST.id}`));
+
+    await waitFor(() => {
+      const eastSection = screen.getByTestId(`venues-region-section-${REGION_EAST.id}`);
+      expect(eastSection).toHaveTextContent('Hall A');
+      expect(eastSection).toHaveTextContent('Hall B');
+    });
+    expect(
+      screen.getByTestId(`venues-region-section-${REGION_WEST.id}`),
+    ).not.toHaveTextContent('Hall A');
   });
 
   it('hides manage regions for read-only users', async () => {

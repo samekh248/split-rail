@@ -1,3 +1,5 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPen, faRotate } from '@fortawesome/free-solid-svg-icons';
 import { LoadingPlaceholder } from '@/components/shell/LoadingPlaceholder';
 import type { VenueResponse } from '@/types/generated-api';
 
@@ -8,7 +10,6 @@ export interface VenueListProps {
   isError?: boolean;
   onRetry?: () => void;
   onEdit: (venue: VenueResponse) => void;
-  onDelete: (venue: VenueResponse) => void;
 }
 
 function formatCreatedAt(createdAt?: string | null): string {
@@ -33,7 +34,6 @@ export function VenueList({
   isError = false,
   onRetry,
   onEdit,
-  onDelete,
 }: VenueListProps) {
   if (isLoading) {
     return (
@@ -55,7 +55,8 @@ export function VenueList({
         <div className="venues-list__message venues-list__message--error" role="alert">
           <p>Unable to load venues.</p>
           {onRetry ? (
-            <button type="button" className="btn-secondary" onClick={onRetry}>
+            <button type="button" className="btn-secondary btn-icon-label" onClick={onRetry}>
+              <FontAwesomeIcon icon={faRotate} aria-hidden="true" />
               Retry
             </button>
           ) : null}
@@ -86,7 +87,11 @@ export function VenueList({
             <tr>
               <th scope="col">Name</th>
               <th scope="col">Created</th>
-              {canManage ? <th scope="col">Actions</th> : null}
+              {canManage ? (
+                <th scope="col" className="venues-table__actions-col">
+                  Actions
+                </th>
+              ) : null}
             </tr>
           </thead>
           <tbody>
@@ -101,17 +106,12 @@ export function VenueList({
                     <div className="team-table__actions">
                       <button
                         type="button"
+                        className="btn-icon-label"
                         data-testid={`edit-venue-${venue.id}`}
                         onClick={() => onEdit(venue)}
                       >
+                        <FontAwesomeIcon icon={faPen} aria-hidden="true" />
                         Edit
-                      </button>
-                      <button
-                        type="button"
-                        data-testid={`delete-venue-${venue.id}`}
-                        onClick={() => onDelete(venue)}
-                      >
-                        Delete
                       </button>
                     </div>
                   </td>
