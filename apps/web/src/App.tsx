@@ -4,7 +4,6 @@ import { DashboardOverviewPage } from '@/pages/DashboardOverviewPage';
 import { AccountingOverviewPage } from '@/pages/AccountingOverviewPage';
 import { EventWorkspacePage } from '@/pages/EventWorkspacePage';
 import { VenuesPage } from '@/pages/VenuesPage';
-import { CreateVenuePage } from '@/pages/CreateVenuePage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { SettingsLandingPage } from '@/pages/SettingsLandingPage';
@@ -128,8 +127,6 @@ export default function App() {
           <EventWorkspacePage />
         ) : appPath === '/venues' ? (
           <VenuesPage />
-        ) : appPath === '/venues/new' ? (
-          <CreateVenuePage />
         ) : appPath === '/accounting' ? (
           <AccountingOverviewPage />
         ) : appPath === '/booking' ? (

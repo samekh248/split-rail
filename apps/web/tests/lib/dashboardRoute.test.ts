@@ -2,7 +2,6 @@ import { renderHook, act } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
   getDashboardPath,
-  navigateToCreateVenue,
   navigateToDashboard,
   navigateToVenues,
   navigateToEventWorkspace,
@@ -18,11 +17,6 @@ describe('dashboardRoute', () => {
     expect(getDashboardPath()).toBe('/');
   });
 
-  it('getDashboardPath returns /venues/new on create path', () => {
-    window.history.pushState({}, '', '/venues/new');
-    expect(getDashboardPath()).toBe('/venues/new');
-  });
-
   it('getDashboardPath returns /venues on venues list path', () => {
     window.history.pushState({}, '', '/venues');
     expect(getDashboardPath()).toBe('/venues');
@@ -35,17 +29,8 @@ describe('dashboardRoute', () => {
     expect(result.current).toBe('/venues');
   });
 
-  it('navigateToCreateVenue updates path and hook state', () => {
-    const { result } = renderHook(() => useDashboardRoute());
-    expect(result.current).toBe('/');
-
-    act(() => navigateToCreateVenue('region-a'));
-    expect(window.location.pathname).toBe('/venues/new');
-    expect(result.current).toBe('/venues/new');
-  });
-
   it('navigateToDashboard returns to root', () => {
-    window.history.pushState({}, '', '/venues/new');
+    window.history.pushState({}, '', '/venues');
     const { result } = renderHook(() => useDashboardRoute());
 
     act(() => navigateToDashboard());

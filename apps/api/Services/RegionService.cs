@@ -96,7 +96,10 @@ public class RegionService
         return ToRegionResponse(region, region.Venues.Count);
     }
 
-    public async Task DeleteRegionAsync(Guid regionId, CancellationToken cancellationToken = default)
+    public async Task DeleteRegionAsync(
+        Guid regionId,
+        DeleteRegionRequest? request = null,
+        CancellationToken cancellationToken = default)
     {
         if (_tenantContext.OrganizationId is not Guid orgId)
             throw new AuthorizationException();
@@ -107,7 +110,28 @@ public class RegionService
             ?? throw new NotFoundException("Region not found.");
 
         if (region.Venues.Count > 0)
-            throw new ConflictException("Region has assigned venues. Reassign venues before deleting.");
+        {
+            if (request?.MoveVenuesToRegionId is Guid destinationId)
+            {
+                if (destinationId == regionId)
+                    throw new ValidationException("Cannot move venues into the region being deleted.");
+
+                var destination = await _db.Regions
+                    .FirstOrDefaultAsync(r => r.Id == destinationId && r.OrganizationId == orgId, cancellationToken)
+                    ?? throw new NotFoundException("Destination region not found.");
+
+                foreach (var venue in region.Venues)
+                    venue.RegionId = destination.Id;
+            }
+            else if (request?.DeleteVenues == true)
+            {
+                _db.Venues.RemoveRange(region.Venues);
+            }
+            else
+            {
+                throw new ConflictException("Region has assigned venues. Reassign venues before deleting.");
+            }
+        }
 
         _db.Regions.Remove(region);
         await _db.SaveChangesAsync(cancellationToken);

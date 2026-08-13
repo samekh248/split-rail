@@ -2081,7 +2081,13 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DeleteRegionRequest"];
+                    "text/json": components["schemas"]["DeleteRegionRequest"];
+                    "application/*+json": components["schemas"]["DeleteRegionRequest"];
+                };
+            };
             responses: {
                 /** @description OK */
                 200: {
@@ -3172,6 +3178,11 @@ export interface components {
             actionCenter?: components["schemas"]["ActionCenterDto"];
             financialHealth?: components["schemas"]["FinancialHealthDto"];
         };
+        DeleteRegionRequest: {
+            /** Format: uuid */
+            moveVenuesToRegionId?: string | null;
+            deleteVenues?: boolean;
+        };
         EditabilityDto: {
             proforma?: string | null;
             settlement?: string | null;
@@ -3753,6 +3764,7 @@ export type CreateRegionRequest = components['schemas']['CreateRegionRequest'];
 export type CreateTrackingMappingRequest = components['schemas']['CreateTrackingMappingRequest'];
 export type CreateVenueRequest = components['schemas']['CreateVenueRequest'];
 export type DashboardResponse = components['schemas']['DashboardResponse'];
+export type DeleteRegionRequest = components['schemas']['DeleteRegionRequest'];
 export type EditabilityDto = components['schemas']['EditabilityDto'];
 export type EventArtistDto = components['schemas']['EventArtistDto'];
 export type EventCardDto = components['schemas']['EventCardDto'];

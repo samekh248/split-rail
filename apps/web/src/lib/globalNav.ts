@@ -43,7 +43,7 @@ export const GLOBAL_NAV_ITEMS: GlobalNavItemConfig[] = [
     id: 'venues',
     label: 'Venues',
     navigate: navigateToVenues,
-    matchPaths: ['/venues', '/venues/new'],
+    matchPaths: ['/venues'],
   },
   {
     id: 'booking',
@@ -54,7 +54,7 @@ export const GLOBAL_NAV_ITEMS: GlobalNavItemConfig[] = [
 ];
 
 export function matchesDashboardNavPath(pathname: string): boolean {
-  if (pathname === '/' || pathname === '/venues' || pathname === '/venues/new') {
+  if (pathname === '/' || pathname === '/venues') {
     return false;
   }
   return isEventWorkspacePath(pathname);

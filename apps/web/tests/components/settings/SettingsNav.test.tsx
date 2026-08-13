@@ -61,12 +61,12 @@ describe('SettingsNav', () => {
 
   it('returns to the saved app path from Return to App', async () => {
     window.history.pushState({}, '', '/settings/team');
-    writeSettingsReturnPath('/venues/new');
+    writeSettingsReturnPath('/venues');
     const user = userEvent.setup();
     render(<SettingsNav variant="sidebar" />);
 
     await user.click(screen.getByRole('button', { name: 'Return to App' }));
-    expect(getAppPath()).toBe('/venues/new');
+    expect(getAppPath()).toBe('/venues');
   });
 
   it('renders horizontal variant for legacy top-bar layout', () => {

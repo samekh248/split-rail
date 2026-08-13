@@ -11,3 +11,5 @@ public record RegionResponse(
 public record CreateRegionRequest(string Name, string? Notes);
 
 public record UpdateRegionRequest(string Name, string? Notes);
+
+public record DeleteRegionRequest(Guid? MoveVenuesToRegionId = null, bool DeleteVenues = false);

@@ -36,15 +36,10 @@ describe('settingsReturnStorage', () => {
     expect(readSettingsReturnPath()).toBe('/venues');
   });
 
-  it('captures create-venue return path when entering settings from app', () => {
-    captureSettingsReturnPath('/venues/new');
-    expect(readSettingsReturnPath()).toBe('/venues/new');
-  });
-
   it('does not overwrite return path when already in settings', () => {
-    writeSettingsReturnPath('/venues/new');
+    writeSettingsReturnPath('/venues');
     captureSettingsReturnPath('/settings/team');
-    expect(readSettingsReturnPath()).toBe('/venues/new');
+    expect(readSettingsReturnPath()).toBe('/venues');
   });
 
   it('captures workspace return path when entering settings from app', () => {

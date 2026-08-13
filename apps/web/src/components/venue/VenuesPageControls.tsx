@@ -1,3 +1,5 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faMap } from '@fortawesome/free-solid-svg-icons';
 import { SelectField } from '@/components/auth/SelectField';
 import type { RegionFilterOption } from '@/lib/venueListView';
 import type { VenueRegionFilter } from '@/lib/venueListViewStorage';
@@ -50,10 +52,11 @@ export function VenuesPageControls({
       {canManageVenues ? (
         <button
           type="button"
-          className="venues-page-controls__manage-regions btn-secondary"
+          className="venues-page-controls__manage-regions btn-secondary btn-icon-label"
           data-testid="venues-manage-regions"
           onClick={onManageRegions}
         >
+          <FontAwesomeIcon icon={faMap} aria-hidden="true" />
           {hasRegions ? 'Manage regions' : 'Create your first region'}
         </button>
       ) : null}

@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faRotate } from '@fortawesome/free-solid-svg-icons';
 import { LoadingPlaceholder } from '@/components/shell/LoadingPlaceholder';
 import { useRegions } from '@/api/regions';
 import { RegionManagementPanel } from '@/components/booking/RegionManagementPanel';
+import { AddVenueModal } from '@/components/venue/AddVenueModal';
 import { DeleteVenueConfirm } from '@/components/venue/DeleteVenueConfirm';
 import { VenueEditModal } from '@/components/venue/VenueEditModal';
 import { VenueList } from '@/components/venue/VenueList';
@@ -10,7 +13,6 @@ import { VenuesPageControls } from '@/components/venue/VenuesPageControls';
 import { useDeleteVenue } from '@/api/venues';
 import { useUserProfile } from '@/api/user';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
-import { navigateToCreateVenue } from '@/lib/dashboardRoute';
 import {
   buildGroupedSections,
   buildRegionFilterOptions,
@@ -50,6 +52,7 @@ export function VenuesPage() {
   const [editingVenue, setEditingVenue] = useState<VenueResponse | null>(null);
   const [deletingVenue, setDeletingVenue] = useState<VenueResponse | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [addVenueRegionId, setAddVenueRegionId] = useState<string | null>(null);
 
   useEffect(() => {
     writeVenuesPageRegionFilter(regionFilter);
@@ -91,6 +94,7 @@ export function VenuesPage() {
     try {
       await deleteVenue.mutateAsync(deletingVenue.id);
       setDeletingVenue(null);
+      setEditingVenue(null);
     } catch (error) {
       setDeleteError(mapDeleteError(error));
     }
@@ -99,10 +103,6 @@ export function VenuesPage() {
   const listHandlers = {
     canManage: canManageVenues,
     onEdit: setEditingVenue,
-    onDelete: (venue: VenueResponse) => {
-      setDeleteError(null);
-      setDeletingVenue(venue);
-    },
   };
 
   return (
@@ -129,9 +129,10 @@ export function VenuesPage() {
           <p>Unable to load venues. Please try again.</p>
           <button
             type="button"
-            className="dashboard-empty__retry btn-primary"
+            className="dashboard-empty__retry btn-primary btn-icon-label"
             onClick={() => void refetch()}
           >
+            <FontAwesomeIcon icon={faRotate} aria-hidden="true" />
             Retry
           </button>
         </div>
@@ -157,7 +158,7 @@ export function VenuesPage() {
           {hasRegions ? (
             <VenueListGrouped
               sections={groupedSections}
-              onAddVenue={(regionId) => navigateToCreateVenue(regionId)}
+              onAddVenue={setAddVenueRegionId}
               {...listHandlers}
             />
           ) : (
@@ -166,12 +167,28 @@ export function VenuesPage() {
         </section>
       ) : null}
 
+      {addVenueRegionId ? (
+        <AddVenueModal
+          regionId={addVenueRegionId}
+          regionName={
+            regions.find((region) => region.id === addVenueRegionId)?.name ?? 'this region'
+          }
+          open
+          onClose={() => setAddVenueRegionId(null)}
+          onCreated={() => void refetch()}
+        />
+      ) : null}
+
       {editingVenue ? (
         <VenueEditModal
           venue={editingVenue}
           open
           onClose={() => setEditingVenue(null)}
           onSaved={() => void refetch()}
+          onDeleteRequest={() => {
+            setDeleteError(null);
+            setDeletingVenue(editingVenue);
+          }}
         />
       ) : null}
 

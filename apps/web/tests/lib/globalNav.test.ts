@@ -28,10 +28,8 @@ describe('globalNav', () => {
     ).toBe('dashboard');
   });
 
-  it('resolves venues as active on /venues and /venues/new', () => {
+  it('resolves venues as active on /venues', () => {
     expect(resolveActiveGlobalNavId('/venues')).toBe('venues');
-    expect(resolveActiveGlobalNavId('/venues/new')).toBe('venues');
-    expect(resolveActiveGlobalNavId('/venues/new')).not.toBe('dashboard');
   });
 
   it('returns null on settings routes', () => {

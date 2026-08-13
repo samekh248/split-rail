@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { captureSettingsReturnPath, readSettingsReturnPath } from '@/lib/settingsReturnStorage';
 
-export type DashboardPath = '/' | '/venues' | '/venues/new';
+export type DashboardPath = '/' | '/venues';
 
 export type AppPath =
   | DashboardPath
@@ -70,8 +70,6 @@ export function getAppPath(): AppPath | string {
   switch (pathname) {
     case '/venues':
       return '/venues';
-    case '/venues/new':
-      return '/venues/new';
     case '/settings':
       return '/settings';
     case '/settings/team':
@@ -93,9 +91,6 @@ export function getAppPath(): AppPath | string {
 
 export function getDashboardPath(): DashboardPath {
   const path = getAppPath();
-  if (path === '/venues/new') {
-    return '/venues/new';
-  }
   if (path === '/venues') {
     return '/venues';
   }
@@ -109,19 +104,8 @@ export function getInviteTokenFromUrl(): string | null {
   return new URLSearchParams(window.location.search).get('token');
 }
 
-export function getCreateVenueRegionIdFromUrl(): string | null {
-  if (getAppPath() !== '/venues/new') {
-    return null;
-  }
-  return new URLSearchParams(window.location.search).get('regionId');
-}
-
 export function navigateToVenues(): void {
   pushPath('/venues');
-}
-
-export function navigateToCreateVenue(regionId: string): void {
-  pushPath(`/venues/new?regionId=${encodeURIComponent(regionId)}`);
 }
 
 export function navigateToDashboard(): void {
@@ -175,9 +159,6 @@ export function useAppRoute(): AppPath | string {
 
 export function useDashboardRoute(): DashboardPath {
   const appPath = useAppRoute();
-  if (appPath === '/venues/new') {
-    return '/venues/new';
-  }
   if (appPath === '/venues') {
     return '/venues';
   }

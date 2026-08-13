@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFloppyDisk, faPen, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FormField } from '@/components/auth/FormField';
 import { ModalHeader } from '@/components/shell/ModalHeader';
+import { RegionDeleteResolutionModal } from '@/components/venue/RegionDeleteResolutionModal';
 import { useCreateRegion, useDeleteRegion, useRegions, useUpdateRegion } from '@/api/regions';
+import type { RegionResponse } from '@/types/generated-api';
 
 export interface RegionManagementPanelProps {
   open: boolean;
@@ -18,6 +22,7 @@ export function RegionManagementPanel({ open, onClose }: RegionManagementPanelPr
   const [notes, setNotes] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deleteResolutionRegion, setDeleteResolutionRegion] = useState<RegionResponse | null>(null);
   const updateRegion = useUpdateRegion(editingId ?? '');
 
   useEffect(() => {
@@ -119,7 +124,9 @@ export function RegionManagementPanel({ open, onClose }: RegionManagementPanelPr
                 <tr>
                   <th scope="col">Name</th>
                   <th scope="col">Venues</th>
-                  <th scope="col">Actions</th>
+                  <th scope="col" className="region-panel__actions-col">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -131,21 +138,34 @@ export function RegionManagementPanel({ open, onClose }: RegionManagementPanelPr
                       <div className="team-table__actions">
                         <button
                           type="button"
+                          className="btn-icon-label"
                           data-testid={`edit-region-${region.id}`}
                           disabled={isPending}
                           onClick={() => startEditing(region)}
                         >
+                          <FontAwesomeIcon icon={faPen} aria-hidden="true" />
                           Edit
                         </button>
                         <button
                           type="button"
+                          className="btn-icon-label"
                           data-testid={`delete-region-${region.id}`}
                           disabled={isPending}
-                          onClick={() =>
-                            region.id &&
-                            deleteRegion.mutate(region.id, { onSuccess: () => void refetch() })
-                          }
+                          onClick={() => {
+                            if (!region.id) {
+                              return;
+                            }
+                            if ((region.venueCount ?? 0) > 0) {
+                              setDeleteResolutionRegion(region);
+                              return;
+                            }
+                            deleteRegion.mutate(
+                              { regionId: region.id },
+                              { onSuccess: () => void refetch() },
+                            );
+                          }}
                         >
+                          <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
                           Delete
                         </button>
                       </div>
@@ -193,13 +213,24 @@ export function RegionManagementPanel({ open, onClose }: RegionManagementPanelPr
               {error}
             </p>
           ) : null}
-          <div className="team-modal__actions">
+          <div
+            className={
+              editingId ? 'team-modal__actions team-modal__actions--split' : 'team-modal__actions'
+            }
+          >
             {editingId ? (
               <button type="button" className="btn-secondary" disabled={isPending} onClick={resetForm}>
                 Cancel edit
               </button>
             ) : null}
-            <button type="submit" className="team-modal__save" disabled={isPending || !name.trim()}>
+            <button
+              type="submit"
+              className="team-modal__save btn-icon-label"
+              disabled={isPending || !name.trim()}
+            >
+              {isPending ? null : (
+                <FontAwesomeIcon icon={editingId ? faFloppyDisk : faPlus} aria-hidden="true" />
+              )}
               {editingId
                 ? updateRegion.isPending
                   ? 'Saving…'
@@ -211,6 +242,14 @@ export function RegionManagementPanel({ open, onClose }: RegionManagementPanelPr
           </div>
         </form>
       </div>
+      {deleteResolutionRegion ? (
+        <RegionDeleteResolutionModal
+          region={deleteResolutionRegion}
+          open
+          onClose={() => setDeleteResolutionRegion(null)}
+          onDeleted={() => void refetch()}
+        />
+      ) : null}
     </div>
   );
 }

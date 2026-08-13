@@ -40,9 +40,12 @@ public class RegionsController : ControllerBase
 
     [HttpDelete("{regionId:guid}")]
     [RequirePermission(PermissionNames.ManagePermissions)]
-    public async Task<IActionResult> Delete(Guid regionId, CancellationToken cancellationToken)
+    public async Task<IActionResult> Delete(
+        Guid regionId,
+        [FromBody] DeleteRegionRequest? request,
+        CancellationToken cancellationToken)
     {
-        await _regionService.DeleteRegionAsync(regionId, cancellationToken);
+        await _regionService.DeleteRegionAsync(regionId, request, cancellationToken);
         return NoContent();
     }
 }
