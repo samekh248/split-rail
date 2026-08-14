@@ -56,6 +56,7 @@ export async function login(request: LoginRequest): Promise<AuthResponse> {
   const response = await apiFetch<AuthResponse>('/auth/login', {
     method: 'POST',
     body: JSON.stringify(request),
+    skipAuthRecovery: true,
   });
   if (response.accessToken && response.refreshToken) {
     setTokens(response.accessToken, response.refreshToken);
@@ -67,6 +68,7 @@ export async function registerUser(request: RegisterRequest): Promise<RegisterRe
   return apiFetch<RegisterResponse>('/auth/register', {
     method: 'POST',
     body: JSON.stringify(request),
+    skipAuthRecovery: true,
   });
 }
 
