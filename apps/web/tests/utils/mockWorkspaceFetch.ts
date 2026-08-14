@@ -42,6 +42,7 @@ export interface MockWorkspaceFetchOptions {
   dashboardError?: boolean;
   pinError?: boolean;
   createdEvent?: EventResponse;
+  createdFestivalEventId?: string;
   createdVenue?: VenueResponse;
   createVenueStatus?: number;
   regions?: RegionResponse[];
@@ -145,6 +146,7 @@ export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
     dashboardError = false,
     pinError = false,
     createdEvent,
+    createdFestivalEventId = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeef',
     createdVenue = DEFAULT_CREATED_VENUE,
     createVenueStatus = 201,
     venueQboStatusByVenue = {},
@@ -257,6 +259,43 @@ export function mockWorkspaceFetch(options: MockWorkspaceFetchOptions = {}) {
           ok: true,
           status: 200,
           json: () => Promise.resolve(result),
+        };
+      }
+
+      const festivalsPostMatch = url.match(/\/venues\/([^/]+)\/festivals$/);
+      if (festivalsPostMatch && method === 'POST') {
+        const venueId = festivalsPostMatch[1]!;
+        const body = init?.body ? JSON.parse(String(init.body)) : {};
+        eventLists[venueId] = [
+          ...(eventLists[venueId] ?? []),
+          {
+            eventId: createdFestivalEventId,
+            venueId,
+            title: body.title,
+            eventDate: body.startDate,
+            endDate: body.endDate,
+            eventType: 'FESTIVAL',
+            status: 'PRE_SHOW',
+            isBudgetLocked: false,
+            qboTagName: '#Fest-2026',
+          } as EventResponse,
+        ];
+        return {
+          ok: true,
+          status: 201,
+          json: () =>
+            Promise.resolve({
+              eventId: createdFestivalEventId,
+              venueId,
+              title: body.title,
+              startDate: body.startDate,
+              endDate: body.endDate,
+              eventType: 'FESTIVAL',
+              status: 'PRE_SHOW',
+              qboTagName: '#Fest-2026',
+              days: [],
+              stages: [],
+            }),
         };
       }
 

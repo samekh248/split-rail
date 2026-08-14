@@ -53,6 +53,12 @@ const allPermissions: PermissionsDto = {
   canTriggerQboSync: true,
   canMapQboAccounts: true,
   canViewFinancials: true,
+  canManageFestivalSchedule: true,
+  canManageAllocations: true,
+  canAdjustSettlements: true,
+  canFinalizeSettlements: true,
+  canOverrideSettlements: true,
+  canPublishPublicItinerary: true,
 };
 
 const noPermissions: PermissionsDto = {
@@ -64,6 +70,12 @@ const noPermissions: PermissionsDto = {
   canTriggerQboSync: false,
   canMapQboAccounts: false,
   canViewFinancials: false,
+  canManageFestivalSchedule: false,
+  canManageAllocations: false,
+  canAdjustSettlements: false,
+  canFinalizeSettlements: false,
+  canOverrideSettlements: false,
+  canPublishPublicItinerary: false,
 };
 
 /** Full-access role: every permission-gated control should render. */

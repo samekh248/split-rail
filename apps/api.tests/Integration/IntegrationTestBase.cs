@@ -672,4 +672,36 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
         return Environment.GetEnvironmentVariable("PROCESSOR_ARCHITECTURE") is "AMD64" or "x86";
     }
+
+    protected async Task<Guid> SeedFestivalQboTransactionAsync(
+        string accessToken,
+        Guid eventId,
+        Guid venueId,
+        string qboTransactionId,
+        decimal amount,
+        QboReviewState reviewState = QboReviewState.None)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
+        var (userId, orgId) = ParseTokenClaims(accessToken);
+        tenantContext.SetContext(userId, orgId);
+
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var txn = new UnmappedQboTransaction
+        {
+            Id = Guid.NewGuid(),
+            EventId = eventId,
+            VenueId = venueId,
+            QboTransactionId = qboTransactionId,
+            QboAccountId = "acct-prod",
+            QboAccountName = "Production",
+            Amount = amount,
+            TransactionDate = DateOnly.FromDateTime(DateTime.UtcNow),
+            SyncedAt = DateTimeOffset.UtcNow,
+            ReviewState = reviewState
+        };
+        db.UnmappedQboTransactions.Add(txn);
+        await db.SaveChangesAsync();
+        return txn.Id;
+    }
 }

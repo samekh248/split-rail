@@ -137,7 +137,13 @@ public class OrganizationService
             CanReverseSettlement = true,
             CanTriggerQboSync = true,
             CanMapQboAccounts = true,
-            CanViewFinancials = true
+            CanViewFinancials = true,
+            CanManageFestivalSchedule = true,
+            CanManageAllocations = true,
+            CanAdjustSettlements = true,
+            CanFinalizeSettlements = true,
+            CanOverrideSettlements = true,
+            CanPublishPublicItinerary = true
         },
         new()
         {
@@ -147,7 +153,15 @@ public class OrganizationService
             CanLockBudget = true,
             CanEditSettlement = true,
             CanSignSettlement = true,
-            CanViewFinancials = true
+            CanViewFinancials = true,
+            // Venue/event managers carry broad festival authority per the PRD, including
+            // settlement override and public-itinerary publishing.
+            CanManageFestivalSchedule = true,
+            CanManageAllocations = true,
+            CanAdjustSettlements = true,
+            CanFinalizeSettlements = true,
+            CanOverrideSettlements = true,
+            CanPublishPublicItinerary = true
         },
         new()
         {

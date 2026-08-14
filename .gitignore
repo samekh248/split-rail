@@ -23,6 +23,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# Firebase Hosting deploy cache
+apps/web/.firebase/
+
 # Playwright E2E
 tests/e2e/node_modules/
 tests/e2e/test-results/

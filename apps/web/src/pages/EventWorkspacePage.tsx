@@ -4,10 +4,13 @@ import { VenueSwitcher } from '@/components/venue/VenueSwitcher';
 import { EventCombobox } from '@/components/event/EventCombobox';
 import { EventFormPanel } from '@/components/event/EventFormPanel';
 import { EventDeleteConfirm } from '@/components/event/EventDeleteConfirm';
+import { FestivalModeCard } from '@/components/festival/FestivalModeCard';
 import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
 import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from '@/api/events';
+import { useCreateFestival } from '@/api/festivals';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import { useCanManageEvents } from '@/hooks/useCanManageEvents';
+import { useCanManageFestivalSchedule } from '@/hooks/useFestivalPermissions';
 import {
   buildEventWorkspacePath,
   navigateToBooking,
@@ -32,6 +35,7 @@ export function EventWorkspacePage() {
     : null;
 
   const canManageEvents = useCanManageEvents();
+  const canManageFestivalSchedule = useCanManageFestivalSchedule();
   const { venues, activeVenueId, isLoading, isError, refetch, activateVenueId } = useActiveVenue();
   const {
     data: events = [],
@@ -47,6 +51,7 @@ export function EventWorkspacePage() {
   const venueSyncedRef = useRef(false);
 
   const createEvent = useCreateEvent(activeVenueId);
+  const createFestival = useCreateFestival(activeVenueId ?? '');
   const updateEvent = useUpdateEvent(activeVenueId, editingEvent?.eventId ?? null);
   const deleteEvent = useDeleteEvent(activeVenueId);
 
@@ -275,7 +280,7 @@ export function EventWorkspacePage() {
       {showEventPanel && panelMode === 'create' ? (
         <EventFormPanel
           mode="create"
-          isPending={createEvent.isPending}
+          isPending={createEvent.isPending || createFestival.isPending}
           onCancel={() => setPanelMode('closed')}
           onSubmit={async (values) => {
             const created = await createEvent.mutateAsync({
@@ -285,6 +290,21 @@ export function EventWorkspacePage() {
             });
             handleCreateSuccess(created);
           }}
+          onCreateFestival={
+            canManageFestivalSchedule
+              ? async (values) => {
+                  const festival = await createFestival.mutateAsync({
+                    title: values.title,
+                    startDate: values.startDate,
+                    endDate: values.endDate,
+                  });
+                  if (festival.eventId && activeVenueId) {
+                    navigateToEventWorkspace(activeVenueId, festival.eventId);
+                  }
+                  setPanelMode('closed');
+                }
+              : undefined
+          }
         />
       ) : null}
 
@@ -333,6 +353,14 @@ export function EventWorkspacePage() {
               }
             });
           }}
+        />
+      ) : null}
+
+      {showLedger && selectedEventId && activeVenueId ? (
+        <FestivalModeCard
+          venueId={activeVenueId}
+          event={selectedEvent}
+          canManage={canManageFestivalSchedule}
         />
       ) : null}
 

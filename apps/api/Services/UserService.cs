@@ -227,5 +227,11 @@ public class UserService
             role.CanReverseSettlement,
             role.CanTriggerQboSync,
             role.CanMapQboAccounts,
-            role.CanViewFinancials));
+            role.CanViewFinancials,
+            role.CanManageFestivalSchedule,
+            role.CanManageAllocations,
+            role.CanAdjustSettlements,
+            role.CanFinalizeSettlements,
+            role.CanOverrideSettlements,
+            role.CanPublishPublicItinerary));
 }

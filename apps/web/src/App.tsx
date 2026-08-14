@@ -3,6 +3,10 @@ import { BookingCalendarPage } from '@/pages/BookingCalendarPage';
 import { DashboardOverviewPage } from '@/pages/DashboardOverviewPage';
 import { AccountingOverviewPage } from '@/pages/AccountingOverviewPage';
 import { EventWorkspacePage } from '@/pages/EventWorkspacePage';
+import { BlockSettlementPage } from '@/pages/BlockSettlementPage';
+import { FestivalItineraryRoute } from '@/pages/FestivalItineraryRoute';
+import { FestivalLedgerPage } from '@/pages/FestivalLedgerPage';
+import { FestivalReportsPage } from '@/pages/FestivalReportsPage';
 import { VenuesPage } from '@/pages/VenuesPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
@@ -16,7 +20,7 @@ import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { AppShell } from '@/components/shell/AppShell';
 import { useAuth } from '@/auth/useAuth';
 import { VenueProvider } from '@/venue/VenueContext';
-import { parseEventWorkspacePath, useAppRoute } from '@/lib/appRoute';
+import { parseEventWorkspacePath, parseFestivalItineraryPath, parseFestivalLedgerPath, parseFestivalReportsPath, parseBlockSettlementPath, useAppRoute } from '@/lib/appRoute';
 
 function AuthenticatedShell({
   sidebarNavigation = 'global',
@@ -119,11 +123,40 @@ export default function App() {
 
   const workspaceRoute =
     typeof appPath === 'string' ? parseEventWorkspacePath(appPath) : null;
+  const festivalItineraryRoute =
+    typeof appPath === 'string' ? parseFestivalItineraryPath(appPath) : null;
+  const festivalLedgerRoute =
+    typeof appPath === 'string' ? parseFestivalLedgerPath(appPath) : null;
+  const festivalReportsRoute =
+    typeof appPath === 'string' ? parseFestivalReportsPath(appPath) : null;
+  const blockSettlementRoute =
+    typeof appPath === 'string' ? parseBlockSettlementPath(appPath) : null;
 
   return (
     <>
       <AuthenticatedShell>
-        {workspaceRoute ? (
+        {blockSettlementRoute ? (
+          <BlockSettlementPage
+            venueId={blockSettlementRoute.venueId}
+            eventId={blockSettlementRoute.eventId}
+            blockId={blockSettlementRoute.blockId}
+          />
+        ) : festivalReportsRoute ? (
+          <FestivalReportsPage
+            venueId={festivalReportsRoute.venueId}
+            eventId={festivalReportsRoute.eventId}
+          />
+        ) : festivalLedgerRoute ? (
+          <FestivalLedgerPage
+            venueId={festivalLedgerRoute.venueId}
+            eventId={festivalLedgerRoute.eventId}
+          />
+        ) : festivalItineraryRoute ? (
+          <FestivalItineraryRoute
+            venueId={festivalItineraryRoute.venueId}
+            eventId={festivalItineraryRoute.eventId}
+          />
+        ) : workspaceRoute ? (
           <EventWorkspacePage />
         ) : appPath === '/venues' ? (
           <VenuesPage />

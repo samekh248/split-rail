@@ -17,10 +17,128 @@ namespace SplitRail.Api.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.28")
+                .HasAnnotation("ProductVersion", "8.0.30")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("SplitRail.Api.Models.BlockSettlementLineItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<decimal>("Amount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(12,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("amount");
+
+                    b.Property<DateTimeOffset>("EnteredAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("entered_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("EnteredByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entered_by_user_id");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("label");
+
+                    b.Property<string>("LineType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("line_type");
+
+                    b.Property<Guid>("ProgrammingBlockId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("programming_block_id");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProgrammingBlockId")
+                        .HasDatabaseName("ix_block_settlement_line_items_block_id");
+
+                    b.ToTable("block_settlement_line_items", (string)null);
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.BlockSettlementRevision", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("DispatchOutcome")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("dispatch_outcome");
+
+                    b.Property<DateTimeOffset>("FinalizedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finalized_at");
+
+                    b.Property<Guid>("FinalizedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("finalized_by_user_id");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.Property<string>("PdfUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("pdf_url");
+
+                    b.Property<Guid>("ProgrammingBlockId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("programming_block_id");
+
+                    b.Property<string>("ReasonCode")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("reason_code");
+
+                    b.Property<DateTimeOffset?>("ReopenedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reopened_at");
+
+                    b.Property<Guid?>("ReopenedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("reopened_by_user_id");
+
+                    b.Property<int>("RevisionNumber")
+                        .HasColumnType("integer")
+                        .HasColumnName("revision_number");
+
+                    b.Property<string>("SnapshotJson")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("snapshot_json");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProgrammingBlockId", "RevisionNumber")
+                        .IsUnique()
+                        .HasDatabaseName("ux_block_settlement_revisions_block_revision");
+
+                    b.ToTable("block_settlement_revisions", (string)null);
+                });
 
             modelBuilder.Entity("SplitRail.Api.Models.Event", b =>
                 {
@@ -56,9 +174,21 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnType("time without time zone")
                         .HasColumnName("doors_time");
 
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date")
+                        .HasColumnName("end_date");
+
                     b.Property<DateOnly>("EventDate")
                         .HasColumnType("date")
                         .HasColumnName("event_date");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("STANDARD")
+                        .HasColumnName("event_type");
 
                     b.Property<bool>("IsBudgetLocked")
                         .ValueGeneratedOnAdd()
@@ -210,6 +340,195 @@ namespace SplitRail.Api.Data.Migrations
                         .HasDatabaseName("IX_event_artists_event_id");
 
                     b.ToTable("event_artists", (string)null);
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.ExpenseAllocation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<decimal>("CalculatedAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(14,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("calculated_amount");
+
+                    b.Property<bool>("CountsTowardSettlement")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("counts_toward_settlement");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("Method")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("method");
+
+                    b.Property<decimal?>("Percentage")
+                        .HasColumnType("numeric(7,4)")
+                        .HasColumnName("percentage");
+
+                    b.Property<Guid?>("SourceLineItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_line_item_id");
+
+                    b.Property<Guid?>("SourceQboTransactionId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_qbo_transaction_id");
+
+                    b.Property<Guid?>("TargetBlockId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_block_id");
+
+                    b.Property<DateOnly?>("TargetDayDate")
+                        .HasColumnType("date")
+                        .HasColumnName("target_day_date");
+
+                    b.Property<Guid?>("TargetStageZoneId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("target_stage_zone_id");
+
+                    b.Property<string>("TargetType")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("target_type");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId")
+                        .HasDatabaseName("ix_expense_allocations_event_id");
+
+                    b.HasIndex("SourceLineItemId")
+                        .HasDatabaseName("ix_expense_allocations_source_line_item_id");
+
+                    b.HasIndex("SourceQboTransactionId")
+                        .HasDatabaseName("ix_expense_allocations_source_qbo_transaction_id");
+
+                    b.HasIndex("TargetBlockId")
+                        .HasDatabaseName("ix_expense_allocations_target_block_id");
+
+                    b.HasIndex("TargetStageZoneId");
+
+                    b.ToTable("expense_allocations", (string)null);
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.FestivalArtist", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ux_festival_artists_event_id_name");
+
+                    b.ToTable("festival_artists", (string)null);
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.FestivalAuditEntry", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Action")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("action");
+
+                    b.Property<Guid>("EntityId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("entity_id");
+
+                    b.Property<string>("EntityType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("entity_type");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("NewValueJson")
+                        .HasColumnType("text")
+                        .HasColumnName("new_value_json");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occurred_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("PriorValueJson")
+                        .HasColumnType("text")
+                        .HasColumnName("prior_value_json");
+
+                    b.Property<string>("Reason")
+                        .HasColumnType("text")
+                        .HasColumnName("reason");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId")
+                        .HasDatabaseName("ix_festival_audit_entries_event_id");
+
+                    b.HasIndex("EntityType", "EntityId")
+                        .HasDatabaseName("ix_festival_audit_entries_entity");
+
+                    b.ToTable("festival_audit_entries", (string)null);
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.FinancialLineItem", b =>
@@ -420,17 +739,41 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
+                    b.Property<bool>("CanAdjustSettlements")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("can_adjust_settlements");
+
                     b.Property<bool>("CanEditSettlement")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("can_edit_settlement");
 
+                    b.Property<bool>("CanFinalizeSettlements")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("can_finalize_settlements");
+
                     b.Property<bool>("CanLockBudget")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("can_lock_budget");
+
+                    b.Property<bool>("CanManageAllocations")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("can_manage_allocations");
+
+                    b.Property<bool>("CanManageFestivalSchedule")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("can_manage_festival_schedule");
 
                     b.Property<bool>("CanManagePermissions")
                         .ValueGeneratedOnAdd()
@@ -443,6 +786,18 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnType("boolean")
                         .HasDefaultValue(false)
                         .HasColumnName("can_map_qbo_accounts");
+
+                    b.Property<bool>("CanOverrideSettlements")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("can_override_settlements");
+
+                    b.Property<bool>("CanPublishPublicItinerary")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("can_publish_public_itinerary");
 
                     b.Property<bool>("CanReverseSettlement")
                         .ValueGeneratedOnAdd()
@@ -485,6 +840,212 @@ namespace SplitRail.Api.Data.Migrations
                         .HasDatabaseName("unique_role_per_org");
 
                     b.ToTable("organization_roles", (string)null);
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.ProgrammingBlock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<decimal>("BackendPercentage")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("backend_percentage");
+
+                    b.Property<decimal>("BaseGuarantee")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(12,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("base_guarantee");
+
+                    b.Property<decimal?>("BonusAmount")
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("bonus_amount");
+
+                    b.Property<decimal?>("BonusThresholdAmount")
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("bonus_threshold_amount");
+
+                    b.Property<string>("BookingStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("HOLD")
+                        .HasColumnName("booking_status");
+
+                    b.Property<decimal>("CalculatedNetPayout")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(12,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("calculated_net_payout");
+
+                    b.Property<decimal?>("CapAmount")
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("cap_amount");
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("MUSIC")
+                        .HasColumnName("category");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("CustomFormulaExpression")
+                        .HasColumnType("text")
+                        .HasColumnName("custom_formula_expression");
+
+                    b.Property<DateOnly>("DayDate")
+                        .HasColumnType("date")
+                        .HasColumnName("day_date");
+
+                    b.Property<string>("DealType")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("guarantee")
+                        .HasColumnName("deal_type");
+
+                    b.Property<string>("Description")
+                        .HasColumnType("text")
+                        .HasColumnName("description");
+
+                    b.Property<TimeOnly>("EndTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("end_time");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<Guid?>("FestivalArtistId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("festival_artist_id");
+
+                    b.Property<DateTimeOffset?>("FinalizedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("finalized_at");
+
+                    b.Property<Guid?>("FinalizedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("finalized_by_user_id");
+
+                    b.Property<string>("FinalizedSnapshotJson")
+                        .HasColumnType("text")
+                        .HasColumnName("finalized_snapshot_json");
+
+                    b.Property<decimal?>("FloorAmount")
+                        .HasColumnType("numeric(12,2)")
+                        .HasColumnName("floor_amount");
+
+                    b.Property<bool>("IsPubliclyVisible")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_publicly_visible");
+
+                    b.Property<TimeOnly?>("LoadInTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("load_in_time");
+
+                    b.Property<string>("PercentBasis")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasDefaultValue("GROSS")
+                        .HasColumnName("percent_basis");
+
+                    b.Property<bool>("RequiresSettlement")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("requires_settlement");
+
+                    b.Property<bool>("RequiresSettlementReview")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("requires_settlement_review");
+
+                    b.Property<string>("ScheduleStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasDefaultValue("SCHEDULED")
+                        .HasColumnName("schedule_status");
+
+                    b.Property<string>("SettlementPdfUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("settlement_pdf_url");
+
+                    b.Property<string>("SettlementStatus")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasDefaultValue("NOT_REQUIRED")
+                        .HasColumnName("settlement_status");
+
+                    b.Property<TimeOnly?>("SoundcheckTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("soundcheck_time");
+
+                    b.Property<Guid>("StageZoneId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("stage_zone_id");
+
+                    b.Property<TimeOnly>("StartTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("start_time");
+
+                    b.Property<decimal>("TaxWithholdingPercentage")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(5,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("tax_withholding_percentage");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("title");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FestivalArtistId")
+                        .HasDatabaseName("ix_programming_blocks_festival_artist_id");
+
+                    b.HasIndex("FinalizedByUserId");
+
+                    b.HasIndex("StageZoneId");
+
+                    b.HasIndex("EventId", "DayDate")
+                        .HasDatabaseName("ix_programming_blocks_event_day");
+
+                    b.HasIndex("EventId", "StageZoneId", "DayDate")
+                        .HasDatabaseName("ix_programming_blocks_event_stage_day");
+
+                    b.ToTable("programming_blocks", (string)null);
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.QboAccountMapping", b =>
@@ -837,6 +1398,134 @@ namespace SplitRail.Api.Data.Migrations
                     b.ToTable("regions", (string)null);
                 });
 
+            modelBuilder.Entity("SplitRail.Api.Models.RevenueAllocation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("AllocationType")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("allocation_type");
+
+                    b.Property<decimal?>("Amount")
+                        .HasColumnType("numeric(14,2)")
+                        .HasColumnName("amount");
+
+                    b.Property<decimal>("CalculatedAmount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(14,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("calculated_amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("CreatedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by_user_id");
+
+                    b.Property<decimal?>("Percentage")
+                        .HasColumnType("numeric(7,4)")
+                        .HasColumnName("percentage");
+
+                    b.Property<Guid>("ProgrammingBlockId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("programming_block_id");
+
+                    b.Property<Guid>("RevenueBucketId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("revenue_bucket_id");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProgrammingBlockId")
+                        .HasDatabaseName("ix_revenue_allocations_block_id");
+
+                    b.HasIndex("RevenueBucketId")
+                        .HasDatabaseName("ix_revenue_allocations_bucket_id");
+
+                    b.ToTable("revenue_allocations", (string)null);
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.RevenueBucket", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<decimal>("Amount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("numeric(14,2)")
+                        .HasDefaultValue(0m)
+                        .HasColumnName("amount");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<bool>("IsAllocable")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_allocable");
+
+                    b.Property<Guid?>("LinkedLineItemId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("linked_line_item_id");
+
+                    b.Property<DateTimeOffset?>("LockedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("locked_at");
+
+                    b.Property<Guid?>("LockedByUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("locked_by_user_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LinkedLineItemId");
+
+                    b.HasIndex("EventId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ux_revenue_buckets_event_id_name");
+
+                    b.ToTable("revenue_buckets", (string)null);
+                });
+
             modelBuilder.Entity("SplitRail.Api.Models.SettlementReversal", b =>
                 {
                     b.Property<Guid>("Id")
@@ -879,6 +1568,82 @@ namespace SplitRail.Api.Data.Migrations
                     b.ToTable("settlement_reversals", (string)null);
                 });
 
+            modelBuilder.Entity("SplitRail.Api.Models.StageZone", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("name");
+
+                    b.Property<int>("SortOrder")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("sort_order");
+
+                    b.Property<uint>("Xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId")
+                        .HasDatabaseName("ix_stage_zones_event_id");
+
+                    b.HasIndex("EventId", "Name")
+                        .IsUnique()
+                        .HasDatabaseName("ux_stage_zones_event_id_name");
+
+                    b.ToTable("stage_zones", (string)null);
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.StageZoneAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<Guid>("StageZoneId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("stage_zone_id");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_stage_zone_assignments_user_id");
+
+                    b.HasIndex("StageZoneId", "UserId")
+                        .IsUnique()
+                        .HasDatabaseName("ux_stage_zone_assignments_stage_user");
+
+                    b.ToTable("stage_zone_assignments", (string)null);
+                });
+
             modelBuilder.Entity("SplitRail.Api.Models.UnmappedQboTransaction", b =>
                 {
                     b.Property<Guid>("Id")
@@ -912,6 +1677,9 @@ namespace SplitRail.Api.Data.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
                         .HasColumnName("qbo_transaction_id");
+
+                    b.Property<int>("ReviewState")
+                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("SyncedAt")
                         .ValueGeneratedOnAdd()
@@ -1073,6 +1841,28 @@ namespace SplitRail.Api.Data.Migrations
                     b.ToTable("venues", (string)null);
                 });
 
+            modelBuilder.Entity("SplitRail.Api.Models.BlockSettlementLineItem", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.ProgrammingBlock", "ProgrammingBlock")
+                        .WithMany("SettlementLineItems")
+                        .HasForeignKey("ProgrammingBlockId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProgrammingBlock");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.BlockSettlementRevision", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.ProgrammingBlock", "ProgrammingBlock")
+                        .WithMany("SettlementRevisions")
+                        .HasForeignKey("ProgrammingBlockId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProgrammingBlock");
+                });
+
             modelBuilder.Entity("SplitRail.Api.Models.Event", b =>
                 {
                     b.HasOne("SplitRail.Api.Models.User", "ReconciledByUser")
@@ -1102,6 +1892,67 @@ namespace SplitRail.Api.Data.Migrations
                 {
                     b.HasOne("SplitRail.Api.Models.Event", "Event")
                         .WithMany("Artists")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.ExpenseAllocation", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.Event", "Event")
+                        .WithMany("ExpenseAllocations")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SplitRail.Api.Models.FinancialLineItem", "SourceLineItem")
+                        .WithMany()
+                        .HasForeignKey("SourceLineItemId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("SplitRail.Api.Models.UnmappedQboTransaction", "SourceQboTransaction")
+                        .WithMany("ExpenseAllocations")
+                        .HasForeignKey("SourceQboTransactionId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("SplitRail.Api.Models.ProgrammingBlock", "TargetBlock")
+                        .WithMany()
+                        .HasForeignKey("TargetBlockId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.HasOne("SplitRail.Api.Models.StageZone", "TargetStageZone")
+                        .WithMany()
+                        .HasForeignKey("TargetStageZoneId")
+                        .OnDelete(DeleteBehavior.Cascade);
+
+                    b.Navigation("Event");
+
+                    b.Navigation("SourceLineItem");
+
+                    b.Navigation("SourceQboTransaction");
+
+                    b.Navigation("TargetBlock");
+
+                    b.Navigation("TargetStageZone");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.FestivalArtist", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.Event", "Event")
+                        .WithMany("FestivalArtists")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.FestivalAuditEntry", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.Event", "Event")
+                        .WithMany("FestivalAuditEntries")
                         .HasForeignKey("EventId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -1167,6 +2018,39 @@ namespace SplitRail.Api.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Organization");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.ProgrammingBlock", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.Event", "Event")
+                        .WithMany("ProgrammingBlocks")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SplitRail.Api.Models.FestivalArtist", "FestivalArtist")
+                        .WithMany("ProgrammingBlocks")
+                        .HasForeignKey("FestivalArtistId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SplitRail.Api.Models.User", "FinalizedByUser")
+                        .WithMany()
+                        .HasForeignKey("FinalizedByUserId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("SplitRail.Api.Models.StageZone", "StageZone")
+                        .WithMany("ProgrammingBlocks")
+                        .HasForeignKey("StageZoneId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+
+                    b.Navigation("FestivalArtist");
+
+                    b.Navigation("FinalizedByUser");
+
+                    b.Navigation("StageZone");
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.QboAccountMapping", b =>
@@ -1271,6 +2155,43 @@ namespace SplitRail.Api.Data.Migrations
                     b.Navigation("Organization");
                 });
 
+            modelBuilder.Entity("SplitRail.Api.Models.RevenueAllocation", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.ProgrammingBlock", "ProgrammingBlock")
+                        .WithMany("RevenueAllocations")
+                        .HasForeignKey("ProgrammingBlockId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SplitRail.Api.Models.RevenueBucket", "RevenueBucket")
+                        .WithMany("Allocations")
+                        .HasForeignKey("RevenueBucketId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProgrammingBlock");
+
+                    b.Navigation("RevenueBucket");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.RevenueBucket", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.Event", "Event")
+                        .WithMany("RevenueBuckets")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SplitRail.Api.Models.FinancialLineItem", "LinkedLineItem")
+                        .WithMany()
+                        .HasForeignKey("LinkedLineItemId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.Navigation("Event");
+
+                    b.Navigation("LinkedLineItem");
+                });
+
             modelBuilder.Entity("SplitRail.Api.Models.SettlementReversal", b =>
                 {
                     b.HasOne("SplitRail.Api.Models.Event", "Event")
@@ -1287,6 +2208,36 @@ namespace SplitRail.Api.Data.Migrations
                     b.Navigation("Event");
 
                     b.Navigation("ReversedByUser");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.StageZone", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.Event", "Event")
+                        .WithMany("StageZones")
+                        .HasForeignKey("EventId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Event");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.StageZoneAssignment", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.StageZone", "StageZone")
+                        .WithMany("Assignments")
+                        .HasForeignKey("StageZoneId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SplitRail.Api.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StageZone");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.UnmappedQboTransaction", b =>
@@ -1395,15 +2346,32 @@ namespace SplitRail.Api.Data.Migrations
                 {
                     b.Navigation("Artists");
 
+                    b.Navigation("ExpenseAllocations");
+
+                    b.Navigation("FestivalArtists");
+
+                    b.Navigation("FestivalAuditEntries");
+
                     b.Navigation("LineItems");
+
+                    b.Navigation("ProgrammingBlocks");
 
                     b.Navigation("QboSyncLedgerEntries");
 
+                    b.Navigation("RevenueBuckets");
+
                     b.Navigation("Reversals");
+
+                    b.Navigation("StageZones");
 
                     b.Navigation("UnmappedQboTransactions");
 
                     b.Navigation("UserEventPins");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.FestivalArtist", b =>
+                {
+                    b.Navigation("ProgrammingBlocks");
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.Invitation", b =>
@@ -1429,9 +2397,35 @@ namespace SplitRail.Api.Data.Migrations
                     b.Navigation("UserMappings");
                 });
 
+            modelBuilder.Entity("SplitRail.Api.Models.ProgrammingBlock", b =>
+                {
+                    b.Navigation("RevenueAllocations");
+
+                    b.Navigation("SettlementLineItems");
+
+                    b.Navigation("SettlementRevisions");
+                });
+
             modelBuilder.Entity("SplitRail.Api.Models.Region", b =>
                 {
                     b.Navigation("Venues");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.RevenueBucket", b =>
+                {
+                    b.Navigation("Allocations");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.StageZone", b =>
+                {
+                    b.Navigation("Assignments");
+
+                    b.Navigation("ProgrammingBlocks");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.UnmappedQboTransaction", b =>
+                {
+                    b.Navigation("ExpenseAllocations");
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.User", b =>

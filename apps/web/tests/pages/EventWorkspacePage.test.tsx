@@ -279,6 +279,33 @@ describe('EventWorkspacePage', () => {
     });
   });
 
+  it('creates a festival from the create panel and opens its workspace', async () => {
+    const festivalEventId = 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeef';
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: noEvents },
+      createdFestivalEventId: festivalEventId,
+    });
+
+    const user = userEvent.setup();
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    await user.click(await screen.findByTestId('empty-state-create-event'));
+    await user.click(screen.getByTestId('event-type-festival'));
+    await user.type(screen.getByLabelText('Festival name'), 'Kalispell Roundup');
+    await user.type(screen.getByLabelText('Start date'), '2026-08-14');
+    const endDate = screen.getByLabelText('End date');
+    await user.clear(endDate);
+    await user.type(endDate, '2026-08-16');
+
+    const panel = screen.getByTestId('event-form-panel');
+    await user.click(within(panel).getByRole('button', { name: 'Create festival' }));
+
+    await waitFor(() =>
+      expect(window.location.pathname).toBe(workspacePath(VENUE_A.id, festivalEventId)),
+    );
+  });
+
   it('shows events error with retry', async () => {
     mockWorkspaceFetch({
       venues: [VENUE_A],

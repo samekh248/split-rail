@@ -329,7 +329,13 @@ public class TestSeedingService
             CanReverseSettlement = true,
             CanTriggerQboSync = true,
             CanMapQboAccounts = true,
-            CanViewFinancials = true
+            CanViewFinancials = true,
+            CanManageFestivalSchedule = true,
+            CanManageAllocations = true,
+            CanAdjustSettlements = true,
+            CanFinalizeSettlements = true,
+            CanOverrideSettlements = true,
+            CanPublishPublicItinerary = true
         };
         var venueManagerRole = new OrganizationRole
         {
@@ -340,7 +346,13 @@ public class TestSeedingService
             CanEditSettlement = true,
             CanSignSettlement = true,
             CanTriggerQboSync = true,
-            CanViewFinancials = true
+            CanViewFinancials = true,
+            CanManageFestivalSchedule = true,
+            CanManageAllocations = true,
+            CanAdjustSettlements = true,
+            CanFinalizeSettlements = true,
+            CanOverrideSettlements = true,
+            CanPublishPublicItinerary = true
         };
         _db.OrganizationRoles.AddRange(adminRole, venueManagerRole);
 

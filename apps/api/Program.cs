@@ -157,7 +157,13 @@ builder.Services.AddAuthorization(options =>
         PermissionNames.ReverseSettlement,
         PermissionNames.TriggerQboSync,
         PermissionNames.MapQboAccounts,
-        PermissionNames.ViewFinancials
+        PermissionNames.ViewFinancials,
+        PermissionNames.ManageFestivalSchedule,
+        PermissionNames.ManageAllocations,
+        PermissionNames.AdjustSettlements,
+        PermissionNames.FinalizeSettlements,
+        PermissionNames.OverrideSettlements,
+        PermissionNames.PublishPublicItinerary
     };
 
     foreach (var permission in permissions)
@@ -198,6 +204,18 @@ builder.Services.AddScoped<FrozenEventMutationAuditor>();
 builder.Services.AddScoped<IFrozenEventSaveContext, FrozenEventSaveContext>();
 builder.Services.AddScoped<FrozenEventImmutabilityInterceptor>();
 builder.Services.AddScoped<LedgerService>();
+builder.Services.AddScoped<FestivalAccessGuard>();
+builder.Services.AddScoped<FestivalAuditService>();
+builder.Services.AddScoped<FestivalService>();
+builder.Services.AddScoped<StageZoneService>();
+builder.Services.AddScoped<ProgrammingBlockService>();
+builder.Services.AddScoped<FestivalArtistService>();
+builder.Services.AddScoped<FestivalItineraryService>();
+builder.Services.AddScoped<FestivalAllocationService>();
+builder.Services.AddScoped<FestivalQboService>();
+builder.Services.AddScoped<FestivalReportService>();
+builder.Services.AddScoped<BlockSettlementService>();
+builder.Services.AddSingleton<IBlockSettlementDocumentRenderer, BlockSettlementDocumentRenderer>();
 builder.Services.AddScoped<DealMathEngine>();
 builder.Services.AddScoped<CustomFormulaEvaluator>();
 builder.Services.AddScoped<QboTokenService>();

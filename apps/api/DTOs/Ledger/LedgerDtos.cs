@@ -117,7 +117,9 @@ public record EventResponse(
     string? LoadInTime = null,
     string? CurfewTime = null,
     string? SupportLineup = null,
-    bool WorkspaceAllowed = true);
+    bool WorkspaceAllowed = true,
+    string EventType = "STANDARD",
+    string? EndDate = null);
 
 public record CreateEventRequest(
     string Title,

@@ -14,6 +14,13 @@ export type AppPath =
   | '/accept-invite';
 
 const WORKSPACE_PATH_PATTERN = /^\/venues\/([^/]+)\/events\/([^/]+)\/?$/;
+const FESTIVAL_ITINERARY_PATH_PATTERN = /^\/venues\/([^/]+)\/festivals\/([^/]+)\/itinerary\/?$/;
+const FESTIVAL_LEDGER_PATH_PATTERN =
+  /^\/venues\/([^/]+)\/festivals\/([^/]+)\/ledger\/?$/;
+const FESTIVAL_REPORTS_PATH_PATTERN =
+  /^\/venues\/([^/]+)\/festivals\/([^/]+)\/reports\/?$/;
+const BLOCK_SETTLEMENT_PATH_PATTERN =
+  /^\/venues\/([^/]+)\/festivals\/([^/]+)\/blocks\/([^/]+)\/settlement\/?$/;
 
 function normalizeAppPathname(pathname: string): string {
   if (pathname.length > 1 && pathname.endsWith('/')) {
@@ -24,6 +31,78 @@ function normalizeAppPathname(pathname: string): string {
 
 export function isEventWorkspacePath(pathname: string): boolean {
   return WORKSPACE_PATH_PATTERN.test(pathname);
+}
+
+export function isFestivalItineraryPath(pathname: string): boolean {
+  return FESTIVAL_ITINERARY_PATH_PATTERN.test(pathname);
+}
+
+export function isFestivalLedgerPath(pathname: string): boolean {
+  return FESTIVAL_LEDGER_PATH_PATTERN.test(pathname);
+}
+
+export function isFestivalReportsPath(pathname: string): boolean {
+  return FESTIVAL_REPORTS_PATH_PATTERN.test(pathname);
+}
+
+export function isBlockSettlementPath(pathname: string): boolean {
+  return BLOCK_SETTLEMENT_PATH_PATTERN.test(pathname);
+}
+
+export function buildBlockSettlementPath(venueId: string, eventId: string, blockId: string): string {
+  return `/venues/${venueId}/festivals/${eventId}/blocks/${blockId}/settlement`;
+}
+
+export function parseBlockSettlementPath(
+  pathname: string,
+): { venueId: string; eventId: string; blockId: string } | null {
+  const match = pathname.match(BLOCK_SETTLEMENT_PATH_PATTERN);
+  if (!match) {
+    return null;
+  }
+  return { venueId: match[1], eventId: match[2], blockId: match[3] };
+}
+
+export function buildFestivalItineraryPath(venueId: string, eventId: string): string {
+  return `/venues/${venueId}/festivals/${eventId}/itinerary`;
+}
+
+export function buildFestivalLedgerPath(venueId: string, eventId: string): string {
+  return `/venues/${venueId}/festivals/${eventId}/ledger`;
+}
+
+export function buildFestivalReportsPath(venueId: string, eventId: string): string {
+  return `/venues/${venueId}/festivals/${eventId}/reports`;
+}
+
+export function parseFestivalItineraryPath(
+  pathname: string,
+): { venueId: string; eventId: string } | null {
+  const match = pathname.match(FESTIVAL_ITINERARY_PATH_PATTERN);
+  if (!match) {
+    return null;
+  }
+  return { venueId: match[1], eventId: match[2] };
+}
+
+export function parseFestivalLedgerPath(
+  pathname: string,
+): { venueId: string; eventId: string } | null {
+  const match = pathname.match(FESTIVAL_LEDGER_PATH_PATTERN);
+  if (!match) {
+    return null;
+  }
+  return { venueId: match[1], eventId: match[2] };
+}
+
+export function parseFestivalReportsPath(
+  pathname: string,
+): { venueId: string; eventId: string } | null {
+  const match = pathname.match(FESTIVAL_REPORTS_PATH_PATTERN);
+  if (!match) {
+    return null;
+  }
+  return { venueId: match[1], eventId: match[2] };
 }
 
 export function buildEventWorkspacePath(
@@ -65,6 +144,9 @@ export function replacePath(path: string): void {
 export function getAppPath(): AppPath | string {
   const pathname = normalizeAppPathname(window.location.pathname);
   if (isEventWorkspacePath(pathname)) {
+    return pathname;
+  }
+  if (isFestivalItineraryPath(pathname)) {
     return pathname;
   }
   switch (pathname) {

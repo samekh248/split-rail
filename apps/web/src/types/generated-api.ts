@@ -166,6 +166,442 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/settlement": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BlockSettlementSheetResponse"];
+                        "application/json": components["schemas"]["BlockSettlementSheetResponse"];
+                        "text/json": components["schemas"]["BlockSettlementSheetResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/settlement/deal-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateBlockDealTermsRequest"];
+                    "text/json": components["schemas"]["UpdateBlockDealTermsRequest"];
+                    "application/*+json": components["schemas"]["UpdateBlockDealTermsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BlockSettlementSheetResponse"];
+                        "application/json": components["schemas"]["BlockSettlementSheetResponse"];
+                        "text/json": components["schemas"]["BlockSettlementSheetResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/settlement/line-items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateBlockSettlementLineItemRequest"];
+                    "text/json": components["schemas"]["CreateBlockSettlementLineItemRequest"];
+                    "application/*+json": components["schemas"]["CreateBlockSettlementLineItemRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BlockSettlementLineItemDto"];
+                        "application/json": components["schemas"]["BlockSettlementLineItemDto"];
+                        "text/json": components["schemas"]["BlockSettlementLineItemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/settlement/line-items/{lineItemId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                    lineItemId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/settlement/preflight": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FinalizePreflightResponse"];
+                        "application/json": components["schemas"]["FinalizePreflightResponse"];
+                        "text/json": components["schemas"]["FinalizePreflightResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/settlement/finalize": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["FinalizeBlockSettlementRequest"];
+                    "text/json": components["schemas"]["FinalizeBlockSettlementRequest"];
+                    "application/*+json": components["schemas"]["FinalizeBlockSettlementRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BlockSettlementResultDto"];
+                        "application/json": components["schemas"]["BlockSettlementResultDto"];
+                        "text/json": components["schemas"]["BlockSettlementResultDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/settlement/reopen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ReopenBlockSettlementRequest"];
+                    "text/json": components["schemas"]["ReopenBlockSettlementRequest"];
+                    "application/*+json": components["schemas"]["ReopenBlockSettlementRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BlockSettlementSheetResponse"];
+                        "application/json": components["schemas"]["BlockSettlementSheetResponse"];
+                        "text/json": components["schemas"]["BlockSettlementSheetResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/settlement/adjustments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateBlockSettlementLineItemRequest"];
+                    "text/json": components["schemas"]["CreateBlockSettlementLineItemRequest"];
+                    "application/*+json": components["schemas"]["CreateBlockSettlementLineItemRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BlockSettlementLineItemDto"];
+                        "application/json": components["schemas"]["BlockSettlementLineItemDto"];
+                        "text/json": components["schemas"]["BlockSettlementLineItemDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/my-blocks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BlockWorkQueueItemDto"][];
+                        "application/json": components["schemas"]["BlockWorkQueueItemDto"][];
+                        "text/json": components["schemas"]["BlockWorkQueueItemDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/artists/{artistId}/settlement-rollup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    artistId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ArtistSettlementRollupDto"];
+                        "application/json": components["schemas"]["ArtistSettlementRollupDto"];
+                        "text/json": components["schemas"]["ArtistSettlementRollupDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/calendar/placements": {
         parameters: {
             query?: never;
@@ -457,6 +893,1660 @@ export interface paths {
                 };
             };
         };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/buckets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RevenueBucketResponse"][];
+                        "application/json": components["schemas"]["RevenueBucketResponse"][];
+                        "text/json": components["schemas"]["RevenueBucketResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateRevenueBucketRequest"];
+                    "text/json": components["schemas"]["CreateRevenueBucketRequest"];
+                    "application/*+json": components["schemas"]["CreateRevenueBucketRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RevenueBucketResponse"];
+                        "application/json": components["schemas"]["RevenueBucketResponse"];
+                        "text/json": components["schemas"]["RevenueBucketResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/buckets/{bucketId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    bucketId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateRevenueBucketRequest"];
+                    "text/json": components["schemas"]["UpdateRevenueBucketRequest"];
+                    "application/*+json": components["schemas"]["UpdateRevenueBucketRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RevenueBucketResponse"];
+                        "application/json": components["schemas"]["RevenueBucketResponse"];
+                        "text/json": components["schemas"]["RevenueBucketResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    bucketId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/buckets/{bucketId}/allocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    bucketId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RevenueAllocationResponse"][];
+                        "application/json": components["schemas"]["RevenueAllocationResponse"][];
+                        "text/json": components["schemas"]["RevenueAllocationResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/allocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateRevenueAllocationRequest"];
+                    "text/json": components["schemas"]["CreateRevenueAllocationRequest"];
+                    "application/*+json": components["schemas"]["CreateRevenueAllocationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RevenueAllocationResponse"];
+                        "application/json": components["schemas"]["RevenueAllocationResponse"];
+                        "text/json": components["schemas"]["RevenueAllocationResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/allocations/{allocationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    allocationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateRevenueAllocationRequest"];
+                    "text/json": components["schemas"]["UpdateRevenueAllocationRequest"];
+                    "application/*+json": components["schemas"]["UpdateRevenueAllocationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RevenueAllocationResponse"];
+                        "application/json": components["schemas"]["RevenueAllocationResponse"];
+                        "text/json": components["schemas"]["RevenueAllocationResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    allocationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/expense-allocations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    sourceType?: string;
+                    targetType?: string;
+                };
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ExpenseAllocationResponse"][];
+                        "application/json": components["schemas"]["ExpenseAllocationResponse"][];
+                        "text/json": components["schemas"]["ExpenseAllocationResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateExpenseAllocationRequest"];
+                    "text/json": components["schemas"]["CreateExpenseAllocationRequest"];
+                    "application/*+json": components["schemas"]["CreateExpenseAllocationRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ExpenseAllocationResponse"];
+                        "application/json": components["schemas"]["ExpenseAllocationResponse"];
+                        "text/json": components["schemas"]["ExpenseAllocationResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/expense-allocations/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    sourceLineItemId?: string;
+                    sourceQboTransactionId?: string;
+                };
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ExpenseSourceSummaryResponse"];
+                        "application/json": components["schemas"]["ExpenseSourceSummaryResponse"];
+                        "text/json": components["schemas"]["ExpenseSourceSummaryResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/expense-allocations/{allocationId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    allocationId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/qbo-transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    reviewState?: string;
+                    allocationState?: string;
+                };
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalQboTransactionResponse"][];
+                        "application/json": components["schemas"]["FestivalQboTransactionResponse"][];
+                        "text/json": components["schemas"]["FestivalQboTransactionResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/qbo-sources": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BlockQboSourceTraceResponse"];
+                        "application/json": components["schemas"]["BlockQboSourceTraceResponse"];
+                        "text/json": components["schemas"]["BlockQboSourceTraceResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/qbo-transactions/{transactionId}/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    transactionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ResolveQboReviewRequest"];
+                    "text/json": components["schemas"]["ResolveQboReviewRequest"];
+                    "application/*+json": components["schemas"]["ResolveQboReviewRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["QboReviewResolutionResponse"];
+                        "application/json": components["schemas"]["QboReviewResolutionResponse"];
+                        "text/json": components["schemas"]["QboReviewResolutionResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/reports/pnl": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    category?: string;
+                };
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalPnlReportResponse"];
+                        "application/json": components["schemas"]["FestivalPnlReportResponse"];
+                        "text/json": components["schemas"]["FestivalPnlReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/reports/days": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    category?: string;
+                    status?: string;
+                };
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalDayReportResponse"];
+                        "application/json": components["schemas"]["FestivalDayReportResponse"];
+                        "text/json": components["schemas"]["FestivalDayReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/reports/stages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    category?: string;
+                    status?: string;
+                };
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalStageReportResponse"];
+                        "application/json": components["schemas"]["FestivalStageReportResponse"];
+                        "text/json": components["schemas"]["FestivalStageReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/reports/settlement-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    category?: string;
+                };
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalSettlementStatusReportResponse"];
+                        "application/json": components["schemas"]["FestivalSettlementStatusReportResponse"];
+                        "text/json": components["schemas"]["FestivalSettlementStatusReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/reports/unreconciled": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalUnreconciledReportResponse"];
+                        "application/json": components["schemas"]["FestivalUnreconciledReportResponse"];
+                        "text/json": components["schemas"]["FestivalUnreconciledReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/reports/variance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    category?: string;
+                    status?: string;
+                };
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalVarianceReportResponse"];
+                        "application/json": components["schemas"]["FestivalVarianceReportResponse"];
+                        "text/json": components["schemas"]["FestivalVarianceReportResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateFestivalRequest"];
+                    "text/json": components["schemas"]["CreateFestivalRequest"];
+                    "application/*+json": components["schemas"]["CreateFestivalRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalResponse"];
+                        "application/json": components["schemas"]["FestivalResponse"];
+                        "text/json": components["schemas"]["FestivalResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalResponse"];
+                        "application/json": components["schemas"]["FestivalResponse"];
+                        "text/json": components["schemas"]["FestivalResponse"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateFestivalRequest"];
+                    "text/json": components["schemas"]["UpdateFestivalRequest"];
+                    "application/*+json": components["schemas"]["UpdateFestivalRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalResponse"];
+                        "application/json": components["schemas"]["FestivalResponse"];
+                        "text/json": components["schemas"]["FestivalResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/revert-to-standard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/stages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StageZoneResponse"][];
+                        "application/json": components["schemas"]["StageZoneResponse"][];
+                        "text/json": components["schemas"]["StageZoneResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateStageZoneRequest"];
+                    "text/json": components["schemas"]["CreateStageZoneRequest"];
+                    "application/*+json": components["schemas"]["CreateStageZoneRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StageZoneResponse"];
+                        "application/json": components["schemas"]["StageZoneResponse"];
+                        "text/json": components["schemas"]["StageZoneResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/stages/{stageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    stageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateStageZoneRequest"];
+                    "text/json": components["schemas"]["UpdateStageZoneRequest"];
+                    "application/*+json": components["schemas"]["UpdateStageZoneRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["StageZoneResponse"];
+                        "application/json": components["schemas"]["StageZoneResponse"];
+                        "text/json": components["schemas"]["StageZoneResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    stageId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateProgrammingBlockRequest"];
+                    "text/json": components["schemas"]["CreateProgrammingBlockRequest"];
+                    "application/*+json": components["schemas"]["CreateProgrammingBlockRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProgrammingBlockResponse"];
+                        "application/json": components["schemas"]["ProgrammingBlockResponse"];
+                        "text/json": components["schemas"]["ProgrammingBlockResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateProgrammingBlockRequest"];
+                    "text/json": components["schemas"]["UpdateProgrammingBlockRequest"];
+                    "application/*+json": components["schemas"]["UpdateProgrammingBlockRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProgrammingBlockResponse"];
+                        "application/json": components["schemas"]["ProgrammingBlockResponse"];
+                        "text/json": components["schemas"]["ProgrammingBlockResponse"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SetBlockStatusRequest"];
+                    "text/json": components["schemas"]["SetBlockStatusRequest"];
+                    "application/*+json": components["schemas"]["SetBlockStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProgrammingBlockResponse"];
+                        "application/json": components["schemas"]["ProgrammingBlockResponse"];
+                        "text/json": components["schemas"]["ProgrammingBlockResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/booking-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SetBlockBookingStatusRequest"];
+                    "text/json": components["schemas"]["SetBlockBookingStatusRequest"];
+                    "application/*+json": components["schemas"]["SetBlockBookingStatusRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ProgrammingBlockResponse"];
+                        "application/json": components["schemas"]["ProgrammingBlockResponse"];
+                        "text/json": components["schemas"]["ProgrammingBlockResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalAuditEntryResponse"][];
+                        "application/json": components["schemas"]["FestivalAuditEntryResponse"][];
+                        "text/json": components["schemas"]["FestivalAuditEntryResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/itinerary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    view?: string;
+                    day?: string;
+                    stageZoneId?: string;
+                    category?: string;
+                    status?: string;
+                };
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ItineraryResponse"];
+                        "application/json": components["schemas"]["ItineraryResponse"];
+                        "text/json": components["schemas"]["ItineraryResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/itinerary/public": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    day?: string;
+                    stageZoneId?: string;
+                    category?: string;
+                };
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublicItineraryResponse"];
+                        "application/json": components["schemas"]["PublicItineraryResponse"];
+                        "text/json": components["schemas"]["PublicItineraryResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/itinerary/publish-visibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SetPublishVisibilityRequest"];
+                    "text/json": components["schemas"]["SetPublishVisibilityRequest"];
+                    "application/*+json": components["schemas"]["SetPublishVisibilityRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/artists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalArtistResponse"][];
+                        "application/json": components["schemas"]["FestivalArtistResponse"][];
+                        "text/json": components["schemas"]["FestivalArtistResponse"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CreateFestivalArtistRequest"];
+                    "text/json": components["schemas"]["CreateFestivalArtistRequest"];
+                    "application/*+json": components["schemas"]["CreateFestivalArtistRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FestivalArtistResponse"];
+                        "application/json": components["schemas"]["FestivalArtistResponse"];
+                        "text/json": components["schemas"]["FestivalArtistResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/artists/{artistId}/appearances": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    artistId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ArtistAppearanceDto"][];
+                        "application/json": components["schemas"]["ArtistAppearanceDto"][];
+                        "text/json": components["schemas"]["ArtistAppearanceDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/venues/{venueId}/festivals/{eventId}/artists/{artistId}/copy-deal-terms": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    artistId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CopyDealTermsRequest"];
+                    "text/json": components["schemas"]["CopyDealTermsRequest"];
+                    "application/*+json": components["schemas"]["CopyDealTermsRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -3060,16 +5150,126 @@ export interface components {
             totalUnmappedCount?: number;
             eventsWithUnmapped?: components["schemas"]["UnmappedEventSummaryDto"][] | null;
         };
+        ArtistAppearanceDto: {
+            /** Format: uuid */
+            blockId?: string;
+            title?: string | null;
+            dayDate?: string | null;
+            stageName?: string | null;
+            startTime?: string | null;
+            endTime?: string | null;
+            scheduleStatus?: string | null;
+            settlementStatus?: string | null;
+            netPayable?: string | null;
+            bookingStatus?: string | null;
+        };
+        ArtistSettlementRollupDto: {
+            /** Format: uuid */
+            artistId?: string;
+            artistName?: string | null;
+            /** Format: int32 */
+            appearanceCount?: number;
+            totalNetPayout?: string;
+            totalAllocatedRevenue?: string;
+            appearances?: components["schemas"]["ArtistAppearanceDto"][] | null;
+        };
         AuthResponse: {
             accessToken?: string | null;
             refreshToken?: string | null;
             /** Format: int32 */
             expiresIn?: number;
         };
+        BlockAllocationLineDto: {
+            bucketName?: string | null;
+            allocationType?: string | null;
+            calculatedAmount?: string;
+        };
+        BlockDealTermsDto: {
+            dealType?: string | null;
+            baseGuarantee?: string;
+            backendPercentage?: string;
+            percentBasis?: string | null;
+            capAmount?: string | null;
+            floorAmount?: string | null;
+            bonusThresholdAmount?: string | null;
+            bonusAmount?: string | null;
+            taxWithholdingPercentage?: string;
+            customFormulaExpression?: string | null;
+        };
+        BlockQboSourceTraceResponse: {
+            /** Format: uuid */
+            blockId?: string;
+            sourceTransactions?: components["schemas"]["FestivalQboTransactionResponse"][] | null;
+        };
+        BlockSettlementComputedDto: {
+            allocationBasis?: string;
+            grossPayout?: string;
+            deductions?: string;
+            taxWithheld?: string;
+            netPayable?: string;
+        };
+        BlockSettlementLineItemDto: {
+            /** Format: uuid */
+            id?: string;
+            lineType?: string | null;
+            label?: string | null;
+            amount?: string;
+            /** Format: date-time */
+            enteredAt?: string;
+        };
+        BlockSettlementResultDto: {
+            /** Format: uuid */
+            blockId?: string;
+            settlementStatus?: string | null;
+            /** Format: date-time */
+            finalizedAt?: string | null;
+            netPayable?: string;
+            pdfUrl?: string | null;
+            dispatchOutcome?: string | null;
+            /** Format: int32 */
+            revisionNumber?: number;
+        };
+        BlockSettlementRevisionDto: {
+            /** Format: int32 */
+            revisionNumber?: number;
+            /** Format: date-time */
+            finalizedAt?: string;
+            pdfUrl?: string | null;
+            dispatchOutcome?: string | null;
+            reasonCode?: string | null;
+        };
+        BlockSettlementSheetResponse: {
+            /** Format: uuid */
+            blockId?: string;
+            title?: string | null;
+            dayDate?: string | null;
+            stageName?: string | null;
+            startTime?: string | null;
+            endTime?: string | null;
+            artistName?: string | null;
+            settlementStatus?: string | null;
+            requiresSettlementReview?: boolean;
+            dealTerms?: components["schemas"]["BlockDealTermsDto"];
+            allocations?: components["schemas"]["BlockAllocationLineDto"][] | null;
+            lineItems?: components["schemas"]["BlockSettlementLineItemDto"][] | null;
+            computed?: components["schemas"]["BlockSettlementComputedDto"];
+            revisions?: components["schemas"]["BlockSettlementRevisionDto"][] | null;
+        };
         BlockTotalsDto: {
             proforma?: string;
             settlement?: string;
             qboActual?: string | null;
+        };
+        BlockWorkQueueItemDto: {
+            /** Format: uuid */
+            blockId?: string;
+            title?: string | null;
+            dayDate?: string | null;
+            stageName?: string | null;
+            startTime?: string | null;
+            settlementStatus?: string | null;
+            requiresSettlementReview?: boolean;
+            preflightReady?: boolean;
         };
         CalendarPlacementDto: {
             /** Format: uuid */
@@ -3104,6 +5304,11 @@ export interface components {
             roleId?: string;
             roleName?: string | null;
         };
+        CopyDealTermsRequest: {
+            /** Format: uuid */
+            sourceBlockId?: string;
+            targetBlockIds?: string[] | null;
+        };
         CreateArtistRequest: {
             artistName?: string | null;
             /** Format: int32 */
@@ -3114,6 +5319,11 @@ export interface components {
             backendPercentage?: string;
             taxWithholdingPercentage?: string;
         };
+        CreateBlockSettlementLineItemRequest: {
+            lineType?: string | null;
+            label?: string | null;
+            amount?: string;
+        };
         CreateEventRequest: {
             title?: string | null;
             eventDate?: string | null;
@@ -3123,6 +5333,33 @@ export interface components {
             loadInTime?: string | null;
             curfewTime?: string | null;
             supportLineup?: string | null;
+        };
+        CreateExpenseAllocationRequest: {
+            targetType?: string | null;
+            method?: string | null;
+            /** Format: uuid */
+            sourceLineItemId?: string | null;
+            /** Format: uuid */
+            sourceQboTransactionId?: string | null;
+            targetDayDate?: string | null;
+            /** Format: uuid */
+            targetStageZoneId?: string | null;
+            /** Format: uuid */
+            targetBlockId?: string | null;
+            percentage?: string | null;
+            amount?: string | null;
+            countsTowardSettlement?: boolean;
+            targets?: components["schemas"]["ExpenseAllocationTargetRequest"][] | null;
+        };
+        CreateFestivalArtistRequest: {
+            name?: string | null;
+        };
+        CreateFestivalRequest: {
+            title?: string | null;
+            startDate?: string | null;
+            endDate?: string | null;
+            /** Format: uuid */
+            existingEventId?: string | null;
         };
         CreateInvitationRequest: {
             email?: string | null;
@@ -3151,9 +5388,48 @@ export interface components {
         CreateOrganizationRequest: {
             name?: string | null;
         };
+        CreateProgrammingBlockRequest: {
+            title?: string | null;
+            dayDate?: string | null;
+            /** Format: uuid */
+            stageZoneId?: string;
+            startTime?: string | null;
+            endTime?: string | null;
+            category?: string | null;
+            requiresSettlement?: boolean;
+            /** Format: uuid */
+            festivalArtistId?: string | null;
+            newArtistName?: string | null;
+            isPubliclyVisible?: boolean;
+            description?: string | null;
+            loadInTime?: string | null;
+            soundcheckTime?: string | null;
+            bookingStatus?: string | null;
+        };
         CreateRegionRequest: {
             name?: string | null;
             notes?: string | null;
+        };
+        CreateRevenueAllocationRequest: {
+            /** Format: uuid */
+            revenueBucketId?: string;
+            /** Format: uuid */
+            programmingBlockId?: string;
+            allocationType?: string | null;
+            percentage?: string | null;
+            amount?: string | null;
+        };
+        CreateRevenueBucketRequest: {
+            name?: string | null;
+            amount?: string;
+            isAllocable?: boolean;
+            /** Format: uuid */
+            linkedLineItemId?: string | null;
+        };
+        CreateStageZoneRequest: {
+            name?: string | null;
+            /** Format: int32 */
+            sortOrder?: number | null;
         };
         CreateTrackingMappingRequest: {
             qboTrackingType?: string | null;
@@ -3251,11 +5527,271 @@ export interface components {
             curfewTime?: string | null;
             supportLineup?: string | null;
             workspaceAllowed?: boolean;
+            eventType?: string | null;
+            endDate?: string | null;
         };
         ExpectedSettlementDto: {
             computedNetPayout?: string | null;
             grossRevenue?: string | null;
             netShowRevenue?: string | null;
+        };
+        ExpenseAllocationResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            sourceLineItemId?: string | null;
+            /** Format: uuid */
+            sourceQboTransactionId?: string | null;
+            targetType?: string | null;
+            targetDayDate?: string | null;
+            /** Format: uuid */
+            targetStageZoneId?: string | null;
+            /** Format: uuid */
+            targetBlockId?: string | null;
+            method?: string | null;
+            percentage?: string | null;
+            calculatedAmount?: string;
+            countsTowardSettlement?: boolean;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        ExpenseAllocationTargetRequest: {
+            targetType?: string | null;
+            targetDayDate?: string | null;
+            /** Format: uuid */
+            targetStageZoneId?: string | null;
+            /** Format: uuid */
+            targetBlockId?: string | null;
+            percentage?: string | null;
+            amount?: string | null;
+        };
+        ExpenseSourceSummaryResponse: {
+            /** Format: uuid */
+            sourceId?: string;
+            sourceKind?: string | null;
+            label?: string | null;
+            sourceAmount?: string;
+            totalAllocated?: string;
+            remainingAtOverhead?: string;
+            allocations?: components["schemas"]["ExpenseAllocationResponse"][] | null;
+        };
+        FestivalArtistResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string | null;
+            /** Format: int32 */
+            appearanceCount?: number;
+            bookingStatus?: string | null;
+            /** Format: int32 */
+            confirmedAppearanceCount?: number;
+        };
+        FestivalAuditEntryResponse: {
+            /** Format: uuid */
+            id?: string;
+            entityType?: string | null;
+            /** Format: uuid */
+            entityId?: string;
+            action?: string | null;
+            priorValueJson?: string | null;
+            newValueJson?: string | null;
+            /** Format: uuid */
+            userId?: string;
+            /** Format: date-time */
+            occurredAt?: string;
+            reason?: string | null;
+        };
+        FestivalAuditLogEntryDto: {
+            /** Format: uuid */
+            blockId?: string;
+            blockTitle?: string | null;
+            action?: string | null;
+            /** Format: date-time */
+            occurredAt?: string;
+            reason?: string | null;
+        };
+        FestivalDayDto: {
+            /** Format: date */
+            dayDate?: string;
+            /** Format: int32 */
+            blockCount?: number;
+        };
+        FestivalDayReportResponse: {
+            days?: components["schemas"]["FestivalDayReportRowDto"][] | null;
+        };
+        FestivalDayReportRowDto: {
+            dayDate?: string | null;
+            revenueAllocatedToDay?: string;
+            expensesAllocatedToDay?: string;
+            blockCountsByStatus?: {
+                [key: string]: number;
+            } | null;
+            blockCountsByCategory?: {
+                [key: string]: number;
+            } | null;
+            settlementCounts?: {
+                [key: string]: number;
+            } | null;
+            blockIds?: string[] | null;
+        };
+        FestivalPnlExpenseRowDto: {
+            label?: string | null;
+            amount?: string;
+            atOverhead?: string;
+            pushedDown?: string;
+            /** Format: uuid */
+            sourceId?: string | null;
+        };
+        FestivalPnlReportResponse: {
+            revenue?: components["schemas"]["FestivalPnlRevenueRowDto"][] | null;
+            expenses?: components["schemas"]["FestivalPnlExpenseRowDto"][] | null;
+            net?: string;
+            drill?: components["schemas"]["FestivalReportDrillDto"];
+        };
+        FestivalPnlRevenueRowDto: {
+            label?: string | null;
+            amount?: string;
+            allocated?: string;
+            retained?: string;
+            /** Format: uuid */
+            bucketId?: string | null;
+        };
+        FestivalQboAllocationTraceDto: {
+            /** Format: uuid */
+            allocationId?: string;
+            targetType?: string | null;
+            targetDayDate?: string | null;
+            /** Format: uuid */
+            targetStageZoneId?: string | null;
+            /** Format: uuid */
+            targetBlockId?: string | null;
+            amount?: string;
+            countsTowardSettlement?: boolean;
+            /** Format: uuid */
+            createdByUserId?: string;
+            /** Format: date-time */
+            createdAt?: string;
+        };
+        FestivalQboTransactionResponse: {
+            /** Format: uuid */
+            id?: string;
+            qboTransactionId?: string | null;
+            qboAccountId?: string | null;
+            qboAccountName?: string | null;
+            amount?: string;
+            transactionDate?: string | null;
+            reviewState?: string | null;
+            masterTag?: string | null;
+            totalAllocated?: string;
+            remainingAtOverhead?: string;
+            allocationState?: string | null;
+            allocations?: components["schemas"]["FestivalQboAllocationTraceDto"][] | null;
+        };
+        FestivalReportDrillDto: {
+            dayDates?: string[] | null;
+            stageIds?: string[] | null;
+            blockIds?: string[] | null;
+            transactionIds?: string[] | null;
+        };
+        FestivalResponse: {
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            venueId?: string;
+            title?: string | null;
+            startDate?: string | null;
+            endDate?: string | null;
+            eventType?: string | null;
+            status?: string | null;
+            qboTagName?: string | null;
+            days?: components["schemas"]["FestivalDayDto"][] | null;
+            stages?: components["schemas"]["StageZoneResponse"][] | null;
+        };
+        FestivalSettlementStatusReportResponse: {
+            byStatus?: components["schemas"]["FestivalSettlementStatusRowDto"][] | null;
+            canceledLog?: components["schemas"]["FestivalAuditLogEntryDto"][] | null;
+            movedLog?: components["schemas"]["FestivalAuditLogEntryDto"][] | null;
+            partialCompletionExceptions?: components["schemas"]["FestivalAuditLogEntryDto"][] | null;
+            /** Format: int32 */
+            varianceScheduledVsCompleted?: number;
+        };
+        FestivalSettlementStatusRowDto: {
+            scheduleStatus?: string | null;
+            settlementStatus?: string | null;
+            /** Format: int32 */
+            count?: number;
+            blockIds?: string[] | null;
+        };
+        FestivalStageReportResponse: {
+            stages?: components["schemas"]["FestivalStageReportRowDto"][] | null;
+        };
+        FestivalStageReportRowDto: {
+            /** Format: uuid */
+            stageId?: string;
+            stageName?: string | null;
+            revenueAllocatedToStage?: string;
+            expensesAllocatedToStage?: string;
+            blockCountsByStatus?: {
+                [key: string]: number;
+            } | null;
+            blockCountsByCategory?: {
+                [key: string]: number;
+            } | null;
+            settlementCounts?: {
+                [key: string]: number;
+            } | null;
+            blockIds?: string[] | null;
+        };
+        FestivalUnreconciledReportResponse: {
+            transactions?: components["schemas"]["FestivalUnreconciledTransactionRowDto"][] | null;
+            totals?: components["schemas"]["FestivalUnreconciledTotalsDto"];
+        };
+        FestivalUnreconciledTotalsDto: {
+            unreconciled?: string;
+            partial?: string;
+            full?: string;
+            overhead?: string;
+            pushedDown?: string;
+        };
+        FestivalUnreconciledTransactionRowDto: {
+            /** Format: uuid */
+            txId?: string;
+            reviewState?: string | null;
+            allocationState?: string | null;
+            remainingAtOverhead?: string;
+            sourceAmount?: string;
+            totalAllocated?: string;
+        };
+        FestivalVarianceReportResponse: {
+            rows?: components["schemas"]["FestivalVarianceRowDto"][] | null;
+        };
+        FestivalVarianceRowDto: {
+            dimension?: string | null;
+            dayDate?: string | null;
+            /** Format: uuid */
+            stageId?: string | null;
+            category?: string | null;
+            /** Format: int32 */
+            scheduled?: number;
+            /** Format: int32 */
+            completed?: number;
+            allocated?: string;
+            settled?: string;
+            variance?: string;
+            blockIds?: string[] | null;
+            transactionIds?: string[] | null;
+        };
+        FestivalWarning: {
+            code?: string | null;
+            message?: string | null;
+        };
+        FinalizeBlockSettlementRequest: {
+            confirmed?: boolean;
+            expectedNetPayable?: string | null;
+        };
+        FinalizePreflightResponse: {
+            ready?: boolean;
+            blockers?: components["schemas"]["PreflightBlockerDto"][] | null;
+            finalPayable?: string | null;
         };
         FinalizeSettlementRequest: {
             signatureData?: string | null;
@@ -3279,6 +5815,11 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
             venueScopes?: components["schemas"]["VenueScopeDto"][] | null;
+        };
+        ItineraryResponse: {
+            days?: components["schemas"]["FestivalDayDto"][] | null;
+            stages?: components["schemas"]["StageZoneResponse"][] | null;
+            blocks?: components["schemas"]["ProgrammingBlockResponse"][] | null;
         };
         LedgerBlockDto: {
             blockType?: string | null;
@@ -3401,6 +5942,59 @@ export interface components {
             canTriggerQboSync?: boolean;
             canMapQboAccounts?: boolean;
             canViewFinancials?: boolean;
+            canManageFestivalSchedule?: boolean;
+            canManageAllocations?: boolean;
+            canAdjustSettlements?: boolean;
+            canFinalizeSettlements?: boolean;
+            canOverrideSettlements?: boolean;
+            canPublishPublicItinerary?: boolean;
+        };
+        PreflightBlockerDto: {
+            category?: string | null;
+            message?: string | null;
+            linkTarget?: string | null;
+        };
+        ProgrammingBlockResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            stageZoneId?: string;
+            stageName?: string | null;
+            /** Format: uuid */
+            festivalArtistId?: string | null;
+            artistName?: string | null;
+            dayDate?: string | null;
+            startTime?: string | null;
+            endTime?: string | null;
+            title?: string | null;
+            category?: string | null;
+            scheduleStatus?: string | null;
+            bookingStatus?: string | null;
+            settlementStatus?: string | null;
+            requiresSettlement?: boolean;
+            requiresSettlementReview?: boolean;
+            isPubliclyVisible?: boolean;
+            description?: string | null;
+            loadInTime?: string | null;
+            soundcheckTime?: string | null;
+            warnings?: components["schemas"]["FestivalWarning"][] | null;
+        };
+        PublicItineraryResponse: {
+            days?: components["schemas"]["FestivalDayDto"][] | null;
+            stages?: components["schemas"]["StageZoneResponse"][] | null;
+            blocks?: components["schemas"]["PublicProgrammingBlockResponse"][] | null;
+        };
+        PublicProgrammingBlockResponse: {
+            /** Format: uuid */
+            id?: string;
+            dayDate?: string | null;
+            stageName?: string | null;
+            startTime?: string | null;
+            endTime?: string | null;
+            title?: string | null;
+            category?: string | null;
         };
         QboAccountMappingDto: {
             /** Format: uuid */
@@ -3426,6 +6020,15 @@ export interface components {
             host?: string | null;
             /** Format: date-time */
             timestamp?: string;
+        };
+        QboReviewResolutionResponse: {
+            /** Format: uuid */
+            transactionId?: string;
+            priorReviewState?: string | null;
+            newReviewState?: string | null;
+            priorMappingJson?: string | null;
+            newMappingJson?: string | null;
+            reason?: string | null;
         };
         QboTrackingCatalogDto: {
             items?: components["schemas"]["QboTrackingRefDto"][] | null;
@@ -3479,10 +6082,49 @@ export interface components {
             /** Format: date-time */
             createdAt?: string;
         };
+        ReopenBlockSettlementRequest: {
+            reasonCode?: string | null;
+            note?: string | null;
+            acknowledgeDispatched?: boolean;
+        };
         ResetSeedResponseDto: {
             orgA?: components["schemas"]["OrgSeedContextDto"];
             orgB?: components["schemas"]["OrgSeedContextDto"];
             sentinels?: components["schemas"]["SeedSentinelsDto"];
+        };
+        ResolveQboReviewRequest: {
+            resolution?: string | null;
+            reason?: string | null;
+        };
+        RevenueAllocationResponse: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            revenueBucketId?: string;
+            bucketName?: string | null;
+            /** Format: uuid */
+            programmingBlockId?: string;
+            blockTitle?: string | null;
+            allocationType?: string | null;
+            percentage?: string | null;
+            amount?: string | null;
+            calculatedAmount?: string;
+            bucketRemaining?: string;
+            warnings?: components["schemas"]["FestivalWarning"][] | null;
+            roundingAdjustment?: string | null;
+        };
+        RevenueBucketResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string | null;
+            isAllocable?: boolean;
+            amount?: string;
+            /** Format: uuid */
+            linkedLineItemId?: string | null;
+            /** Format: date-time */
+            lockedAt?: string | null;
+            totalAllocated?: string;
+            remaining?: string;
         };
         ReverseSettlementRequest: {
             reason?: string | null;
@@ -3505,6 +6147,12 @@ export interface components {
             canTriggerQboSync?: boolean;
             canMapQboAccounts?: boolean;
             canViewFinancials?: boolean;
+            canManageFestivalSchedule?: boolean;
+            canManageAllocations?: boolean;
+            canAdjustSettlements?: boolean;
+            canFinalizeSettlements?: boolean;
+            canOverrideSettlements?: boolean;
+            canPublishPublicItinerary?: boolean;
         };
         RoleSummaryDto: {
             /** Format: uuid */
@@ -3514,6 +6162,18 @@ export interface components {
         SeedSentinelsDto: {
             orgAString?: string[] | null;
             orgBStrings?: string[] | null;
+        };
+        SetBlockBookingStatusRequest: {
+            bookingStatus?: string | null;
+            reason?: string | null;
+        };
+        SetBlockStatusRequest: {
+            status?: string | null;
+            reason?: string | null;
+        };
+        SetPublishVisibilityRequest: {
+            blockIds?: string[] | null;
+            isPubliclyVisible?: boolean;
         };
         SettlementPdfHashResponseDto: {
             hashHex?: string | null;
@@ -3533,6 +6193,15 @@ export interface components {
             settledByUserId?: string | null;
             settlementPdfAvailable?: boolean;
             editability?: components["schemas"]["EditabilityDto"];
+        };
+        StageZoneResponse: {
+            /** Format: uuid */
+            id?: string;
+            name?: string | null;
+            /** Format: int32 */
+            sortOrder?: number;
+            /** Format: int32 */
+            blockCount?: number;
         };
         SyncResultDto: {
             /** Format: uuid */
@@ -3610,6 +6279,18 @@ export interface components {
             taxWithholdingPercentage?: string;
             rowVersion?: string | null;
         };
+        UpdateBlockDealTermsRequest: {
+            dealType?: string | null;
+            baseGuarantee?: string;
+            backendPercentage?: string;
+            percentBasis?: string | null;
+            capAmount?: string | null;
+            floorAmount?: string | null;
+            bonusThresholdAmount?: string | null;
+            bonusAmount?: string | null;
+            taxWithholdingPercentage?: string;
+            customFormulaExpression?: string | null;
+        };
         UpdateEventRequest: {
             title?: string | null;
             eventDate?: string | null;
@@ -3619,6 +6300,11 @@ export interface components {
             loadInTime?: string | null;
             curfewTime?: string | null;
             supportLineup?: string | null;
+        };
+        UpdateFestivalRequest: {
+            title?: string | null;
+            startDate?: string | null;
+            endDate?: string | null;
         };
         UpdateLineItemRequest: {
             rowLabel?: string | null;
@@ -3639,9 +6325,39 @@ export interface components {
         UpdateOrganizationRequest: {
             name?: string | null;
         };
+        UpdateProgrammingBlockRequest: {
+            title?: string | null;
+            dayDate?: string | null;
+            /** Format: uuid */
+            stageZoneId?: string;
+            startTime?: string | null;
+            endTime?: string | null;
+            category?: string | null;
+            requiresSettlement?: boolean;
+            /** Format: uuid */
+            festivalArtistId?: string | null;
+            newArtistName?: string | null;
+            isPubliclyVisible?: boolean;
+            description?: string | null;
+            loadInTime?: string | null;
+            soundcheckTime?: string | null;
+            bookingStatus?: string | null;
+        };
         UpdateRegionRequest: {
             name?: string | null;
             notes?: string | null;
+        };
+        UpdateRevenueAllocationRequest: {
+            allocationType?: string | null;
+            percentage?: string | null;
+            amount?: string | null;
+        };
+        UpdateRevenueBucketRequest: {
+            name?: string | null;
+            amount?: string;
+            isAllocable?: boolean;
+            /** Format: uuid */
+            linkedLineItemId?: string | null;
         };
         UpdateRoleRequest: {
             canManagePermissions?: boolean | null;
@@ -3652,6 +6368,17 @@ export interface components {
             canTriggerQboSync?: boolean | null;
             canMapQboAccounts?: boolean | null;
             canViewFinancials?: boolean | null;
+            canManageFestivalSchedule?: boolean | null;
+            canManageAllocations?: boolean | null;
+            canAdjustSettlements?: boolean | null;
+            canFinalizeSettlements?: boolean | null;
+            canOverrideSettlements?: boolean | null;
+            canPublishPublicItinerary?: boolean | null;
+        };
+        UpdateStageZoneRequest: {
+            name?: string | null;
+            /** Format: int32 */
+            sortOrder?: number | null;
         };
         UpdateTrackingMappingRequest: {
             targetTier?: string | null;
@@ -3749,18 +6476,38 @@ export type operations = Record<string, never>;
 export type AcceptInvitationRequest = components['schemas']['AcceptInvitationRequest'];
 export type AcceptInvitationResponse = components['schemas']['AcceptInvitationResponse'];
 export type ActionCenterDto = components['schemas']['ActionCenterDto'];
+export type ArtistAppearanceDto = components['schemas']['ArtistAppearanceDto'];
+export type ArtistSettlementRollupDto = components['schemas']['ArtistSettlementRollupDto'];
 export type AuthResponse = components['schemas']['AuthResponse'];
+export type BlockAllocationLineDto = components['schemas']['BlockAllocationLineDto'];
+export type BlockDealTermsDto = components['schemas']['BlockDealTermsDto'];
+export type BlockQboSourceTraceResponse = components['schemas']['BlockQboSourceTraceResponse'];
+export type BlockSettlementComputedDto = components['schemas']['BlockSettlementComputedDto'];
+export type BlockSettlementLineItemDto = components['schemas']['BlockSettlementLineItemDto'];
+export type BlockSettlementResultDto = components['schemas']['BlockSettlementResultDto'];
+export type BlockSettlementRevisionDto = components['schemas']['BlockSettlementRevisionDto'];
+export type BlockSettlementSheetResponse = components['schemas']['BlockSettlementSheetResponse'];
 export type BlockTotalsDto = components['schemas']['BlockTotalsDto'];
+export type BlockWorkQueueItemDto = components['schemas']['BlockWorkQueueItemDto'];
 export type CalendarPlacementDto = components['schemas']['CalendarPlacementDto'];
 export type ChangeRoleRequest = components['schemas']['ChangeRoleRequest'];
 export type ChangeRoleResponse = components['schemas']['ChangeRoleResponse'];
+export type CopyDealTermsRequest = components['schemas']['CopyDealTermsRequest'];
 export type CreateArtistRequest = components['schemas']['CreateArtistRequest'];
+export type CreateBlockSettlementLineItemRequest = components['schemas']['CreateBlockSettlementLineItemRequest'];
 export type CreateEventRequest = components['schemas']['CreateEventRequest'];
+export type CreateExpenseAllocationRequest = components['schemas']['CreateExpenseAllocationRequest'];
+export type CreateFestivalArtistRequest = components['schemas']['CreateFestivalArtistRequest'];
+export type CreateFestivalRequest = components['schemas']['CreateFestivalRequest'];
 export type CreateInvitationRequest = components['schemas']['CreateInvitationRequest'];
 export type CreateLineItemRequest = components['schemas']['CreateLineItemRequest'];
 export type CreateMappingRequest = components['schemas']['CreateMappingRequest'];
 export type CreateOrganizationRequest = components['schemas']['CreateOrganizationRequest'];
+export type CreateProgrammingBlockRequest = components['schemas']['CreateProgrammingBlockRequest'];
 export type CreateRegionRequest = components['schemas']['CreateRegionRequest'];
+export type CreateRevenueAllocationRequest = components['schemas']['CreateRevenueAllocationRequest'];
+export type CreateRevenueBucketRequest = components['schemas']['CreateRevenueBucketRequest'];
+export type CreateStageZoneRequest = components['schemas']['CreateStageZoneRequest'];
 export type CreateTrackingMappingRequest = components['schemas']['CreateTrackingMappingRequest'];
 export type CreateVenueRequest = components['schemas']['CreateVenueRequest'];
 export type DashboardResponse = components['schemas']['DashboardResponse'];
@@ -3770,9 +6517,38 @@ export type EventArtistDto = components['schemas']['EventArtistDto'];
 export type EventCardDto = components['schemas']['EventCardDto'];
 export type EventResponse = components['schemas']['EventResponse'];
 export type ExpectedSettlementDto = components['schemas']['ExpectedSettlementDto'];
+export type ExpenseAllocationResponse = components['schemas']['ExpenseAllocationResponse'];
+export type ExpenseAllocationTargetRequest = components['schemas']['ExpenseAllocationTargetRequest'];
+export type ExpenseSourceSummaryResponse = components['schemas']['ExpenseSourceSummaryResponse'];
+export type FestivalArtistResponse = components['schemas']['FestivalArtistResponse'];
+export type FestivalAuditEntryResponse = components['schemas']['FestivalAuditEntryResponse'];
+export type FestivalAuditLogEntryDto = components['schemas']['FestivalAuditLogEntryDto'];
+export type FestivalDayDto = components['schemas']['FestivalDayDto'];
+export type FestivalDayReportResponse = components['schemas']['FestivalDayReportResponse'];
+export type FestivalDayReportRowDto = components['schemas']['FestivalDayReportRowDto'];
+export type FestivalPnlExpenseRowDto = components['schemas']['FestivalPnlExpenseRowDto'];
+export type FestivalPnlReportResponse = components['schemas']['FestivalPnlReportResponse'];
+export type FestivalPnlRevenueRowDto = components['schemas']['FestivalPnlRevenueRowDto'];
+export type FestivalQboAllocationTraceDto = components['schemas']['FestivalQboAllocationTraceDto'];
+export type FestivalQboTransactionResponse = components['schemas']['FestivalQboTransactionResponse'];
+export type FestivalReportDrillDto = components['schemas']['FestivalReportDrillDto'];
+export type FestivalResponse = components['schemas']['FestivalResponse'];
+export type FestivalSettlementStatusReportResponse = components['schemas']['FestivalSettlementStatusReportResponse'];
+export type FestivalSettlementStatusRowDto = components['schemas']['FestivalSettlementStatusRowDto'];
+export type FestivalStageReportResponse = components['schemas']['FestivalStageReportResponse'];
+export type FestivalStageReportRowDto = components['schemas']['FestivalStageReportRowDto'];
+export type FestivalUnreconciledReportResponse = components['schemas']['FestivalUnreconciledReportResponse'];
+export type FestivalUnreconciledTotalsDto = components['schemas']['FestivalUnreconciledTotalsDto'];
+export type FestivalUnreconciledTransactionRowDto = components['schemas']['FestivalUnreconciledTransactionRowDto'];
+export type FestivalVarianceReportResponse = components['schemas']['FestivalVarianceReportResponse'];
+export type FestivalVarianceRowDto = components['schemas']['FestivalVarianceRowDto'];
+export type FestivalWarning = components['schemas']['FestivalWarning'];
+export type FinalizeBlockSettlementRequest = components['schemas']['FinalizeBlockSettlementRequest'];
+export type FinalizePreflightResponse = components['schemas']['FinalizePreflightResponse'];
 export type FinalizeSettlementRequest = components['schemas']['FinalizeSettlementRequest'];
 export type FinancialHealthDto = components['schemas']['FinancialHealthDto'];
 export type InvitationResponse = components['schemas']['InvitationResponse'];
+export type ItineraryResponse = components['schemas']['ItineraryResponse'];
 export type LedgerBlockDto = components['schemas']['LedgerBlockDto'];
 export type LedgerGridResponse = components['schemas']['LedgerGridResponse'];
 export type LedgerSummaryDto = components['schemas']['LedgerSummaryDto'];
@@ -3787,10 +6563,15 @@ export type OrganizationQboSummaryDto = components['schemas']['OrganizationQboSu
 export type OrganizationResponse = components['schemas']['OrganizationResponse'];
 export type OrganizationSummaryDto = components['schemas']['OrganizationSummaryDto'];
 export type PermissionsDto = components['schemas']['PermissionsDto'];
+export type PreflightBlockerDto = components['schemas']['PreflightBlockerDto'];
+export type ProgrammingBlockResponse = components['schemas']['ProgrammingBlockResponse'];
+export type PublicItineraryResponse = components['schemas']['PublicItineraryResponse'];
+export type PublicProgrammingBlockResponse = components['schemas']['PublicProgrammingBlockResponse'];
 export type QboAccountMappingDto = components['schemas']['QboAccountMappingDto'];
 export type QboAccountMappingsResponse = components['schemas']['QboAccountMappingsResponse'];
 export type QboConnectUrlDto = components['schemas']['QboConnectUrlDto'];
 export type QboEgressRecordDto = components['schemas']['QboEgressRecordDto'];
+export type QboReviewResolutionResponse = components['schemas']['QboReviewResolutionResponse'];
 export type QboTrackingCatalogDto = components['schemas']['QboTrackingCatalogDto'];
 export type QboTrackingMappingDto = components['schemas']['QboTrackingMappingDto'];
 export type QboTrackingMappingsResponse = components['schemas']['QboTrackingMappingsResponse'];
@@ -3799,15 +6580,23 @@ export type RefreshRequest = components['schemas']['RefreshRequest'];
 export type RegionResponse = components['schemas']['RegionResponse'];
 export type RegisterRequest = components['schemas']['RegisterRequest'];
 export type RegisterResponse = components['schemas']['RegisterResponse'];
+export type ReopenBlockSettlementRequest = components['schemas']['ReopenBlockSettlementRequest'];
 export type ResetSeedResponseDto = components['schemas']['ResetSeedResponseDto'];
+export type ResolveQboReviewRequest = components['schemas']['ResolveQboReviewRequest'];
+export type RevenueAllocationResponse = components['schemas']['RevenueAllocationResponse'];
+export type RevenueBucketResponse = components['schemas']['RevenueBucketResponse'];
 export type ReverseSettlementRequest = components['schemas']['ReverseSettlementRequest'];
 export type RoleDetailDto = components['schemas']['RoleDetailDto'];
 export type RoleResponse = components['schemas']['RoleResponse'];
 export type RoleSummaryDto = components['schemas']['RoleSummaryDto'];
 export type SeedSentinelsDto = components['schemas']['SeedSentinelsDto'];
+export type SetBlockBookingStatusRequest = components['schemas']['SetBlockBookingStatusRequest'];
+export type SetBlockStatusRequest = components['schemas']['SetBlockStatusRequest'];
+export type SetPublishVisibilityRequest = components['schemas']['SetPublishVisibilityRequest'];
 export type SettlementPdfHashResponseDto = components['schemas']['SettlementPdfHashResponseDto'];
 export type SettlementPdfLinkDto = components['schemas']['SettlementPdfLinkDto'];
 export type SettlementResultDto = components['schemas']['SettlementResultDto'];
+export type StageZoneResponse = components['schemas']['StageZoneResponse'];
 export type SyncResultDto = components['schemas']['SyncResultDto'];
 export type SyncStatusDto = components['schemas']['SyncStatusDto'];
 export type UnmappedCountDto = components['schemas']['UnmappedCountDto'];
@@ -3815,12 +6604,18 @@ export type UnmappedEventSummaryDto = components['schemas']['UnmappedEventSummar
 export type UnmappedTransactionDto = components['schemas']['UnmappedTransactionDto'];
 export type UnmappedTransactionsResponse = components['schemas']['UnmappedTransactionsResponse'];
 export type UpdateArtistRequest = components['schemas']['UpdateArtistRequest'];
+export type UpdateBlockDealTermsRequest = components['schemas']['UpdateBlockDealTermsRequest'];
 export type UpdateEventRequest = components['schemas']['UpdateEventRequest'];
+export type UpdateFestivalRequest = components['schemas']['UpdateFestivalRequest'];
 export type UpdateLineItemRequest = components['schemas']['UpdateLineItemRequest'];
 export type UpdateMappingRequest = components['schemas']['UpdateMappingRequest'];
 export type UpdateOrganizationRequest = components['schemas']['UpdateOrganizationRequest'];
+export type UpdateProgrammingBlockRequest = components['schemas']['UpdateProgrammingBlockRequest'];
 export type UpdateRegionRequest = components['schemas']['UpdateRegionRequest'];
+export type UpdateRevenueAllocationRequest = components['schemas']['UpdateRevenueAllocationRequest'];
+export type UpdateRevenueBucketRequest = components['schemas']['UpdateRevenueBucketRequest'];
 export type UpdateRoleRequest = components['schemas']['UpdateRoleRequest'];
+export type UpdateStageZoneRequest = components['schemas']['UpdateStageZoneRequest'];
 export type UpdateTrackingMappingRequest = components['schemas']['UpdateTrackingMappingRequest'];
 export type UpdateVenueRequest = components['schemas']['UpdateVenueRequest'];
 export type UpdateVenueScopesRequest = components['schemas']['UpdateVenueScopesRequest'];
