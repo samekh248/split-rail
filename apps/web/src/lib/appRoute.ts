@@ -194,6 +194,11 @@ export function navigateToDashboard(): void {
   pushPath('/');
 }
 
+/** Ends an authenticated route without retaining it in browser history. */
+export function navigateToSignIn(): void {
+  replacePath('/');
+}
+
 export function navigateToAccounting(): void {
   pushPath('/accounting');
 }

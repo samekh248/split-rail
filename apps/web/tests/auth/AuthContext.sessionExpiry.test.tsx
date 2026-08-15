@@ -124,6 +124,7 @@ describe('AuthContext session expiry', () => {
     renderAuth(<SessionExpiryProbe />);
     await waitFor(() => expect(screen.getByTestId('phase')).toHaveTextContent('authenticated'));
 
+    window.history.pushState({}, '', '/venues/venue-1/events/event-1?focus=deal#artist');
     localStorage.removeItem('refreshToken');
 
     await expect(apiFetch('/secure')).rejects.toBeInstanceOf(SessionExpiredError);
@@ -132,6 +133,9 @@ describe('AuthContext session expiry', () => {
     await waitFor(() => expect(screen.getByTestId('session-expired')).toHaveTextContent('true'));
     expect(localStorage.getItem('accessToken')).toBeNull();
     expect(localStorage.getItem('refreshToken')).toBeNull();
+    expect(window.location.pathname).toBe('/');
+    expect(window.location.search).toBe('');
+    expect(window.location.hash).toBe('');
     expect(
       fetchMock.mock.calls.some((call) => String(call[0]).includes('/auth/logout')),
     ).toBe(true);
@@ -157,12 +161,46 @@ describe('AuthContext session expiry', () => {
     renderAuth(<SessionExpiryProbe />);
     await waitFor(() => expect(screen.getByTestId('phase')).toHaveTextContent('authenticated'));
 
+    window.history.pushState({}, '', '/settings/team?from=event#members');
     await act(async () => {
       screen.getByRole('button', { name: 'logout' }).click();
     });
 
     await waitFor(() => expect(screen.getByTestId('phase')).toHaveTextContent('unauthenticated'));
     expect(screen.getByTestId('session-expired')).toHaveTextContent('false');
+    expect(window.location.pathname).toBe('/');
+    expect(window.location.search).toBe('');
+    expect(window.location.hash).toBe('');
+  });
+
+  it('explicit logout clears local state and URL when the server request fails', async () => {
+    localStorage.setItem('accessToken', 'token');
+    localStorage.setItem('refreshToken', 'refresh');
+
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve(profileWithOrg()),
+      })
+      .mockRejectedValueOnce(new TypeError('Failed to fetch'));
+    vi.stubGlobal('fetch', fetchMock);
+
+    renderAuth(<SessionExpiryProbe />);
+    await waitFor(() => expect(screen.getByTestId('phase')).toHaveTextContent('authenticated'));
+    window.history.pushState({}, '', '/accept-invite?token=secret#continue');
+
+    await act(async () => {
+      screen.getByRole('button', { name: 'logout' }).click();
+    });
+
+    await waitFor(() => expect(screen.getByTestId('phase')).toHaveTextContent('unauthenticated'));
+    expect(localStorage.getItem('accessToken')).toBeNull();
+    expect(localStorage.getItem('refreshToken')).toBeNull();
+    expect(window.location.pathname).toBe('/');
+    expect(window.location.search).toBe('');
+    expect(window.location.hash).toBe('');
   });
 
   it('successful login resets sessionExpired', async () => {
