@@ -9,7 +9,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { configureApiClient, resetSessionExpiredLatch } from '@/api/client';
 import { fetchUserProfile } from '@/api/user';
-import { navigateToDashboard } from '@/lib/appRoute';
+import { navigateToDashboard, navigateToSignIn } from '@/lib/appRoute';
 import type { AcceptInvitationRequest, LoginRequest, UserProfileResponse } from '@/types/generated-api';
 import { clearActiveVenueId } from '@/venue/activeVenueStorage';
 import { bootstrapAuthSession, routeProfile } from './authBootstrap';
@@ -70,6 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthViewState('login');
       setPhase('unauthenticated');
       setSessionExpired(true);
+      navigateToSignIn();
     })();
   }, [queryClient]);
 
@@ -211,6 +212,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAuthViewState('login');
       setPhase('unauthenticated');
       setPending(false);
+      navigateToSignIn();
     }
   }, [queryClient]);
 

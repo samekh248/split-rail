@@ -1,5 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   buildEventWorkspacePath,
   getAppPath,
@@ -10,6 +10,7 @@ import {
   navigateToAcceptInvite,
   navigateToBooking,
   navigateToDashboard,
+  navigateToSignIn,
   navigateToVenues,
   navigateToIntegrationsSettings,
   navigateToOrganizationSettings,
@@ -164,6 +165,20 @@ describe('appRoute', () => {
     const { result } = renderHook(() => useAppRoute());
     act(() => navigateToDashboard());
     expect(window.location.pathname).toBe('/');
+    expect(result.current).toBe('/');
+  });
+
+  it('navigateToSignIn replaces a deep route and clears query and fragment state', () => {
+    window.history.pushState({}, '', `${WORKSPACE_PATH}?focus=deal#artist`);
+    const replaceState = vi.spyOn(window.history, 'replaceState');
+    const { result } = renderHook(() => useAppRoute());
+
+    act(() => navigateToSignIn());
+
+    expect(replaceState).toHaveBeenCalledWith(null, '', '/');
+    expect(window.location.pathname).toBe('/');
+    expect(window.location.search).toBe('');
+    expect(window.location.hash).toBe('');
     expect(result.current).toBe('/');
   });
 
