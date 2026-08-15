@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using SplitRail.Api.Data;
 using SplitRail.Api.DTOs.Booking;
+using SplitRail.Api.DTOs.Festivals;
 using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.Exceptions;
 using SplitRail.Api.Models;
@@ -381,6 +382,8 @@ public class EventService
             evt.LoadInTime?.ToString("HH:mm"),
             evt.CurfewTime?.ToString("HH:mm"),
             evt.SupportLineup,
-            workspaceAllowed);
+            workspaceAllowed,
+            EventTypeFormat.ToApiString(evt.EventType),
+            evt.EndDate?.ToString("yyyy-MM-dd"));
     }
 }

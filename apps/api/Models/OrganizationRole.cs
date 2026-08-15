@@ -15,6 +15,15 @@ public class OrganizationRole
     public bool CanMapQboAccounts { get; set; }
     public bool CanViewFinancials { get; set; }
 
+    // Festival permission layers. Deliberately distinct — access to one layer never
+    // implies another (spec FR-036).
+    public bool CanManageFestivalSchedule { get; set; }
+    public bool CanManageAllocations { get; set; }
+    public bool CanAdjustSettlements { get; set; }
+    public bool CanFinalizeSettlements { get; set; }
+    public bool CanOverrideSettlements { get; set; }
+    public bool CanPublishPublicItinerary { get; set; }
+
     public Organization Organization { get; set; } = null!;
     public ICollection<UserOrganizationMapping> UserMappings { get; set; } = [];
 }

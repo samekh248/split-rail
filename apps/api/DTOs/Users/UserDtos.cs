@@ -9,7 +9,13 @@ public record PermissionsDto(
     bool CanReverseSettlement,
     bool CanTriggerQboSync,
     bool CanMapQboAccounts,
-    bool CanViewFinancials);
+    bool CanViewFinancials,
+    bool CanManageFestivalSchedule,
+    bool CanManageAllocations,
+    bool CanAdjustSettlements,
+    bool CanFinalizeSettlements,
+    bool CanOverrideSettlements,
+    bool CanPublishPublicItinerary);
 
 public record RoleDetailDto(Guid Id, string RoleName, PermissionsDto Permissions);
 public record OrganizationSummaryDto(Guid Id, string Name);

@@ -1,8 +1,13 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BookingCalendarPage } from '@/pages/BookingCalendarPage';
 import { clearBookingCalendarDisplayModeCookie } from '@/lib/bookingCalendarViewStorage';
+import type { CalendarPlacementDto } from '@/types/generated-api';
+
+const calendarPlacementsState = vi.hoisted(() => ({
+  data: [] as CalendarPlacementDto[],
+}));
 
 vi.mock('@/venue/useActiveVenue', () => ({
   useActiveVenue: () => ({
@@ -24,13 +29,52 @@ vi.mock('@/api/regions', () => ({
 }));
 
 vi.mock('@/api/calendar', () => ({
-  useCalendarPlacements: () => ({ data: [], refetch: vi.fn() }),
+  useCalendarPlacements: () => ({ data: calendarPlacementsState.data, refetch: vi.fn() }),
+}));
+
+vi.mock('@/api/user', () => ({
+  useUserProfile: () => ({
+    data: {
+      role: {
+        permissions: {
+          canManageFestivalSchedule: true,
+          canPublishPublicItinerary: true,
+        },
+      },
+    },
+  }),
 }));
 
 const BOOKING_CALENDAR_TEST_DATE = new Date(2026, 5, 15);
+const FESTIVAL_VENUE_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
+const FESTIVAL_EVENT_ID = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+
+function createFestivalPlacement(overrides: Partial<CalendarPlacementDto> = {}): CalendarPlacementDto {
+  return {
+    eventId: FESTIVAL_EVENT_ID,
+    venueId: FESTIVAL_VENUE_ID,
+    venueName: 'Hall A',
+    regionId: null,
+    regionName: null,
+    title: 'Summer Fest',
+    eventDate: '2026-06-15',
+    bookingPlacementStatus: 'CONFIRMED',
+    doorsTime: null,
+    loadInTime: null,
+    curfewTime: null,
+    supportLineup: null,
+    financialStatus: 'PRE_SHOW',
+    isBudgetLocked: false,
+    qboTagName: 'Summer Fest',
+    hasLineItems: false,
+    workspaceAllowed: true,
+    ...overrides,
+  };
+}
 
 describe('BookingCalendarPage', () => {
   beforeEach(() => {
+    calendarPlacementsState.data = [];
     vi.useFakeTimers();
     vi.setSystemTime(BOOKING_CALENDAR_TEST_DATE);
     clearBookingCalendarDisplayModeCookie();
@@ -117,5 +161,42 @@ describe('BookingCalendarPage', () => {
 
     expect(screen.queryByTestId('booking-placement-type-modal')).not.toBeInTheDocument();
     expect(screen.getByTestId('booking-create-event-modal')).toBeInTheDocument();
+  });
+
+  it('opens festival setup after choosing festival', () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId('booking-cell-quick-add-2026-06-15'));
+    fireEvent.click(screen.getByTestId('booking-placement-type-festival'));
+
+    expect(screen.queryByTestId('booking-placement-type-modal')).not.toBeInTheDocument();
+    const modal = screen.getByTestId('festival-setup-modal');
+    expect(within(modal).getByLabelText(/Festival name/)).toBeInTheDocument();
+    expect(within(modal).getByLabelText(/Start date/)).toHaveValue('2026-06-15');
+  });
+
+  it('renders a festival wrapper as a single placement without block flooding', () => {
+    // Calendar API returns one CalendarPlacementDto per Event; a festival with 250 blocks
+    // still surfaces as a single wrapper row — never one chip per block.
+    calendarPlacementsState.data = [createFestivalPlacement()];
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    const matrix = screen.getByTestId('booking-calendar-matrix');
+    const festivalDay = within(matrix).getByTestId('booking-calendar-day-2026-06-15');
+    const placementTitles = festivalDay.querySelectorAll('.booking-calendar-matrix__event-title');
+
+    expect(placementTitles).toHaveLength(1);
+    expect(placementTitles[0]).toHaveTextContent('Summer Fest');
+    expect(within(matrix).queryByTestId('booking-cell-total-2026-06-15')).not.toBeInTheDocument();
+    expect(calendarPlacementsState.data).toHaveLength(1);
   });
 });

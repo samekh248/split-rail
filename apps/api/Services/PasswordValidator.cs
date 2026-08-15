@@ -44,4 +44,13 @@ public static class PermissionNames
     public const string TriggerQboSync = "can_trigger_qbo_sync";
     public const string MapQboAccounts = "can_map_qbo_accounts";
     public const string ViewFinancials = "can_view_financials";
+
+    // Festival permission layers — deliberately distinct; one never implies another
+    // (spec FR-036).
+    public const string ManageFestivalSchedule = "can_manage_festival_schedule";
+    public const string ManageAllocations = "can_manage_allocations";
+    public const string AdjustSettlements = "can_adjust_settlements";
+    public const string FinalizeSettlements = "can_finalize_settlements";
+    public const string OverrideSettlements = "can_override_settlements";
+    public const string PublishPublicItinerary = "can_publish_public_itinerary";
 }

@@ -32,7 +32,13 @@ public class RoleService
                 r.CanReverseSettlement,
                 r.CanTriggerQboSync,
                 r.CanMapQboAccounts,
-                r.CanViewFinancials))
+                r.CanViewFinancials,
+                r.CanManageFestivalSchedule,
+                r.CanManageAllocations,
+                r.CanAdjustSettlements,
+                r.CanFinalizeSettlements,
+                r.CanOverrideSettlements,
+                r.CanPublishPublicItinerary))
             .ToListAsync(cancellationToken);
     }
 
@@ -53,6 +59,12 @@ public class RoleService
         if (request.CanTriggerQboSync.HasValue) role.CanTriggerQboSync = request.CanTriggerQboSync.Value;
         if (request.CanMapQboAccounts.HasValue) role.CanMapQboAccounts = request.CanMapQboAccounts.Value;
         if (request.CanViewFinancials.HasValue) role.CanViewFinancials = request.CanViewFinancials.Value;
+        if (request.CanManageFestivalSchedule.HasValue) role.CanManageFestivalSchedule = request.CanManageFestivalSchedule.Value;
+        if (request.CanManageAllocations.HasValue) role.CanManageAllocations = request.CanManageAllocations.Value;
+        if (request.CanAdjustSettlements.HasValue) role.CanAdjustSettlements = request.CanAdjustSettlements.Value;
+        if (request.CanFinalizeSettlements.HasValue) role.CanFinalizeSettlements = request.CanFinalizeSettlements.Value;
+        if (request.CanOverrideSettlements.HasValue) role.CanOverrideSettlements = request.CanOverrideSettlements.Value;
+        if (request.CanPublishPublicItinerary.HasValue) role.CanPublishPublicItinerary = request.CanPublishPublicItinerary.Value;
 
         await _db.SaveChangesAsync(cancellationToken);
 
@@ -68,6 +80,12 @@ public class RoleService
             role.CanReverseSettlement,
             role.CanTriggerQboSync,
             role.CanMapQboAccounts,
-            role.CanViewFinancials);
+            role.CanViewFinancials,
+            role.CanManageFestivalSchedule,
+            role.CanManageAllocations,
+            role.CanAdjustSettlements,
+            role.CanFinalizeSettlements,
+            role.CanOverrideSettlements,
+            role.CanPublishPublicItinerary);
     }
 }

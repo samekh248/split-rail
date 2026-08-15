@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarCheck, faClock } from '@fortawesome/free-solid-svg-icons';
+import { faCalendarCheck, faClock, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { ModalHeader } from '@/components/shell/ModalHeader';
 
 export interface BookingPlacementTypeModalProps {
@@ -9,6 +9,8 @@ export interface BookingPlacementTypeModalProps {
   onClose: () => void;
   onSelectEvent: () => void;
   onSelectHold: () => void;
+  /** Omitted when the signed-in user cannot create festivals. */
+  onSelectFestival?: () => void;
 }
 
 function formatChooserDate(dateKey: string): string {
@@ -27,6 +29,7 @@ export function BookingPlacementTypeModal({
   onClose,
   onSelectEvent,
   onSelectHold,
+  onSelectFestival,
 }: BookingPlacementTypeModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -100,6 +103,24 @@ export function BookingPlacementTypeModal({
               Reserve this date as a tentative hold
             </span>
           </button>
+          {onSelectFestival ? (
+            <button
+              type="button"
+              className="booking-placement-type-modal__option"
+              data-testid="booking-placement-type-festival"
+              onClick={onSelectFestival}
+            >
+              <FontAwesomeIcon
+                icon={faLayerGroup}
+                className="booking-placement-type-modal__icon"
+                aria-hidden
+              />
+              <span className="booking-placement-type-modal__option-title">Festival</span>
+              <span className="booking-placement-type-modal__option-description">
+                Start a multi-day run with stages and programming blocks
+              </span>
+            </button>
+          ) : null}
         </div>
       </div>
     </div>

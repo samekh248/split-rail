@@ -58,6 +58,12 @@ public class PermissionAuthorizationHandler : AuthorizationHandler<PermissionReq
             PermissionNames.TriggerQboSync => role.CanTriggerQboSync,
             PermissionNames.MapQboAccounts => role.CanMapQboAccounts,
             PermissionNames.ViewFinancials => role.CanViewFinancials,
+            PermissionNames.ManageFestivalSchedule => role.CanManageFestivalSchedule,
+            PermissionNames.ManageAllocations => role.CanManageAllocations,
+            PermissionNames.AdjustSettlements => role.CanAdjustSettlements,
+            PermissionNames.FinalizeSettlements => role.CanFinalizeSettlements,
+            PermissionNames.OverrideSettlements => role.CanOverrideSettlements,
+            PermissionNames.PublishPublicItinerary => role.CanPublishPublicItinerary,
             _ => false
         };
 

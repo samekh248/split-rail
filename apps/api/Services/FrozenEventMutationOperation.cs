@@ -22,4 +22,9 @@ public static class FrozenEventMutationOperation
     public const string PersistenceCreateArtist = "persistence_create_artist";
     public const string PersistenceUpdateArtist = "persistence_update_artist";
     public const string PersistenceDeleteArtist = "persistence_delete_artist";
+
+    public const string PersistenceUpdateBlockSettlement = "persistence_update_block_settlement";
+    public const string PersistenceCreateBlockSettlementLineItem = "persistence_create_block_settlement_line_item";
+    public const string PersistenceUpdateBlockSettlementLineItem = "persistence_update_block_settlement_line_item";
+    public const string PersistenceDeleteBlockSettlementLineItem = "persistence_delete_block_settlement_line_item";
 }

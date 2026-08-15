@@ -8,6 +8,13 @@ public class Event
     public Guid VenueId { get; set; }
     public string Title { get; set; } = string.Empty;
     public DateOnly EventDate { get; set; }
+    public EventType EventType { get; set; } = EventType.Standard;
+
+    /// <summary>
+    /// Inclusive last day of a festival. Null for standard events; the festival's Days are
+    /// the derived range EventDate..EndDate (no separate day table — research.md D2).
+    /// </summary>
+    public DateOnly? EndDate { get; set; }
     public EventStatus Status { get; set; } = EventStatus.PreShow;
     public string QboTagName { get; set; } = string.Empty;
     public bool IsBudgetLocked { get; set; }
@@ -34,4 +41,22 @@ public class Event
     public ICollection<QboSyncLedger> QboSyncLedgerEntries { get; set; } = [];
     public ICollection<UnmappedQboTransaction> UnmappedQboTransactions { get; set; } = [];
     public ICollection<UserEventPin> UserEventPins { get; set; } = [];
+    public ICollection<StageZone> StageZones { get; set; } = [];
+    public ICollection<ProgrammingBlock> ProgrammingBlocks { get; set; } = [];
+    public ICollection<FestivalArtist> FestivalArtists { get; set; } = [];
+    public ICollection<RevenueBucket> RevenueBuckets { get; set; } = [];
+    public ICollection<ExpenseAllocation> ExpenseAllocations { get; set; } = [];
+    public ICollection<FestivalAuditEntry> FestivalAuditEntries { get; set; } = [];
+
+    /// <summary>
+    /// Inclusive festival day range. Empty for standard events.
+    /// </summary>
+    public IEnumerable<DateOnly> FestivalDays()
+    {
+        if (EventType != EventType.Festival || EndDate is not DateOnly end)
+            yield break;
+
+        for (var day = EventDate; day <= end; day = day.AddDays(1))
+            yield return day;
+    }
 }

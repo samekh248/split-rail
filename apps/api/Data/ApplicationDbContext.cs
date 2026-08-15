@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using SplitRail.Api.DTOs.Booking;
+using SplitRail.Api.DTOs.Festivals;
 using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.Models;
 using SplitRail.Api.Models.Enums;
@@ -37,6 +38,16 @@ public class ApplicationDbContext : DbContext
     public DbSet<UnmappedQboTransaction> UnmappedQboTransactions => Set<UnmappedQboTransaction>();
     public DbSet<SettlementReversal> SettlementReversals => Set<SettlementReversal>();
     public DbSet<UserEventPin> UserEventPins => Set<UserEventPin>();
+    public DbSet<StageZone> StageZones => Set<StageZone>();
+    public DbSet<ProgrammingBlock> ProgrammingBlocks => Set<ProgrammingBlock>();
+    public DbSet<FestivalArtist> FestivalArtists => Set<FestivalArtist>();
+    public DbSet<RevenueBucket> RevenueBuckets => Set<RevenueBucket>();
+    public DbSet<RevenueAllocation> RevenueAllocations => Set<RevenueAllocation>();
+    public DbSet<ExpenseAllocation> ExpenseAllocations => Set<ExpenseAllocation>();
+    public DbSet<BlockSettlementLineItem> BlockSettlementLineItems => Set<BlockSettlementLineItem>();
+    public DbSet<BlockSettlementRevision> BlockSettlementRevisions => Set<BlockSettlementRevision>();
+    public DbSet<StageZoneAssignment> StageZoneAssignments => Set<StageZoneAssignment>();
+    public DbSet<FestivalAuditEntry> FestivalAuditEntries => Set<FestivalAuditEntry>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -62,6 +73,16 @@ public class ApplicationDbContext : DbContext
         ConfigureUnmappedQboTransaction(modelBuilder);
         ConfigureSettlementReversal(modelBuilder);
         ConfigureUserEventPin(modelBuilder);
+        ConfigureStageZone(modelBuilder);
+        ConfigureProgrammingBlock(modelBuilder);
+        ConfigureFestivalArtist(modelBuilder);
+        ConfigureRevenueBucket(modelBuilder);
+        ConfigureRevenueAllocation(modelBuilder);
+        ConfigureExpenseAllocation(modelBuilder);
+        ConfigureBlockSettlementLineItem(modelBuilder);
+        ConfigureBlockSettlementRevision(modelBuilder);
+        ConfigureStageZoneAssignment(modelBuilder);
+        ConfigureFestivalAuditEntry(modelBuilder);
 
         ApplyTenantQueryFilters(modelBuilder);
     }
@@ -132,6 +153,48 @@ public class ApplicationDbContext : DbContext
             e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
 
         modelBuilder.Entity<UserEventPin>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        // Festival entities all reach OrganizationId through the wrapper Event -> Venue
+        // (Constitution II — no unscoped festival reads are possible).
+        modelBuilder.Entity<StageZone>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<ProgrammingBlock>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<FestivalArtist>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<RevenueBucket>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<RevenueAllocation>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.RevenueBucket.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<ExpenseAllocation>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<BlockSettlementLineItem>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.ProgrammingBlock.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<BlockSettlementRevision>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.ProgrammingBlock.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<StageZoneAssignment>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.StageZone.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<FestivalAuditEntry>().HasQueryFilter(e =>
             _tenantContext.OrganizationId == null ||
             e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
     }
@@ -313,6 +376,30 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.CanTriggerQboSync)
                 .HasColumnName("can_trigger_qbo_sync")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.CanManageFestivalSchedule)
+                .HasColumnName("can_manage_festival_schedule")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.CanManageAllocations)
+                .HasColumnName("can_manage_allocations")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.CanAdjustSettlements)
+                .HasColumnName("can_adjust_settlements")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.CanFinalizeSettlements)
+                .HasColumnName("can_finalize_settlements")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.CanOverrideSettlements)
+                .HasColumnName("can_override_settlements")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.CanPublishPublicItinerary)
+                .HasColumnName("can_publish_public_itinerary")
                 .HasDefaultValue(false);
 
             entity.Property(e => e.CanMapQboAccounts)
@@ -502,6 +589,16 @@ public class ApplicationDbContext : DbContext
                 .IsRequired();
 
             entity.Property(e => e.EventDate).HasColumnName("event_date");
+
+            entity.Property(e => e.EventType)
+                .HasColumnName("event_type")
+                .HasMaxLength(20)
+                .HasConversion(
+                    v => EventTypeFormat.ToApiString(v),
+                    v => EventTypeFormat.FromApiString(v))
+                .HasDefaultValue(EventType.Standard);
+
+            entity.Property(e => e.EndDate).HasColumnName("end_date");
 
             entity.Property(e => e.Status)
                 .HasColumnName("status")
@@ -1099,6 +1196,643 @@ public class ApplicationDbContext : DbContext
 
             entity.HasOne(e => e.Event)
                 .WithMany(ev => ev.UserEventPins)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureStageZone(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<StageZone>(entity =>
+        {
+            entity.ToTable("stage_zones");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.SortOrder)
+                .HasColumnName("sort_order")
+                .HasDefaultValue(0);
+
+            entity.Property(e => e.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            entity.HasIndex(e => e.EventId).HasDatabaseName("ix_stage_zones_event_id");
+            entity.HasIndex(e => new { e.EventId, e.Name })
+                .IsUnique()
+                .HasDatabaseName("ux_stage_zones_event_id_name");
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.StageZones)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureProgrammingBlock(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ProgrammingBlock>(entity =>
+        {
+            entity.ToTable("programming_blocks");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+            entity.Property(e => e.StageZoneId).HasColumnName("stage_zone_id");
+            entity.Property(e => e.FestivalArtistId).HasColumnName("festival_artist_id");
+
+            entity.Property(e => e.DayDate).HasColumnName("day_date");
+            entity.Property(e => e.StartTime).HasColumnName("start_time");
+            entity.Property(e => e.EndTime).HasColumnName("end_time");
+
+            entity.Property(e => e.Title)
+                .HasColumnName("title")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.Category)
+                .HasColumnName("category")
+                .HasMaxLength(20)
+                .HasConversion(
+                    v => BlockCategoryFormat.ToApiString(v),
+                    v => BlockCategoryFormat.FromApiString(v))
+                .HasDefaultValue(BlockCategory.Music);
+
+            entity.Property(e => e.RequiresSettlement)
+                .HasColumnName("requires_settlement")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.IsPubliclyVisible)
+                .HasColumnName("is_publicly_visible")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.Description).HasColumnName("description");
+            entity.Property(e => e.LoadInTime).HasColumnName("load_in_time");
+            entity.Property(e => e.SoundcheckTime).HasColumnName("soundcheck_time");
+
+            entity.Property(e => e.ScheduleStatus)
+                .HasColumnName("schedule_status")
+                .HasMaxLength(30)
+                .HasConversion(
+                    v => BlockScheduleStatusFormat.ToApiString(v),
+                    v => BlockScheduleStatusFormat.FromApiString(v))
+                .HasDefaultValue(BlockScheduleStatus.Scheduled);
+
+            entity.Property(e => e.BookingStatus)
+                .HasColumnName("booking_status")
+                .HasMaxLength(20)
+                .HasConversion(
+                    v => BlockBookingStatusFormat.ToApiString(v),
+                    v => BlockBookingStatusFormat.FromApiString(v))
+                .HasDefaultValue(BlockBookingStatus.Hold);
+
+            entity.Property(e => e.RequiresSettlementReview)
+                .HasColumnName("requires_settlement_review")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.DealType)
+                .HasColumnName("deal_type")
+                .HasMaxLength(20)
+                .HasConversion(
+                    v => v.ToStorage(),
+                    v => DealTypeExtensions.FromStorage(v))
+                .HasDefaultValue(DealType.Guarantee);
+
+            entity.Property(e => e.BaseGuarantee)
+                .HasColumnName("base_guarantee")
+                .HasColumnType("numeric(12,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.BackendPercentage)
+                .HasColumnName("backend_percentage")
+                .HasColumnType("numeric(5,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.PercentBasis)
+                .HasColumnName("percent_basis")
+                .HasMaxLength(10)
+                .HasConversion(
+                    v => PercentBasisFormat.ToApiString(v),
+                    v => PercentBasisFormat.FromApiString(v))
+                .HasDefaultValue(PercentBasis.Gross);
+
+            entity.Property(e => e.CapAmount)
+                .HasColumnName("cap_amount")
+                .HasColumnType("numeric(12,2)");
+
+            entity.Property(e => e.FloorAmount)
+                .HasColumnName("floor_amount")
+                .HasColumnType("numeric(12,2)");
+
+            entity.Property(e => e.BonusThresholdAmount)
+                .HasColumnName("bonus_threshold_amount")
+                .HasColumnType("numeric(12,2)");
+
+            entity.Property(e => e.BonusAmount)
+                .HasColumnName("bonus_amount")
+                .HasColumnType("numeric(12,2)");
+
+            entity.Property(e => e.TaxWithholdingPercentage)
+                .HasColumnName("tax_withholding_percentage")
+                .HasColumnType("numeric(5,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.CustomFormulaExpression)
+                .HasColumnName("custom_formula_expression");
+
+            entity.Property(e => e.SettlementStatus)
+                .HasColumnName("settlement_status")
+                .HasMaxLength(20)
+                .HasConversion(
+                    v => BlockSettlementStatusFormat.ToApiString(v),
+                    v => BlockSettlementStatusFormat.FromApiString(v))
+                .HasDefaultValue(BlockSettlementStatus.NotRequired);
+
+            entity.Property(e => e.CalculatedNetPayout)
+                .HasColumnName("calculated_net_payout")
+                .HasColumnType("numeric(12,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.FinalizedAt).HasColumnName("finalized_at");
+            entity.Property(e => e.FinalizedByUserId).HasColumnName("finalized_by_user_id");
+            entity.Property(e => e.SettlementPdfUrl).HasColumnName("settlement_pdf_url");
+            entity.Property(e => e.FinalizedSnapshotJson).HasColumnName("finalized_snapshot_json");
+
+            entity.Property(e => e.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("NOW()");
+
+            // Primary index for same-stage overlap validation (research.md D12).
+            entity.HasIndex(e => new { e.EventId, e.StageZoneId, e.DayDate })
+                .HasDatabaseName("ix_programming_blocks_event_stage_day");
+            entity.HasIndex(e => new { e.EventId, e.DayDate })
+                .HasDatabaseName("ix_programming_blocks_event_day");
+            entity.HasIndex(e => e.FestivalArtistId)
+                .HasDatabaseName("ix_programming_blocks_festival_artist_id");
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.ProgrammingBlocks)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.StageZone)
+                .WithMany(s => s.ProgrammingBlocks)
+                .HasForeignKey(e => e.StageZoneId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.FestivalArtist)
+                .WithMany(a => a.ProgrammingBlocks)
+                .HasForeignKey(e => e.FestivalArtistId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.FinalizedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.FinalizedByUserId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    private static void ConfigureFestivalArtist(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<FestivalArtist>(entity =>
+        {
+            entity.ToTable("festival_artists");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasIndex(e => new { e.EventId, e.Name })
+                .IsUnique()
+                .HasDatabaseName("ux_festival_artists_event_id_name");
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.FestivalArtists)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureRevenueBucket(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<RevenueBucket>(entity =>
+        {
+            entity.ToTable("revenue_buckets");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+
+            entity.Property(e => e.Name)
+                .HasColumnName("name")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            // Allocation is opt-in per PRD — buckets are never allocable by default.
+            entity.Property(e => e.IsAllocable)
+                .HasColumnName("is_allocable")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.Amount)
+                .HasColumnName("amount")
+                .HasColumnType("numeric(14,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.LinkedLineItemId).HasColumnName("linked_line_item_id");
+            entity.Property(e => e.LockedAt).HasColumnName("locked_at");
+            entity.Property(e => e.LockedByUserId).HasColumnName("locked_by_user_id");
+
+            entity.Property(e => e.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasIndex(e => new { e.EventId, e.Name })
+                .IsUnique()
+                .HasDatabaseName("ux_revenue_buckets_event_id_name");
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.RevenueBuckets)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.LinkedLineItem)
+                .WithMany()
+                .HasForeignKey(e => e.LinkedLineItemId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+    }
+
+    private static void ConfigureRevenueAllocation(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<RevenueAllocation>(entity =>
+        {
+            entity.ToTable("revenue_allocations");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.RevenueBucketId).HasColumnName("revenue_bucket_id");
+            entity.Property(e => e.ProgrammingBlockId).HasColumnName("programming_block_id");
+
+            entity.Property(e => e.AllocationType)
+                .HasColumnName("allocation_type")
+                .HasMaxLength(30)
+                .HasConversion(
+                    v => RevenueAllocationTypeFormat.ToApiString(v),
+                    v => RevenueAllocationTypeFormat.FromApiString(v));
+
+            entity.Property(e => e.Percentage)
+                .HasColumnName("percentage")
+                .HasColumnType("numeric(7,4)");
+
+            entity.Property(e => e.Amount)
+                .HasColumnName("amount")
+                .HasColumnType("numeric(14,2)");
+
+            entity.Property(e => e.CalculatedAmount)
+                .HasColumnName("calculated_amount")
+                .HasColumnType("numeric(14,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.Property(e => e.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            entity.HasIndex(e => e.RevenueBucketId)
+                .HasDatabaseName("ix_revenue_allocations_bucket_id");
+            entity.HasIndex(e => e.ProgrammingBlockId)
+                .HasDatabaseName("ix_revenue_allocations_block_id");
+
+            entity.HasOne(e => e.RevenueBucket)
+                .WithMany(b => b.Allocations)
+                .HasForeignKey(e => e.RevenueBucketId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ProgrammingBlock)
+                .WithMany(b => b.RevenueAllocations)
+                .HasForeignKey(e => e.ProgrammingBlockId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureExpenseAllocation(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ExpenseAllocation>(entity =>
+        {
+            entity.ToTable("expense_allocations");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+            entity.Property(e => e.SourceLineItemId).HasColumnName("source_line_item_id");
+            entity.Property(e => e.SourceQboTransactionId).HasColumnName("source_qbo_transaction_id");
+
+            entity.Property(e => e.TargetType)
+                .HasColumnName("target_type")
+                .HasMaxLength(20)
+                .HasConversion(
+                    v => AllocationTargetTypeFormat.ToApiString(v),
+                    v => AllocationTargetTypeFormat.FromApiString(v));
+
+            entity.Property(e => e.TargetDayDate).HasColumnName("target_day_date");
+            entity.Property(e => e.TargetStageZoneId).HasColumnName("target_stage_zone_id");
+            entity.Property(e => e.TargetBlockId).HasColumnName("target_block_id");
+
+            entity.Property(e => e.Method)
+                .HasColumnName("method")
+                .HasMaxLength(20)
+                .HasConversion(
+                    v => AllocationMethodFormat.ToApiString(v),
+                    v => AllocationMethodFormat.FromApiString(v));
+
+            entity.Property(e => e.Percentage)
+                .HasColumnName("percentage")
+                .HasColumnType("numeric(7,4)");
+
+            entity.Property(e => e.CalculatedAmount)
+                .HasColumnName("calculated_amount")
+                .HasColumnType("numeric(14,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.CountsTowardSettlement)
+                .HasColumnName("counts_toward_settlement")
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.CreatedByUserId).HasColumnName("created_by_user_id");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.Property(e => e.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            entity.HasIndex(e => e.EventId).HasDatabaseName("ix_expense_allocations_event_id");
+            entity.HasIndex(e => e.SourceLineItemId)
+                .HasDatabaseName("ix_expense_allocations_source_line_item_id");
+            entity.HasIndex(e => e.SourceQboTransactionId)
+                .HasDatabaseName("ix_expense_allocations_source_qbo_transaction_id");
+            entity.HasIndex(e => e.TargetBlockId)
+                .HasDatabaseName("ix_expense_allocations_target_block_id");
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.ExpenseAllocations)
+                .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.SourceLineItem)
+                .WithMany()
+                .HasForeignKey(e => e.SourceLineItemId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.SourceQboTransaction)
+                .WithMany(t => t.ExpenseAllocations)
+                .HasForeignKey(e => e.SourceQboTransactionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.TargetStageZone)
+                .WithMany()
+                .HasForeignKey(e => e.TargetStageZoneId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.TargetBlock)
+                .WithMany()
+                .HasForeignKey(e => e.TargetBlockId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureBlockSettlementLineItem(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<BlockSettlementLineItem>(entity =>
+        {
+            entity.ToTable("block_settlement_line_items");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.ProgrammingBlockId).HasColumnName("programming_block_id");
+
+            entity.Property(e => e.LineType)
+                .HasColumnName("line_type")
+                .HasMaxLength(30)
+                .HasConversion(
+                    v => BlockSettlementLineTypeFormat.ToApiString(v),
+                    v => BlockSettlementLineTypeFormat.FromApiString(v));
+
+            entity.Property(e => e.Label)
+                .HasColumnName("label")
+                .HasMaxLength(255)
+                .IsRequired();
+
+            entity.Property(e => e.Amount)
+                .HasColumnName("amount")
+                .HasColumnType("numeric(12,2)")
+                .HasDefaultValue(0m);
+
+            entity.Property(e => e.EnteredByUserId).HasColumnName("entered_by_user_id");
+
+            entity.Property(e => e.EnteredAt)
+                .HasColumnName("entered_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.Property(e => e.Xmin)
+                .HasColumnName("xmin")
+                .HasColumnType("xid")
+                .ValueGeneratedOnAddOrUpdate()
+                .IsConcurrencyToken();
+
+            entity.HasIndex(e => e.ProgrammingBlockId)
+                .HasDatabaseName("ix_block_settlement_line_items_block_id");
+
+            entity.HasOne(e => e.ProgrammingBlock)
+                .WithMany(b => b.SettlementLineItems)
+                .HasForeignKey(e => e.ProgrammingBlockId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureBlockSettlementRevision(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<BlockSettlementRevision>(entity =>
+        {
+            entity.ToTable("block_settlement_revisions");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.ProgrammingBlockId).HasColumnName("programming_block_id");
+            entity.Property(e => e.RevisionNumber).HasColumnName("revision_number");
+
+            entity.Property(e => e.SnapshotJson)
+                .HasColumnName("snapshot_json")
+                .IsRequired();
+
+            entity.Property(e => e.ReasonCode)
+                .HasColumnName("reason_code")
+                .HasMaxLength(100);
+
+            entity.Property(e => e.Note).HasColumnName("note");
+            entity.Property(e => e.ReopenedByUserId).HasColumnName("reopened_by_user_id");
+            entity.Property(e => e.ReopenedAt).HasColumnName("reopened_at");
+            entity.Property(e => e.FinalizedByUserId).HasColumnName("finalized_by_user_id");
+            entity.Property(e => e.FinalizedAt).HasColumnName("finalized_at");
+            entity.Property(e => e.PdfUrl).HasColumnName("pdf_url");
+
+            entity.Property(e => e.DispatchOutcome)
+                .HasColumnName("dispatch_outcome")
+                .HasMaxLength(100);
+
+            entity.HasIndex(e => new { e.ProgrammingBlockId, e.RevisionNumber })
+                .IsUnique()
+                .HasDatabaseName("ux_block_settlement_revisions_block_revision");
+
+            entity.HasOne(e => e.ProgrammingBlock)
+                .WithMany(b => b.SettlementRevisions)
+                .HasForeignKey(e => e.ProgrammingBlockId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureStageZoneAssignment(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<StageZoneAssignment>(entity =>
+        {
+            entity.ToTable("stage_zone_assignments");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.StageZoneId).HasColumnName("stage_zone_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.Property(e => e.CreatedAt)
+                .HasColumnName("created_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasIndex(e => new { e.StageZoneId, e.UserId })
+                .IsUnique()
+                .HasDatabaseName("ux_stage_zone_assignments_stage_user");
+            entity.HasIndex(e => e.UserId)
+                .HasDatabaseName("ix_stage_zone_assignments_user_id");
+
+            entity.HasOne(e => e.StageZone)
+                .WithMany(s => s.Assignments)
+                .HasForeignKey(e => e.StageZoneId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.User)
+                .WithMany()
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureFestivalAuditEntry(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<FestivalAuditEntry>(entity =>
+        {
+            entity.ToTable("festival_audit_entries");
+
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Id)
+                .HasColumnName("id")
+                .HasDefaultValueSql("gen_random_uuid()");
+
+            entity.Property(e => e.EventId).HasColumnName("event_id");
+
+            entity.Property(e => e.EntityType)
+                .HasColumnName("entity_type")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.EntityId).HasColumnName("entity_id");
+
+            entity.Property(e => e.Action)
+                .HasColumnName("action")
+                .HasMaxLength(50)
+                .IsRequired();
+
+            entity.Property(e => e.PriorValueJson).HasColumnName("prior_value_json");
+            entity.Property(e => e.NewValueJson).HasColumnName("new_value_json");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+
+            entity.Property(e => e.OccurredAt)
+                .HasColumnName("occurred_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.Property(e => e.Reason).HasColumnName("reason");
+
+            entity.HasIndex(e => e.EventId).HasDatabaseName("ix_festival_audit_entries_event_id");
+            entity.HasIndex(e => new { e.EntityType, e.EntityId })
+                .HasDatabaseName("ix_festival_audit_entries_entity");
+
+            entity.HasOne(e => e.Event)
+                .WithMany(ev => ev.FestivalAuditEntries)
                 .HasForeignKey(e => e.EventId)
                 .OnDelete(DeleteBehavior.Cascade);
         });

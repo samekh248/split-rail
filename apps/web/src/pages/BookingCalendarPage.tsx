@@ -13,6 +13,8 @@ import { BookingEventDrawer } from '@/components/booking/BookingEventDrawer';
 import { CreateBookingEventModal } from '@/components/booking/CreateBookingEventModal';
 import { CreateHoldModal } from '@/components/booking/CreateHoldModal';
 import { BookingPlacementTypeModal } from '@/components/booking/BookingPlacementTypeModal';
+import { FestivalSetupModal } from '@/components/festival/FestivalSetupModal';
+import { useCanManageFestivalSchedule } from '@/hooks/useFestivalPermissions';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import {
   filterPlacementsByView,
@@ -90,10 +92,13 @@ export function BookingCalendarPage() {
       : null,
   );
 
+  const canManageFestivalSchedule = useCanManageFestivalSchedule();
+
   const [agendaDate, setAgendaDate] = useState<string | null>(null);
   const [selectedPlacement, setSelectedPlacement] = useState<BookingPlacement | null>(null);
   const [createEventOpen, setCreateEventOpen] = useState(false);
   const [createHoldOpen, setCreateHoldOpen] = useState(false);
+  const [createFestivalOpen, setCreateFestivalOpen] = useState(false);
   const [placementTypeOpen, setPlacementTypeOpen] = useState(false);
   const [quickAdd, setQuickAdd] = useState<{ venueId: string; date: string } | null>(null);
   const [highlightedStatus, setHighlightedStatus] = useState<BookingPlacementStatus | null>(null);
@@ -229,6 +234,14 @@ export function BookingCalendarPage() {
           setPlacementTypeOpen(false);
           setCreateHoldOpen(true);
         }}
+        onSelectFestival={
+          canManageFestivalSchedule
+            ? () => {
+                setPlacementTypeOpen(false);
+                setCreateFestivalOpen(true);
+              }
+            : undefined
+        }
       />
 
       <CreateBookingEventModal
@@ -253,6 +266,22 @@ export function BookingCalendarPage() {
           setQuickAdd(null);
         }}
         onCreated={handlePlacementCreated}
+      />
+
+      <FestivalSetupModal
+        open={createFestivalOpen}
+        venueId={quickAdd?.venueId ?? ''}
+        venues={venues}
+        initialStartDate={quickAdd?.date ?? ''}
+        onClose={() => {
+          setCreateFestivalOpen(false);
+          setQuickAdd(null);
+        }}
+        onCreated={() => {
+          setCreateFestivalOpen(false);
+          handlePlacementCreated(quickAdd?.date ?? '');
+          void Promise.all([refetch(), refetchUpcoming()]);
+        }}
       />
 
     </main>

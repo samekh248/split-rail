@@ -55,6 +55,12 @@ public sealed class FrozenEventImmutabilityInterceptor : SaveChangesInterceptor
 
         foreach (var entry in context.ChangeTracker.Entries<FinancialLineItem>())
             ValidateLineItemEntry(entry, parentEvents);
+
+        foreach (var entry in context.ChangeTracker.Entries<ProgrammingBlock>())
+            ValidateProgrammingBlockEntry(entry);
+
+        foreach (var entry in context.ChangeTracker.Entries<BlockSettlementLineItem>())
+            ValidateBlockSettlementLineItemEntry(entry, context);
     }
 
     private void ValidateEventEntry(EntityEntry<Event> entry)
@@ -127,6 +133,84 @@ public sealed class FrozenEventImmutabilityInterceptor : SaveChangesInterceptor
 
         Reject(parent, operation, parent.Status);
     }
+
+    private void ValidateProgrammingBlockEntry(EntityEntry<ProgrammingBlock> entry)
+    {
+        if (entry.State is EntityState.Unchanged or EntityState.Detached or EntityState.Added)
+            return;
+
+        var originalStatus = GetOriginalBlockSettlementStatus(entry);
+        if (originalStatus != BlockSettlementStatus.Finalized)
+            return;
+
+        if (entry.State == EntityState.Deleted)
+        {
+            RejectFinalizedBlock(entry.Entity, FrozenEventMutationOperation.PersistenceUpdateBlockSettlement);
+            return;
+        }
+
+        if (entry.State == EntityState.Modified &&
+            !IsAuthorizedFinalizedBlockModification(entry))
+        {
+            RejectFinalizedBlock(entry.Entity, FrozenEventMutationOperation.PersistenceUpdateBlockSettlement);
+        }
+    }
+
+    private void ValidateBlockSettlementLineItemEntry(
+        EntityEntry<BlockSettlementLineItem> entry,
+        DbContext context)
+    {
+        if (entry.State is EntityState.Unchanged or EntityState.Detached)
+            return;
+
+        var block = LoadBlockSettlementSnapshot(context, entry.Entity.ProgrammingBlockId);
+        if (block?.SettlementStatus != BlockSettlementStatus.Finalized)
+            return;
+
+        var operation = entry.State switch
+        {
+            EntityState.Added => FrozenEventMutationOperation.PersistenceCreateBlockSettlementLineItem,
+            EntityState.Deleted => FrozenEventMutationOperation.PersistenceDeleteBlockSettlementLineItem,
+            _ => FrozenEventMutationOperation.PersistenceUpdateBlockSettlementLineItem
+        };
+
+        RejectFinalizedBlock(block, operation);
+    }
+
+    private bool IsAuthorizedFinalizedBlockModification(EntityEntry<ProgrammingBlock> entry)
+    {
+        if (_saveContext.CurrentReason != FrozenEventSaveReason.BlockSettlementReopen)
+            return false;
+
+        var originalStatus = GetOriginalBlockSettlementStatus(entry);
+        return originalStatus == BlockSettlementStatus.Finalized
+               && entry.Entity.SettlementStatus == BlockSettlementStatus.Draft;
+    }
+
+    private static BlockSettlementStatus GetOriginalBlockSettlementStatus(EntityEntry<ProgrammingBlock> entry)
+    {
+        if (entry.State == EntityState.Added)
+            return entry.Entity.SettlementStatus;
+
+        return (BlockSettlementStatus)entry.OriginalValues[nameof(ProgrammingBlock.SettlementStatus)]!;
+    }
+
+    private static ProgrammingBlock? LoadBlockSettlementSnapshot(DbContext context, Guid blockId) =>
+        context.Set<ProgrammingBlock>()
+            .AsNoTracking()
+            .Where(b => b.Id == blockId)
+            .Select(b => new ProgrammingBlock
+            {
+                Id = b.Id,
+                SettlementStatus = b.SettlementStatus
+            })
+            .FirstOrDefault();
+
+    private void RejectFinalizedBlock(ProgrammingBlock block, string operation) =>
+        _auditor.RejectIfFinalizedBlockSettlement(
+            block,
+            _tenantContext.UserId,
+            operation);
 
     private bool IsAuthorizedFrozenEventModification(EntityEntry<Event> entry, EventStatus originalStatus)
     {

@@ -1,3 +1,5 @@
+using SplitRail.Api.Models.Enums;
+
 namespace SplitRail.Api.Models;
 
 public class UnmappedQboTransaction
@@ -11,7 +13,9 @@ public class UnmappedQboTransaction
     public decimal Amount { get; set; }
     public DateOnly TransactionDate { get; set; }
     public DateTimeOffset SyncedAt { get; set; }
+    public QboReviewState ReviewState { get; set; } = QboReviewState.None;
 
     public Event Event { get; set; } = null!;
     public Venue Venue { get; set; } = null!;
+    public ICollection<ExpenseAllocation> ExpenseAllocations { get; set; } = [];
 }
