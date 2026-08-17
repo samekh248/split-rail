@@ -76,6 +76,17 @@ describe('EventCard', () => {
       expect(badge).toHaveClass('event-card__booking-badge--confirmed');
     });
 
+    it('renders a Festival badge for festival events', () => {
+      renderCard({ ...EVENT_A, eventType: 'FESTIVAL' });
+      openBadgePopover(EVENT_A.eventId!);
+      expect(screen.getByTestId(`event-card-festival-${EVENT_A.eventId}`)).toHaveTextContent('Festival');
+    });
+
+    it('renders the festival date range on the card', () => {
+      renderCard({ ...EVENT_A, eventType: 'FESTIVAL', endDate: '2026-08-03' });
+      expect(screen.getByTestId(`event-card-date-${EVENT_A.eventId}`)).toHaveTextContent('Aug 1–3, 2026');
+    });
+
     it('applies booking status colors for hold placements', () => {
       renderCard({ ...EVENT_A, bookingPlacementStatus: 'HOLD_2' });
       const badge = screen.getByTestId(`event-card-booking-${EVENT_A.eventId}`);

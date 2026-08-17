@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using SplitRail.Api.Data;
+using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.DTOs.Roles;
 using SplitRail.Api.DTOs.Venues;
 using SplitRail.Api.Services;
@@ -26,6 +27,10 @@ public class EventPinControllerTests : IntegrationTestBase
         var pin = await GetPinAsync(token, userId, evt.EventId);
         pin.Should().NotBeNull();
         pin!.PinnedAt.Should().BeAfter(DateTimeOffset.UtcNow.AddMinutes(-1));
+
+        var listed = await client.GetFromJsonAsync<List<EventResponse>>(
+            $"/api/venues/{venueId}/events");
+        listed!.Single(e => e.EventId == evt.EventId).IsPinned.Should().BeTrue();
     }
 
     [Fact]

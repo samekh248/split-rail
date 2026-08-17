@@ -7,7 +7,8 @@ import {
   type QueryClient,
 } from '@tanstack/react-query';
 import { apiFetch } from './client';
-import type { ActionCenterDto, DashboardResponse, EventCardDto, UnmappedEventSummaryDto } from '@/types/generated-api';
+import type { ActionCenterDto, DashboardResponse, EventCardDto, EventResponse, PinnedPerformanceDto, UnmappedEventSummaryDto } from '@/types/generated-api';
+import { eventsQueryKey } from './events';
 
 export function dashboardQueryKey(venueId: string) {
   return ['dashboard', venueId] as const;
@@ -15,6 +16,7 @@ export function dashboardQueryKey(venueId: string) {
 
 export interface MergedDashboardPartitions {
   pinnedEvents: EventCardDto[];
+  pinnedPerformances: PinnedPerformanceDto[];
   tonightEvents: EventCardDto[];
   upcomingEvents: EventCardDto[];
   recentEvents: EventCardDto[];
@@ -29,6 +31,18 @@ function dedupeByEventId(events: EventCardDto[]): EventCardDto[] {
   const seen = new Set<string>();
   return events.filter((event) => {
     const id = event.eventId;
+    if (!id || seen.has(id)) {
+      return false;
+    }
+    seen.add(id);
+    return true;
+  });
+}
+
+function dedupePinnedPerformances(performances: PinnedPerformanceDto[]): PinnedPerformanceDto[] {
+  const seen = new Set<string>();
+  return performances.filter((performance) => {
+    const id = performance.blockId;
     if (!id || seen.has(id)) {
       return false;
     }
@@ -52,6 +66,7 @@ function visiblePartitionEvents(events: EventCardDto[] | null | undefined): Even
 function emptyPartitions(): MergedDashboardPartitions {
   return {
     pinnedEvents: [],
+    pinnedPerformances: [],
     tonightEvents: [],
     upcomingEvents: [],
     recentEvents: [],
@@ -103,11 +118,31 @@ export function applyPinOptimisticUpdate(
   return previous;
 }
 
+function applyEventListPinOptimistic(
+  queryClient: QueryClient,
+  venueId: string,
+  eventId: string,
+  pinned: boolean,
+): EventResponse[] | undefined {
+  const key = eventsQueryKey(venueId);
+  const previous = queryClient.getQueryData<EventResponse[]>(key);
+  if (!previous) {
+    return undefined;
+  }
+
+  queryClient.setQueryData<EventResponse[]>(
+    key,
+    previous.map((event) => (event.eventId === eventId ? { ...event, isPinned: pinned } : event)),
+  );
+  return previous;
+}
+
 export function normalizeDashboardPartitions(
   data: DashboardResponse | MergedDashboardPartitions,
 ): MergedDashboardPartitions {
   return {
     pinnedEvents: visiblePartitionEvents(data.pinnedEvents),
+    pinnedPerformances: data.pinnedPerformances ?? [],
     tonightEvents: visiblePartitionEvents(data.tonightEvents),
     upcomingEvents: visiblePartitionEvents(data.upcomingEvents),
     recentEvents: visiblePartitionEvents(data.recentEvents),
@@ -173,6 +208,9 @@ export function useAllVenuesDashboard(venueIds: string[]) {
       pinnedEvents: visiblePartitionEvents(
         mergePartitionArrays(dashboards.map((dashboard) => dashboard.pinnedEvents ?? [])),
       ),
+      pinnedPerformances: dedupePinnedPerformances(
+        dashboards.flatMap((dashboard) => dashboard.pinnedPerformances ?? []),
+      ),
       tonightEvents: visiblePartitionEvents(
         mergePartitionArrays(dashboards.map((dashboard) => dashboard.tonightEvents ?? [])),
       ),
@@ -221,16 +259,22 @@ export function usePinEvent() {
       apiFetch<void>(`/venues/${venueId}/events/${eventId}/pin`, { method: 'PUT' }),
     onMutate: async ({ venueId, eventId }) => {
       await queryClient.cancelQueries({ queryKey: dashboardQueryKey(venueId) });
+      await queryClient.cancelQueries({ queryKey: eventsQueryKey(venueId) });
       const previous = applyPinOptimisticUpdate(queryClient, venueId, eventId, true);
-      return { previous, venueId };
+      const previousEvents = applyEventListPinOptimistic(queryClient, venueId, eventId, true);
+      return { previous, previousEvents, venueId };
     },
     onError: (_error, { venueId }, context) => {
       if (context?.previous) {
         queryClient.setQueryData(dashboardQueryKey(venueId), context.previous);
       }
+      if (context?.previousEvents) {
+        queryClient.setQueryData(eventsQueryKey(venueId), context.previousEvents);
+      }
     },
     onSettled: (_data, _error, { venueId }) => {
       void queryClient.invalidateQueries({ queryKey: dashboardQueryKey(venueId) });
+      void queryClient.invalidateQueries({ queryKey: eventsQueryKey(venueId) });
     },
   });
 }
@@ -243,16 +287,22 @@ export function useUnpinEvent() {
       apiFetch<void>(`/venues/${venueId}/events/${eventId}/pin`, { method: 'DELETE' }),
     onMutate: async ({ venueId, eventId }) => {
       await queryClient.cancelQueries({ queryKey: dashboardQueryKey(venueId) });
+      await queryClient.cancelQueries({ queryKey: eventsQueryKey(venueId) });
       const previous = applyPinOptimisticUpdate(queryClient, venueId, eventId, false);
-      return { previous, venueId };
+      const previousEvents = applyEventListPinOptimistic(queryClient, venueId, eventId, false);
+      return { previous, previousEvents, venueId };
     },
     onError: (_error, { venueId }, context) => {
       if (context?.previous) {
         queryClient.setQueryData(dashboardQueryKey(venueId), context.previous);
       }
+      if (context?.previousEvents) {
+        queryClient.setQueryData(eventsQueryKey(venueId), context.previousEvents);
+      }
     },
     onSettled: (_data, _error, { venueId }) => {
       void queryClient.invalidateQueries({ queryKey: dashboardQueryKey(venueId) });
+      void queryClient.invalidateQueries({ queryKey: eventsQueryKey(venueId) });
     },
   });
 }

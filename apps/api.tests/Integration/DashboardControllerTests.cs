@@ -62,6 +62,27 @@ public class DashboardControllerTests : IntegrationTestBase
     }
 
     [Fact]
+    public async Task GetDashboard_InProgressFestival_LandsInTonightWithEndDate()
+    {
+        var (client, venueId, _) = await SetupFinancialAdminAsync();
+        var today = DateOnly.FromDateTime(DateTime.UtcNow);
+        var festival = await FestivalStructureTests.CreateFestivalAsync(
+            client,
+            venueId,
+            "Live Fest",
+            today.AddDays(-1).ToString("yyyy-MM-dd"),
+            today.AddDays(1).ToString("yyyy-MM-dd"));
+
+        var dashboard = await GetDashboardAsync(client, venueId);
+        var card = dashboard.TonightEvents.Should().ContainSingle(e => e.EventId == festival.EventId).Subject;
+
+        card.EventType.Should().Be("FESTIVAL");
+        card.EndDate.Should().Be(today.AddDays(1).ToString("yyyy-MM-dd"));
+        dashboard.UpcomingEvents.Select(e => e.EventId).Should().NotContain(festival.EventId);
+        dashboard.RecentEvents.Select(e => e.EventId).Should().NotContain(festival.EventId);
+    }
+
+    [Fact]
     public async Task GetDashboard_EmptyVenue_AllPartitionsEmpty()
     {
         var (client, venueId, _) = await SetupFinancialAdminAsync();

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using SplitRail.Api.Data;
 using SplitRail.Api.DTOs.Booking;
 using SplitRail.Api.DTOs.Dashboard;
+using SplitRail.Api.DTOs.Festivals;
 using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.Exceptions;
 using SplitRail.Api.Models;
@@ -56,30 +57,46 @@ public class DashboardService
 
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var allCards = events
-            .Select(e => ToEventCardDto(e))
+            .Select(ToEventCardDto)
             .ToList();
         var visibleEvents = events
             .Where(e => e.BookingPlacementStatus != BookingPlacementStatus.Cancelled)
             .ToList();
         var cards = visibleEvents
-            .Select(e => ToEventCardDto(e))
+            .Select(ToEventCardDto)
             .ToList();
 
-        var tonight = cards.Where(c => ParseEventDate(c.EventDate) == today).ToList();
+        DateOnly LastDay(EventCardDto card)
+        {
+            if (!string.IsNullOrWhiteSpace(card.EndDate)
+                && DateOnly.TryParse(card.EndDate, out var end)
+                && end >= ParseEventDate(card.EventDate))
+            {
+                return end;
+            }
+
+            return ParseEventDate(card.EventDate);
+        }
+
+        var tonight = cards.Where(c =>
+        {
+            var start = ParseEventDate(c.EventDate);
+            return start <= today && LastDay(c) >= today;
+        }).ToList();
         var pinned = cards.Where(c => c.IsPinned).ToList();
         var recent = cards
             .Where(c =>
             {
-                var date = ParseEventDate(c.EventDate);
-                return date >= today.AddDays(-7) && date < today;
+                var end = LastDay(c);
+                return end >= today.AddDays(-7) && end < today;
             })
-            .OrderByDescending(c => c.EventDate)
+            .OrderByDescending(c => c.EndDate ?? c.EventDate)
             .ToList();
         var upcoming = cards
             .Where(c =>
             {
-                var date = ParseEventDate(c.EventDate);
-                return date > today && date <= today.AddDays(30);
+                var start = ParseEventDate(c.EventDate);
+                return start > today && start <= today.AddDays(30);
             })
             .OrderBy(c => c.EventDate)
             .ToList();
@@ -96,11 +113,42 @@ public class DashboardService
         var actionCenter = BuildActionCenter(allCards);
         var financialHealth = DashboardFinancialHealthHelper.BuildFinancialHealthDto(events, today);
         var connected = await _tokenService.IsConnectedAsync(venueId, cancellationToken);
+        var pinnedPerformances = await LoadPinnedPerformancesAsync(venueId, userId, cancellationToken);
 
         return _payloadFilter.Apply(
-            new DashboardResponse(venueId, tonight, pinned, recent, upcoming, actionCenter, financialHealth),
+            new DashboardResponse(
+                venueId,
+                tonight,
+                pinned,
+                recent,
+                upcoming,
+                actionCenter,
+                financialHealth,
+                pinnedPerformances),
             connected);
     }
+
+    private async Task<IReadOnlyList<PinnedPerformanceDto>> LoadPinnedPerformancesAsync(
+        Guid venueId,
+        Guid userId,
+        CancellationToken cancellationToken) =>
+        await _db.UserProgrammingBlockPins
+            .AsNoTracking()
+            .Where(p => p.UserId == userId && p.ProgrammingBlock.Event.VenueId == venueId)
+            .OrderByDescending(p => p.PinnedAt)
+            .Select(p => new PinnedPerformanceDto(
+                p.ProgrammingBlockId,
+                p.ProgrammingBlock.EventId,
+                p.ProgrammingBlock.Event.VenueId,
+                p.ProgrammingBlock.Event.Title,
+                p.ProgrammingBlock.Title,
+                p.ProgrammingBlock.DayDate.ToString("yyyy-MM-dd"),
+                p.ProgrammingBlock.StartTime.ToString("HH:mm"),
+                p.ProgrammingBlock.EndTime.ToString("HH:mm"),
+                p.ProgrammingBlock.StageZone.Name,
+                p.ProgrammingBlock.FestivalArtist != null ? p.ProgrammingBlock.FestivalArtist.Name : null,
+                true))
+            .ToListAsync(cancellationToken);
 
     private static ActionCenterDto BuildActionCenter(IReadOnlyList<EventCardDto> cards)
     {
@@ -143,7 +191,9 @@ public class DashboardService
             LedgerVarianceHelper.HasVarianceConcern(evt.LineItems),
             evt.UnmappedQboTransactions.Count,
             lastSyncedAt,
-            BookingPlacementStatusFormat.ToApiString(evt.BookingPlacementStatus));
+            BookingPlacementStatusFormat.ToApiString(evt.BookingPlacementStatus),
+            EventTypeFormat.ToApiString(evt.EventType),
+            evt.EndDate?.ToString("yyyy-MM-dd"));
     }
 
     private static DateOnly ParseEventDate(string eventDate) =>

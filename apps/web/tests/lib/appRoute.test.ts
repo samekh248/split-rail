@@ -1,14 +1,17 @@
 import { renderHook, act } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+  buildBookingPath,
   buildEventWorkspacePath,
   getAppPath,
+  getBookingMonthFromUrl,
   getDashboardPath,
   getInviteTokenFromUrl,
   isEventWorkspacePath,
   navigateReturnToApp,
   navigateToAcceptInvite,
   navigateToBooking,
+  navigateToBookingMonth,
   navigateToDashboard,
   navigateToSignIn,
   navigateToVenues,
@@ -16,8 +19,10 @@ import {
   navigateToOrganizationSettings,
   navigateToSettings,
   navigateToTeamSettings,
+  parseBookingMonth,
   parseEventWorkspacePath,
   useAppRoute,
+  useBookingCalendarMonth,
   useEventWorkspaceRoute,
 } from '@/lib/appRoute';
 import { readSettingsReturnPath } from '@/lib/settingsReturnStorage';
@@ -41,9 +46,72 @@ describe('appRoute', () => {
     expect(getAppPath()).toBe('/booking');
   });
 
-  it('navigateToBooking pushes /booking', () => {
+  it('getAppPath returns /booking when a month query is present', () => {
+    window.history.pushState({}, '', '/booking?month=2026-08');
+    expect(getAppPath()).toBe('/booking');
+    expect(getBookingMonthFromUrl()).toBe('2026-08');
+  });
+
+  it('parseBookingMonth accepts YYYY-MM and rejects invalid values', () => {
+    expect(parseBookingMonth('2026-08')).toBe('2026-08');
+    expect(parseBookingMonth('2026-13')).toBeNull();
+    expect(parseBookingMonth('08')).toBeNull();
+    expect(parseBookingMonth('nope')).toBeNull();
+  });
+
+  it('buildBookingPath writes a month query and falls back to the current month', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15));
+    expect(buildBookingPath('2026-08')).toBe('/booking?month=2026-08');
+    expect(buildBookingPath('nope')).toBe('/booking?month=2026-06');
+    expect(buildBookingPath()).toBe('/booking?month=2026-06');
+    vi.useRealTimers();
+  });
+
+  it('navigateToBooking pushes the current month query', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15));
     navigateToBooking();
     expect(getAppPath()).toBe('/booking');
+    expect(window.location.search).toBe('?month=2026-06');
+    vi.useRealTimers();
+  });
+
+  it('navigateToBooking accepts an explicit month', () => {
+    navigateToBooking('2026-08');
+    expect(window.location.pathname).toBe('/booking');
+    expect(window.location.search).toBe('?month=2026-08');
+  });
+
+  it('navigateToBookingMonth is a no-op when the URL already matches', () => {
+    window.history.pushState({}, '', '/booking?month=2026-08');
+    const pushState = vi.spyOn(window.history, 'pushState');
+    navigateToBookingMonth('2026-08');
+    expect(pushState).not.toHaveBeenCalled();
+    pushState.mockRestore();
+  });
+
+  it('useBookingCalendarMonth reads the URL and canonicalizes a missing month', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15));
+    window.history.pushState({}, '', '/booking');
+    const { result } = renderHook(() => useBookingCalendarMonth());
+    expect(result.current).toBe('2026-06');
+    expect(window.location.search).toBe('?month=2026-06');
+    vi.useRealTimers();
+  });
+
+  it('useBookingCalendarMonth updates when the month query changes', () => {
+    window.history.pushState({}, '', '/booking?month=2026-08');
+    const { result } = renderHook(() => useBookingCalendarMonth());
+    expect(result.current).toBe('2026-08');
+
+    act(() => {
+      navigateToBookingMonth('2026-09');
+    });
+
+    expect(result.current).toBe('2026-09');
+    expect(window.location.search).toBe('?month=2026-09');
   });
 
   it('getAppPath returns settings paths', () => {

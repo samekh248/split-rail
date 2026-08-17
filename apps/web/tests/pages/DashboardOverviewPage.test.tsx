@@ -122,6 +122,7 @@ function dashboardForVenue(
       eventsWithUnmapped: [],
     },
     financialHealth: partitions.financialHealth ?? defaultFinancialHealth(),
+    pinnedPerformances: partitions.pinnedPerformances ?? [],
   };
 }
 
@@ -168,6 +169,38 @@ describe('DashboardOverviewPage', () => {
     expect(screen.getByText('Pinned Show')).toBeInTheDocument();
     expect(screen.getByText('Upcoming Show')).toBeInTheDocument();
     expect(screen.getByText('Recent Show')).toBeInTheDocument();
+  });
+
+  it('renders pinned performances alongside pinned events', async () => {
+    const blockId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb';
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      dashboardByVenue: {
+        [VENUE_A.id]: dashboardForVenue(VENUE_A.id, {
+          pinnedEvents: [cardOn(offsetDate(1), { eventId: '11111111-1111-1111-1111-111111111111', title: 'Pinned Festival', eventType: 'FESTIVAL' })],
+          pinnedPerformances: [
+            {
+              blockId,
+              eventId: '11111111-1111-1111-1111-111111111111',
+              venueId: VENUE_A.id,
+              festivalTitle: 'Pinned Festival',
+              title: 'Cody Jinks',
+              dayDate: offsetDate(1),
+              startTime: '20:00',
+              endTime: '21:30',
+              stageName: 'Main Stage',
+              isPinned: true,
+            },
+          ],
+        }),
+      },
+    });
+
+    render(<DashboardOverviewPage />, { wrapper: createWrapper() });
+
+    const pinnedSection = await screen.findByTestId('dashboard-zone-pinned');
+    expect(within(pinnedSection).getByTestId('event-card-11111111-1111-1111-1111-111111111111')).toHaveTextContent('Pinned Festival');
+    expect(within(pinnedSection).getByTestId(`pinned-performance-${blockId}`)).toHaveTextContent('Cody Jinks');
   });
 
   it('renders unassigned transactions banner when action center count > 0', async () => {

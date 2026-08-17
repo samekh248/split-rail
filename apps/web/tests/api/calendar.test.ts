@@ -59,4 +59,26 @@ describe('calendar cache helpers', () => {
 
     expect(queryClient.getQueryData(calendarPlacementsQueryKey(params))).toEqual([]);
   });
+
+  it('upserts a festival that overlaps the cached month', () => {
+    const queryClient = new QueryClient();
+    const params = { from: '2026-07-01', to: '2026-07-31', includeCancelled: false };
+    queryClient.setQueryData(calendarPlacementsQueryKey(params), []);
+
+    upsertCalendarPlacementInCache(
+      queryClient,
+      buildCalendarPlacementFromEvent(
+        { ...CREATED_EVENT, eventDate: '2026-06-30', endDate: '2026-07-02', eventType: 'FESTIVAL' },
+        VENUE,
+      ),
+    );
+
+    expect(queryClient.getQueryData(calendarPlacementsQueryKey(params))).toEqual([
+      expect.objectContaining({
+        eventId: CREATED_EVENT.eventId,
+        eventDate: '2026-06-30',
+        endDate: '2026-07-02',
+      }),
+    ]);
+  });
 });

@@ -58,6 +58,19 @@ describe('partitionOverviewZones', () => {
     expect(partition.pinned).toEqual([]);
   });
 
+  it('treats an in-progress festival as tonight across its full range', () => {
+    const festival = event('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-06-17', {
+      eventType: 'FESTIVAL',
+      endDate: '2026-06-19',
+    });
+
+    expect(filterTonightEvents([festival], REF_NOW).map((item) => item.eventId)).toEqual([
+      'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+    ]);
+    expect(partitionUpcomingEvents([festival], REF_NOW)).toEqual([]);
+    expect(partitionRecentEvents([festival], REF_NOW)).toEqual([]);
+  });
+
   it('excludes today from recent and upcoming', () => {
     const today = event('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '2026-06-18');
     expect(partitionRecentEvents([today], REF_NOW)).toEqual([]);

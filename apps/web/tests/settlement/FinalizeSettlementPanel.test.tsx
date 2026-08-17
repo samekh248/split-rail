@@ -93,7 +93,12 @@ describe('FinalizeSettlementPanel', () => {
 
   it('uses shared primary button styling', () => {
     renderPanel();
-    expect(screen.getByTestId('finalize-settlement-btn')).toHaveClass('btn-primary');
+    const btn = screen.getByTestId('finalize-settlement-btn');
+    expect(btn).toHaveClass('btn-primary');
+    expect(btn.closest('.section-header__actions')).toBeInTheDocument();
+    expect(btn.compareDocumentPosition(screen.getByTestId('finalize-confirm-checkbox'))).toBe(
+      Node.DOCUMENT_POSITION_PRECEDING,
+    );
   });
 
   it('is not rendered when user lacks sign permission', () => {

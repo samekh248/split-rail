@@ -82,18 +82,18 @@ export function blockDurationMinutes(block: ProgrammingBlockResponse): number {
 }
 
 export function blockGridStyle(block: ProgrammingBlockResponse): {
-  left: string;
-  width: string;
+  top: string;
+  height: string;
 } {
   const startMinutes = timeToMinutes(block.startTime ?? '00:00');
   const endMinutes = timeToMinutes(block.endTime ?? '00:00');
   const timelineStart = TIMELINE_START_HOUR * 60;
   const timelineEnd = TIMELINE_END_HOUR * 60;
   const totalMinutes = timelineEnd - timelineStart;
-  const leftPct = ((startMinutes - timelineStart) / totalMinutes) * 100;
-  const widthPct = ((endMinutes - startMinutes) / totalMinutes) * 100;
+  const topPct = ((startMinutes - timelineStart) / totalMinutes) * 100;
+  const heightPct = ((endMinutes - startMinutes) / totalMinutes) * 100;
   return {
-    left: `${Math.max(0, leftPct)}%`,
-    width: `${Math.max(2, widthPct)}%`,
+    top: `${Math.max(0, topPct)}%`,
+    height: `${Math.max(2, heightPct)}%`,
   };
 }

@@ -5,13 +5,14 @@ import { describe, expect, it, vi } from 'vitest';
 import { SyncNowButton } from '@/components/qbo/SyncNowButton';
 
 const mutateAsync = vi.fn().mockResolvedValue({});
+let syncPending = false;
 
 vi.mock('@/api/user', () => ({
   useCanTriggerQboSync: vi.fn(),
 }));
 
 vi.mock('@/api/qbo', () => ({
-  useTriggerSync: () => ({ mutateAsync, isPending: false }),
+  useTriggerSync: () => ({ mutateAsync, isPending: syncPending }),
   qboKeys: {
     unmappedCount: () => ['qbo', 'count'],
     syncStatus: () => ['qbo', 'status'],
@@ -26,6 +27,7 @@ import { useCanTriggerQboSync } from '@/api/user';
 
 describe('SyncNowButton', () => {
   it('is hidden without permission', () => {
+    syncPending = false;
     vi.mocked(useCanTriggerQboSync).mockReturnValue(false);
     render(
       <QueryClientProvider client={new QueryClient()}>
@@ -51,6 +53,7 @@ describe('SyncNowButton', () => {
   });
 
   it('uses shared compact primary button styling', () => {
+    syncPending = false;
     vi.mocked(useCanTriggerQboSync).mockReturnValue(true);
     render(
       <QueryClientProvider client={new QueryClient()}>
@@ -59,5 +62,19 @@ describe('SyncNowButton', () => {
     );
 
     expect(screen.getByTestId('sync-now-button')).toHaveClass('btn-primary--compact');
+  });
+
+  it('shows pending label while sync is in progress', () => {
+    syncPending = true;
+    vi.mocked(useCanTriggerQboSync).mockReturnValue(true);
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <SyncNowButton venueId="ven-1" eventId="evt-1" />
+      </QueryClientProvider>,
+    );
+
+    const button = screen.getByTestId('sync-now-button');
+    expect(button).toHaveTextContent('Syncing…');
+    expect(button).toBeDisabled();
   });
 });

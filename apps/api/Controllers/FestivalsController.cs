@@ -14,6 +14,7 @@ public class FestivalsController : ControllerBase
     private readonly FestivalService _festivalService;
     private readonly StageZoneService _stageZoneService;
     private readonly ProgrammingBlockService _blockService;
+    private readonly ProgrammingBlockPinService _blockPinService;
     private readonly FestivalArtistService _artistService;
     private readonly FestivalItineraryService _itineraryService;
 
@@ -21,12 +22,14 @@ public class FestivalsController : ControllerBase
         FestivalService festivalService,
         StageZoneService stageZoneService,
         ProgrammingBlockService blockService,
+        ProgrammingBlockPinService blockPinService,
         FestivalArtistService artistService,
         FestivalItineraryService itineraryService)
     {
         _festivalService = festivalService;
         _stageZoneService = stageZoneService;
         _blockService = blockService;
+        _blockPinService = blockPinService;
         _artistService = artistService;
         _itineraryService = itineraryService;
     }
@@ -175,6 +178,30 @@ public class FestivalsController : ControllerBase
         CancellationToken cancellationToken)
     {
         await _blockService.DeleteAsync(venueId, eventId, blockId, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpPut("{eventId:guid}/blocks/{blockId:guid}/pin")]
+    [RequirePermission(PermissionNames.ViewFinancials)]
+    public async Task<IActionResult> PinBlock(
+        Guid venueId,
+        Guid eventId,
+        Guid blockId,
+        CancellationToken cancellationToken)
+    {
+        await _blockPinService.PinAsync(venueId, eventId, blockId, cancellationToken);
+        return NoContent();
+    }
+
+    [HttpDelete("{eventId:guid}/blocks/{blockId:guid}/pin")]
+    [RequirePermission(PermissionNames.ViewFinancials)]
+    public async Task<IActionResult> UnpinBlock(
+        Guid venueId,
+        Guid eventId,
+        Guid blockId,
+        CancellationToken cancellationToken)
+    {
+        await _blockPinService.UnpinAsync(venueId, eventId, blockId, cancellationToken);
         return NoContent();
     }
 

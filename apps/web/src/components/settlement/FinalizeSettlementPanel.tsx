@@ -38,18 +38,20 @@ export function FinalizeSettlementPanel({
         I confirm this settlement is accurate and ready to freeze.
       </label>
 
-      <button
-        type="button"
-        className="btn-primary"
-        data-testid="finalize-settlement-btn"
-        disabled={!signatureData || !confirmed || finalize.isPending}
-        onClick={() => {
-          if (!signatureData) return;
-          void finalize.mutateAsync({ signatureData, confirmed: true });
-        }}
-      >
-        {finalize.isPending ? 'Finalizing…' : 'Finalize Settlement'}
-      </button>
+      <div className="section-header__actions finalize-settlement-panel__actions">
+        <button
+          type="button"
+          className="btn-primary"
+          data-testid="finalize-settlement-btn"
+          disabled={!signatureData || !confirmed || finalize.isPending}
+          onClick={() => {
+            if (!signatureData) return;
+            void finalize.mutateAsync({ signatureData, confirmed: true });
+          }}
+        >
+          {finalize.isPending ? 'Finalizing…' : 'Finalize Settlement'}
+        </button>
+      </div>
 
       {finalize.isError && (
         <p role="alert" data-testid="finalize-error">

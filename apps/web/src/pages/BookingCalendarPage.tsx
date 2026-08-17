@@ -32,12 +32,12 @@ import {
   readBookingCalendarDisplayMode,
   writeBookingCalendarDisplayMode,
 } from '@/lib/bookingCalendarViewStorage';
+import {
+  navigateToBookingMonth,
+  parseBookingMonth,
+  useBookingCalendarMonth,
+} from '@/lib/appRoute';
 import type { CalendarPlacementDto } from '@/types/generated-api';
-
-function defaultMonth(): string {
-  const now = new Date();
-  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-}
 
 function toBookingPlacement(dto: CalendarPlacementDto): BookingPlacement {
   return {
@@ -48,6 +48,8 @@ function toBookingPlacement(dto: CalendarPlacementDto): BookingPlacement {
     regionName: dto.regionName ?? null,
     title: dto.title ?? 'Untitled',
     eventDate: dto.eventDate ?? '',
+    endDate: dto.endDate ?? null,
+    eventType: dto.eventType ?? 'STANDARD',
     bookingPlacementStatus: (dto.bookingPlacementStatus ?? 'CONFIRMED') as BookingPlacement['bookingPlacementStatus'],
     doorsTime: dto.doorsTime ?? null,
     loadInTime: dto.loadInTime ?? null,
@@ -60,14 +62,19 @@ function toBookingPlacement(dto: CalendarPlacementDto): BookingPlacement {
 export function BookingCalendarPage() {
   const { venues } = useActiveVenue();
   const { data: regions = [] } = useRegions();
+  const routeMonth = useBookingCalendarMonth();
   const [context, setContext] = useState<CalendarViewContext>(() => ({
     viewMode: 'global',
     regionId: null,
     venueId: null,
-    month: defaultMonth(),
+    month: routeMonth,
     showCancelled: false,
     displayMode: readBookingCalendarDisplayMode() ?? 'calendar',
   }));
+
+  useEffect(() => {
+    setContext((current) => (current.month === routeMonth ? current : { ...current, month: routeMonth }));
+  }, [routeMonth]);
 
   useEffect(() => {
     writeBookingCalendarDisplayMode(context.displayMode);
@@ -128,9 +135,9 @@ export function BookingCalendarPage() {
   const agendaPlacements = agendaDate ? placementsByDate[agendaDate] ?? [] : [];
 
   const handlePlacementCreated = (eventDate: string) => {
-    const month = eventDate.slice(0, 7);
+    const month = parseBookingMonth(eventDate.slice(0, 7));
     if (month && month !== context.month) {
-      setContext((current) => ({ ...current, month }));
+      navigateToBookingMonth(month);
     }
     setQuickAdd(null);
   };
@@ -159,7 +166,7 @@ export function BookingCalendarPage() {
       >
         <BookingCalendarMonthNav
           month={context.month}
-          onMonthChange={(month) => setContext((current) => ({ ...current, month }))}
+          onMonthChange={navigateToBookingMonth}
         />
 
         <BookingCalendarLegend

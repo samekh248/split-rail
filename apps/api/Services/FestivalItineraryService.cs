@@ -52,11 +52,12 @@ public class FestivalItineraryService
 
         var stages = await LoadStagesAsync(eventId, cancellationToken);
         var days = await BuildDaysAsync(festival, eventId, cancellationToken);
+        var pinnedIds = await PinnedBlockIdsAsync(eventId, cancellationToken);
 
         return new ItineraryResponse(
             days,
             stages,
-            blocks.Select(b => ProgrammingBlockService.ToResponse(b, [])).ToList());
+            blocks.Select(b => ProgrammingBlockService.ToResponse(b, [], pinnedIds.Contains(b.Id))).ToList());
     }
 
     public async Task<PublicItineraryResponse> GetPublicAsync(
@@ -191,5 +192,18 @@ public class FestivalItineraryService
         return festival.FestivalDays()
             .Select(d => new FestivalDayDto(d, counts.GetValueOrDefault(d)))
             .ToList();
+    }
+
+    private async Task<HashSet<Guid>> PinnedBlockIdsAsync(
+        Guid eventId,
+        CancellationToken cancellationToken)
+    {
+        var userId = _guard.RequireUserId();
+        var ids = await _db.UserProgrammingBlockPins
+            .AsNoTracking()
+            .Where(p => p.UserId == userId && p.ProgrammingBlock.EventId == eventId)
+            .Select(p => p.ProgrammingBlockId)
+            .ToListAsync(cancellationToken);
+        return ids.ToHashSet();
     }
 }

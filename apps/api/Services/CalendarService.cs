@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using SplitRail.Api.Data;
 using SplitRail.Api.DTOs.Booking;
 using SplitRail.Api.DTOs.Calendar;
+using SplitRail.Api.DTOs.Festivals;
 using SplitRail.Api.DTOs.Ledger;
 using SplitRail.Api.Exceptions;
 using SplitRail.Api.Models.Enums;
@@ -59,7 +60,7 @@ public class CalendarService
             .ThenInclude(v => v.Region)
             .Include(e => e.LineItems)
             .Where(e => accessibleVenueIds.Contains(e.VenueId))
-            .Where(e => e.EventDate >= fromDate && e.EventDate <= toDate);
+            .Where(e => e.EventDate <= toDate && (e.EndDate ?? e.EventDate) >= fromDate);
 
         if (venueId is Guid venueFilter)
             query = query.Where(e => e.VenueId == venueFilter);
@@ -101,7 +102,9 @@ public class CalendarService
             evt.IsBudgetLocked,
             evt.QboTagName,
             evt.LineItems.Count > 0,
-            workspaceAllowed);
+            workspaceAllowed,
+            evt.EndDate?.ToString("yyyy-MM-dd"),
+            EventTypeFormat.ToApiString(evt.EventType));
     }
 
     private static string? FormatTime(TimeOnly? time) =>

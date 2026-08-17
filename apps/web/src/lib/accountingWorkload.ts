@@ -12,6 +12,7 @@ export interface AccountingWorkloadEvent {
   venueId: string;
   title: string;
   eventDate: string;
+  endDate?: string | null;
   unmappedCount: number;
   lastSyncedAt: string | null;
   alertLabels: string[];
@@ -66,6 +67,7 @@ export function deriveAccountingWorkloadEvents(
       venueId: event.venueId!,
       title: event.title ?? 'Untitled event',
       eventDate: event.eventDate ?? '',
+      endDate: event.endDate ?? null,
       unmappedCount: event.unmappedCount ?? 0,
       lastSyncedAt: event.lastSyncedAt ?? null,
       alertLabels: alerts.map((alert) => alert.label),

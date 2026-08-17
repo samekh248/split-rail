@@ -113,6 +113,9 @@ export function BookingCalendarMatrix({
                           className={[
                             'booking-placement',
                             'booking-calendar-matrix__event',
+                            placement.eventType === 'FESTIVAL'
+                              ? 'booking-calendar-matrix__event--festival'
+                              : '',
                             placementStatusClass(placement.bookingPlacementStatus),
                             placementLegendHighlightClass(
                               placement.bookingPlacementStatus,

@@ -15,6 +15,7 @@ import { LedgerGrid } from '@/components/ledger/LedgerGrid';
 import { SyncNowButton } from '@/components/qbo/SyncNowButton';
 import { UnmappedBanner } from '@/components/qbo/UnmappedBanner';
 import { useCanEditLedgerStructure } from '@/hooks/useCanEditLedgerStructure';
+import { useCanTriggerQboSync } from '@/api/user';
 import { getArtistReorderSwapPair } from '@/lib/reorderArtists';
 import { getReorderSwapPair } from '@/lib/reorderLineItems';
 import type { MoveDirection } from '@/lib/reorderLineItems';
@@ -58,6 +59,7 @@ export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProp
     ledger?.status,
     ledger?.isBudgetLocked ?? false,
   );
+  const canSync = useCanTriggerQboSync();
 
   useEffect(() => {
     if (!focus || isLoading || error || !ledger) {
@@ -282,10 +284,6 @@ export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProp
   return (
     <main className="event-ledger-page" data-testid="event-ledger-page">
       <div className="event-ledger-page__alerts">
-        <div className="event-ledger-page__toolbar" data-testid="workspace-focus-sync">
-          <SyncNowButton venueId={venueId} eventId={eventId} />
-        </div>
-
         <UnmappedBanner
           venueId={venueId}
           eventId={eventId}
@@ -311,6 +309,7 @@ export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProp
         canEditStructure={canEditStructure}
         lockBudgetPending={lockBudget.isPending}
         onLockBudget={() => lockBudget.mutate()}
+        headerActions={canSync ? <SyncNowButton venueId={venueId} eventId={eventId} /> : undefined}
         onProformaChange={(id, value) => void saveLineItemField(id, 'proformaValue', value)}
         onSettlementChange={(id, value) =>
           void saveLineItemField(id, 'settlementValue', value)

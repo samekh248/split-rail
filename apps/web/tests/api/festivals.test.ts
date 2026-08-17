@@ -1,3 +1,4 @@
+import { QueryClient } from '@tanstack/react-query';
 import { renderHook, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -25,6 +26,8 @@ import {
   useSetBlockStatus,
   useSetPublishVisibility,
   useStages,
+  usePinProgrammingBlock,
+  useUnpinProgrammingBlock,
   useUpdateBlock,
   useUpdateFestival,
   useUpdateStage,
@@ -357,5 +360,62 @@ describe('festivals api', () => {
       `/api/venues/${VENUE_ID}/festivals/${EVENT_ID}/blocks/${BLOCK_ID}/status`,
       expect.objectContaining({ method: 'POST' }),
     );
+  });
+
+  it('usePinProgrammingBlock PUTs pin and marks the itinerary block pinned', async () => {
+    const fetchMock = mockFetchJson(undefined, 204);
+    vi.stubGlobal('fetch', fetchMock);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    queryClient.setQueryData(itineraryQueryKey(VENUE_ID, EVENT_ID), {
+      blocks: [{ id: BLOCK_ID, title: 'Headliner', isPinned: false }],
+    });
+
+    const { result } = renderHook(() => usePinProgrammingBlock(), {
+      wrapper: createWrapper(queryClient),
+    });
+    await result.current.mutateAsync({
+      venueId: VENUE_ID,
+      eventId: EVENT_ID,
+      blockId: BLOCK_ID,
+    });
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      `/api/venues/${VENUE_ID}/festivals/${EVENT_ID}/blocks/${BLOCK_ID}/pin`,
+      expect.objectContaining({ method: 'PUT' }),
+    );
+    expect(
+      queryClient.getQueryData<{ blocks?: { isPinned?: boolean }[] }>(
+        itineraryQueryKey(VENUE_ID, EVENT_ID),
+      )?.blocks?.[0]?.isPinned,
+    ).toBe(true);
+  });
+
+  it('useUnpinProgrammingBlock rolls back itinerary pin state on error', async () => {
+    vi.stubGlobal('fetch', mockFetchJson({ detail: 'Pin failed' }, 500));
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    queryClient.setQueryData(itineraryQueryKey(VENUE_ID, EVENT_ID), {
+      blocks: [{ id: BLOCK_ID, title: 'Headliner', isPinned: true }],
+    });
+
+    const { result } = renderHook(() => useUnpinProgrammingBlock(), {
+      wrapper: createWrapper(queryClient),
+    });
+    await expect(
+      result.current.mutateAsync({
+        venueId: VENUE_ID,
+        eventId: EVENT_ID,
+        blockId: BLOCK_ID,
+      }),
+    ).rejects.toThrow();
+
+    expect(
+      queryClient.getQueryData<{ blocks?: { isPinned?: boolean }[] }>(
+        itineraryQueryKey(VENUE_ID, EVENT_ID),
+      )?.blocks?.[0]?.isPinned,
+    ).toBe(true);
   });
 });

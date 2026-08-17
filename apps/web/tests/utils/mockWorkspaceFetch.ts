@@ -67,6 +67,8 @@ function toEventCardDto(event: EventResponse, isPinned = false): EventCardDto {
     settledAt: event.settledAt,
     settlementPdfAvailable: event.settlementPdfAvailable ?? false,
     isPinned,
+    eventType: event.eventType ?? 'STANDARD',
+    endDate: event.endDate ?? null,
     hasVarianceConcern: false,
     unmappedCount: 0,
     lastSyncedAt: null,
@@ -98,6 +100,7 @@ function buildDashboardFromEvents(
     pinnedEvents,
     upcomingEvents,
     recentEvents,
+    pinnedPerformances: [],
   };
 }
 

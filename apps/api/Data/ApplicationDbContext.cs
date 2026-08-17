@@ -38,6 +38,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<UnmappedQboTransaction> UnmappedQboTransactions => Set<UnmappedQboTransaction>();
     public DbSet<SettlementReversal> SettlementReversals => Set<SettlementReversal>();
     public DbSet<UserEventPin> UserEventPins => Set<UserEventPin>();
+    public DbSet<UserProgrammingBlockPin> UserProgrammingBlockPins => Set<UserProgrammingBlockPin>();
     public DbSet<StageZone> StageZones => Set<StageZone>();
     public DbSet<ProgrammingBlock> ProgrammingBlocks => Set<ProgrammingBlock>();
     public DbSet<FestivalArtist> FestivalArtists => Set<FestivalArtist>();
@@ -73,6 +74,7 @@ public class ApplicationDbContext : DbContext
         ConfigureUnmappedQboTransaction(modelBuilder);
         ConfigureSettlementReversal(modelBuilder);
         ConfigureUserEventPin(modelBuilder);
+        ConfigureUserProgrammingBlockPin(modelBuilder);
         ConfigureStageZone(modelBuilder);
         ConfigureProgrammingBlock(modelBuilder);
         ConfigureFestivalArtist(modelBuilder);
@@ -155,6 +157,10 @@ public class ApplicationDbContext : DbContext
         modelBuilder.Entity<UserEventPin>().HasQueryFilter(e =>
             _tenantContext.OrganizationId == null ||
             e.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
+
+        modelBuilder.Entity<UserProgrammingBlockPin>().HasQueryFilter(e =>
+            _tenantContext.OrganizationId == null ||
+            e.ProgrammingBlock.Event.Venue.OrganizationId == _tenantContext.OrganizationId);
 
         // Festival entities all reach OrganizationId through the wrapper Event -> Venue
         // (Constitution II — no unscoped festival reads are possible).
@@ -1197,6 +1203,33 @@ public class ApplicationDbContext : DbContext
             entity.HasOne(e => e.Event)
                 .WithMany(ev => ev.UserEventPins)
                 .HasForeignKey(e => e.EventId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+    }
+
+    private static void ConfigureUserProgrammingBlockPin(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<UserProgrammingBlockPin>(entity =>
+        {
+            entity.ToTable("user_programming_block_pins");
+
+            entity.HasKey(e => new { e.UserId, e.ProgrammingBlockId });
+
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.ProgrammingBlockId).HasColumnName("programming_block_id");
+
+            entity.Property(e => e.PinnedAt)
+                .HasColumnName("pinned_at")
+                .HasDefaultValueSql("NOW()");
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.ProgrammingBlockPins)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.ProgrammingBlock)
+                .WithMany(b => b.UserProgrammingBlockPins)
+                .HasForeignKey(e => e.ProgrammingBlockId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
     }

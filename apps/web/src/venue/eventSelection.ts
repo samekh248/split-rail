@@ -9,7 +9,8 @@ export function filterEvents(events: EventResponse[], query: string): EventRespo
   return events.filter((event) => {
     const title = (event.title ?? '').toLowerCase();
     const date = (event.eventDate ?? '').toLowerCase();
-    return title.includes(normalized) || date.includes(normalized);
+    const endDate = (event.endDate ?? '').toLowerCase();
+    return title.includes(normalized) || date.includes(normalized) || endDate.includes(normalized);
   });
 }
 

@@ -101,18 +101,21 @@ describe('TimelineGrid', () => {
     });
   });
 
-  it('renders time columns and stage rows with blocks positioned on the selected day', () => {
+  it('renders vertical time slots and stage columns with blocks positioned on the selected day', () => {
     renderGrid();
 
     expect(screen.getByTestId('timeline-grid')).toBeInTheDocument();
     expect(screen.getByTestId('timeline-time-header')).toBeInTheDocument();
     expect(screen.getByTestId('timeline-stage-row-stage-1')).toBeInTheDocument();
     expect(screen.getByTestId('timeline-stage-row-stage-2')).toBeInTheDocument();
+    expect(screen.getByTestId('timeline-slot-stage-1-08:00')).toBeInTheDocument();
+    expect(screen.getByTestId('timeline-slot-stage-1-14:00')).toBeInTheDocument();
 
     const openingAct = screen.getByTestId('timeline-block-block-1');
     expect(openingAct).toHaveTextContent('Opening Act');
     expect(openingAct).toHaveAttribute('data-stage-id', 'stage-1');
     expect(openingAct).toHaveAttribute('data-start-time', '14:00');
+    expect(openingAct).toHaveStyle({ top: '37.5%', height: '6.25%' });
 
     expect(screen.queryByTestId('timeline-block-block-3')).not.toBeInTheDocument();
   });
@@ -270,5 +273,16 @@ describe('TimelineGrid', () => {
     renderGrid({}, [{ ...dayOneBlocks[0], bookingStatus: undefined }]);
 
     expect(screen.queryByTestId('timeline-block-booking-block-1')).not.toBeInTheDocument();
+  });
+
+  it('pins a performance without opening the block editor', async () => {
+    const onPinToggle = vi.fn();
+    const onBlockClick = vi.fn();
+    renderGrid({ onPinToggle, onBlockClick });
+
+    await userEvent.click(screen.getByTestId('timeline-block-pin-block-1'));
+
+    expect(onPinToggle).toHaveBeenCalledWith(expect.objectContaining({ id: 'block-1' }));
+    expect(onBlockClick).not.toHaveBeenCalled();
   });
 });

@@ -3,6 +3,7 @@ import {
   startOfLocalDay,
   toDateKey,
 } from '@/lib/upcomingEventsCalendar';
+import { eachDateKey } from '@/lib/eventDateRange';
 
 export { toDateKey };
 
@@ -16,6 +17,8 @@ export interface BookingPlacement {
   regionName: string | null;
   title: string;
   eventDate: string;
+  endDate?: string | null;
+  eventType?: string | null;
   bookingPlacementStatus: BookingPlacementStatus;
   doorsTime: string | null;
   loadInTime?: string | null;
@@ -104,10 +107,12 @@ export function groupPlacementsByDate(
   const grouped: Record<string, BookingPlacement[]> = {};
 
   for (const placement of placements) {
-    if (!grouped[placement.eventDate]) {
-      grouped[placement.eventDate] = [];
+    for (const dateKey of eachDateKey(placement.eventDate, placement.endDate)) {
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = [];
+      }
+      grouped[dateKey]!.push(placement);
     }
-    grouped[placement.eventDate]!.push(placement);
   }
 
   for (const dateKey of Object.keys(grouped)) {
@@ -123,13 +128,15 @@ export function groupPlacementsByDateAndVenue(
   const grouped: Record<string, Record<string, BookingPlacement[]>> = {};
 
   for (const placement of placements) {
-    if (!grouped[placement.eventDate]) {
-      grouped[placement.eventDate] = {};
+    for (const dateKey of eachDateKey(placement.eventDate, placement.endDate)) {
+      if (!grouped[dateKey]) {
+        grouped[dateKey] = {};
+      }
+      if (!grouped[dateKey]![placement.venueId]) {
+        grouped[dateKey]![placement.venueId] = [];
+      }
+      grouped[dateKey]![placement.venueId]!.push(placement);
     }
-    if (!grouped[placement.eventDate]![placement.venueId]) {
-      grouped[placement.eventDate]![placement.venueId] = [];
-    }
-    grouped[placement.eventDate]![placement.venueId]!.push(placement);
   }
 
   return grouped;

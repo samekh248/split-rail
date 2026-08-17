@@ -59,9 +59,61 @@ export function QboIntegrationCard({ venueId }: QboIntegrationCardProps) {
 
   return (
     <section className="team-section qbo-integration-card" data-testid="qbo-integration-card">
-      <div className="qbo-integration-card__header">
+      <div className="qbo-integration-card__header section-header">
         <h2 className="team-section__title qbo-integration-card__title">QuickBooks Online</h2>
-        <StateBadge state={state} />
+        <div className="section-header__actions qbo-integration-card__actions">
+          <StateBadge state={state} />
+          {(state === 'Disconnected' || state === 'Expired') && (
+            <button
+              type="button"
+              className="btn-primary qbo-integration-card__connect"
+              data-testid="qbo-connect-button"
+              disabled={connectPending}
+              onClick={() => void handleConnect()}
+            >
+              <FontAwesomeIcon icon={faLink} aria-hidden="true" />
+              {state === 'Expired' ? 'Reconnect to QuickBooks' : 'Connect to QuickBooks'}
+            </button>
+          )}
+
+          {state === 'Connected' && (
+            <>
+              <button
+                type="button"
+                className="btn-secondary qbo-integration-card__force-pull"
+                data-testid="qbo-force-pull-button"
+                disabled={syncMutation.isPending}
+                onClick={handleForcePull}
+              >
+                <FontAwesomeIcon
+                  icon={faRotate}
+                  spin={syncMutation.isPending}
+                  aria-hidden="true"
+                />
+                Force Pull Latest QBO Data
+              </button>
+              <button
+                type="button"
+                className="btn-outline qbo-integration-card__disconnect"
+                data-testid="qbo-disconnect-button"
+                onClick={() => setShowDisconnect(true)}
+              >
+                Disconnect Account
+              </button>
+            </>
+          )}
+
+          {state === 'Disconnected' && integration?.canPurgeCache && (
+            <button
+              type="button"
+              className="btn-outline qbo-integration-card__purge"
+              data-testid="qbo-purge-button"
+              onClick={() => setShowPurge(true)}
+            >
+              Clear Cached QBO Data
+            </button>
+          )}
+        </div>
       </div>
 
       <p className="qbo-integration-card__explainer">
@@ -94,59 +146,6 @@ export function QboIntegrationCard({ venueId }: QboIntegrationCardProps) {
           Your QuickBooks authorization expired. Reconnect to resume syncing.
         </p>
       )}
-
-      <div className="qbo-integration-card__actions">
-        {(state === 'Disconnected' || state === 'Expired') && (
-          <button
-            type="button"
-            className="btn-primary qbo-integration-card__connect"
-            data-testid="qbo-connect-button"
-            disabled={connectPending}
-            onClick={() => void handleConnect()}
-          >
-            <FontAwesomeIcon icon={faLink} aria-hidden="true" />
-            {state === 'Expired' ? 'Reconnect to QuickBooks' : 'Connect to QuickBooks'}
-          </button>
-        )}
-
-        {state === 'Connected' && (
-          <>
-            <button
-              type="button"
-              className="btn-secondary qbo-integration-card__force-pull"
-              data-testid="qbo-force-pull-button"
-              disabled={syncMutation.isPending}
-              onClick={handleForcePull}
-            >
-              <FontAwesomeIcon
-                icon={faRotate}
-                spin={syncMutation.isPending}
-                aria-hidden="true"
-              />
-              Force Pull Latest QBO Data
-            </button>
-            <button
-              type="button"
-              className="btn-outline qbo-integration-card__disconnect"
-              data-testid="qbo-disconnect-button"
-              onClick={() => setShowDisconnect(true)}
-            >
-              Disconnect Account
-            </button>
-          </>
-        )}
-
-        {state === 'Disconnected' && integration?.canPurgeCache && (
-          <button
-            type="button"
-            className="btn-outline qbo-integration-card__purge"
-            data-testid="qbo-purge-button"
-            onClick={() => setShowPurge(true)}
-          >
-            Clear Cached QBO Data
-          </button>
-        )}
-      </div>
 
       {showDisconnect && (
         <QboDisconnectModal

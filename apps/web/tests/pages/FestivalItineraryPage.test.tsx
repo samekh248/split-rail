@@ -33,6 +33,17 @@ vi.mock('@/api/festivals', () => ({
   useSetBlockBookingStatus: () => ({ mutateAsync }),
   useSetPublishVisibility: () => ({ mutateAsync, isPending: false }),
   useBlockHistory: () => ({ data: [], isLoading: false }),
+  usePinProgrammingBlock: () => ({ mutate: vi.fn() }),
+  useUnpinProgrammingBlock: () => ({ mutate: vi.fn() }),
+}));
+
+vi.mock('@/api/events', () => ({
+  useEvents: () => ({ data: [{ eventId: 'event-1', isPinned: false }] }),
+}));
+
+vi.mock('@/api/dashboard', () => ({
+  usePinEvent: () => ({ mutate: vi.fn() }),
+  useUnpinEvent: () => ({ mutate: vi.fn() }),
 }));
 
 vi.mock('@/lib/eventWorkspaceRoute', () => ({
@@ -60,6 +71,8 @@ describe('FestivalItineraryPage', () => {
     expect(screen.getByTestId('timeline-grid')).toBeInTheDocument();
     expect(screen.getByTestId('itinerary-filters')).toBeInTheDocument();
     expect(screen.getByText('Headliner')).toBeInTheDocument();
+    expect(screen.getByTestId('festival-itinerary-pin-event-1')).toBeInTheDocument();
+    expect(screen.getByTestId('timeline-block-pin-block-1')).toBeInTheDocument();
   });
 
   it('opens the block editor from add block', () => {

@@ -1,5 +1,6 @@
 import type { BookingPlacement, BookingPlacementStatus } from '@/lib/bookingCalendar';
 import { placementLegendHighlightClass } from '@/lib/bookingCalendar';
+import { formatEventDateRange } from '@/lib/eventDateRange';
 import { placementStatusLabel, statusClass } from '@/components/booking/BookingCalendarMatrix';
 
 export interface BookingCalendarPlacementCardProps {
@@ -9,22 +10,25 @@ export interface BookingCalendarPlacementCardProps {
   highlightedStatus?: BookingPlacementStatus | null;
 }
 
-function formatListDate(dateKey: string): string {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+function formatListDateRange(placement: BookingPlacement): string {
+  const [startYear, startMonth, startDay] = placement.eventDate.split('-').map(Number);
+  const start = new Date(startYear, startMonth - 1, startDay);
+  const endKey = placement.endDate && placement.endDate !== placement.eventDate
+    ? placement.endDate
+    : null;
+  if (!endKey) {
+    return start.toLocaleDateString('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }
+  return formatEventDateRange(placement.eventDate, endKey);
 }
 
-function formatCompactDate(dateKey: string): string {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
+function formatCompactDateRange(placement: BookingPlacement): string {
+  return formatEventDateRange(placement.eventDate, placement.endDate);
 }
 
 export function BookingCalendarPlacementCard({
@@ -56,7 +60,7 @@ export function BookingCalendarPlacementCard({
         </div>
         <div className="booking-calendar-list__compact-row booking-calendar-list__compact-row--meta">
           <span className="booking-calendar-list__compact-meta">
-            {formatCompactDate(placement.eventDate)} · {timeLabel} · {placement.venueName}
+            {formatCompactDateRange(placement)} · {timeLabel} · {placement.venueName}
           </span>
         </div>
       </button>
@@ -67,7 +71,7 @@ export function BookingCalendarPlacementCard({
     <button type="button" className={cardClassName} onClick={() => onClick(placement)}>
       <div className="booking-calendar-list__card-header">
         <div className="booking-calendar-list__card-meta">
-          <span className="booking-calendar-list__date">{formatListDate(placement.eventDate)}</span>
+          <span className="booking-calendar-list__date">{formatListDateRange(placement)}</span>
           <span className="booking-calendar-list__time">{placement.doorsTime ?? 'Time TBD'}</span>
         </div>
         <span className="booking-calendar-list__status">

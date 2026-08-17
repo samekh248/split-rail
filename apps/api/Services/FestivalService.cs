@@ -25,6 +25,7 @@ public class FestivalService
     private readonly ITenantContext _tenantContext;
     private readonly FestivalAccessGuard _guard;
     private readonly VenueService _venueService;
+    private readonly EventService _eventService;
     private readonly ILogger<FestivalService> _logger;
 
     public FestivalService(
@@ -32,12 +33,14 @@ public class FestivalService
         ITenantContext tenantContext,
         FestivalAccessGuard guard,
         VenueService venueService,
+        EventService eventService,
         ILogger<FestivalService> logger)
     {
         _db = db;
         _tenantContext = tenantContext;
         _guard = guard;
         _venueService = venueService;
+        _eventService = eventService;
         _logger = logger;
     }
 
@@ -68,6 +71,14 @@ public class FestivalService
                 throw new LedgerStateException(
                     "A settled or reconciled event cannot be converted to a festival.");
 
+            await _eventService.ValidateOccupiedRangeAsync(
+                venueId,
+                startDate,
+                endDate,
+                festival.BookingPlacementStatus,
+                existingId,
+                cancellationToken);
+
             festival.EventType = EventType.Festival;
             festival.Title = title;
             festival.EventDate = startDate;
@@ -78,6 +89,14 @@ public class FestivalService
         }
         else
         {
+            await _eventService.ValidateOccupiedRangeAsync(
+                venueId,
+                startDate,
+                endDate,
+                BookingPlacementStatus.Confirmed,
+                excludeEventId: null,
+                cancellationToken);
+
             festival = new Event
             {
                 Id = Guid.NewGuid(),
@@ -142,6 +161,14 @@ public class FestivalService
 
         var (startDate, endDate) = ParseAndValidateRange(request.StartDate, request.EndDate);
         var title = ValidateTitle(request.Title);
+
+        await _eventService.ValidateOccupiedRangeAsync(
+            venueId,
+            startDate,
+            endDate,
+            festival.BookingPlacementStatus,
+            eventId,
+            cancellationToken);
 
         // Shrinking the range must never silently orphan blocks — the user resolves them
         // explicitly by moving or canceling first (spec edge case).

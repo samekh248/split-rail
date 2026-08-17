@@ -41,7 +41,7 @@ public static class DashboardFinancialHealthHelper
     {
         var (weekStart, weekEnd) = GetCalendarWeek(today);
         var inWeekEvents = venueEvents
-            .Where(e => e.EventDate >= weekStart && e.EventDate <= weekEnd)
+            .Where(e => e.EventDate <= weekEnd && (e.EndDate ?? e.EventDate) >= weekStart)
             .ToList();
 
         var projected = inWeekEvents.Sum(ComputeProjectedNetShowRevenue);

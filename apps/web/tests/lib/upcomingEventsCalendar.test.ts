@@ -26,6 +26,24 @@ describe('upcomingEventsCalendar', () => {
     expect(toDateKey(bounds.end)).toBe('2026-07-18');
   });
 
+  it('groups a festival onto every occupied local date', () => {
+    const grouped = groupEventsByLocalDate([
+      {
+        eventId: '11111111-1111-1111-1111-111111111111',
+        venueId: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
+        title: 'Summer Fest',
+        eventDate: '2026-06-20',
+        endDate: '2026-06-22',
+        eventType: 'FESTIVAL',
+      },
+    ]);
+
+    expect(grouped.get('2026-06-20')).toHaveLength(1);
+    expect(grouped.get('2026-06-21')).toHaveLength(1);
+    expect(grouped.get('2026-06-22')).toHaveLength(1);
+    expect(grouped.get('2026-06-23')).toBeUndefined();
+  });
+
   it('groups multiple events on the same local date', () => {
     const grouped = groupEventsByLocalDate([
       event('11111111-1111-1111-1111-111111111111', '2026-06-20'),

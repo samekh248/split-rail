@@ -103,7 +103,8 @@ public class EventService
             .ThenByDescending(e => e.CreatedAt)
             .ToListAsync(cancellationToken);
 
-        return events.Select(ToEventResponse).ToList();
+        var pinnedIds = await PinnedEventIdsAsync(userId, cancellationToken);
+        return events.Select(evt => ToEventResponse(evt, pinnedIds.Contains(evt.Id))).ToList();
     }
 
     public async Task<EventResponse> UpdateEventMetadataAsync(
@@ -146,14 +147,17 @@ public class EventService
             FrozenEventMutationOperation.UpdateEventMetadata);
 
         var targetVenueId = venueId;
-        var targetDate = eventDate;
         var dateOrVenueChanged = evt.EventDate != eventDate || evt.VenueId != venueId;
 
         if (dateOrVenueChanged)
         {
-            await ValidatePlacementAsync(
+            var lastDay = evt.EndDate is DateOnly existingEnd && existingEnd >= eventDate
+                ? existingEnd
+                : eventDate;
+            await ValidateOccupiedRangeAsync(
                 targetVenueId,
-                targetDate,
+                eventDate,
+                lastDay,
                 evt.BookingPlacementStatus,
                 evt.Id,
                 cancellationToken);
@@ -175,7 +179,7 @@ public class EventService
 
         _logger.LogInformation("Event {EventId} metadata updated at venue {VenueId}", evt.Id, venueId);
 
-        return ToEventResponse(evt);
+        return ToEventResponse(evt, await IsEventPinnedAsync(userId, evt.Id, cancellationToken));
     }
 
     public async Task DeleteEventAsync(
@@ -235,7 +239,7 @@ public class EventService
             .Include(e => e.Venue)
             .FirstOrDefaultAsync(e => e.Id == eventId && e.VenueId == venueId, cancellationToken);
 
-        return evt is null ? null : ToEventResponse(evt);
+        return evt is null ? null : ToEventResponse(evt, await IsEventPinnedAsync(userId, evt.Id, cancellationToken));
     }
 
     private async Task<EventResponse> CancelConfirmedEventAsync(
@@ -258,7 +262,7 @@ public class EventService
 
         _logger.LogInformation("Event {EventId} booking cancelled at venue {VenueId}", evt.Id, venueId);
 
-        return ToEventResponse(evt);
+        return ToEventResponse(evt, await IsEventPinnedAsync(userId, evt.Id, cancellationToken));
     }
 
     private async Task<EventResponse> PromoteHoldAsync(
@@ -276,18 +280,37 @@ public class EventService
             userId,
             FrozenEventMutationOperation.UpdateEventMetadata);
 
-        var active = await LoadActivePlacementsAsync(evt.VenueId, evt.EventDate, cancellationToken);
-        _bookingConflictService.ValidateAction(
-            active,
-            BookingConflictAction.PromoteToConfirmed,
-            evt.Id);
+        var lastDay = evt.EndDate ?? evt.EventDate;
+        for (var day = evt.EventDate; day <= lastDay; day = day.AddDays(1))
+        {
+            var active = await LoadActivePlacementsAsync(evt.VenueId, day, cancellationToken);
+            _bookingConflictService.ValidateAction(
+                active,
+                BookingConflictAction.PromoteToConfirmed,
+                evt.Id);
+        }
 
         evt.BookingPlacementStatus = BookingPlacementStatus.Confirmed;
         await _db.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("Hold {EventId} promoted to confirmed at venue {VenueId}", evt.Id, venueId);
 
-        return ToEventResponse(evt);
+        return ToEventResponse(evt, await IsEventPinnedAsync(userId, evt.Id, cancellationToken));
+    }
+
+    public async Task ValidateOccupiedRangeAsync(
+        Guid venueId,
+        DateOnly startDate,
+        DateOnly endDate,
+        BookingPlacementStatus placementStatus,
+        Guid? excludeEventId,
+        CancellationToken cancellationToken)
+    {
+        if (endDate < startDate)
+            throw new ValidationException("End date cannot be before the start date.");
+
+        for (var day = startDate; day <= endDate; day = day.AddDays(1))
+            await ValidatePlacementAsync(venueId, day, placementStatus, excludeEventId, cancellationToken);
     }
 
     private async Task ValidatePlacementAsync(
@@ -318,7 +341,10 @@ public class EventService
     {
         return await _db.Events
             .AsNoTracking()
-            .Where(e => e.VenueId == venueId && e.EventDate == eventDate)
+            .Where(e =>
+                e.VenueId == venueId
+                && e.EventDate <= eventDate
+                && (e.EndDate ?? e.EventDate) >= eventDate)
             .Select(e => new ActivePlacement(e.Id, e.BookingPlacementStatus))
             .ToListAsync(cancellationToken);
     }
@@ -359,7 +385,22 @@ public class EventService
     private static string? NormalizeOptionalText(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    internal static EventResponse ToEventResponse(Event evt)
+    private async Task<HashSet<Guid>> PinnedEventIdsAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        var ids = await _db.UserEventPins
+            .AsNoTracking()
+            .Where(p => p.UserId == userId)
+            .Select(p => p.EventId)
+            .ToListAsync(cancellationToken);
+        return ids.ToHashSet();
+    }
+
+    private async Task<bool> IsEventPinnedAsync(Guid userId, Guid eventId, CancellationToken cancellationToken) =>
+        await _db.UserEventPins
+            .AsNoTracking()
+            .AnyAsync(p => p.UserId == userId && p.EventId == eventId, cancellationToken);
+
+    internal static EventResponse ToEventResponse(Event evt, bool isPinned = false)
     {
         var workspaceAllowed = evt.BookingPlacementStatus
             is not (BookingPlacementStatus.Hold1 or BookingPlacementStatus.Hold2);
@@ -384,6 +425,7 @@ public class EventService
             evt.SupportLineup,
             workspaceAllowed,
             EventTypeFormat.ToApiString(evt.EventType),
-            evt.EndDate?.ToString("yyyy-MM-dd"));
+            evt.EndDate?.ToString("yyyy-MM-dd"),
+            isPinned);
     }
 }

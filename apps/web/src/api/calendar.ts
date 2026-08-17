@@ -36,6 +36,8 @@ export function buildCalendarPlacementFromEvent(
     regionName: region?.name ?? null,
     title: event.title,
     eventDate: event.eventDate,
+    endDate: event.endDate ?? null,
+    eventType: event.eventType ?? 'STANDARD',
     bookingPlacementStatus,
     doorsTime: event.doorsTime ?? null,
     loadInTime: event.loadInTime ?? null,
@@ -54,6 +56,7 @@ export function upsertCalendarPlacementInCache(
   placement: CalendarPlacementDto,
 ): void {
   const eventDate = placement.eventDate ?? '';
+  const endDate = placement.endDate ?? eventDate;
   const eventId = placement.eventId;
 
   if (!eventDate || !eventId) {
@@ -72,7 +75,7 @@ export function upsertCalendarPlacementInCache(
       continue;
     }
 
-    if (eventDate < params.from || eventDate > params.to) {
+    if (endDate < params.from || eventDate > params.to) {
       continue;
     }
 

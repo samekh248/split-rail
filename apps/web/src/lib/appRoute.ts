@@ -131,6 +131,32 @@ export function getWorkspaceFocusFromUrl(): string | null {
   return new URLSearchParams(window.location.search).get('focus');
 }
 
+const BOOKING_MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+export function defaultBookingMonth(now = new Date()): string {
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
+
+export function parseBookingMonth(value: string | null | undefined): string | null {
+  if (!value || !BOOKING_MONTH_PATTERN.test(value)) {
+    return null;
+  }
+  return value;
+}
+
+export function getBookingMonthFromUrl(): string | null {
+  return parseBookingMonth(new URLSearchParams(window.location.search).get('month'));
+}
+
+export function resolveBookingMonthFromUrl(): string {
+  return getBookingMonthFromUrl() ?? defaultBookingMonth();
+}
+
+export function buildBookingPath(month?: string): string {
+  const valid = parseBookingMonth(month) ?? defaultBookingMonth();
+  return `/booking?month=${valid}`;
+}
+
 export function pushPath(path: string): void {
   window.history.pushState(null, '', path);
   window.dispatchEvent(new PopStateEvent('popstate'));
@@ -203,8 +229,17 @@ export function navigateToAccounting(): void {
   pushPath('/accounting');
 }
 
-export function navigateToBooking(): void {
-  pushPath('/booking');
+export function navigateToBooking(month?: string): void {
+  pushPath(buildBookingPath(month));
+}
+
+export function navigateToBookingMonth(month: string): void {
+  const next = buildBookingPath(month);
+  const current = `${window.location.pathname}${window.location.search}`;
+  if (current === next) {
+    return;
+  }
+  pushPath(next);
 }
 
 export function navigateToSettings(): void {
@@ -276,4 +311,29 @@ export function useEventWorkspaceRoute(): EventWorkspaceRouteParams | null {
     ...params,
     focus: getWorkspaceFocusFromUrl(),
   };
+}
+
+export function useBookingCalendarMonth(): string {
+  const [, setRouteRevision] = useState(0);
+
+  useEffect(() => {
+    const onPopState = () => setRouteRevision((revision) => revision + 1);
+    window.addEventListener('popstate', onPopState);
+    return () => window.removeEventListener('popstate', onPopState);
+  }, []);
+
+  const month = resolveBookingMonthFromUrl();
+
+  useEffect(() => {
+    if (getAppPath() !== '/booking') {
+      return;
+    }
+    const next = buildBookingPath(month);
+    const current = `${window.location.pathname}${window.location.search}`;
+    if (current !== next) {
+      replacePath(next);
+    }
+  }, [month]);
+
+  return month;
 }

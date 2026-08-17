@@ -75,6 +75,7 @@ public class ProgrammingBlock
     public ICollection<RevenueAllocation> RevenueAllocations { get; set; } = [];
     public ICollection<BlockSettlementLineItem> SettlementLineItems { get; set; } = [];
     public ICollection<BlockSettlementRevision> SettlementRevisions { get; set; } = [];
+    public ICollection<UserProgrammingBlockPin> UserProgrammingBlockPins { get; set; } = [];
 
     /// <summary>
     /// Two active blocks overlap when each starts before the other ends. Only active

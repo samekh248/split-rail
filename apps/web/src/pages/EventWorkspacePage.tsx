@@ -357,15 +357,14 @@ export function EventWorkspacePage() {
       ) : null}
 
       {showLedger && selectedEventId && activeVenueId ? (
-        <FestivalModeCard
-          venueId={activeVenueId}
-          event={selectedEvent}
-          canManage={canManageFestivalSchedule}
-        />
-      ) : null}
-
-      {showLedger && selectedEventId && activeVenueId ? (
-        <EventLedgerPage venueId={activeVenueId} eventId={selectedEventId} focus={ledgerFocus} />
+        <div className="event-workspace" data-testid="event-workspace">
+          <FestivalModeCard
+            venueId={activeVenueId}
+            event={selectedEvent}
+            canManage={canManageFestivalSchedule}
+          />
+          <EventLedgerPage venueId={activeVenueId} eventId={selectedEventId} focus={ledgerFocus} />
+        </div>
       ) : null}
 
       {showEventWorkspace &&

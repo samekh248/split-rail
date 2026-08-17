@@ -179,10 +179,14 @@ describe('BookingCalendarPage', () => {
     expect(within(modal).getByLabelText(/Start date/)).toHaveValue('2026-06-15');
   });
 
-  it('renders a festival wrapper as a single placement without block flooding', () => {
-    // Calendar API returns one CalendarPlacementDto per Event; a festival with 250 blocks
-    // still surfaces as a single wrapper row — never one chip per block.
-    calendarPlacementsState.data = [createFestivalPlacement()];
+  it('renders a festival wrapper on every day of its range without block flooding', () => {
+    calendarPlacementsState.data = [
+      createFestivalPlacement({
+        eventDate: '2026-06-15',
+        endDate: '2026-06-17',
+        eventType: 'FESTIVAL',
+      }),
+    ];
 
     render(
       <QueryClientProvider client={new QueryClient()}>
@@ -191,12 +195,76 @@ describe('BookingCalendarPage', () => {
     );
 
     const matrix = screen.getByTestId('booking-calendar-matrix');
-    const festivalDay = within(matrix).getByTestId('booking-calendar-day-2026-06-15');
-    const placementTitles = festivalDay.querySelectorAll('.booking-calendar-matrix__event-title');
+    for (const dateKey of ['2026-06-15', '2026-06-16', '2026-06-17']) {
+      const festivalDay = within(matrix).getByTestId(`booking-calendar-day-${dateKey}`);
+      const placementTitles = festivalDay.querySelectorAll('.booking-calendar-matrix__event-title');
+      expect(placementTitles).toHaveLength(1);
+      expect(placementTitles[0]).toHaveTextContent('Summer Fest');
+    }
 
-    expect(placementTitles).toHaveLength(1);
-    expect(placementTitles[0]).toHaveTextContent('Summer Fest');
     expect(within(matrix).queryByTestId('booking-cell-total-2026-06-15')).not.toBeInTheDocument();
     expect(calendarPlacementsState.data).toHaveLength(1);
+  });
+
+  it('opens the month from a deep link query', () => {
+    window.history.pushState({}, '', '/booking?month=2026-08');
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('booking-calendar-month-nav')).toHaveTextContent('August 2026');
+    expect(screen.getByTestId('booking-calendar-day-2026-08-15')).toBeInTheDocument();
+    expect(window.location.search).toBe('?month=2026-08');
+  });
+
+  it('writes the current month into the URL so refresh stays put', () => {
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('booking-calendar-month-nav')).toHaveTextContent('June 2026');
+    expect(window.location.search).toBe('?month=2026-06');
+  });
+
+  it('updates the URL when the month changes and restores it after remount', () => {
+    const { unmount } = render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    fireEvent.click(screen.getByTestId('booking-month-next'));
+
+    expect(screen.getByTestId('booking-calendar-month-nav')).toHaveTextContent('July 2026');
+    expect(window.location.search).toBe('?month=2026-07');
+
+    unmount();
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('booking-calendar-month-nav')).toHaveTextContent('July 2026');
+    expect(window.location.search).toBe('?month=2026-07');
+  });
+
+  it('falls back to the current month for an invalid month query', () => {
+    window.history.pushState({}, '', '/booking?month=not-a-month');
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('booking-calendar-month-nav')).toHaveTextContent('June 2026');
+    expect(window.location.search).toBe('?month=2026-06');
   });
 });

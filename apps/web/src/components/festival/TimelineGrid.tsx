@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState, type CSSProperties } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCircleCheck,
@@ -7,6 +7,7 @@ import {
   faHourglassHalf,
   faTriangleExclamation,
 } from '@fortawesome/free-solid-svg-icons';
+import { PinToggleButton } from '@/components/PinToggleButton';
 import { isBlockConflictError, parseBlockConflictError } from '@/components/festival/conflictTypes';
 import {
   blockDurationMinutes,
@@ -54,6 +55,7 @@ export interface TimelineGridProps {
     block: ProgrammingBlockResponse,
     bookingStatus: FestivalBookingStatus,
   ) => void | Promise<void>;
+  onPinToggle?: (block: ProgrammingBlockResponse) => void;
   canManage?: boolean;
 }
 
@@ -142,6 +144,7 @@ export function TimelineGrid({
   onBlockMove,
   onConflict,
   onBookingStatusChange,
+  onPinToggle,
   canManage = false,
 }: TimelineGridProps) {
   const timeSlots = useMemo(() => buildTimeSlots(), []);
@@ -239,6 +242,12 @@ export function TimelineGrid({
       }
     };
 
+  const columnTemplate = `var(--timeline-time-col) repeat(${Math.max(stages.length, 1)}, minmax(11rem, 1fr))`;
+  const boardStyle = {
+    '--timeline-slot-count': String(timeSlots.length),
+    gridTemplateColumns: columnTemplate,
+  } as CSSProperties;
+
   return (
     <section className="timeline-grid" data-testid="timeline-grid" role="grid" aria-label="Festival timeline">
       <div className="timeline-day-switcher" data-testid="timeline-day-switcher" role="group" aria-label="Festival day">
@@ -262,41 +271,36 @@ export function TimelineGrid({
       </div>
 
       <div className="timeline-grid__scroll">
-        <div
-          className="timeline-grid__header"
-          data-testid="timeline-time-header"
-          style={{ gridTemplateColumns: `8rem repeat(${timeSlots.length}, minmax(2.5rem, 1fr))` }}
-        >
+        <div className="timeline-grid__header" style={boardStyle}>
           <div className="timeline-grid__corner" aria-hidden="true" />
-          {timeSlots.map((slot) => (
-            <div key={slot} className="timeline-grid__time-label">
-              <FontAwesomeIcon icon={faClock} aria-hidden="true" />
-              {slot}
+          {stages.map((stage) => (
+            <div key={stage.id ?? stage.name} className="timeline-grid__stage-label">
+              {stage.name}
             </div>
           ))}
         </div>
 
-        {stages.map((stage) => {
-          const stageId = stage.id ?? '';
-          const stageBlocks = dayBlocks.filter((block) => block.stageZoneId === stageId);
+        <div className="timeline-grid__body" style={boardStyle}>
+          <div className="timeline-grid__times" data-testid="timeline-time-header">
+            {timeSlots.map((slot) => (
+              <div key={slot} className="timeline-grid__time-label">
+                <FontAwesomeIcon icon={faClock} aria-hidden="true" />
+                {slot}
+              </div>
+            ))}
+          </div>
 
-          return (
-            <div
-              key={stageId}
-              className="timeline-stage-row"
-              data-testid={`timeline-stage-row-${stageId}`}
-              style={{ gridTemplateColumns: `8rem repeat(${timeSlots.length}, minmax(2.5rem, 1fr))` }}
-            >
-              <div className="timeline-stage-row__label">{stage.name}</div>
+          {stages.map((stage) => {
+            const stageId = stage.id ?? '';
+            const stageBlocks = dayBlocks.filter((block) => block.stageZoneId === stageId);
 
+            return (
               <div
-                className="timeline-stage-row__track"
-                style={{ gridColumn: `2 / span ${timeSlots.length}` }}
+                key={stageId}
+                className="timeline-stage-column"
+                data-testid={`timeline-stage-row-${stageId}`}
               >
-                <div
-                  className="timeline-stage-row__slots"
-                  style={{ gridTemplateColumns: `repeat(${timeSlots.length}, minmax(2.5rem, 1fr))` }}
-                >
+                <div className="timeline-stage-column__slots">
                   {timeSlots.map((slot) => {
                     const isHover =
                       hoverTarget?.stageZoneId === stageId && hoverTarget.startTime === slot;
@@ -325,8 +329,6 @@ export function TimelineGrid({
                   const style = blockGridStyle(block);
                   const isPending = pendingBlockId === block.id;
                   const isDragging = draggedBlock?.block.id === block.id;
-                  // The public itinerary payload carries no booking commitment, so the badge
-                  // only appears for blocks that actually have one.
                   const bookingStatus = block.bookingStatus
                     ? normalizeBookingStatus(block.bookingStatus)
                     : null;
@@ -334,7 +336,7 @@ export function TimelineGrid({
                   return (
                     <article
                       key={block.id}
-                      className={`timeline-block-card ${categoryClass(block.category)} timeline-block-card--${(block.scheduleStatus ?? 'scheduled').toLowerCase()}${bookingStatus ? ` timeline-block-card--booking-${bookingStatus.toLowerCase()}` : ''}${isPending ? ' timeline-block-card--pending' : ''}${isDragging ? ' timeline-block-card--dragging' : ''}`}
+                      className={`timeline-block-card ${categoryClass(block.category)} timeline-block-card--${(block.scheduleStatus ?? 'scheduled').toLowerCase()}${bookingStatus ? ` timeline-block-card--booking-${bookingStatus.toLowerCase()}` : ''}${block.isPinned ? ' timeline-block-card--pinned' : ''}${isPending ? ' timeline-block-card--pending' : ''}${isDragging ? ' timeline-block-card--dragging' : ''}`}
                       style={style}
                       data-testid={`timeline-block-${block.id}`}
                       data-stage-id={block.stageZoneId}
@@ -367,6 +369,16 @@ export function TimelineGrid({
                           <FontAwesomeIcon icon={faGripVertical} aria-hidden="true" />
                         </span>
                       ) : null}
+                      {onPinToggle && block.id ? (
+                        <PinToggleButton
+                          className="timeline-block-card__pin event-card__pin"
+                          pinned={block.isPinned === true}
+                          pinnedLabel="Unpin performance"
+                          unpinnedLabel="Pin performance"
+                          testId={`timeline-block-pin-${block.id}`}
+                          onToggle={() => onPinToggle(block)}
+                        />
+                      ) : null}
                       <span className="timeline-block-card__title">{block.title}</span>
                       <span className="timeline-block-card__time">
                         {block.startTime}–{block.endTime}
@@ -388,9 +400,9 @@ export function TimelineGrid({
                   );
                 })}
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
       {overlapWarning ? (

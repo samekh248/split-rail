@@ -17,4 +17,6 @@ public record CalendarPlacementDto(
     bool IsBudgetLocked,
     string QboTagName,
     bool HasLineItems,
-    bool WorkspaceAllowed);
+    bool WorkspaceAllowed,
+    string? EndDate = null,
+    string EventType = "STANDARD");

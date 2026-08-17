@@ -3,7 +3,10 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCalendarDays, faFileInvoiceDollar, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { FestivalSetupModal } from '@/components/festival/FestivalSetupModal';
 import { StageManagerPanel } from '@/components/festival/StageManagerPanel';
+import { PinToggleButton } from '@/components/PinToggleButton';
+import { formatEventDateRange } from '@/lib/eventDateRange';
 import { useFestival } from '@/api/festivals';
+import { usePinEvent, useUnpinEvent } from '@/api/dashboard';
 import { navigateToFestivalItinerary } from '@/lib/festivalItineraryRoute';
 import { navigateToFestivalLedger } from '@/lib/festivalLedgerRoute';
 import type { EventResponse } from '@/types/generated-api';
@@ -14,13 +17,6 @@ export interface FestivalModeCardProps {
   canManage: boolean;
 }
 
-function formatRange(startDate: string, endDate: string | null | undefined): string {
-  if (!endDate || endDate === startDate) {
-    return startDate;
-  }
-  return `${startDate} – ${endDate}`;
-}
-
 /**
  * Progressive-enhancement entry point. Standard events show only an opt-in affordance
  * (and nothing at all without manage permission); festivals show their day/stage structure.
@@ -29,6 +25,8 @@ function formatRange(startDate: string, endDate: string | null | undefined): str
 export function FestivalModeCard({ venueId, event, canManage }: FestivalModeCardProps) {
   const [setupOpen, setSetupOpen] = useState(false);
   const isFestival = event?.eventType === 'FESTIVAL';
+  const pinEvent = usePinEvent();
+  const unpinEvent = useUnpinEvent();
 
   const festivalQuery = useFestival(venueId, event?.eventId ?? '', isFestival);
 
@@ -46,19 +44,21 @@ export function FestivalModeCard({ venueId, event, canManage }: FestivalModeCard
 
     return (
       <section className="festival-mode-card" data-testid="festival-mode-card">
-        <div className="festival-mode-card__prompt">
+        <div className="festival-mode-card__prompt section-header">
           <p className="festival-mode-card__text">
             Running this over multiple days or stages?
           </p>
-          <button
-            type="button"
-            className="festival-mode-card__convert btn-icon-label"
-            data-testid="festival-convert-button"
-            onClick={() => setSetupOpen(true)}
-          >
-            <FontAwesomeIcon icon={faLayerGroup} aria-hidden="true" />
-            Convert to festival
-          </button>
+          <div className="section-header__actions">
+            <button
+              type="button"
+              className="festival-mode-card__convert btn-icon-label"
+              data-testid="festival-convert-button"
+              onClick={() => setSetupOpen(true)}
+            >
+              <FontAwesomeIcon icon={faLayerGroup} aria-hidden="true" />
+              Convert to festival
+            </button>
+          </div>
         </div>
 
         <FestivalSetupModal
@@ -75,18 +75,37 @@ export function FestivalModeCard({ venueId, event, canManage }: FestivalModeCard
   }
 
   const festival = festivalQuery.data;
+  const eventId = event.eventId ?? '';
+  const isPinned = event.isPinned === true;
+
+  const toggleFestivalPin = () => {
+    if (!eventId) {
+      return;
+    }
+    const mutation = isPinned ? unpinEvent : pinEvent;
+    mutation.mutate({ venueId, eventId });
+  };
 
   return (
     <section className="festival-mode-card festival-mode-card--active" data-testid="festival-mode-card">
-      <h2 className="festival-mode-card__title">
-        <FontAwesomeIcon icon={faLayerGroup} aria-hidden="true" /> Festival
-      </h2>
+      <div className="festival-mode-card__heading">
+        <h2 className="festival-mode-card__title">
+          <FontAwesomeIcon icon={faLayerGroup} aria-hidden="true" /> Festival
+        </h2>
+        <PinToggleButton
+          pinned={isPinned}
+          pinnedLabel="Unpin festival"
+          unpinnedLabel="Pin festival"
+          testId={`festival-pin-${eventId}`}
+          onToggle={toggleFestivalPin}
+        />
+      </div>
 
       <dl className="festival-mode-card__meta">
         <div>
           <dt>Dates</dt>
           <dd data-testid="festival-date-range">
-            {formatRange(event.eventDate ?? '', event.endDate)}
+            {formatEventDateRange(event.eventDate, event.endDate)}
           </dd>
         </div>
         <div>

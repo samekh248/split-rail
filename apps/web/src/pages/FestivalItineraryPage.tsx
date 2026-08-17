@@ -4,12 +4,17 @@ import { faArrowLeft, faPlus } from '@fortawesome/free-solid-svg-icons';
 import {
   useBlockHistory,
   useItinerary,
+  usePinProgrammingBlock,
   usePublicItinerary,
   useSetBlockBookingStatus,
   useSetBlockStatus,
   useSetPublishVisibility,
+  useUnpinProgrammingBlock,
   useUpdateBlock,
 } from '@/api/festivals';
+import { useEvents } from '@/api/events';
+import { usePinEvent, useUnpinEvent } from '@/api/dashboard';
+import { PinToggleButton } from '@/components/PinToggleButton';
 import { BlockEditorDrawer } from '@/components/festival/BlockEditorDrawer';
 import { ConflictDialog } from '@/components/festival/ConflictDialog';
 import type { BlockConflictInfo } from '@/components/festival/conflictTypes';
@@ -65,6 +70,11 @@ export function FestivalItineraryPage({
 
   const itineraryQuery = useItinerary(venueId, eventId, {}, viewMode === 'internal');
   const publicItineraryQuery = usePublicItinerary(venueId, eventId, {}, viewMode === 'public');
+  const eventsQuery = useEvents(venueId);
+  const pinEvent = usePinEvent();
+  const unpinEvent = useUnpinEvent();
+  const pinBlock = usePinProgrammingBlock();
+  const unpinBlock = useUnpinProgrammingBlock();
   const updateBlock = useUpdateBlock(venueId, eventId);
   const setBlockStatus = useSetBlockStatus(venueId, eventId);
   const setBlockBookingStatus = useSetBlockBookingStatus(venueId, eventId);
@@ -170,6 +180,22 @@ export function FestivalItineraryPage({
     setConflictState({ block, conflict });
   };
 
+  const festivalEvent = eventsQuery.data?.find((item) => item.eventId === eventId);
+  const festivalPinned = festivalEvent?.isPinned === true;
+
+  const handleFestivalPinToggle = () => {
+    const mutation = festivalPinned ? unpinEvent : pinEvent;
+    mutation.mutate({ venueId, eventId });
+  };
+
+  const handleBlockPinToggle = (block: ProgrammingBlockResponse) => {
+    if (!block.id) {
+      return;
+    }
+    const mutation = block.isPinned === true ? unpinBlock : pinBlock;
+    mutation.mutate({ venueId, eventId, blockId: block.id });
+  };
+
   const handleCancelOrMoveConflicting = async (conflictingBlockId: string) => {
     setConflictState(null);
     await setBlockStatus.mutateAsync({
@@ -182,7 +208,7 @@ export function FestivalItineraryPage({
 
   return (
     <div className="festival-itinerary-page" data-testid="festival-itinerary-page">
-      <header className="festival-itinerary-page__header">
+      <header className="festival-itinerary-page__header section-header">
         <button
           type="button"
           className="btn-icon-label festival-itinerary-page__back"
@@ -192,17 +218,26 @@ export function FestivalItineraryPage({
           Back to event
         </button>
         <h1 className="festival-itinerary-page__title">Festival itinerary</h1>
-        {canManage ? (
-          <button
-            type="button"
-            className="btn-primary btn-icon-label"
-            data-testid="itinerary-add-block"
-            onClick={openCreateBlock}
-          >
-            <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
-            Add block
-          </button>
-        ) : null}
+        <div className="section-header__actions">
+          <PinToggleButton
+            pinned={festivalPinned}
+            pinnedLabel="Unpin festival"
+            unpinnedLabel="Pin festival"
+            testId={`festival-itinerary-pin-${eventId}`}
+            onToggle={handleFestivalPinToggle}
+          />
+          {canManage ? (
+            <button
+              type="button"
+              className="btn-primary btn-icon-label"
+              data-testid="itinerary-add-block"
+              onClick={openCreateBlock}
+            >
+              <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+              Add block
+            </button>
+          ) : null}
+        </div>
       </header>
 
       <ViewToggle
@@ -248,6 +283,7 @@ export function FestivalItineraryPage({
           onBlockMove={handleBlockMove}
           onConflict={handleConflict}
           onBookingStatusChange={handleBookingStatusChange}
+          onPinToggle={viewMode === 'internal' ? handleBlockPinToggle : undefined}
           canManage={canManage && viewMode === 'internal'}
         />
       )}

@@ -199,6 +199,7 @@ builder.Services.AddScoped<BookingConflictService>();
 builder.Services.AddScoped<InvitationService>();
 builder.Services.AddScoped<EventService>();
 builder.Services.AddScoped<EventPinService>();
+builder.Services.AddScoped<ProgrammingBlockPinService>();
 builder.Services.AddScoped<DashboardService>();
 builder.Services.AddScoped<FrozenEventMutationAuditor>();
 builder.Services.AddScoped<IFrozenEventSaveContext, FrozenEventSaveContext>();

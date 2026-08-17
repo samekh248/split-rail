@@ -6,6 +6,7 @@ import { useDashboard, usePinEvent, useUnpinEvent } from '@/api/dashboard';
 import { useUserProfile } from '@/api/user';
 import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
 import { ModalHeader } from '@/components/shell/ModalHeader';
+import { formatIsoDateRange } from '@/lib/eventDateRange';
 import type { BookingPlacement } from '@/lib/bookingCalendar';
 import { placementStatusLabel } from '@/components/booking/BookingCalendarMatrix';
 import type { DashboardResponse } from '@/types/generated-api';
@@ -201,7 +202,7 @@ export function BookingEventDrawer({
       {mode === 'detail' ? (
         <div>
           <p>{placement.venueName}</p>
-          <p>{placement.eventDate}</p>
+          <p>{formatIsoDateRange(placement.eventDate, placement.endDate)}</p>
           <p>{placementStatusLabel(placement.bookingPlacementStatus)}</p>
           <div className="booking-event-drawer__actions">
             <button type="button" onClick={() => setMode('edit')}>
@@ -238,10 +239,14 @@ export function BookingEventDrawer({
             Title
             <input value={title} onChange={(event) => setTitle(event.target.value)} />
           </label>
-          <label>
-            Date
-            <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} />
-          </label>
+          {placement.eventType === 'FESTIVAL' ? (
+            <p>{formatIsoDateRange(placement.eventDate, placement.endDate)}</p>
+          ) : (
+            <label>
+              Date
+              <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} />
+            </label>
+          )}
           {error ? <p role="alert">{error}</p> : null}
           <button type="submit">Save</button>
         </form>
