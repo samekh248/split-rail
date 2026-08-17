@@ -42,6 +42,10 @@ export function formatEventDateLabel(eventDate: string | null | undefined): stri
   });
 }
 
+function formatLongDate(date: Date, options: Intl.DateTimeFormatOptions): string {
+  return date.toLocaleDateString('en-US', options);
+}
+
 /** Compact locale range, e.g. "Aug 14–16, 2026" or "Aug 30 – Sep 1, 2026". */
 export function formatEventDateRange(
   startDate: string | null | undefined,
@@ -71,6 +75,42 @@ export function formatEventDateRange(
     return `${startMonth} ${startDay} – ${endMonth} ${endDay}, ${endYear}`;
   }
   return `${startMonth} ${startDay}, ${startYear} – ${endMonth} ${endDay}, ${endYear}`;
+}
+
+/** Detail-view range, e.g. "Fri, June 15 – Sun, June 17, 2026". */
+export function formatEventDateRangeLong(
+  startDate: string | null | undefined,
+  endDate: string | null | undefined,
+): string {
+  const start = parseEventLocalDate(startDate);
+  if (!start) {
+    return 'Date TBD';
+  }
+
+  const last = parseEventLocalDate(effectiveEndDate(startDate, endDate));
+  if (!last || toDateKey(last) === toDateKey(start)) {
+    return formatLongDate(start, {
+      weekday: 'short',
+      month: 'long',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }
+
+  const sameYear = start.getFullYear() === last.getFullYear();
+  const startLabel = formatLongDate(start, {
+    weekday: 'short',
+    month: 'long',
+    day: 'numeric',
+    year: sameYear ? undefined : 'numeric',
+  });
+  const endLabel = formatLongDate(last, {
+    weekday: 'short',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+  return `${startLabel} – ${endLabel}`;
 }
 
 /** ISO range for compact lists, e.g. "2026-08-14 – 2026-08-16". */

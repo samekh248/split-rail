@@ -77,6 +77,7 @@ export function useUpdateFestival(venueId: string, eventId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: festivalQueryKey(venueId, eventId) });
       void queryClient.invalidateQueries({ queryKey: ['events'] });
+      void queryClient.invalidateQueries({ queryKey: ['calendar'] });
     },
   });
 }

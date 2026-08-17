@@ -135,4 +135,56 @@ describe('BookingEventDrawer', () => {
       expect.any(Object),
     );
   });
+
+  it('renders a readable date span for a multi-day festival', () => {
+    render(
+      <QueryClientProvider
+        client={
+          new QueryClient({
+            defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+          })
+        }
+      >
+        <BookingEventDrawer
+          open
+          placement={{
+            ...placement,
+            title: 'Summer Fest',
+            eventDate: '2026-06-15',
+            endDate: '2026-06-17',
+            eventType: 'FESTIVAL',
+          }}
+          onClose={vi.fn()}
+          onUpdated={vi.fn()}
+        />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('booking-event-drawer-date')).toHaveTextContent(
+      'Mon, June 15 – Wed, June 17, 2026',
+    );
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel booking' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open workspace' })).toBeInTheDocument();
+  });
+
+  it('keeps edit and cancel booking on a standard event', async () => {
+    const user = userEvent.setup();
+    renderDrawer();
+
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    await user.click(screen.getByTestId('booking-event-drawer-actions-menu-trigger'));
+    expect(screen.getByTestId('booking-event-drawer-cancel-booking')).toHaveTextContent(
+      'Cancel booking',
+    );
+  });
+
+  it('places Open workspace on the right as a primary action', () => {
+    renderDrawer();
+
+    const openWorkspace = screen.getByTestId('booking-event-drawer-open-workspace');
+    expect(openWorkspace).toHaveClass('btn-primary');
+    expect(openWorkspace.closest('.section-header__actions')).toBeInTheDocument();
+    expect(openWorkspace.closest('.booking-event-drawer__actions')).toHaveClass('section-header');
+  });
 });

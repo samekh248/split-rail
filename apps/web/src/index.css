@@ -1330,6 +1330,65 @@ th {
   background: var(--color-bg-cream);
 }
 
+.kebab-menu {
+  position: relative;
+  display: inline-flex;
+}
+
+.kebab-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-button);
+  background: var(--color-surface-white);
+  color: var(--color-primary-brown);
+  cursor: pointer;
+}
+
+.kebab-menu__trigger:hover:not(:disabled) {
+  background: var(--color-bg-cream);
+}
+
+.kebab-menu__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  min-width: 10rem;
+  background: var(--color-surface-white);
+  color: var(--color-primary-brown);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  box-shadow: var(--shadow-card);
+  padding: 0.25rem;
+  z-index: 110;
+}
+
+.kebab-menu__menu-item {
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+  font-family: var(--font-ui);
+  font-size: 0.875rem;
+  color: var(--color-primary-brown);
+}
+
+.kebab-menu__menu-item:hover {
+  background: var(--color-bg-cream);
+}
+
+.kebab-menu__menu-item--destructive {
+  color: var(--color-error);
+}
+
 .mobile-nav-drawer {
   position: fixed;
   inset: 0;
@@ -5109,15 +5168,33 @@ button.welcome-modal__dismiss {
 }
 
 .booking-calendar-matrix__week {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 0;
+  position: relative;
   background: transparent;
   border-bottom: 1px solid color-mix(in srgb, var(--color-border-subtle) 40%, transparent);
 }
 
 .booking-calendar-matrix__week:last-child {
   border-bottom: none;
+}
+
+.booking-calendar-matrix__week-days {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 0;
+}
+
+.booking-calendar-matrix__week-lanes {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 2.05rem;
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-auto-rows: 1.3125rem;
+  align-content: start;
+  row-gap: 0.25rem;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .booking-calendar-matrix__day {
@@ -5168,6 +5245,13 @@ button.welcome-modal__dismiss {
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  padding-top: calc(var(--week-lane-count, 0) * 1.5625rem);
+}
+
+.booking-calendar-matrix__week-lanes .booking-calendar-matrix__event {
+  pointer-events: auto;
+  min-width: 0;
+  margin: 0 0.2rem;
 }
 
 .booking-calendar-matrix__event {
@@ -5189,6 +5273,18 @@ button.welcome-modal__dismiss {
 
 .booking-calendar-matrix__event--festival {
   box-shadow: inset 3px 0 0 var(--color-primary-brown);
+}
+
+.booking-calendar-matrix__event--continues-before {
+  margin-left: 0;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.booking-calendar-matrix__event--continues-after {
+  margin-right: 0;
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
 }
 
 .booking-calendar-matrix__event-title {
@@ -5474,6 +5570,24 @@ button.welcome-modal__dismiss {
   border-radius: 0.75rem;
   padding: 1.5rem 1.75rem;
   box-shadow: var(--shadow-modal);
+}
+
+.booking-event-drawer__date {
+  margin: 0.15rem 0 0.65rem;
+  color: var(--color-text-muted);
+  font-size: 0.9375rem;
+  letter-spacing: 0.01em;
+}
+
+.booking-event-drawer__actions {
+  margin-top: 1rem;
+}
+
+.booking-event-drawer__secondary-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .booking-create-event-modal,

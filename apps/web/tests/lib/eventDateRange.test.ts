@@ -3,6 +3,7 @@ import {
   eachDateKey,
   effectiveEndDate,
   formatEventDateRange,
+  formatEventDateRangeLong,
   formatIsoDateRange,
 } from '@/lib/eventDateRange';
 
@@ -31,5 +32,21 @@ describe('eventDateRange', () => {
 
   it('formats ISO ranges for compact lists', () => {
     expect(formatIsoDateRange('2026-08-14', '2026-08-16')).toBe('2026-08-14 – 2026-08-16');
+  });
+
+  it('formats a long festival span with weekdays', () => {
+    expect(formatEventDateRangeLong('2026-06-15', '2026-06-17')).toBe(
+      'Mon, June 15 – Wed, June 17, 2026',
+    );
+  });
+
+  it('formats a long cross-month span', () => {
+    expect(formatEventDateRangeLong('2026-06-30', '2026-07-02')).toBe(
+      'Tue, June 30 – Thu, July 2, 2026',
+    );
+  });
+
+  it('formats a long single-day date without a dash', () => {
+    expect(formatEventDateRangeLong('2026-06-26', null)).toBe('Fri, June 26, 2026');
   });
 });

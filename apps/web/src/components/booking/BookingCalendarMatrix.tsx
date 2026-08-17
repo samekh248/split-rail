@@ -1,14 +1,18 @@
+import type { CSSProperties } from 'react';
 import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   buildMonthCalendarWeeks,
   formatBookingStatusLabel,
   getWeekdayLabels,
+  layoutWeekPlacementLanes,
   placementLegendHighlightClass,
   placementStatusClass,
   type BookingPlacement,
   type BookingPlacementStatus,
+  type BookingWeekLaneItem,
 } from '@/lib/bookingCalendar';
+import { formatEventDateRangeLong } from '@/lib/eventDateRange';
 
 export const MAX_VISIBLE_PLACEMENTS_PER_DAY = 2;
 
@@ -55,6 +59,13 @@ function QuickAddButton({
   );
 }
 
+function spanStyle(item: BookingWeekLaneItem): CSSProperties {
+  return {
+    gridColumn: `${item.startIndex + 1} / span ${item.span}`,
+    gridRow: item.lane + 1,
+  };
+}
+
 export function BookingCalendarMatrix({
   month,
   placementsByDate,
@@ -77,77 +88,108 @@ export function BookingCalendarMatrix({
       </div>
 
       <div className="booking-calendar-matrix__grid">
-        {weeks.map((week) => (
-          <div key={week.days[0]?.dateKey ?? 'week'} className="booking-calendar-matrix__week">
-            {week.days.map((day) => {
-              const placements = placementsByDate[day.dateKey] ?? [];
-              const visible = placements.slice(0, MAX_VISIBLE_PLACEMENTS_PER_DAY);
-              const totalCount = placements.length;
-              const showTotalBadge = totalCount > MAX_VISIBLE_PLACEMENTS_PER_DAY;
+        {weeks.map((week) => {
+          const weekDateKeys = week.days.map((day) => day.dateKey);
+          const laneItems = layoutWeekPlacementLanes(weekDateKeys, placementsByDate);
+          const visibleLaneItems = laneItems.filter(
+            (item) => item.lane < MAX_VISIBLE_PLACEMENTS_PER_DAY,
+          );
+          const laneCount = visibleLaneItems.reduce(
+            (max, item) => Math.max(max, item.lane + 1),
+            0,
+          );
 
-              return (
-                <div
-                  key={day.dateKey}
-                  className={`booking-calendar-matrix__day${
-                    day.isAdjacentMonth ? ' booking-calendar-matrix__day--adjacent' : ''
-                  }`}
-                  data-testid={`booking-calendar-day-${day.dateKey}`}
-                >
-                  <div className="booking-calendar-matrix__day-header">
-                    <span className="booking-calendar-matrix__day-label" aria-hidden="true">
-                      {formatDayNumber(day.date)}
-                    </span>
-                    {onCellQuickAdd ? (
-                      <QuickAddButton dateKey={day.dateKey} onCellQuickAdd={onCellQuickAdd} />
-                    ) : (
-                      <span className="booking-calendar-matrix__day-header-spacer" aria-hidden="true" />
-                    )}
-                  </div>
+          return (
+            <div
+              key={week.days[0]?.dateKey ?? 'week'}
+              className="booking-calendar-matrix__week"
+              style={{ '--week-lane-count': laneCount } as CSSProperties}
+            >
+              <div className="booking-calendar-matrix__week-days">
+                {week.days.map((day) => {
+                  const placements = placementsByDate[day.dateKey] ?? [];
+                  const totalCount = placements.length;
+                  const showTotalBadge = totalCount > MAX_VISIBLE_PLACEMENTS_PER_DAY;
 
-                  {totalCount > 0 ? (
-                    <div className="booking-calendar-matrix__day-events">
-                      {visible.map((placement) => (
-                        <button
-                          key={placement.eventId}
-                          type="button"
-                          className={[
-                            'booking-placement',
-                            'booking-calendar-matrix__event',
-                            placement.eventType === 'FESTIVAL'
-                              ? 'booking-calendar-matrix__event--festival'
-                              : '',
-                            placementStatusClass(placement.bookingPlacementStatus),
-                            placementLegendHighlightClass(
-                              placement.bookingPlacementStatus,
-                              highlightedStatus,
-                            ),
-                          ]
-                            .filter(Boolean)
-                            .join(' ')}
-                          onClick={() => onPlacementClick(placement)}
-                          title={`${placement.title} — ${placement.venueName}`}
-                        >
-                          <span className="booking-calendar-matrix__event-title">{placement.title}</span>
-                        </button>
-                      ))}
+                  return (
+                    <div
+                      key={day.dateKey}
+                      className={`booking-calendar-matrix__day${
+                        day.isAdjacentMonth ? ' booking-calendar-matrix__day--adjacent' : ''
+                      }`}
+                      data-testid={`booking-calendar-day-${day.dateKey}`}
+                    >
+                      <div className="booking-calendar-matrix__day-header">
+                        <span className="booking-calendar-matrix__day-label" aria-hidden="true">
+                          {formatDayNumber(day.date)}
+                        </span>
+                        {onCellQuickAdd ? (
+                          <QuickAddButton dateKey={day.dateKey} onCellQuickAdd={onCellQuickAdd} />
+                        ) : (
+                          <span className="booking-calendar-matrix__day-header-spacer" aria-hidden="true" />
+                        )}
+                      </div>
+
                       {showTotalBadge ? (
-                        <button
-                          type="button"
-                          className="booking-calendar-matrix__total-count"
-                          data-testid={`booking-cell-total-${day.dateKey}`}
-                          onClick={() => onDateClick(day.dateKey)}
-                          aria-label={`${totalCount} events on ${day.dateKey}`}
-                        >
-                          {totalCount}
-                        </button>
+                        <div className="booking-calendar-matrix__day-events">
+                          <button
+                            type="button"
+                            className="booking-calendar-matrix__total-count"
+                            data-testid={`booking-cell-total-${day.dateKey}`}
+                            onClick={() => onDateClick(day.dateKey)}
+                            aria-label={`${totalCount} events on ${day.dateKey}`}
+                          >
+                            {totalCount}
+                          </button>
+                        </div>
                       ) : null}
                     </div>
-                  ) : null}
+                  );
+                })}
+              </div>
+
+              {visibleLaneItems.length > 0 ? (
+                <div className="booking-calendar-matrix__week-lanes">
+                  {visibleLaneItems.map((item) => {
+                    const startKey = weekDateKeys[item.startIndex] ?? item.placement.eventDate;
+                    return (
+                      <button
+                        key={`${item.placement.eventId}-${startKey}`}
+                        type="button"
+                        className={[
+                          'booking-placement',
+                          'booking-calendar-matrix__event',
+                          item.span > 1 ? 'booking-calendar-matrix__event--span' : '',
+                          item.continuesBefore ? 'booking-calendar-matrix__event--continues-before' : '',
+                          item.continuesAfter ? 'booking-calendar-matrix__event--continues-after' : '',
+                          item.placement.eventType === 'FESTIVAL'
+                            ? 'booking-calendar-matrix__event--festival'
+                            : '',
+                          placementStatusClass(item.placement.bookingPlacementStatus),
+                          placementLegendHighlightClass(
+                            item.placement.bookingPlacementStatus,
+                            highlightedStatus,
+                          ),
+                        ]
+                          .filter(Boolean)
+                          .join(' ')}
+                        style={spanStyle(item)}
+                        data-testid={`booking-calendar-span-${item.placement.eventId}-${startKey}`}
+                        data-span-days={item.span}
+                        onClick={() => onPlacementClick(item.placement)}
+                        title={`${item.placement.title} — ${item.placement.venueName} — ${formatEventDateRangeLong(item.placement.eventDate, item.placement.endDate)}`}
+                      >
+                        <span className="booking-calendar-matrix__event-title">
+                          {item.placement.title}
+                        </span>
+                      </button>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
-        ))}
+              ) : null}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

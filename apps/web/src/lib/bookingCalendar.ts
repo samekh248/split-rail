@@ -122,6 +122,89 @@ export function groupPlacementsByDate(
   return grouped;
 }
 
+export interface BookingWeekLaneItem {
+  placement: BookingPlacement;
+  startIndex: number;
+  span: number;
+  lane: number;
+  continuesBefore: boolean;
+  continuesAfter: boolean;
+}
+
+export function layoutWeekPlacementLanes(
+  weekDateKeys: string[],
+  placementsByDate: Record<string, BookingPlacement[]>,
+): BookingWeekLaneItem[] {
+  if (weekDateKeys.length === 0) {
+    return [];
+  }
+
+  const segments = new Map<string, { placement: BookingPlacement; startIndex: number; endIndex: number }>();
+
+  weekDateKeys.forEach((dateKey, index) => {
+    for (const placement of placementsByDate[dateKey] ?? []) {
+      const existing = segments.get(placement.eventId);
+      if (existing) {
+        existing.endIndex = index;
+        continue;
+      }
+      segments.set(placement.eventId, {
+        placement,
+        startIndex: index,
+        endIndex: index,
+      });
+    }
+  });
+
+  const packed = [...segments.values()]
+    .map((segment) => {
+      const occupied = eachDateKey(segment.placement.eventDate, segment.placement.endDate);
+      const weekStart = weekDateKeys[0] ?? '';
+      const weekEnd = weekDateKeys[weekDateKeys.length - 1] ?? '';
+      return {
+        placement: segment.placement,
+        startIndex: segment.startIndex,
+        span: segment.endIndex - segment.startIndex + 1,
+        continuesBefore: Boolean(occupied[0] && occupied[0] < weekStart),
+        continuesAfter: Boolean(
+          occupied.length > 0 && occupied[occupied.length - 1]! > weekEnd,
+        ),
+      };
+    })
+    .sort((a, b) => {
+      if (a.startIndex !== b.startIndex) {
+        return a.startIndex - b.startIndex;
+      }
+      if (a.span !== b.span) {
+        return b.span - a.span;
+      }
+      return a.placement.eventId.localeCompare(b.placement.eventId);
+    });
+
+  const occupiedLanes: boolean[][] = [];
+  const items: BookingWeekLaneItem[] = [];
+
+  for (const segment of packed) {
+    let lane = 0;
+    while (
+      occupiedLanes[lane]?.slice(segment.startIndex, segment.startIndex + segment.span).some(Boolean)
+    ) {
+      lane += 1;
+    }
+
+    if (!occupiedLanes[lane]) {
+      occupiedLanes[lane] = Array.from({ length: weekDateKeys.length }, () => false);
+    }
+    for (let column = segment.startIndex; column < segment.startIndex + segment.span; column += 1) {
+      occupiedLanes[lane]![column] = true;
+    }
+
+    items.push({ ...segment, lane });
+  }
+
+  return items;
+}
+
 export function groupPlacementsByDateAndVenue(
   placements: BookingPlacement[],
 ): Record<string, Record<string, BookingPlacement[]>> {

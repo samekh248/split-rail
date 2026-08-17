@@ -179,7 +179,7 @@ describe('BookingCalendarPage', () => {
     expect(within(modal).getByLabelText(/Start date/)).toHaveValue('2026-06-15');
   });
 
-  it('renders a festival wrapper on every day of its range without block flooding', () => {
+  it('renders a festival as a single bar spanning its occupied days', () => {
     calendarPlacementsState.data = [
       createFestivalPlacement({
         eventDate: '2026-06-15',
@@ -195,13 +195,12 @@ describe('BookingCalendarPage', () => {
     );
 
     const matrix = screen.getByTestId('booking-calendar-matrix');
-    for (const dateKey of ['2026-06-15', '2026-06-16', '2026-06-17']) {
-      const festivalDay = within(matrix).getByTestId(`booking-calendar-day-${dateKey}`);
-      const placementTitles = festivalDay.querySelectorAll('.booking-calendar-matrix__event-title');
-      expect(placementTitles).toHaveLength(1);
-      expect(placementTitles[0]).toHaveTextContent('Summer Fest');
-    }
-
+    const span = within(matrix).getByTestId(
+      `booking-calendar-span-${FESTIVAL_EVENT_ID}-2026-06-15`,
+    );
+    expect(span).toHaveAttribute('data-span-days', '3');
+    expect(span).toHaveTextContent('Summer Fest');
+    expect(within(matrix).getAllByText('Summer Fest')).toHaveLength(1);
     expect(within(matrix).queryByTestId('booking-cell-total-2026-06-15')).not.toBeInTheDocument();
     expect(calendarPlacementsState.data).toHaveLength(1);
   });

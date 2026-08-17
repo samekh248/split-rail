@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EventLedgerPage } from '@/pages/EventLedgerPage';
 import { VenueSwitcher } from '@/components/venue/VenueSwitcher';
 import { EventCombobox } from '@/components/event/EventCombobox';
@@ -47,6 +47,7 @@ export function EventWorkspacePage() {
   const [panelMode, setPanelMode] = useState<PanelMode>('closed');
   const [editingEvent, setEditingEvent] = useState<EventResponse | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<EventResponse | null>(null);
+  const [festivalEditEventId, setFestivalEditEventId] = useState<string | null>(null);
   const [venueAccessDenied, setVenueAccessDenied] = useState(false);
   const venueSyncedRef = useRef(false);
 
@@ -144,6 +145,10 @@ export function EventWorkspacePage() {
     setPanelMode('closed');
   };
 
+  const handleFestivalEditHandled = useCallback(() => {
+    setFestivalEditEventId(null);
+  }, []);
+
   const showEventWorkspace = !isLoading && !isError && Boolean(activeVenueId) && !venueAccessDenied;
   const showEventsEmpty =
     showEventWorkspace && !eventsLoading && !eventsError && events.length === 0;
@@ -179,6 +184,18 @@ export function EventWorkspacePage() {
             onEditClick={
               canManageEvents
                 ? (event) => {
+                    if (event.eventType === 'FESTIVAL') {
+                      if (canManageFestivalSchedule && event.eventId) {
+                        setFestivalEditEventId(event.eventId);
+                      }
+                      if (event.eventId && activeVenueId && event.eventId !== selectedEventId) {
+                        navigateToEventWorkspace(activeVenueId, event.eventId);
+                      }
+                      setPanelMode('closed');
+                      setEditingEvent(null);
+                      setDeleteTarget(null);
+                      return;
+                    }
                     setEditingEvent(event);
                     setPanelMode('edit');
                     setDeleteTarget(null);
@@ -204,6 +221,8 @@ export function EventWorkspacePage() {
       events,
       selectedEventId,
       canManageEvents,
+      canManageFestivalSchedule,
+      activeVenueId,
     ],
   );
 
@@ -362,6 +381,19 @@ export function EventWorkspacePage() {
             venueId={activeVenueId}
             event={selectedEvent}
             canManage={canManageFestivalSchedule}
+            canManageEvents={canManageEvents}
+            editRequestedEventId={festivalEditEventId}
+            onEditRequestHandled={handleFestivalEditHandled}
+            onBookingCancelled={({ deleted }) => {
+              if (!deleted || !activeVenueId || !selectedEventId) {
+                return;
+              }
+              const remaining = events.filter((item) => item.eventId !== selectedEventId);
+              const nextEventId = resolveActiveEventId(remaining, activeVenueId);
+              if (nextEventId) {
+                navigateToEventWorkspace(activeVenueId, nextEventId);
+              }
+            }}
           />
           <EventLedgerPage venueId={activeVenueId} eventId={selectedEventId} focus={ledgerFocus} />
         </div>

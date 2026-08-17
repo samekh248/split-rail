@@ -10,9 +10,11 @@ import {
 } from '@/components/festival/FestivalSetupModal';
 
 const mockCreate = { mutateAsync: vi.fn(), isPending: false };
+const mockUpdate = { mutateAsync: vi.fn(), isPending: false };
 
 vi.mock('@/api/festivals', () => ({
   useCreateFestival: () => mockCreate,
+  useUpdateFestival: () => mockUpdate,
 }));
 
 function Wrapper({ children }: { children: ReactNode }) {
@@ -205,5 +207,47 @@ describe('FestivalSetupModal', () => {
     );
 
     expect(screen.queryByTestId('festival-setup-modal')).not.toBeInTheDocument();
+  });
+
+  it('saves festival name and dates in edit mode', async () => {
+    mockUpdate.mutateAsync.mockResolvedValue({
+      eventId: 'festival-1',
+      title: 'Kalispell Roundup',
+      startDate: '2026-08-14',
+      endDate: '2026-08-16',
+    });
+    const onCreated = vi.fn();
+
+    render(
+      <FestivalSetupModal
+        mode="edit"
+        venueId="venue-1"
+        eventId="festival-1"
+        open
+        onClose={vi.fn()}
+        onCreated={onCreated}
+        initialTitle="Old Name"
+        initialStartDate="2026-08-14"
+        initialEndDate="2026-08-15"
+      />,
+      { wrapper: Wrapper },
+    );
+
+    expect(screen.getByText('Edit festival')).toBeInTheDocument();
+    expect(screen.getByLabelText(/Festival name/)).toHaveValue('Old Name');
+    expect(screen.getByLabelText(/End date/)).toHaveValue('2026-08-15');
+
+    await userEvent.clear(screen.getByLabelText(/Festival name/));
+    await userEvent.type(screen.getByLabelText(/Festival name/), 'Kalispell Roundup');
+    await setDate(/End date/, '2026-08-16');
+    await userEvent.click(screen.getByTestId('festival-setup-save'));
+
+    expect(mockUpdate.mutateAsync).toHaveBeenCalledWith({
+      title: 'Kalispell Roundup',
+      startDate: '2026-08-14',
+      endDate: '2026-08-16',
+    });
+    expect(mockCreate.mutateAsync).not.toHaveBeenCalled();
+    expect(onCreated).toHaveBeenCalledWith('festival-1');
   });
 });
