@@ -102,7 +102,7 @@ describe('FestivalModeCard', () => {
     expect(card).toHaveClass('festival-mode-card');
     expect(card).toHaveClass('festival-mode-card--active');
     expect(card).not.toHaveClass('event-workspace');
-    expect(screen.getByTestId('festival-date-range')).toHaveTextContent('08/01/2026 – 08/03/2026');
+    expect(screen.getByTestId('festival-date-range')).toHaveTextContent('Aug 1–3, 2026');
     expect(screen.getByTestId('stage-manager-stub')).toBeInTheDocument();
     expect(screen.getByTestId('festival-pin-evt-festival')).toHaveAttribute('aria-label', 'Pin festival');
     expect(screen.getByTestId('festival-edit-button').closest('.festival-mode-card__heading')).toHaveClass(

@@ -5340,8 +5340,6 @@ export interface components {
             regionName?: string | null;
             title?: string | null;
             eventDate?: string | null;
-            endDate?: string | null;
-            eventType?: string | null;
             bookingPlacementStatus?: string | null;
             doorsTime?: string | null;
             loadInTime?: string | null;
@@ -5352,6 +5350,8 @@ export interface components {
             qboTagName?: string | null;
             hasLineItems?: boolean;
             workspaceAllowed?: boolean;
+            endDate?: string | null;
+            eventType?: string | null;
         };
         ChangeRoleRequest: {
             /** Format: uuid */
