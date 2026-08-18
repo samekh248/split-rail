@@ -1,5 +1,10 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowsRotate, faRoute, faTrafficLight } from '@fortawesome/free-solid-svg-icons';
+import {
+  faArrowsRotate,
+  faClockRotateLeft,
+  faRoute,
+  faTrafficLight,
+} from '@fortawesome/free-solid-svg-icons';
 import type { FestivalAuditEntryResponse } from '@/types/generated-api';
 
 export interface ScheduleHistoryPanelProps {
@@ -82,6 +87,10 @@ export function ScheduleHistoryPanel({ entries, loading = false }: ScheduleHisto
   if (loading) {
     return (
       <section className="schedule-history" data-testid="schedule-history-panel">
+        <h3 className="schedule-history__title">
+          <FontAwesomeIcon icon={faClockRotateLeft} aria-hidden="true" />
+          Schedule history
+        </h3>
         <p className="schedule-history__loading">Loading schedule history…</p>
       </section>
     );
@@ -90,6 +99,10 @@ export function ScheduleHistoryPanel({ entries, loading = false }: ScheduleHisto
   if (entries.length === 0) {
     return (
       <section className="schedule-history" data-testid="schedule-history-panel">
+        <h3 className="schedule-history__title">
+          <FontAwesomeIcon icon={faClockRotateLeft} aria-hidden="true" />
+          Schedule history
+        </h3>
         <p className="schedule-history__empty" data-testid="schedule-history-empty">
           No schedule changes recorded yet.
         </p>
@@ -99,7 +112,10 @@ export function ScheduleHistoryPanel({ entries, loading = false }: ScheduleHisto
 
   return (
     <section className="schedule-history" data-testid="schedule-history-panel" aria-label="Schedule history">
-      <h3 className="schedule-history__title">Schedule history</h3>
+      <h3 className="schedule-history__title">
+        <FontAwesomeIcon icon={faClockRotateLeft} aria-hidden="true" />
+        Schedule history
+      </h3>
       <ol className="schedule-history__list">
         {entries.map((entry) => {
           const { icon, label, detail } = describeEntry(entry);

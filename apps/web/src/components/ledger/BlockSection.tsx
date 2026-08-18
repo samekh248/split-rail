@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { formatMoney } from '@/lib/money';
 import { nextSortOrder } from '@/lib/reorderLineItems';
 import type { CreateLineItemRequest, EditabilityDto, LedgerBlockDto } from '@/types/generated-api';
@@ -58,17 +60,21 @@ export function BlockSection({
       data-testid={`block-${blockType}`}
       aria-label={`${label} block`}
     >
-      <div className="block-section__header">
+      <div className="block-section__header section-header">
         <h3 className="block-section__title">{label}</h3>
-        {showAddRow && (
-          <button
-            type="button"
-            data-testid={`add-row-${blockType}`}
-            onClick={() => setShowAddForm((open) => !open)}
-          >
-            Add row
-          </button>
-        )}
+        {showAddRow ? (
+          <div className="section-header__actions">
+            <button
+              type="button"
+              className="btn-primary--compact btn-icon-label"
+              data-testid={`add-row-${blockType}`}
+              onClick={() => setShowAddForm((open) => !open)}
+            >
+              <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+              Add row
+            </button>
+          </div>
+        ) : null}
       </div>
 
       {showAddForm && onAddLineItem && (
@@ -129,10 +135,10 @@ export function BlockSection({
             {showQboColumns && (
               <>
                 <td>{formatMoney(totals?.qboActual)}</td>
-                <td colSpan={1} />
+                <td aria-hidden="true" />
               </>
             )}
-            <td colSpan={canEditStructure ? (showQboColumns ? 2 : 1) : showQboColumns ? 1 : 1} />
+            <td colSpan={1 + (canEditStructure ? 1 : 0)} aria-hidden="true" />
           </tr>
         </tfoot>
       </table>

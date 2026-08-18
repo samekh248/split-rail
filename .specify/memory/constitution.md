@@ -1,9 +1,10 @@
 <!--
 Sync Impact Report
-- Version: 1.1.0 → 1.2.0 (MINOR: new dual-platform operator script principle)
-- Added: §X Dual-Platform Operator Scripts
-- Templates: plan-template.md ✅, tasks-template.md ✅, infrastructure.md ✅
-- Ratified: 2026-06-13 | Last Amended: 2026-06-22
+- Version: 1.2.0 → 1.3.0 (MINOR: new destructive action confirmation principle)
+- Added: §XI Destructive Action Confirmation
+- Templates: plan-template.md ✅, spec-template.md ✅, tasks-template.md ✅
+- Reference: .specify/memory/delete-confirmation.md ✅
+- Ratified: 2026-06-13 | Last Amended: 2026-08-18
 -->
 
 # Accounting-First Venue Platform Constitution
@@ -89,4 +90,12 @@ Sync Impact Report
 - Features that add a new runnable deploy script MUST include automated contract verification that both variants exist and remain behaviorally aligned (Constitution III).
 - **Exempt**: one-off smoke helpers invoked only inside Docker/Linux CI with no Windows operator path, and generated artifacts — exemptions MUST be documented in the feature spec Assumptions section.
 
-**Version**: 1.2.0 | **Ratified**: 2026-06-13 | **Last Amended**: 2026-06-22
+### XI. Destructive Action Confirmation
+
+- Any user-initiated action that deletes, permanently removes, or irreversibly cancels persisted product data MUST present an explicit confirmation step **before** calling the delete/remove API or mutation.
+- STRICTLY prohibited from wiring delete/remove buttons to mutate server state directly, and prohibited from using `window.confirm` or `alert` for product UI confirmations.
+- Confirmations MUST use the shared modal `alertdialog` pattern documented in `.specify/memory/delete-confirmation.md`: named entity, plain-language impact, dismiss via close/backdrop/Escape, pending state on confirm, and left-aligned Font Awesome icon on the destructive button (Constitution IX).
+- Features introducing new delete/remove flows MUST include Vitest + RTL tests proving the mutation does not run until confirm and that cancel/close leaves data unchanged (Constitution III).
+- Exemptions (e.g. clearing unsaved draft input only) MUST be listed in the feature spec Assumptions section.
+
+**Version**: 1.3.0 | **Ratified**: 2026-06-13 | **Last Amended**: 2026-08-18

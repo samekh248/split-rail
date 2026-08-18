@@ -102,7 +102,7 @@ describe('FestivalModeCard', () => {
     expect(card).toHaveClass('festival-mode-card');
     expect(card).toHaveClass('festival-mode-card--active');
     expect(card).not.toHaveClass('event-workspace');
-    expect(screen.getByTestId('festival-date-range')).toHaveTextContent('Aug 1–3, 2026');
+    expect(screen.getByTestId('festival-date-range')).toHaveTextContent('08/01/2026 – 08/03/2026');
     expect(screen.getByTestId('stage-manager-stub')).toBeInTheDocument();
     expect(screen.getByTestId('festival-pin-evt-festival')).toHaveAttribute('aria-label', 'Pin festival');
     expect(screen.getByTestId('festival-edit-button').closest('.festival-mode-card__heading')).toHaveClass(
@@ -110,6 +110,17 @@ describe('FestivalModeCard', () => {
     );
     expect(screen.getByTestId('festival-edit-button').closest('.section-header__actions')).toBeInTheDocument();
     expect(screen.queryByTestId('festival-actions-menu')).not.toBeInTheDocument();
+  });
+
+  it('keeps itinerary and master ledger in the section header actions', () => {
+    render(<FestivalModeCard venueId="venue-1" event={festivalEvent} canManage />);
+
+    const actions = screen.getByTestId('festival-edit-button').closest('.section-header__actions');
+    expect(actions).toContainElement(screen.getByTestId('festival-itinerary-link'));
+    expect(actions).toContainElement(screen.getByTestId('festival-ledger-link'));
+    expect(screen.getByTestId('festival-itinerary-link')).toHaveClass('festival-mode-card__link');
+    expect(screen.getByTestId('festival-ledger-link')).toHaveClass('festival-mode-card__link');
+    expect(screen.queryByRole('navigation', { name: 'Festival views' })).not.toBeInTheDocument();
   });
 
   it('opens the edit-festival modal from the card action', async () => {

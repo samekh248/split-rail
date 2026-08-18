@@ -4,6 +4,8 @@ import { resolveVarianceDisplay } from '@/lib/ledgerVariance';
 import type { CreateLineItemRequest, LedgerGridResponse } from '@/types/generated-api';
 import type { MoveDirection } from '@/lib/reorderLineItems';
 import type { ReactNode } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLock } from '@fortawesome/free-solid-svg-icons';
 import { BlockSection } from './BlockSection';
 
 interface LedgerGridProps {
@@ -81,11 +83,12 @@ export function LedgerGrid({
               {showLockBudget ? (
                 <button
                   type="button"
-                  className="ledger-grid__lock-btn btn-primary--compact"
+                  className="ledger-grid__lock-btn btn-primary--compact btn-icon-label"
                   data-testid="lock-budget-btn"
                   disabled={!canLockBudget || lockBudgetPending}
                   onClick={onLockBudget}
                 >
+                  {!lockBudgetPending ? <FontAwesomeIcon icon={faLock} aria-hidden="true" /> : null}
                   {lockBudgetPending ? 'Locking…' : 'Lock Budget'}
                 </button>
               ) : null}

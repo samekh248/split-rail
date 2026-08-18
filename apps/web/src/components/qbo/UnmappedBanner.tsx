@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronDown, faChevronUp, faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { useUnmappedCount, useUnmappedTransactions } from '@/api/qbo';
 import { formatMoney } from '@/lib/money';
 import { InlineMappingDropdown } from './InlineMappingDropdown';
@@ -21,14 +23,16 @@ export function UnmappedBanner({ venueId, eventId, lineItemOptions }: UnmappedBa
     <section className="unmapped-banner" data-testid="unmapped-banner" role="alert">
       <button
         type="button"
-        className="unmapped-banner__toggle"
+        className="unmapped-banner__toggle btn-icon-label"
         onClick={() => setExpanded((v) => !v)}
         data-testid="unmapped-banner-toggle"
       >
+        <FontAwesomeIcon icon={faTriangleExclamation} aria-hidden="true" />
         <span className="badge-action-required" data-testid="unmapped-banner-badge">
           Action required
         </span>
         {count} unassigned transaction{count === 1 ? '' : 's'} detected
+        <FontAwesomeIcon icon={expanded ? faChevronUp : faChevronDown} aria-hidden="true" />
       </button>
 
       {expanded && listData && (

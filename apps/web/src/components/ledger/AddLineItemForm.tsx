@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFloppyDisk, faXmark } from '@fortawesome/free-solid-svg-icons';
 import { parseMoneyInput } from '@/lib/money';
 import type { CreateLineItemRequest } from '@/types/generated-api';
 
@@ -138,10 +140,22 @@ export function AddLineItemForm({
       )}
 
       <div className="add-line-item-form__actions">
-        <button type="submit" disabled={submitting} data-testid="add-line-item-submit">
+        <button
+          type="submit"
+          className="btn-icon-label"
+          disabled={submitting}
+          data-testid="add-line-item-submit"
+        >
+          {!submitting ? <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" /> : null}
           {submitting ? 'Saving…' : 'Save row'}
         </button>
-        <button type="button" onClick={onCancel} data-testid="add-line-item-cancel">
+        <button
+          type="button"
+          className="btn-icon-label"
+          onClick={onCancel}
+          data-testid="add-line-item-cancel"
+        >
+          <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
           Cancel
         </button>
       </div>

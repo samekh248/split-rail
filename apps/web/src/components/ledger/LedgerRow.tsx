@@ -1,3 +1,9 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faArrowDown,
+  faArrowUp,
+  faTrash,
+} from '@fortawesome/free-solid-svg-icons';
 import { formatMoney, parseMoneyInput } from '@/lib/money';
 import type { EditabilityDto, LineItemDto } from '@/types/generated-api';
 import type { MoveDirection } from '@/lib/reorderLineItems';
@@ -179,28 +185,34 @@ export function LedgerRow({
         <td className="ledger-row__actions">
           <button
             type="button"
+            className="btn-icon-label"
             aria-label={`Move ${row.rowLabel} up`}
             data-testid={`move-up-${row.id}`}
             disabled={!row.id || !canMoveRow(blockRows, row.id, 'up')}
             onClick={() => row.id && onMoveLineItem?.(row.id, 'up')}
           >
-            ↑
+            <FontAwesomeIcon icon={faArrowUp} aria-hidden="true" />
+            Up
           </button>
           <button
             type="button"
+            className="btn-icon-label"
             aria-label={`Move ${row.rowLabel} down`}
             data-testid={`move-down-${row.id}`}
             disabled={!row.id || !canMoveRow(blockRows, row.id, 'down')}
             onClick={() => row.id && onMoveLineItem?.(row.id, 'down')}
           >
-            ↓
+            <FontAwesomeIcon icon={faArrowDown} aria-hidden="true" />
+            Down
           </button>
           <button
             type="button"
+            className="btn-icon-label"
             aria-label={`Delete ${row.rowLabel}`}
             data-testid={`delete-row-${row.id}`}
             onClick={handleDelete}
           >
+            <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
             Delete
           </button>
         </td>

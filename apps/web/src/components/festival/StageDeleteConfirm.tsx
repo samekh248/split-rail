@@ -1,9 +1,11 @@
 import { useEffect, useRef } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
 import { ModalHeader } from '@/components/shell/ModalHeader';
-import type { UserListResponse } from '@/types/generated-api';
 
-export interface RemoveMemberConfirmProps {
-  member: UserListResponse;
+export interface StageDeleteConfirmProps {
+  stageName: string;
+  blockCount?: number;
   open: boolean;
   onConfirm: () => void | Promise<void>;
   onCancel: () => void;
@@ -11,14 +13,15 @@ export interface RemoveMemberConfirmProps {
   error?: string | null;
 }
 
-export function RemoveMemberConfirm({
-  member,
+export function StageDeleteConfirm({
+  stageName,
+  blockCount = 0,
   open,
   onConfirm,
   onCancel,
   isPending = false,
   error = null,
-}: RemoveMemberConfirmProps) {
+}: StageDeleteConfirmProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
@@ -31,7 +34,7 @@ export function RemoveMemberConfirm({
     dialogRef.current?.focus();
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
+      if (event.key === 'Escape' && !isPending) {
         onCancel();
       }
     };
@@ -41,34 +44,44 @@ export function RemoveMemberConfirm({
       document.removeEventListener('keydown', handleKeyDown);
       previousFocusRef.current?.focus();
     };
-  }, [open, onCancel]);
+  }, [open, onCancel, isPending]);
 
   if (!open) {
     return null;
   }
 
+  const blockWarning =
+    blockCount > 0
+      ? ` This stage still has ${blockCount} programming ${blockCount === 1 ? 'block' : 'blocks'}; deletion will fail until those blocks are moved or removed.`
+      : '';
+
   return (
-    <div className="welcome-modal__backdrop" onClick={onCancel} role="presentation">
+    <div
+      className="welcome-modal__backdrop"
+      onClick={isPending ? undefined : onCancel}
+      role="presentation"
+    >
       <section
         ref={dialogRef}
         className="team-confirm"
         role="alertdialog"
-        aria-labelledby="remove-member-heading"
-        aria-describedby="remove-member-description"
+        aria-modal="true"
+        aria-labelledby="stage-delete-heading"
+        aria-describedby="stage-delete-description"
         tabIndex={-1}
-        data-testid="remove-member-confirm"
+        data-testid="stage-delete-confirm"
         onClick={(event) => event.stopPropagation()}
       >
         <ModalHeader
-          title="Remove member?"
-          titleId="remove-member-heading"
+          title="Delete stage?"
+          titleId="stage-delete-heading"
           onClose={onCancel}
           closeDisabled={isPending}
           titleClassName="team-confirm__heading"
         />
-        <p id="remove-member-description" className="team-confirm__text">
-          Remove <strong>{member.email}</strong> from your organization? They will lose access
-          immediately.
+        <p id="stage-delete-description" className="team-confirm__text">
+          Delete <strong>{stageName}</strong>? This removes the stage from the festival schedule.
+          {blockWarning}
         </p>
         {error ? (
           <p className="team-confirm__error" role="alert">
@@ -78,12 +91,13 @@ export function RemoveMemberConfirm({
         <div className="team-confirm__actions">
           <button
             type="button"
-            className="btn-primary--compact btn-primary--danger"
-            data-testid="remove-member-confirm-button"
+            className="btn-primary--compact btn-primary--danger btn-icon-label"
+            data-testid="stage-delete-confirm-button"
             onClick={() => void onConfirm()}
             disabled={isPending}
           >
-            {isPending ? 'Removing…' : 'Remove member'}
+            {!isPending ? <FontAwesomeIcon icon={faTrash} aria-hidden="true" /> : null}
+            {isPending ? 'Deleting…' : 'Delete stage'}
           </button>
         </div>
       </section>

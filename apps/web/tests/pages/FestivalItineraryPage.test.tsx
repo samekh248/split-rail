@@ -86,7 +86,9 @@ describe('FestivalItineraryPage', () => {
     renderPage();
 
     fireEvent.click(screen.getByTestId('festival-view-public'));
-    expect(screen.getByTestId('festival-view-active-label')).toHaveTextContent(/Public view/i);
+    expect(screen.getByTestId('festival-view-active-label')).toHaveTextContent(
+      /Public itinerary preview/i,
+    );
   });
 
   it('promotes a held block to confirmed from the timeline', async () => {

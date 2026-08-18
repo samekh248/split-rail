@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { faFloppyDisk, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { FormField } from '@/components/auth/FormField';
 import { SelectField } from '@/components/auth/SelectField';
 import { ModalHeader } from '@/components/shell/ModalHeader';
@@ -148,7 +148,7 @@ export function FestivalSetupModal({
     <div className="welcome-modal__backdrop" onClick={onClose} role="presentation">
       <div
         ref={dialogRef}
-        className="welcome-modal team-modal festival-setup-modal"
+        className="welcome-modal venue-modal-form festival-setup-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="festival-setup-title"
@@ -162,7 +162,7 @@ export function FestivalSetupModal({
           onClose={onClose}
           closeDisabled={isPending}
         />
-        <p className="team-confirm__text">
+        <p className="team-modal__subtitle">
           {isEdit
             ? 'Update the festival name and dates. Changing dates updates the festival calendar span.'
             : isConversion
@@ -200,39 +200,41 @@ export function FestivalSetupModal({
           disabled={isPending}
           describedBy={errorId}
         />
-        <FormField
-          id="festival-start-date"
-          label="Start date"
-          type="date"
-          value={startDate}
-          onChange={(value) => {
-            setStartDate(value);
-            if (!endDate || endDate < value) {
+        <div className="festival-setup-modal__dates">
+          <FormField
+            id="festival-start-date"
+            label="Start date"
+            type="date"
+            value={startDate}
+            onChange={(value) => {
+              setStartDate(value);
+              if (!endDate || endDate < value) {
+                setEndDate(value);
+              }
+            }}
+            required
+            disabled={isPending}
+          />
+          <FormField
+            id="festival-end-date"
+            label="End date"
+            type="date"
+            value={endDate}
+            onChange={(value) => {
               setEndDate(value);
-            }
-          }}
-          required
-          disabled={isPending}
-        />
-        <FormField
-          id="festival-end-date"
-          label="End date"
-          type="date"
-          value={endDate}
-          onChange={(value) => {
-            setEndDate(value);
-            setRangeError(validateFestivalRange(startDate, value));
-          }}
-          error={rangeError}
-          required
-          disabled={isPending}
-        />
+              setRangeError(validateFestivalRange(startDate, value));
+            }}
+            error={rangeError}
+            required
+            disabled={isPending}
+          />
+        </div>
         {!rangeError && dayCount !== null && dayCount >= 1 ? (
           <p className="festival-setup-modal__day-count" data-testid="festival-day-count">
             {dayCount} {dayCount === 1 ? 'day' : 'days'}
           </p>
         ) : null}
-        <div className="team-modal__actions">
+        <div className="team-modal__actions booking-create-modal__actions">
           <button
             type="button"
             className="team-modal__save btn-icon-label"
@@ -240,7 +242,9 @@ export function FestivalSetupModal({
             onClick={() => void handleSubmit()}
             disabled={isPending}
           >
-            <FontAwesomeIcon icon={faLayerGroup} aria-hidden="true" />
+            {isPending ? null : (
+              <FontAwesomeIcon icon={isEdit ? faFloppyDisk : faLayerGroup} aria-hidden="true" />
+            )}
             {isPending
               ? 'Saving…'
               : isEdit
@@ -248,14 +252,6 @@ export function FestivalSetupModal({
                 : isConversion
                   ? 'Convert'
                   : 'Create festival'}
-          </button>
-          <button
-            type="button"
-            className="team-modal__cancel"
-            onClick={onClose}
-            disabled={isPending}
-          >
-            Cancel
           </button>
         </div>
       </div>

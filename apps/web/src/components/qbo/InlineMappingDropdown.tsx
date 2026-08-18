@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faLink } from '@fortawesome/free-solid-svg-icons';
 import { useCreateMapping } from '@/api/qbo';
 import { dashboardQueryKey } from '@/api/dashboard';
 import { useQueryClient } from '@tanstack/react-query';
@@ -65,11 +67,13 @@ export function InlineMappingDropdown({
       />
       <button
         type="button"
+        className="btn-icon-label"
         disabled={!selectedLineItemId || createMapping.isPending}
         onClick={() => void handleConfirm()}
         data-testid="inline-mapping-confirm"
       >
-        Map
+        {!createMapping.isPending ? <FontAwesomeIcon icon={faLink} aria-hidden="true" /> : null}
+        {createMapping.isPending ? 'Mapping…' : 'Map'}
       </button>
     </div>
   );

@@ -1,4 +1,6 @@
 import { ModalHeader } from '@/components/shell/ModalHeader';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTrash } from '@fortawesome/free-solid-svg-icons';
 
 export interface EventDeleteConfirmProps {
   eventTitle: string;
@@ -34,12 +36,13 @@ export function EventDeleteConfirm({
       <div className="event-delete-confirm__actions">
         <button
           type="button"
-          className="event-delete-confirm__danger"
+          className="btn-primary--compact btn-primary--danger btn-icon-label"
           data-testid="event-delete-confirm-button"
           onClick={onConfirm}
           disabled={isPending}
         >
-          Delete event
+          {!isPending ? <FontAwesomeIcon icon={faTrash} aria-hidden="true" /> : null}
+          {isPending ? 'Deleting…' : 'Delete event'}
         </button>
       </div>
     </section>

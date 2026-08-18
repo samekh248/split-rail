@@ -8,6 +8,8 @@ export interface PinToggleButtonProps {
   unpinnedLabel: string;
   testId: string;
   className?: string;
+  /** When true, shows a short text label beside the pin icon. */
+  showLabel?: boolean;
 }
 
 export function PinToggleButton({
@@ -17,11 +19,14 @@ export function PinToggleButton({
   unpinnedLabel,
   testId,
   className = 'event-card__pin',
+  showLabel = false,
 }: PinToggleButtonProps) {
+  const label = pinned ? 'Unpin' : 'Pin';
+
   return (
     <button
       type="button"
-      className={className}
+      className={[className, showLabel ? 'btn-icon-label' : ''].filter(Boolean).join(' ')}
       aria-label={pinned ? pinnedLabel : unpinnedLabel}
       aria-pressed={pinned}
       data-testid={testId}
@@ -32,9 +37,10 @@ export function PinToggleButton({
     >
       <FontAwesomeIcon
         icon={pinned ? faThumbtackSlash : faThumbtack}
-        className="event-card__pin-icon"
+        className={showLabel ? undefined : 'event-card__pin-icon'}
         aria-hidden="true"
       />
+      {showLabel ? label : null}
     </button>
   );
 }

@@ -1,4 +1,6 @@
 import { useEffect, useRef } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBan } from '@fortawesome/free-solid-svg-icons';
 import { ModalHeader } from '@/components/shell/ModalHeader';
 
 export interface FestivalCancelConfirmProps {
@@ -78,11 +80,12 @@ export function FestivalCancelConfirm({
         <div className="team-confirm__actions">
           <button
             type="button"
-            className="team-confirm__danger"
+            className="btn-primary--compact btn-primary--danger btn-icon-label"
             data-testid="festival-cancel-confirm-button"
             onClick={() => void onConfirm()}
             disabled={isPending}
           >
+            {!isPending ? <FontAwesomeIcon icon={faBan} aria-hidden="true" /> : null}
             {isPending ? 'Cancelling…' : 'Cancel booking'}
           </button>
         </div>

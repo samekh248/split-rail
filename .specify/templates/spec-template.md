@@ -93,6 +93,7 @@
 - **FR-004**: System MUST [data requirement, e.g., "persist user preferences"]
 - **FR-005**: System MUST [behavior, e.g., "log all security events"]
 - **FR-006**: System MUST achieve ≥80% line/branch coverage across backend and frontend for this feature (CI-enforced; Constitution III)
+- **FR-007**: Any delete, remove, or irreversible cancel action MUST use the Constitution §XI confirmation modal pattern (see `.specify/memory/delete-confirmation.md`) before mutating server state
 
 *Example of marking unclear requirements:*
 

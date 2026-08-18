@@ -1,12 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEllipsisVertical } from '@fortawesome/free-solid-svg-icons';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 
 export interface KebabMenuItem {
   label: string;
   onSelect: () => void;
   testId?: string;
   destructive?: boolean;
+  icon?: IconDefinition;
 }
 
 export interface KebabMenuProps {
@@ -77,8 +79,8 @@ export function KebabMenu({ ariaLabel, items, testId = 'kebab-menu' }: KebabMenu
               role="menuitem"
               className={
                 item.destructive
-                  ? 'kebab-menu__menu-item kebab-menu__menu-item--destructive'
-                  : 'kebab-menu__menu-item'
+                  ? 'kebab-menu__menu-item kebab-menu__menu-item--destructive btn-icon-label'
+                  : 'kebab-menu__menu-item btn-icon-label'
               }
               data-testid={item.testId}
               onClick={() => {
@@ -86,6 +88,7 @@ export function KebabMenu({ ariaLabel, items, testId = 'kebab-menu' }: KebabMenu
                 item.onSelect();
               }}
             >
+              {item.icon ? <FontAwesomeIcon icon={item.icon} aria-hidden="true" /> : null}
               {item.label}
             </button>
           ))}

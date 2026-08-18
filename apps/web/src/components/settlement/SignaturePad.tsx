@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faRotateLeft } from '@fortawesome/free-solid-svg-icons';
 
 export interface SignaturePadProps {
   onChange?: (signatureBase64: string | null) => void;
@@ -210,11 +212,12 @@ export function SignaturePad({
       <div className="signature-pad__actions">
         <button
           type="button"
-          className="btn-secondary"
+          className="btn-secondary btn-icon-label"
           data-testid="signature-clear-btn"
           disabled={disabled || !canClear}
           onClick={clear}
         >
+          <FontAwesomeIcon icon={faRotateLeft} aria-hidden="true" />
           Clear / Redo
         </button>
       </div>

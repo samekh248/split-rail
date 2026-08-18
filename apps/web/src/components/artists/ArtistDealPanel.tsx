@@ -1,4 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faArrowDown,
+  faArrowUp,
+  faFloppyDisk,
+  faPen,
+  faPlus,
+  faTrash,
+  faXmark,
+} from '@fortawesome/free-solid-svg-icons';
 import { SelectField } from '@/components/auth/SelectField';
 import { previewNetPayout } from '@/lib/dealMathPreview';
 import { formatMoney } from '@/lib/money';
@@ -234,7 +244,23 @@ export function ArtistDealPanel({
 
   return (
     <section className="artist-deal-panel" data-testid="artist-deal-panel">
-      <h3>Artist Deals</h3>
+      <div className="artist-deal-panel__header section-header">
+        <h3 className="artist-deal-panel__title">Artist Deals</h3>
+        {editable && formMode === 'add' ? (
+          <div className="section-header__actions">
+            <button
+              type="button"
+              className="btn-primary--compact btn-icon-label"
+              data-testid="add-artist-btn"
+              disabled={!artistName.trim() || !onAddArtist}
+              onClick={() => void handleSubmit()}
+            >
+              <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+              Add artist
+            </button>
+          </div>
+        ) : null}
+      </div>
 
       <ul className="artist-deal-panel__list">
         {artists.map((artist) => (
@@ -260,10 +286,11 @@ export function ArtistDealPanel({
                 {onUpdateArtist && artist.id && (
                   <button
                     type="button"
-                    className="artist-deal-panel__edit"
+                    className="artist-deal-panel__edit btn-icon-label"
                     data-testid={`edit-artist-${artist.id}`}
                     onClick={() => handleEditClick(artist)}
                   >
+                    <FontAwesomeIcon icon={faPen} aria-hidden="true" />
                     Edit
                   </button>
                 )}
@@ -271,29 +298,36 @@ export function ArtistDealPanel({
                   <>
                     <button
                       type="button"
+                      className="btn-icon-label"
+                      aria-label={`Move ${artist.artistName} up`}
                       data-testid={`move-artist-up-${artist.id}`}
                       disabled={!canMoveArtist(artists, artist.id, 'up')}
                       onClick={() => onReorderArtist(artist.id!, 'up')}
                     >
-                      ↑
+                      <FontAwesomeIcon icon={faArrowUp} aria-hidden="true" />
+                      Up
                     </button>
                     <button
                       type="button"
+                      className="btn-icon-label"
+                      aria-label={`Move ${artist.artistName} down`}
                       data-testid={`move-artist-down-${artist.id}`}
                       disabled={!canMoveArtist(artists, artist.id, 'down')}
                       onClick={() => onReorderArtist(artist.id!, 'down')}
                     >
-                      ↓
+                      <FontAwesomeIcon icon={faArrowDown} aria-hidden="true" />
+                      Down
                     </button>
                   </>
                 )}
                 {onRemoveArtist && (
                   <button
                     type="button"
-                    className="artist-deal-panel__remove"
+                    className="artist-deal-panel__remove btn-icon-label"
                     data-testid={`remove-artist-${artist.id}`}
                     onClick={() => artist.id && onRemoveArtist(artist.id)}
                   >
+                    <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
                     Remove
                   </button>
                 )}
@@ -395,33 +429,28 @@ export function ArtistDealPanel({
 
           <div className="artist-deal-panel__form-actions">
             {formMode === 'edit' ? (
-              <button
-                type="button"
-                data-testid="save-artist-btn"
-                disabled={!artistName.trim()}
-                onClick={() => void handleSubmit()}
-              >
-                Save Changes
-              </button>
-            ) : (
-              <button
-                type="button"
-                data-testid="add-artist-btn"
-                disabled={!artistName.trim()}
-                onClick={() => void handleSubmit()}
-              >
-                Add Artist
-              </button>
-            )}
-            {formMode === 'edit' && (
-              <button
-                type="button"
-                data-testid="cancel-artist-btn"
-                onClick={handleCancel}
-              >
-                Cancel
-              </button>
-            )}
+              <>
+                <button
+                  type="button"
+                  className="team-modal__save btn-icon-label"
+                  data-testid="save-artist-btn"
+                  disabled={!artistName.trim()}
+                  onClick={() => void handleSubmit()}
+                >
+                  <FontAwesomeIcon icon={faFloppyDisk} aria-hidden="true" />
+                  Save Changes
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary btn-icon-label"
+                  data-testid="cancel-artist-btn"
+                  onClick={handleCancel}
+                >
+                  <FontAwesomeIcon icon={faXmark} aria-hidden="true" />
+                  Cancel
+                </button>
+              </>
+            ) : null}
           </div>
         </div>
       )}

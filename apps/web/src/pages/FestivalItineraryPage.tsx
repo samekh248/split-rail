@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faArrowLeft, faCalendarDays, faPlus } from '@fortawesome/free-solid-svg-icons';
 import {
   useBlockHistory,
   useItinerary,
@@ -21,6 +21,7 @@ import type { BlockConflictInfo } from '@/components/festival/conflictTypes';
 import {
   applyItineraryFilters,
   DEFAULT_ITINERARY_FILTERS,
+  filterStagesByItineraryFilter,
   ItineraryFilters,
 } from '@/components/festival/ItineraryFilters';
 import { ScheduleHistoryPanel } from '@/components/festival/ScheduleHistoryPanel';
@@ -114,6 +115,10 @@ export function FestivalItineraryPage({
     () => applyItineraryFilters(allBlocks, filters),
     [allBlocks, filters],
   );
+  const visibleStages = useMemo(
+    () => filterStagesByItineraryFilter(stages, filters),
+    [stages, filters],
+  );
 
   const openCreateBlock = () => {
     setEditingBlock(null);
@@ -182,6 +187,8 @@ export function FestivalItineraryPage({
 
   const festivalEvent = eventsQuery.data?.find((item) => item.eventId === eventId);
   const festivalPinned = festivalEvent?.isPinned === true;
+  const dayCount = days.length;
+  const blockCount = filteredBlocks.length;
 
   const handleFestivalPinToggle = () => {
     const mutation = festivalPinned ? unpinEvent : pinEvent;
@@ -208,88 +215,110 @@ export function FestivalItineraryPage({
 
   return (
     <div className="festival-itinerary-page" data-testid="festival-itinerary-page">
-      <header className="festival-itinerary-page__header section-header">
+      <header className="festival-itinerary-page__hero">
         <button
           type="button"
-          className="btn-icon-label festival-itinerary-page__back"
+          className="btn-secondary btn-icon-label festival-itinerary-page__back"
           onClick={() => navigateToEventWorkspace(venueId, eventId)}
         >
           <FontAwesomeIcon icon={faArrowLeft} aria-hidden="true" />
           Back to event
         </button>
-        <h1 className="festival-itinerary-page__title">Festival itinerary</h1>
-        <div className="section-header__actions">
-          <PinToggleButton
-            pinned={festivalPinned}
-            pinnedLabel="Unpin festival"
-            unpinnedLabel="Pin festival"
-            testId={`festival-itinerary-pin-${eventId}`}
-            onToggle={handleFestivalPinToggle}
-          />
-          {canManage ? (
-            <button
-              type="button"
-              className="btn-primary btn-icon-label"
-              data-testid="itinerary-add-block"
-              onClick={openCreateBlock}
-            >
-              <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
-              Add block
-            </button>
-          ) : null}
+
+        <div className="festival-itinerary-page__hero-main section-header">
+          <div className="festival-itinerary-page__intro">
+            <h1 className="festival-itinerary-page__title">
+              <FontAwesomeIcon icon={faCalendarDays} aria-hidden="true" />
+              Festival itinerary
+            </h1>
+            <p className="festival-itinerary-page__subtitle">
+              {festivalEvent?.title ?? 'Festival schedule'}
+              {dayCount > 0
+                ? ` · ${dayCount} ${dayCount === 1 ? 'day' : 'days'} · ${blockCount} ${blockCount === 1 ? 'block' : 'blocks'}`
+                : ''}
+            </p>
+          </div>
+          <div className="section-header__actions">
+            <PinToggleButton
+              pinned={festivalPinned}
+              pinnedLabel="Unpin festival"
+              unpinnedLabel="Pin festival"
+              testId={`festival-itinerary-pin-${eventId}`}
+              showLabel
+              className="btn-secondary"
+              onToggle={handleFestivalPinToggle}
+            />
+            {canManage ? (
+              <button
+                type="button"
+                className="btn-primary--compact btn-icon-label"
+                data-testid="itinerary-add-block"
+                onClick={openCreateBlock}
+              >
+                <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+                Add block
+              </button>
+            ) : null}
+          </div>
         </div>
       </header>
 
-      <ViewToggle
-        mode={viewMode}
-        onChange={setViewMode}
-        canPublish={canPublish}
-        hasSelectedBlock={Boolean(editingBlock)}
-        selectedBlockIsPublic={editingBlock?.isPubliclyVisible ?? false}
-        publishPending={setPublishVisibility.isPending}
-        onPublishToggle={async (isPublic) => {
-          if (!editingBlock?.id) {
-            return;
-          }
-          await setPublishVisibility.mutateAsync({
-            blockIds: [editingBlock.id],
-            isPubliclyVisible: isPublic,
-          });
-          setEditingBlock({ ...editingBlock, isPubliclyVisible: isPublic });
-          await activeQuery.refetch();
-        }}
-      />
-
-      <ItineraryFilters stages={stages} values={filters} onChange={setFilters} />
-
-      {activeQuery.isLoading ? (
-        <p className="festival-itinerary-page__loading" role="status">
-          Loading itinerary…
-        </p>
-      ) : activeQuery.isError ? (
-        <p className="festival-itinerary-page__error" role="alert">
-          Unable to load the festival itinerary.
-        </p>
-      ) : (
-        <TimelineGrid
-          venueId={venueId}
-          eventId={eventId}
-          days={days}
-          stages={stages}
-          blocks={filteredBlocks}
-          selectedDay={activeDay}
-          onDayChange={setSelectedDay}
-          onBlockClick={openEditBlock}
-          onBlockMove={handleBlockMove}
-          onConflict={handleConflict}
-          onBookingStatusChange={handleBookingStatusChange}
-          onPinToggle={viewMode === 'internal' ? handleBlockPinToggle : undefined}
-          canManage={canManage && viewMode === 'internal'}
+      <section className="festival-itinerary-page__toolbar">
+        <ViewToggle
+          mode={viewMode}
+          onChange={setViewMode}
+          canPublish={canPublish}
+          hasSelectedBlock={Boolean(editingBlock)}
+          selectedBlockIsPublic={editingBlock?.isPubliclyVisible ?? false}
+          publishPending={setPublishVisibility.isPending}
+          onPublishToggle={async (isPublic) => {
+            if (!editingBlock?.id) {
+              return;
+            }
+            await setPublishVisibility.mutateAsync({
+              blockIds: [editingBlock.id],
+              isPubliclyVisible: isPublic,
+            });
+            setEditingBlock({ ...editingBlock, isPubliclyVisible: isPublic });
+            await activeQuery.refetch();
+          }}
         />
-      )}
+
+        <ItineraryFilters stages={stages} values={filters} onChange={setFilters} />
+      </section>
+
+      <section className="festival-itinerary-page__timeline">
+        {activeQuery.isLoading ? (
+          <p className="festival-itinerary-page__loading" role="status">
+            Loading itinerary…
+          </p>
+        ) : activeQuery.isError ? (
+          <p className="festival-itinerary-page__error" role="alert">
+            Unable to load the festival itinerary.
+          </p>
+        ) : (
+          <TimelineGrid
+            venueId={venueId}
+            eventId={eventId}
+            days={days}
+            stages={visibleStages}
+            blocks={filteredBlocks}
+            selectedDay={activeDay}
+            onDayChange={setSelectedDay}
+            onBlockClick={openEditBlock}
+            onBlockMove={handleBlockMove}
+            onConflict={handleConflict}
+            onBookingStatusChange={handleBookingStatusChange}
+            onPinToggle={viewMode === 'internal' ? handleBlockPinToggle : undefined}
+            canManage={canManage && viewMode === 'internal'}
+          />
+        )}
+      </section>
 
       {historyBlockId ? (
-        <ScheduleHistoryPanel entries={historyQuery.data ?? []} loading={historyQuery.isLoading} />
+        <section className="festival-itinerary-page__history">
+          <ScheduleHistoryPanel entries={historyQuery.data ?? []} loading={historyQuery.isLoading} />
+        </section>
       ) : null}
 
       <BlockEditorDrawer

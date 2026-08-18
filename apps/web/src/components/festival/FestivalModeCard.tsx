@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCalendarDays, faFileInvoiceDollar, faLayerGroup, faPen } from '@fortawesome/free-solid-svg-icons';
+import {
+  faBan,
+  faCalendarDays,
+  faFileInvoiceDollar,
+  faLayerGroup,
+  faPen,
+} from '@fortawesome/free-solid-svg-icons';
 import { FestivalCancelConfirm } from '@/components/festival/FestivalCancelConfirm';
 import { FestivalSetupModal } from '@/components/festival/FestivalSetupModal';
 import { StageManagerPanel } from '@/components/festival/StageManagerPanel';
@@ -103,7 +109,7 @@ export function FestivalModeCard({
           <div className="section-header__actions">
             <button
               type="button"
-              className="festival-mode-card__convert btn-icon-label"
+              className="btn-primary--compact btn-icon-label"
               data-testid="festival-convert-button"
               onClick={() => setSetupOpen(true)}
             >
@@ -173,8 +179,28 @@ export function FestivalModeCard({
             pinnedLabel="Unpin festival"
             unpinnedLabel="Pin festival"
             testId={`festival-pin-${eventId}`}
+            showLabel
+            className="btn-secondary"
             onToggle={toggleFestivalPin}
           />
+          <button
+            type="button"
+            className="btn-secondary btn-icon-label festival-mode-card__link"
+            data-testid="festival-itinerary-link"
+            onClick={() => navigateToFestivalItinerary(venueId, event.eventId ?? '')}
+          >
+            <FontAwesomeIcon icon={faCalendarDays} aria-hidden="true" />
+            Itinerary
+          </button>
+          <button
+            type="button"
+            className="btn-secondary btn-icon-label festival-mode-card__link"
+            data-testid="festival-ledger-link"
+            onClick={() => navigateToFestivalLedger(venueId, event.eventId ?? '')}
+          >
+            <FontAwesomeIcon icon={faFileInvoiceDollar} aria-hidden="true" />
+            Master ledger
+          </button>
           {canEditFestival ? (
             <button
               type="button"
@@ -193,6 +219,7 @@ export function FestivalModeCard({
               items={[
                 {
                   label: 'Cancel booking',
+                  icon: faBan,
                   testId: 'festival-cancel-booking',
                   destructive: true,
                   onSelect: () => {
@@ -206,45 +233,26 @@ export function FestivalModeCard({
         </div>
       </div>
 
-      <dl className="festival-mode-card__meta">
-        <div>
-          <dt>Dates</dt>
-          <dd data-testid="festival-date-range">
-            {formatEventDateRange(event.eventDate, event.endDate)}
-          </dd>
-        </div>
-        <div>
-          <dt>Days</dt>
-          <dd data-testid="festival-day-total">{festival?.days?.length ?? '—'}</dd>
-        </div>
-        <div>
-          <dt>QuickBooks tag</dt>
-          <dd data-testid="festival-master-tag">{festival?.qboTagName ?? event.qboTagName}</dd>
-        </div>
-      </dl>
+      <div className="festival-mode-card__content">
+        <dl className="festival-mode-card__meta">
+          <div className="festival-mode-card__meta-item">
+            <dt>Dates</dt>
+            <dd data-testid="festival-date-range">
+              {formatEventDateRange(event.eventDate, event.endDate)}
+            </dd>
+          </div>
+          <div className="festival-mode-card__meta-item">
+            <dt>Days</dt>
+            <dd data-testid="festival-day-total">{festival?.days?.length ?? '—'}</dd>
+          </div>
+          <div className="festival-mode-card__meta-item">
+            <dt>QuickBooks tag</dt>
+            <dd data-testid="festival-master-tag">{festival?.qboTagName ?? event.qboTagName}</dd>
+          </div>
+        </dl>
 
-      <StageManagerPanel venueId={venueId} eventId={event.eventId ?? ''} canManage={canManage} />
-
-      <nav className="festival-mode-card__links" aria-label="Festival views">
-        <button
-          type="button"
-          className="btn-icon-label festival-mode-card__link"
-          data-testid="festival-itinerary-link"
-          onClick={() => navigateToFestivalItinerary(venueId, event.eventId ?? '')}
-        >
-          <FontAwesomeIcon icon={faCalendarDays} aria-hidden="true" />
-          Itinerary
-        </button>
-        <button
-          type="button"
-          className="btn-icon-label festival-mode-card__link"
-          data-testid="festival-ledger-link"
-          onClick={() => navigateToFestivalLedger(venueId, event.eventId ?? '')}
-        >
-          <FontAwesomeIcon icon={faFileInvoiceDollar} aria-hidden="true" />
-          Master ledger
-        </button>
-      </nav>
+        <StageManagerPanel venueId={venueId} eventId={event.eventId ?? ''} canManage={canManage} />
+      </div>
 
       <FestivalSetupModal
         mode="edit"

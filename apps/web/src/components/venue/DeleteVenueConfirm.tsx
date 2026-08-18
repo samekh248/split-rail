@@ -80,7 +80,7 @@ export function DeleteVenueConfirm({
         <div className="team-confirm__actions">
           <button
             type="button"
-            className="team-confirm__danger btn-icon-label"
+            className="btn-primary--compact btn-primary--danger btn-icon-label"
             data-testid="delete-venue-confirm-button"
             onClick={() => void onConfirm()}
             disabled={isPending}

@@ -19,6 +19,7 @@ description: "Task list template for feature implementation"
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
 - Operator/deploy scripts: when adding a runnable `deploy/**/*.sh`, also add the paired `deploy/**/*.ps1` (Constitution §X)
+- Destructive UI: when a story deletes/removes persisted data, add confirm modal + Vitest coverage per Constitution §XI and `.specify/memory/delete-confirmation.md`
 
 ## Path Conventions
 

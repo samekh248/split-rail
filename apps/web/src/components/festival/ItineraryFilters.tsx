@@ -1,3 +1,7 @@
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFilter } from '@fortawesome/free-solid-svg-icons';
+import { MultiSelectField } from '@/components/auth/MultiSelectField';
+import { SelectField } from '@/components/auth/SelectField';
 import {
   bookingStatusLabel,
   FESTIVAL_BOOKING_STATUSES,
@@ -15,14 +19,14 @@ export const BLOCK_SCHEDULE_STATUSES = [
 export const BLOCK_CATEGORIES_FILTER = ['MUSIC', 'EXHIBITION', 'VENDOR', 'EXPERIENCE'] as const;
 
 export interface ItineraryFilterValues {
-  stageZoneId: string;
+  stageZoneIds: string[];
   category: string;
   status: string;
   bookingStatus: string;
 }
 
 export const DEFAULT_ITINERARY_FILTERS: ItineraryFilterValues = {
-  stageZoneId: '',
+  stageZoneIds: [],
   category: '',
   status: '',
   bookingStatus: '',
@@ -50,7 +54,10 @@ export function applyItineraryFilters(
   filters: ItineraryFilterValues,
 ): ProgrammingBlockResponse[] {
   return blocks.filter((block) => {
-    if (filters.stageZoneId && block.stageZoneId !== filters.stageZoneId) {
+    if (
+      filters.stageZoneIds.length > 0 &&
+      !filters.stageZoneIds.includes(block.stageZoneId ?? '')
+    ) {
       return false;
     }
     if (filters.category && block.category !== filters.category) {
@@ -69,87 +76,82 @@ export function applyItineraryFilters(
   });
 }
 
+export function filterStagesByItineraryFilter(
+  stages: StageZoneResponse[],
+  filters: ItineraryFilterValues,
+): StageZoneResponse[] {
+  if (filters.stageZoneIds.length === 0) {
+    return stages;
+  }
+
+  return stages.filter((stage) => stage.id && filters.stageZoneIds.includes(stage.id));
+}
+
 export function ItineraryFilters({ stages, values, onChange }: ItineraryFiltersProps) {
   return (
     <div className="itinerary-filters" data-testid="itinerary-filters">
-      <div className="itinerary-filters__field">
-        <label htmlFor="itinerary-filter-stage" className="itinerary-filters__label">
-          Stage
-        </label>
-        <select
-          id="itinerary-filter-stage"
-          className="itinerary-filters__select"
-          value={values.stageZoneId}
-          onChange={(event) => onChange({ ...values, stageZoneId: event.target.value })}
-          data-testid="itinerary-filter-stage"
-        >
-          <option value="">All stages</option>
-          {stages.map((stage) => (
-            <option key={stage.id} value={stage.id ?? ''}>
-              {stage.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <h2 className="itinerary-filters__heading">
+        <FontAwesomeIcon icon={faFilter} aria-hidden="true" />
+        Filters
+      </h2>
+      <div className="itinerary-filters__grid">
+      <MultiSelectField
+        id="itinerary-filter-stage"
+        label="Stage"
+        values={values.stageZoneIds}
+        placeholder="All stages"
+        options={stages.map((stage) => ({
+          value: stage.id ?? '',
+          label: stage.name ?? 'Stage',
+        }))}
+        onChange={(stageZoneIds) => onChange({ ...values, stageZoneIds })}
+        data-testid="itinerary-filter-stage"
+      />
 
-      <div className="itinerary-filters__field">
-        <label htmlFor="itinerary-filter-category" className="itinerary-filters__label">
-          Category
-        </label>
-        <select
-          id="itinerary-filter-category"
-          className="itinerary-filters__select"
-          value={values.category}
-          onChange={(event) => onChange({ ...values, category: event.target.value })}
-          data-testid="itinerary-filter-category"
-        >
-          <option value="">All categories</option>
-          {BLOCK_CATEGORIES_FILTER.map((category) => (
-            <option key={category} value={category}>
-              {categoryLabel(category)}
-            </option>
-          ))}
-        </select>
-      </div>
+      <SelectField
+        id="itinerary-filter-category"
+        label="Category"
+        value={values.category}
+        options={[
+          { value: '', label: 'All categories' },
+          ...BLOCK_CATEGORIES_FILTER.map((category) => ({
+            value: category,
+            label: categoryLabel(category),
+          })),
+        ]}
+        onChange={(category) => onChange({ ...values, category })}
+        data-testid="itinerary-filter-category"
+      />
 
-      <div className="itinerary-filters__field">
-        <label htmlFor="itinerary-filter-status" className="itinerary-filters__label">
-          Status
-        </label>
-        <select
-          id="itinerary-filter-status"
-          className="itinerary-filters__select"
-          value={values.status}
-          onChange={(event) => onChange({ ...values, status: event.target.value })}
-          data-testid="itinerary-filter-status"
-        >
-          <option value="">All statuses</option>
-          {BLOCK_SCHEDULE_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {statusLabel(status)}
-            </option>
-          ))}
-        </select>
-      </div>
+      <SelectField
+        id="itinerary-filter-status"
+        label="Status"
+        value={values.status}
+        options={[
+          { value: '', label: 'All statuses' },
+          ...BLOCK_SCHEDULE_STATUSES.map((status) => ({
+            value: status,
+            label: statusLabel(status),
+          })),
+        ]}
+        onChange={(status) => onChange({ ...values, status })}
+        data-testid="itinerary-filter-status"
+      />
 
-      <div className="itinerary-filters__field">
-        <label htmlFor="itinerary-filter-booking" className="itinerary-filters__label">
-          Booking
-        </label>
-        <select
-          id="itinerary-filter-booking"
-          className="itinerary-filters__select"
-          value={values.bookingStatus}
-          onChange={(event) => onChange({ ...values, bookingStatus: event.target.value })}
-          data-testid="itinerary-filter-booking"
-        >
-          <option value="">Holds and confirmed</option>
-          {FESTIVAL_BOOKING_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {bookingStatusLabel(status)}
-            </option>
-          ))}
-        </select>
+      <SelectField
+        id="itinerary-filter-booking"
+        label="Booking"
+        value={values.bookingStatus}
+        options={[
+          { value: '', label: 'Holds and confirmed' },
+          ...FESTIVAL_BOOKING_STATUSES.map((status) => ({
+            value: status,
+            label: bookingStatusLabel(status),
+          })),
+        ]}
+        onChange={(bookingStatus) => onChange({ ...values, bookingStatus })}
+        data-testid="itinerary-filter-booking"
+      />
       </div>
     </div>
   );
