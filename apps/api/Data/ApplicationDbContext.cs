@@ -335,6 +335,12 @@ public class ApplicationDbContext : DbContext
                 .HasColumnName("password_hash")
                 .IsRequired();
 
+            entity.Property(e => e.DateDisplayFormat)
+                .HasColumnName("date_display_format")
+                .HasMaxLength(32)
+                .HasDefaultValue(Constants.DateDisplayFormats.Default)
+                .IsRequired();
+
             entity.Property(e => e.CreatedAt)
                 .HasColumnName("created_at")
                 .HasDefaultValueSql("NOW()");

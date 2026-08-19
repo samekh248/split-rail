@@ -4874,6 +4874,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/users/me/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UpdateUserPreferencesRequest"];
+                    "text/json": components["schemas"]["UpdateUserPreferencesRequest"];
+                    "application/*+json": components["schemas"]["UpdateUserPreferencesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UserProfileResponse"];
+                        "application/json": components["schemas"]["UserProfileResponse"];
+                        "text/json": components["schemas"]["UserProfileResponse"];
+                    };
+                };
+            };
+        };
+        trace?: never;
+    };
     "/api/users": {
         parameters: {
             query?: never;
@@ -6467,6 +6510,9 @@ export interface components {
             /** Format: uuid */
             targetEntityId?: string;
         };
+        UpdateUserPreferencesRequest: {
+            dateDisplayFormat?: string | null;
+        };
         UpdateVenueRequest: {
             name?: string | null;
             /** Format: uuid */
@@ -6491,6 +6537,7 @@ export interface components {
             /** Format: uuid */
             id?: string;
             email?: string | null;
+            dateDisplayFormat?: string | null;
             organization?: components["schemas"]["OrganizationSummaryDto"];
             role?: components["schemas"]["RoleDetailDto"];
             venueScopes?: components["schemas"]["VenueScopeDto"][] | null;
@@ -6700,6 +6747,7 @@ export type UpdateRevenueBucketRequest = components['schemas']['UpdateRevenueBuc
 export type UpdateRoleRequest = components['schemas']['UpdateRoleRequest'];
 export type UpdateStageZoneRequest = components['schemas']['UpdateStageZoneRequest'];
 export type UpdateTrackingMappingRequest = components['schemas']['UpdateTrackingMappingRequest'];
+export type UpdateUserPreferencesRequest = components['schemas']['UpdateUserPreferencesRequest'];
 export type UpdateVenueRequest = components['schemas']['UpdateVenueRequest'];
 export type UpdateVenueScopesRequest = components['schemas']['UpdateVenueScopesRequest'];
 export type UpdateVenueScopesResponse = components['schemas']['UpdateVenueScopesResponse'];

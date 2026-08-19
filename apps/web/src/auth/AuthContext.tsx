@@ -9,6 +9,7 @@ import {
 import { useQueryClient } from '@tanstack/react-query';
 import { configureApiClient, resetSessionExpiredLatch } from '@/api/client';
 import { fetchUserProfile } from '@/api/user';
+import { setDateDisplayFormat } from '@/lib/dateDisplayFormat';
 import { navigateToDashboard, navigateToSignIn } from '@/lib/appRoute';
 import type { AcceptInvitationRequest, LoginRequest, UserProfileResponse } from '@/types/generated-api';
 import { clearActiveVenueId } from '@/venue/activeVenueStorage';
@@ -94,6 +95,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    setDateDisplayFormat(profile?.dateDisplayFormat);
+  }, [profile?.dateDisplayFormat]);
 
   const clearError = useCallback(() => setError(null), []);
 

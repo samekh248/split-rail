@@ -1,4 +1,9 @@
 import { addLocalDays, parseEventLocalDate, toDateKey } from '@/lib/upcomingEventsCalendar';
+import {
+  formatDateLabelFromIso,
+  formatDateRangeFromIso,
+  formatDateRangeLongFromIso,
+} from '@/lib/dateDisplayFormat';
 
 export function effectiveEndDate(
   startDate: string | null | undefined,
@@ -30,87 +35,30 @@ export function eachDateKey(
   return keys;
 }
 
+/**
+ * The three formatters below delegate to the shared date-display helpers so every event
+ * surface honours the signed-in user's chosen format. They keep `effectiveEndDate` in front
+ * of the range helpers, which tolerates an end date that precedes the start.
+ */
+
 export function formatEventDateLabel(eventDate: string | null | undefined): string {
-  const parsed = parseEventLocalDate(eventDate);
-  if (!parsed) {
-    return 'Date TBD';
-  }
-  return parsed.toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  return formatDateLabelFromIso(eventDate);
 }
 
-function formatLongDate(date: Date, options: Intl.DateTimeFormatOptions): string {
-  return date.toLocaleDateString('en-US', options);
-}
-
-/** Compact locale range, e.g. "Aug 14–16, 2026" or "Aug 30 – Sep 1, 2026". */
+/** Compact range in the user's date format, e.g. "08/14/2026 – 08/16/2026". */
 export function formatEventDateRange(
   startDate: string | null | undefined,
   endDate: string | null | undefined,
 ): string {
-  const start = parseEventLocalDate(startDate);
-  if (!start) {
-    return 'Date TBD';
-  }
-
-  const last = parseEventLocalDate(effectiveEndDate(startDate, endDate));
-  if (!last || toDateKey(last) === toDateKey(start)) {
-    return formatEventDateLabel(startDate);
-  }
-
-  const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
-  const endMonth = last.toLocaleDateString('en-US', { month: 'short' });
-  const startDay = start.getDate();
-  const endDay = last.getDate();
-  const startYear = start.getFullYear();
-  const endYear = last.getFullYear();
-
-  if (startYear === endYear && startMonth === endMonth) {
-    return `${startMonth} ${startDay}–${endDay}, ${endYear}`;
-  }
-  if (startYear === endYear) {
-    return `${startMonth} ${startDay} – ${endMonth} ${endDay}, ${endYear}`;
-  }
-  return `${startMonth} ${startDay}, ${startYear} – ${endMonth} ${endDay}, ${endYear}`;
+  return formatDateRangeFromIso(startDate, effectiveEndDate(startDate, endDate));
 }
 
-/** Detail-view range, e.g. "Fri, June 15 – Sun, June 17, 2026". */
+/** Detail-view range with weekdays, e.g. "Mon, 06/15/2026 – Wed, 06/17/2026". */
 export function formatEventDateRangeLong(
   startDate: string | null | undefined,
   endDate: string | null | undefined,
 ): string {
-  const start = parseEventLocalDate(startDate);
-  if (!start) {
-    return 'Date TBD';
-  }
-
-  const last = parseEventLocalDate(effectiveEndDate(startDate, endDate));
-  if (!last || toDateKey(last) === toDateKey(start)) {
-    return formatLongDate(start, {
-      weekday: 'short',
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
-    });
-  }
-
-  const sameYear = start.getFullYear() === last.getFullYear();
-  const startLabel = formatLongDate(start, {
-    weekday: 'short',
-    month: 'long',
-    day: 'numeric',
-    year: sameYear ? undefined : 'numeric',
-  });
-  const endLabel = formatLongDate(last, {
-    weekday: 'short',
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-  return `${startLabel} – ${endLabel}`;
+  return formatDateRangeLongFromIso(startDate, effectiveEndDate(startDate, endDate));
 }
 
 /** ISO range for compact lists, e.g. "2026-08-14 – 2026-08-16". */

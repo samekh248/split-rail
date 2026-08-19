@@ -11,12 +11,14 @@ import { VenuesPage } from '@/pages/VenuesPage';
 import { LoginPage } from '@/pages/LoginPage';
 import { RegisterPage } from '@/pages/RegisterPage';
 import { SettingsLandingPage } from '@/pages/SettingsLandingPage';
+import { AccountSettingsPage } from '@/pages/AccountSettingsPage';
 import { PlaceholderSettingsPage } from '@/pages/PlaceholderSettingsPage';
 import { IntegrationsSettingsRoute } from '@/pages/IntegrationsSettingsRoute';
 import { TeamSettingsPage } from '@/pages/TeamSettingsPage';
 import { AcceptInvitePage } from '@/pages/AcceptInvitePage';
 import { OrganizationCreateStep } from '@/components/onboarding/OrganizationCreateStep';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
+import { DateDisplayFormatSync } from '@/components/preferences/DateDisplayFormatSync';
 import { AppShell } from '@/components/shell/AppShell';
 import { useAuth } from '@/auth/useAuth';
 import { VenueProvider } from '@/venue/VenueContext';
@@ -33,6 +35,7 @@ function AuthenticatedShell({
 }) {
   return (
     <VenueProvider>
+      <DateDisplayFormatSync />
       <AppShell sidebarNavigation={sidebarNavigation} topBarContent={topBarContent}>
         {children}
       </AppShell>
@@ -93,6 +96,14 @@ export default function App() {
     return (
       <AuthenticatedShell sidebarNavigation="settings">
         <SettingsLandingPage />
+      </AuthenticatedShell>
+    );
+  }
+
+  if (appPath === '/settings/account') {
+    return (
+      <AuthenticatedShell sidebarNavigation="settings">
+        <AccountSettingsPage />
       </AuthenticatedShell>
     );
   }

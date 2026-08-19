@@ -19,6 +19,12 @@ public class UsersController : ControllerBase
     public async Task<ActionResult<UserProfileResponse>> GetMe(CancellationToken cancellationToken) =>
         Ok(await _userService.GetProfileAsync(cancellationToken));
 
+    [HttpPatch("me/preferences")]
+    public async Task<ActionResult<UserProfileResponse>> UpdatePreferences(
+        UpdateUserPreferencesRequest request,
+        CancellationToken cancellationToken) =>
+        Ok(await _userService.UpdatePreferencesAsync(request, cancellationToken));
+
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<UserListResponse>>> List(CancellationToken cancellationToken) =>
         Ok(await _userService.ListOrgUsersAsync(cancellationToken));

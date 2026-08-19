@@ -31,6 +31,7 @@ describe('SettingsNav', () => {
     expect(screen.getByTestId('settings-return-to-app')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Return to App' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Overview' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Account' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Organization' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Integrations' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Team' })).toBeInTheDocument();

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using SplitRail.Api.Constants;
 using SplitRail.Api.Data;
 using SplitRail.Api.DTOs.Users;
 using SplitRail.Api.Exceptions;
@@ -33,7 +34,7 @@ public class UserService
 
         if (_tenantContext.OrganizationId is not Guid orgId)
         {
-            return new UserProfileResponse(user.Id, user.Email, null, null, []);
+            return new UserProfileResponse(user.Id, user.Email, user.DateDisplayFormat, null, null, []);
         }
 
         var mapping = await _db.UserOrganizationMappings
@@ -50,9 +51,31 @@ public class UserService
         return new UserProfileResponse(
             user.Id,
             user.Email,
+            user.DateDisplayFormat,
             new OrganizationSummaryDto(mapping.Organization.Id, mapping.Organization.Name),
             ToRoleDetail(mapping.Role),
             venueScopes);
+    }
+
+    public async Task<UserProfileResponse> UpdatePreferencesAsync(
+        UpdateUserPreferencesRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (_tenantContext.UserId is not Guid userId)
+            throw new AuthenticationException();
+
+        if (request.DateDisplayFormat is not null && !DateDisplayFormats.IsAllowed(request.DateDisplayFormat))
+            throw new ValidationException("Date display format is not supported.");
+
+        var user = await _db.Users
+            .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
+            ?? throw new NotFoundException("User not found.");
+
+        if (request.DateDisplayFormat is not null)
+            user.DateDisplayFormat = request.DateDisplayFormat;
+
+        await _db.SaveChangesAsync(cancellationToken);
+        return await GetProfileAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<UserListResponse>> ListOrgUsersAsync(CancellationToken cancellationToken = default)

@@ -2,12 +2,13 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   BlockEditorDrawer,
   validateBlockForm,
   type BlockFormValues,
 } from '@/components/festival/BlockEditorDrawer';
+import { setDateDisplayFormat } from '@/lib/dateDisplayFormat';
 
 const mockCreateBlock = { mutateAsync: vi.fn(), isPending: false };
 const mockUpdateBlock = { mutateAsync: vi.fn(), isPending: false };
@@ -97,6 +98,38 @@ describe('BlockEditorDrawer', () => {
     });
   });
 
+  afterEach(() => {
+    setDateDisplayFormat(undefined);
+  });
+
+  it('formats day options using the signed-in user\'s date display preference', () => {
+    setDateDisplayFormat('MMM d, yyyy');
+    renderDrawer();
+
+    expect(screen.getByTestId('block-day-select')).toHaveTextContent('Aug 14, 2026');
+  });
+
+  it('reformats day options when the date display preference changes', () => {
+    setDateDisplayFormat('dd/MM/yyyy');
+    const { unmount } = renderDrawer();
+    expect(screen.getByTestId('block-day-select')).toHaveTextContent('14/08/2026');
+    unmount();
+
+    setDateDisplayFormat('yyyy-MM-dd');
+    renderDrawer();
+    expect(screen.getByTestId('block-day-select')).toHaveTextContent('2026-08-14');
+  });
+
+  it('places Cancel on the left and the save action on the right', () => {
+    renderDrawer();
+
+    const buttons = screen.getAllByRole('button', { name: /Cancel|Add block/i });
+    expect(buttons[0]).toHaveTextContent('Cancel');
+    expect(buttons[0]).toHaveClass('team-modal__cancel');
+    expect(buttons[1]).toHaveTextContent('Add block');
+    expect(buttons[1]).toHaveClass('team-modal__save');
+  });
+
   it('shows music preset fields for MUSIC category', () => {
     renderDrawer();
 
@@ -141,7 +174,8 @@ describe('BlockEditorDrawer', () => {
     renderDrawer();
 
     await userEvent.click(screen.getByLabelText('Existing artist'));
-    await userEvent.selectOptions(screen.getByTestId('block-artist-select'), 'artist-1');
+    await userEvent.click(screen.getByTestId('block-artist-select'));
+    await userEvent.click(screen.getByTestId('block-artist-select-option-artist-1'));
     await userEvent.type(screen.getByLabelText(/Act \/ title/), 'Cody Jinks');
     await userEvent.click(screen.getByTestId('block-editor-save'));
 
@@ -180,6 +214,26 @@ describe('BlockEditorDrawer', () => {
     expect(within(picker).getByRole('button', { name: /Exhibition/i })).toHaveClass(
       'block-category-badge--exhibition',
     );
+  });
+
+  it('moves the selected-category indicator to the clicked category', async () => {
+    renderDrawer();
+
+    const picker = screen.getByTestId('block-category-picker');
+    const musicBtn = within(picker).getByRole('button', { name: /Music/i });
+    const exhibitionBtn = within(picker).getByRole('button', { name: /Exhibition/i });
+
+    expect(musicBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(musicBtn).toHaveClass('block-editor__category-btn--active');
+    expect(exhibitionBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(exhibitionBtn).not.toHaveClass('block-editor__category-btn--active');
+
+    await userEvent.click(exhibitionBtn);
+
+    expect(exhibitionBtn).toHaveAttribute('aria-pressed', 'true');
+    expect(exhibitionBtn).toHaveClass('block-editor__category-btn--active');
+    expect(musicBtn).toHaveAttribute('aria-pressed', 'false');
+    expect(musicBtn).not.toHaveClass('block-editor__category-btn--active');
   });
 
   it('defaults a new block to a hold and submits it that way', async () => {
@@ -281,8 +335,10 @@ describe('BlockEditorDrawer', () => {
       ],
     });
 
-    await userEvent.selectOptions(screen.getByLabelText('Day'), '2026-08-15');
-    await userEvent.selectOptions(screen.getByLabelText('Stage'), 'stage-2');
+    await userEvent.click(screen.getByTestId('block-day-select'));
+    await userEvent.click(screen.getByTestId('block-day-select-option-2026-08-15'));
+    await userEvent.click(screen.getByTestId('block-stage-select'));
+    await userEvent.click(screen.getByTestId('block-stage-select-option-stage-2'));
     await userEvent.clear(screen.getByLabelText('Start time'));
     await userEvent.type(screen.getByLabelText('Start time'), '18:00');
     await userEvent.clear(screen.getByLabelText('End time'));

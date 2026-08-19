@@ -161,7 +161,7 @@ describe('BookingEventDrawer', () => {
     );
 
     expect(screen.getByTestId('booking-event-drawer-date')).toHaveTextContent(
-      'Mon, June 15 – Wed, June 17, 2026',
+      'Mon, 06/15/2026 – Wed, 06/17/2026',
     );
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Cancel booking' })).not.toBeInTheDocument();

@@ -25,7 +25,11 @@ import {
   ItineraryFilters,
 } from '@/components/festival/ItineraryFilters';
 import { ScheduleHistoryPanel } from '@/components/festival/ScheduleHistoryPanel';
-import { TimelineGrid, type BlockMoveTarget } from '@/components/festival/TimelineGrid';
+import {
+  TimelineGrid,
+  type BlockPlacementChange,
+  type SlotCreateSeed,
+} from '@/components/festival/TimelineGrid';
 import { ViewToggle } from '@/components/festival/ViewToggle';
 import { buildEventWorkspacePath } from '@/lib/appRoute';
 import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
@@ -138,19 +142,19 @@ export function FestivalItineraryPage({
     setEditorOpen(true);
   };
 
-  const handleBlockMove = async (target: BlockMoveTarget) => {
-    const block = allBlocks.find((item) => item.id === target.blockId);
+  const handleBlockPlacementChange = async (change: BlockPlacementChange) => {
+    const block = allBlocks.find((item) => item.id === change.blockId);
     if (!block) {
       return;
     }
 
     await updateBlock.mutateAsync({
-      blockId: target.blockId,
+      blockId: change.blockId,
       title: block.title ?? '',
-      dayDate: target.dayDate,
-      stageZoneId: target.stageZoneId,
-      startTime: target.startTime,
-      endTime: target.endTime,
+      dayDate: change.dayDate,
+      stageZoneId: change.stageZoneId,
+      startTime: change.startTime,
+      endTime: change.endTime,
       category: block.category ?? 'MUSIC',
       requiresSettlement: block.requiresSettlement ?? false,
       description: block.description ?? null,
@@ -162,6 +166,12 @@ export function FestivalItineraryPage({
     });
 
     await itineraryQuery.refetch();
+  };
+
+  const handleSlotClick = (seed: SlotCreateSeed) => {
+    setEditingBlock(null);
+    setEditorSeed(seed);
+    setEditorOpen(true);
   };
 
   const handleBookingStatusChange = async (
@@ -306,7 +316,8 @@ export function FestivalItineraryPage({
             selectedDay={activeDay}
             onDayChange={setSelectedDay}
             onBlockClick={openEditBlock}
-            onBlockMove={handleBlockMove}
+            onSlotClick={handleSlotClick}
+            onBlockPlacementChange={handleBlockPlacementChange}
             onConflict={handleConflict}
             onBookingStatusChange={handleBookingStatusChange}
             onPinToggle={viewMode === 'internal' ? handleBlockPinToggle : undefined}

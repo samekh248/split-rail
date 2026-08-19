@@ -6,7 +6,7 @@ import {
   isEventPinned,
   setEventPinned,
 } from '@/lib/pinnedEventStorage';
-import type { EventResponse, LineItemDto, PermissionsDto } from '@/types/generated-api';
+import { DEFAULT_DATE_DISPLAY_FORMAT, setDateDisplayFormat } from '@/lib/dateDisplayFormat';
 import { EVENT_A } from '../../fixtures/events';
 
 const FULL_PERMISSIONS: PermissionsDto = {
@@ -63,13 +63,14 @@ function openBadgePopover(eventId: string) {
 describe('EventCard', () => {
   beforeEach(() => {
     clearAllPinnedEvents();
+    setDateDisplayFormat(DEFAULT_DATE_DISPLAY_FORMAT);
   });
 
   describe('US1 — event summary', () => {
     it('renders title, formatted date, and booking preview badge with tooltip', () => {
       renderCard(EVENT_A);
       expect(screen.getByText('Show A')).toBeInTheDocument();
-      expect(screen.getByTestId(`event-card-date-${EVENT_A.eventId}`)).toHaveTextContent('Aug 1, 2026');
+      expect(screen.getByTestId(`event-card-date-${EVENT_A.eventId}`)).toHaveTextContent('08/01/2026');
       const badge = screen.getByTestId(`event-card-booking-${EVENT_A.eventId}`);
       expect(badge).toBeInTheDocument();
       expect(badge).toHaveAttribute('title', expect.stringContaining('Booking placement status'));
@@ -84,7 +85,9 @@ describe('EventCard', () => {
 
     it('renders the festival date range on the card', () => {
       renderCard({ ...EVENT_A, eventType: 'FESTIVAL', endDate: '2026-08-03' });
-      expect(screen.getByTestId(`event-card-date-${EVENT_A.eventId}`)).toHaveTextContent('Aug 1–3, 2026');
+      expect(screen.getByTestId(`event-card-date-${EVENT_A.eventId}`)).toHaveTextContent(
+        '08/01/2026 – 08/03/2026',
+      );
     });
 
     it('applies booking status colors for hold placements', () => {
