@@ -6199,10 +6199,17 @@ textarea.form-field__input {
   width: min(28rem, 100vw);
   height: 100%;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
   background: var(--color-surface-white);
   border-left: 1px solid var(--color-border-subtle);
   padding: 1rem 1.25rem 1.5rem;
   box-shadow: -4px 0 24px rgba(15, 23, 42, 0.12);
+}
+
+.block-editor .modal-header {
+  margin-bottom: 0;
 }
 
 .block-editor__legend {
@@ -6213,7 +6220,7 @@ textarea.form-field__input {
 
 .block-editor__category {
   border: none;
-  margin: 0 0 1rem;
+  margin: 0;
   padding: 0;
 }
 
@@ -6239,6 +6246,11 @@ textarea.form-field__input {
   border-color: var(--color-accent-orange);
   background: color-mix(in srgb, var(--color-accent-orange) 8%, transparent);
   font-weight: 600;
+  /* The category-specific border-left (below) is declared after this rule and wins the
+     cascade on that edge at equal specificity, so the selected state can't rely on
+     border-color alone — a box-shadow ring (same technique as .block-editor__booking-btn--active)
+     guarantees a visible, non-overridable selection indicator on every category. */
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-orange) 45%, transparent);
 }
 
 .block-category-badge {
@@ -6282,7 +6294,7 @@ textarea.form-field__input {
 
 .block-editor__artist {
   border: none;
-  margin: 1rem 0;
+  margin: 0;
   padding: 0;
 }
 
@@ -6301,7 +6313,7 @@ textarea.form-field__input {
 }
 
 .block-editor__settlement {
-  margin: 1rem 0;
+  margin: 0;
   padding: 0.75rem;
   border-radius: 8px;
   background: var(--color-surface-muted);
@@ -6327,20 +6339,26 @@ textarea.form-field__input {
 
 .block-editor__actions {
   display: flex;
+  justify-content: space-between;
   gap: 0.75rem;
   flex-wrap: wrap;
-  margin-top: 1rem;
+  margin-top: 0;
 }
 
-.block-editor__error,
+.block-editor__error {
+  color: var(--color-error);
+  font-size: 0.85rem;
+  margin: 0;
+}
+
 .block-editor__field-error {
   color: var(--color-error);
   font-size: 0.85rem;
-  margin: 0 0 0.5rem;
+  margin: 0.5rem 0 0;
 }
 
 .block-editor__warnings {
-  margin: 0 0 0.75rem;
+  margin: 0;
   padding-left: 1.25rem;
   color: var(--color-warning-amber);
   font-size: 0.85rem;
@@ -6811,17 +6829,77 @@ textarea.form-field__input {
   text-decoration: line-through;
 }
 
-.timeline-block-card--pending,
-.timeline-block-card--dragging {
+.timeline-block-card--pending {
   opacity: 0.65;
 }
 
-.timeline-block-card__handle {
-  position: absolute;
-  left: 0.15rem;
-  top: 0.2rem;
+/* Applies for the whole gesture, from press: lets pointer hit-testing pass through to the
+   slot cells the card itself covers, so a move/resize can register a target inside the card's
+   own footprint (shrinking by dragging an edge inward never leaves it). Release/cancel listen
+   on document, so this doesn't block them. */
+.timeline-block-card--gesturing {
+  pointer-events: none;
+}
+
+/* Reads as lifted off the board rather than faded out — the card is the live preview and
+   needs to stay legible while it tracks the pointer. */
+.timeline-block-card--dragging {
+  z-index: 4;
+  box-shadow: 0 8px 20px rgb(15 23 42 / 28%);
+  transform: scale(1.015);
+}
+
+.timeline-block-card--invalid {
+  outline: 2px solid var(--color-timeline-warning);
+  outline-offset: -2px;
+}
+
+.timeline-block-card--manageable {
   cursor: grab;
-  color: var(--color-text-muted);
+  /* Without this a touch drag scrolls the board instead of moving the block. */
+  touch-action: none;
+}
+
+.timeline-grid[data-gesturing='true'] {
+  cursor: grabbing;
+  user-select: none;
+}
+
+.timeline-block-card__edge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0.75rem;
+  z-index: 2;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+/* Widens the grab target past the visible strip without changing the layout, so the handle is
+   reachable without pixel-hunting (and stays usable by touch). */
+.timeline-block-card__edge::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -0.25rem;
+  bottom: -0.25rem;
+}
+
+.timeline-block-card__edge--start {
+  top: 0;
+}
+
+.timeline-block-card__edge--end {
+  bottom: 0;
+}
+
+.timeline-block-card__edge:hover {
+  background: color-mix(in srgb, var(--color-text-muted) 25%, transparent);
+}
+
+.timeline-slot {
+  touch-action: none;
 }
 
 .timeline-block-card__pin {
@@ -6902,18 +6980,31 @@ textarea.form-field__input {
 }
 
 .block-editor__booking-options {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 0.5rem;
 }
 
+/* Matches .block-editor__category-btn's card treatment (padding, radius, base border/background)
+   so the two pickers in this form read as one consistent pattern, overriding the pill-shaped
+   .festival-booking-status base badge styling this button also carries. */
 .block-editor__booking-btn {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 8px;
+  background: var(--color-surface-muted);
   cursor: pointer;
+  font-size: 0.85rem;
 }
 
 .block-editor__booking-btn--active {
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary-brown) 45%, transparent);
+  border-color: var(--color-accent-orange);
+  background: color-mix(in srgb, var(--color-accent-orange) 8%, transparent);
+  font-weight: 600;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-orange) 45%, transparent);
 }
 
 .block-editor__booking-btn:disabled {
@@ -7300,4 +7391,68 @@ textarea.form-field__input {
 
 .festival-qbo-chip--clear {
   color: var(--color-qbo-clear);
+}
+
+/* --- Timeline block: sync state and size-aware content priority (spec 085) --- */
+
+.timeline-block-card__sync {
+  position: absolute;
+  right: 0.35rem;
+  bottom: 0.3rem;
+  z-index: 3;
+  display: inline-flex;
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+/* The placement is already applied locally; the card is live, just not durable yet. Keep it
+   fully legible and let the spinner carry the "not saved" signal on its own. */
+.timeline-block-card--syncing {
+  border-style: dashed;
+}
+
+/* A one-slot card fits the act name and nothing else, so times/status/badges are dropped
+   rather than squeezing the name into an ellipsis. */
+.timeline-block-card--compact {
+  padding: 0.2rem 0.4rem;
+  justify-content: center;
+}
+
+.timeline-block-card--compact .timeline-block-card__title {
+  font-size: 0.72rem;
+  -webkit-line-clamp: 1;
+  line-height: 1.2;
+}
+
+.timeline-block-card--short {
+  padding: 0.3rem 0.45rem;
+  gap: 0.1rem;
+}
+
+.timeline-block-card--short .timeline-block-card__title {
+  -webkit-line-clamp: 1;
+}
+
+.timeline-block-card--short .timeline-block-card__time {
+  font-size: 0.64rem;
+}
+
+.timeline-block-card--short .timeline-block-card__booking {
+  font-size: 0.62rem;
+  padding: 0 0.35rem;
+}
+
+/* Leave room for the spinner so it never sits on top of the name. */
+.timeline-block-card--compact.timeline-block-card--syncing,
+.timeline-block-card--short.timeline-block-card--syncing {
+  padding-right: 1.35rem;
+}
+
+/* The provisional block swept out by a drag on empty time, before the create form opens. */
+.timeline-block-card--draft {
+  z-index: 3;
+  border: 2px dashed var(--color-accent-orange);
+  background: color-mix(in srgb, var(--color-accent-orange) 12%, var(--color-surface-white));
+  pointer-events: none;
 }

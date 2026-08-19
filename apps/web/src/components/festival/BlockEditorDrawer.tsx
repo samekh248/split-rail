@@ -2,14 +2,18 @@ import { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCircleCheck,
+  faFloppyDisk,
   faHourglassHalf,
   faMusic,
   faPalette,
+  faPlus,
   faStar,
   faStore,
 } from '@fortawesome/free-solid-svg-icons';
 import { FormField } from '@/components/auth/FormField';
+import { SelectField } from '@/components/auth/SelectField';
 import { ModalHeader } from '@/components/shell/ModalHeader';
+import { formatDateLabelFromIso } from '@/lib/dateDisplayFormat';
 import {
   useCreateBlock,
   useFestivalArtists,
@@ -431,57 +435,30 @@ export function BlockEditorDrawer({
           </div>
         ) : null}
 
-        <div className="form-field">
-          <label htmlFor="block-day" className="form-field__label">
-            Day
-          </label>
-          <select
-            id="block-day"
-            className="form-field__input"
-            value={values.dayDate}
-            onChange={(event) => setValues((prev) => ({ ...prev, dayDate: event.target.value }))}
-            disabled={isPending}
-            aria-invalid={errors.dayDate ? true : undefined}
-          >
-            {days.map((day) => (
-              <option key={day.dayDate} value={day.dayDate ?? ''}>
-                {day.dayDate}
-              </option>
-            ))}
-          </select>
-          {errors.dayDate ? (
-            <p className="form-field__error" role="alert">
-              {errors.dayDate}
-            </p>
-          ) : null}
-        </div>
+        <SelectField
+          id="block-day"
+          label="Day"
+          value={values.dayDate}
+          options={days.map((day) => ({
+            value: day.dayDate ?? '',
+            label: formatDateLabelFromIso(day.dayDate),
+          }))}
+          onChange={(dayDate) => setValues((prev) => ({ ...prev, dayDate }))}
+          disabled={isPending}
+          error={errors.dayDate}
+          data-testid="block-day-select"
+        />
 
-        <div className="form-field">
-          <label htmlFor="block-stage" className="form-field__label">
-            Stage
-          </label>
-          <select
-            id="block-stage"
-            className="form-field__input"
-            value={values.stageZoneId}
-            onChange={(event) =>
-              setValues((prev) => ({ ...prev, stageZoneId: event.target.value }))
-            }
-            disabled={isPending}
-            aria-invalid={errors.stageZoneId ? true : undefined}
-          >
-            {stages.map((stage) => (
-              <option key={stage.id} value={stage.id ?? ''}>
-                {stage.name}
-              </option>
-            ))}
-          </select>
-          {errors.stageZoneId ? (
-            <p className="form-field__error" role="alert">
-              {errors.stageZoneId}
-            </p>
-          ) : null}
-        </div>
+        <SelectField
+          id="block-stage"
+          label="Stage"
+          value={values.stageZoneId}
+          options={stages.map((stage) => ({ value: stage.id ?? '', label: stage.name ?? '' }))}
+          onChange={(stageZoneId) => setValues((prev) => ({ ...prev, stageZoneId }))}
+          disabled={isPending}
+          error={errors.stageZoneId}
+          data-testid="block-stage-select"
+        />
 
         <fieldset className="block-editor__booking" data-testid="block-booking-status-picker">
           <legend className="block-editor__legend">Booking status</legend>
@@ -615,24 +592,21 @@ export function BlockEditorDrawer({
           </div>
 
           {values.artistMode === 'existing' ? (
-            <select
-              className="form-field__input"
+            <SelectField
+              id="block-artist"
+              ariaLabel="Select artist"
               value={values.festivalArtistId}
-              onChange={(event) =>
-                setValues((prev) => ({ ...prev, festivalArtistId: event.target.value }))
+              placeholder="Select an artist…"
+              options={artists.map((artist) => ({
+                value: artist.id ?? '',
+                label: `${artist.name} (${artist.appearanceCount ?? 0} appearances) — ${bookingStatusLabel(artist.bookingStatus)}`,
+              }))}
+              onChange={(festivalArtistId) =>
+                setValues((prev) => ({ ...prev, festivalArtistId }))
               }
               disabled={isPending}
-              aria-label="Select artist"
               data-testid="block-artist-select"
-            >
-              <option value="">Select an artist…</option>
-              {artists.map((artist) => (
-                <option key={artist.id} value={artist.id ?? ''}>
-                  {artist.name} ({artist.appearanceCount ?? 0} appearances) —{' '}
-                  {bookingStatusLabel(artist.bookingStatus)}
-                </option>
-              ))}
-            </select>
+            />
           ) : null}
 
           {values.artistMode === 'new' ? (
@@ -712,20 +686,23 @@ export function BlockEditorDrawer({
         <div className="block-editor__actions">
           <button
             type="button"
-            className="team-modal__save"
-            data-testid="block-editor-save"
-            onClick={() => void handleSubmit()}
-            disabled={isPending}
-          >
-            {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Add block'}
-          </button>
-          <button
-            type="button"
             className="team-modal__cancel"
             onClick={onClose}
             disabled={isPending}
           >
             Cancel
+          </button>
+          <button
+            type="button"
+            className="team-modal__save btn-icon-label"
+            data-testid="block-editor-save"
+            onClick={() => void handleSubmit()}
+            disabled={isPending}
+          >
+            {isPending ? null : (
+              <FontAwesomeIcon icon={isEdit ? faFloppyDisk : faPlus} aria-hidden="true" />
+            )}
+            {isPending ? 'Saving…' : isEdit ? 'Save changes' : 'Add block'}
           </button>
         </div>
       </aside>
