@@ -62,7 +62,8 @@ public record ProgrammingBlockResponse(
     string? Description,
     string? LoadInTime,
     string? SoundcheckTime,
-    IReadOnlyList<FestivalWarning> Warnings);
+    IReadOnlyList<FestivalWarning> Warnings,
+    bool IsPinned = false);
 
 /// <summary>Public-facing itinerary rows carry only the audience-safe subset (research.md D13).</summary>
 public record PublicProgrammingBlockResponse(

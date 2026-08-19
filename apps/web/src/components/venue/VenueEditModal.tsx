@@ -157,7 +157,7 @@ export function VenueEditModal({
         <div className="team-modal__actions team-modal__actions--split">
           <button
             type="button"
-            className="team-confirm__danger btn-icon-label"
+            className="btn-primary--compact btn-primary--danger btn-icon-label"
             data-testid="venue-edit-delete"
             onClick={onDeleteRequest}
             disabled={isPending}

@@ -97,7 +97,8 @@ public record LedgerGridResponse(
     IReadOnlyList<EventArtistDto> Artists,
     LedgerSummaryDto Summary,
     DateTimeOffset? SettledAt = null,
-    bool SettlementPdfAvailable = false);
+    bool SettlementPdfAvailable = false,
+    string? EndDate = null);
 
 public record EventResponse(
     Guid EventId,
@@ -119,7 +120,8 @@ public record EventResponse(
     string? SupportLineup = null,
     bool WorkspaceAllowed = true,
     string EventType = "STANDARD",
-    string? EndDate = null);
+    string? EndDate = null,
+    bool IsPinned = false);
 
 public record CreateEventRequest(
     string Title,

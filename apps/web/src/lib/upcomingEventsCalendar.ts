@@ -1,4 +1,5 @@
 import type { EventCardDto } from '@/types/generated-api';
+import { eachDateKey } from '@/lib/eventDateRange';
 
 export interface UpcomingWindowBounds {
   start: Date;
@@ -83,14 +84,11 @@ export function groupEventsByLocalDate(events: EventCardDto[]): Map<string, Even
   const grouped = new Map<string, EventCardDto[]>();
 
   for (const event of events) {
-    const localDate = parseEventLocalDate(event.eventDate);
-    if (!localDate) {
-      continue;
+    for (const key of eachDateKey(event.eventDate, event.endDate)) {
+      const existing = grouped.get(key) ?? [];
+      existing.push(event);
+      grouped.set(key, existing);
     }
-    const key = toDateKey(localDate);
-    const existing = grouped.get(key) ?? [];
-    existing.push(event);
-    grouped.set(key, existing);
   }
 
   return grouped;

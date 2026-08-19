@@ -246,6 +246,7 @@ describe('dashboard api hooks', () => {
     expect(partitions.upcomingEvents).toEqual([active]);
     expect(partitions.pinnedEvents).toEqual([]);
     expect(partitions.recentEvents).toEqual([]);
+    expect(partitions.pinnedPerformances).toEqual([]);
     expect(filterCancelledDashboardEvents([active, cancelled])).toEqual([active]);
   });
 });

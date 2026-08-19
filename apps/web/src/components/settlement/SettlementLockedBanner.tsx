@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFilePdf } from '@fortawesome/free-solid-svg-icons';
 import { openSettlementPdfUrl, useSettlementPdfLink } from '@/api/settlement';
 
 interface SettlementLockedBannerProps {
@@ -61,10 +63,12 @@ export function SettlementLockedBanner({
       <span>This event is frozen. Ledger edits are read-only.</span>
       <button
         type="button"
+        className="btn-icon-label"
         data-testid="settlement-pdf-link"
         disabled={isBusy}
         onClick={() => void openPdf()}
       >
+        {!isBusy ? <FontAwesomeIcon icon={faFilePdf} aria-hidden="true" /> : null}
         {isBusy ? 'Loading PDF…' : 'View Settlement PDF'}
       </button>
       {openError && (

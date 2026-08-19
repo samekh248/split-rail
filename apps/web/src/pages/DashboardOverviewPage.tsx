@@ -25,6 +25,11 @@ import {
 } from '@/api/dashboard';
 import { useUserProfile } from '@/api/user';
 import {
+  usePinProgrammingBlock,
+  useUnpinProgrammingBlock,
+} from '@/api/festivals';
+import { navigateToFestivalItinerary } from '@/lib/festivalItineraryRoute';
+import {
   eventHasBottleneckAlerts,
   filterRecentEventsByBottleneck,
 } from '@/lib/eventCardSummary';
@@ -37,6 +42,7 @@ const EMPTY_PERMISSIONS: PermissionsDto = {};
 
 const EMPTY_PARTITIONS: MergedDashboardPartitions = {
   pinnedEvents: [],
+  pinnedPerformances: [],
   tonightEvents: [],
   upcomingEvents: [],
   recentEvents: [],
@@ -45,6 +51,7 @@ const EMPTY_PARTITIONS: MergedDashboardPartitions = {
 function hasAnyDashboardEvents(partitions: MergedDashboardPartitions): boolean {
   return (
     partitions.pinnedEvents.length > 0
+    || partitions.pinnedPerformances.length > 0
     || partitions.tonightEvents.length > 0
     || partitions.upcomingEvents.length > 0
     || partitions.recentEvents.length > 0
@@ -61,6 +68,8 @@ export function DashboardOverviewPage() {
   const dashboardQuery = isAllVenuesSelected ? allVenuesDashboard : singleVenueDashboard;
   const pinEvent = usePinEvent();
   const unpinEvent = useUnpinEvent();
+  const pinBlock = usePinProgrammingBlock();
+  const unpinBlock = useUnpinProgrammingBlock();
   const [pinError, setPinError] = useState<string | null>(null);
   const [bottleneckFilterActive, setBottleneckFilterActive] = useState(false);
 
@@ -202,6 +211,31 @@ export function DashboardOverviewPage() {
     );
   };
 
+  const handlePerformancePinToggle = (
+    venueId: string,
+    eventId: string,
+    blockId: string,
+    currentlyPinned: boolean,
+  ) => {
+    if (!venueId || !eventId || !blockId) {
+      return;
+    }
+    setPinError(null);
+    const mutation = currentlyPinned ? unpinBlock : pinBlock;
+    mutation.mutate(
+      { venueId, eventId, blockId },
+      {
+        onError: (error) => {
+          setPinError(error instanceof Error ? error.message : 'Unable to update pin. Please try again.');
+        },
+      },
+    );
+  };
+
+  const handlePerformanceActivate = (venueId: string, eventId: string) => {
+    navigateToFestivalItinerary(venueId, eventId);
+  };
+
   const zoneProps = {
     permissions,
     onQuickLink: handleQuickLink,
@@ -306,7 +340,13 @@ export function DashboardOverviewPage() {
         <>
           {dashboardActionWidgets}
           <div className="dashboard-overview__zones" data-testid="dashboard-overview">
-            <PinnedEventsSection events={partitions.pinnedEvents} {...zoneProps} />
+            <PinnedEventsSection
+              events={partitions.pinnedEvents}
+              performances={partitions.pinnedPerformances}
+              onPerformancePinToggle={handlePerformancePinToggle}
+              onPerformanceActivate={handlePerformanceActivate}
+              {...zoneProps}
+            />
             <TonightHeroBanner events={partitions.tonightEvents} {...zoneProps} />
             <UpcomingEventsSection events={partitions.upcomingEvents} {...zoneProps} />
             <RecentEventsSection

@@ -37,6 +37,7 @@ describe('QboIntegrationCard', () => {
 
     expect(screen.getByTestId('qbo-integration-card')).toBeInTheDocument();
     expect(screen.getByTestId('qbo-connect-button')).toHaveTextContent('Connect to QuickBooks');
+    expect(screen.getByTestId('qbo-connect-button').closest('.section-header__actions')).toBeInTheDocument();
   });
 
   it('renders connected state with metadata and force pull', () => {
@@ -75,5 +76,6 @@ describe('QboIntegrationCard', () => {
 
     expect(screen.getByTestId('qbo-integration-expired-badge')).toBeInTheDocument();
     expect(screen.getByTestId('qbo-connect-button')).toHaveTextContent('Reconnect to QuickBooks');
+    expect(screen.getByTestId('qbo-connect-button').closest('.section-header__actions')).toBeInTheDocument();
   });
 });

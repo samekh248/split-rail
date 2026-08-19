@@ -107,7 +107,7 @@ export function VenuesPage() {
 
   return (
     <main className="venues-page" data-testid="venues-page">
-      <header className="venues-page__header">
+      <header className="venues-page__header section-header">
         <h1 className="venues-page__title">Venues</h1>
         <div className="venues-page__actions">
           {showControls && !hasRegions ? <VenuesPageControls {...controlsProps} /> : null}

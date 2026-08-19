@@ -169,7 +169,7 @@ export function RegionDeleteResolutionModal({
           </button>
           <button
             type="button"
-            className="team-confirm__danger btn-icon-label"
+            className="btn-primary--compact btn-primary--danger btn-icon-label"
             data-testid="region-delete-resolution-confirm"
             onClick={() => void handleConfirm()}
             disabled={isPending || !canConfirm}

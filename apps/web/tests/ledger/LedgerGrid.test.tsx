@@ -125,6 +125,31 @@ describe('LedgerGrid', () => {
     expect(onLockBudget).toHaveBeenCalled();
   });
 
+  it('renders injected Sync Now in the hero action cluster with Lock Budget', () => {
+    render(
+      <LedgerGrid
+        ledger={mockLedger}
+        headerActions={<button type="button" data-testid="sync-now-button">Sync Now</button>}
+      />,
+    );
+
+    const cluster = screen.getByTestId('sync-now-button').closest('.section-header__actions');
+    expect(cluster).toBeInTheDocument();
+    expect(cluster).toContainElement(screen.getByTestId('lock-budget-btn'));
+    expect(screen.getByTestId('workspace-focus-sync')).toBeInTheDocument();
+  });
+
+  it('omits the action cluster when neither Sync Now nor Lock Budget is shown', () => {
+    render(
+      <LedgerGrid ledger={{ ...mockLedger, isBudgetLocked: true, status: 'SETTLED' }} />,
+    );
+
+    expect(screen.queryByTestId('lock-budget-btn')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument();
+    expect(document.querySelector('.section-header__actions')).not.toBeInTheDocument();
+    expect(screen.getByTestId('workspace-focus-sync')).toBeInTheDocument();
+  });
+
   it('shows variance banner when reconciled rows have non-zero derived variance', () => {
     const ledgerWithVariance: LedgerGridResponse = {
       ...mockLedger,

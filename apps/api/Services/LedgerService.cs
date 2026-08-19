@@ -469,7 +469,8 @@ public class LedgerService
             evt.Artists.OrderBy(a => a.PerformanceOrder).Select(ToArtistDto).ToList(),
             new LedgerSummaryDto(grossRevenue, totalDeductions, netShowRevenue),
             evt.SettledAt,
-            !string.IsNullOrWhiteSpace(evt.SettlementPdfUrl));
+            !string.IsNullOrWhiteSpace(evt.SettlementPdfUrl),
+            evt.EndDate?.ToString("yyyy-MM-dd"));
     }
 
     private async Task<Event> LoadEventForReadAsync(

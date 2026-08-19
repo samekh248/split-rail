@@ -575,12 +575,13 @@ public class ProgrammingBlockService
             .Include(b => b.FestivalArtist)
             .FirstAsync(b => b.Id == blockId, cancellationToken);
 
-        return ToResponse(row, warnings);
+        return ToResponse(row, warnings, await IsBlockPinnedAsync(blockId, cancellationToken));
     }
 
     internal static ProgrammingBlockResponse ToResponse(
         ProgrammingBlock block,
-        IReadOnlyList<FestivalWarning> warnings) =>
+        IReadOnlyList<FestivalWarning> warnings,
+        bool isPinned = false) =>
         new(
             block.Id,
             block.EventId,
@@ -602,5 +603,14 @@ public class ProgrammingBlockService
             block.Description,
             block.LoadInTime?.ToString("HH:mm"),
             block.SoundcheckTime?.ToString("HH:mm"),
-            warnings);
+            warnings,
+            isPinned);
+
+    private async Task<bool> IsBlockPinnedAsync(Guid blockId, CancellationToken cancellationToken)
+    {
+        var userId = _guard.RequireUserId();
+        return await _db.UserProgrammingBlockPins
+            .AsNoTracking()
+            .AnyAsync(p => p.UserId == userId && p.ProgrammingBlockId == blockId, cancellationToken);
+    }
 }

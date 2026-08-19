@@ -1,4 +1,6 @@
 import { deriveLifecyclePhase } from '@/lib/eventLifecycle';
+import { effectiveEndDate } from '@/lib/eventDateRange';
+import { parseEventLocalDate } from '@/lib/upcomingEventsCalendar';
 import { isEventPinned } from '@/lib/pinnedEventStorage';
 import type { EventResponse } from '@/types/generated-api';
 
@@ -17,26 +19,15 @@ const PHASE_PRIORITY: Record<ReturnType<typeof deriveLifecyclePhase>, number> = 
 };
 
 function parseEventDate(eventDate: string | null | undefined): Date | null {
-  if (!eventDate) {
-    return null;
-  }
-  const [year, month, day] = eventDate.split('-').map(Number);
-  if (!year || !month || !day) {
-    return null;
-  }
-  return new Date(year, month - 1, day);
+  return parseEventLocalDate(eventDate);
+}
+
+function lastOccupiedDate(event: EventResponse): Date | null {
+  return parseEventDate(effectiveEndDate(event.eventDate, event.endDate));
 }
 
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
-
-function isSameCalendarDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear()
-    && a.getMonth() === b.getMonth()
-    && a.getDate() === b.getDate()
-  );
 }
 
 function addCalendarDays(date: Date, days: number): Date {
@@ -71,8 +62,9 @@ export function filterTonightEvents(events: EventResponse[], now: Date = new Dat
   const today = startOfDay(now);
   return events
     .filter((event) => {
-      const parsed = parseEventDate(event.eventDate);
-      return parsed ? isSameCalendarDay(parsed, today) : false;
+      const start = parseEventDate(event.eventDate);
+      const end = lastOccupiedDate(event);
+      return start && end ? start <= today && end >= today : false;
     })
     .sort((a, b) => compareTonightPriority(a, b, now));
 }
@@ -84,7 +76,7 @@ export function partitionRecentEvents(events: EventResponse[], now: Date = new D
 
   return events
     .filter((event) => {
-      const parsed = parseEventDate(event.eventDate);
+      const parsed = lastOccupiedDate(event);
       if (!parsed) {
         return false;
       }

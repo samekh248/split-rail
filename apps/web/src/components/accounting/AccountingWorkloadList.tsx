@@ -1,4 +1,5 @@
 import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
+import { formatIsoDateRange } from '@/lib/eventDateRange';
 import type { AccountingWorkloadEvent } from '@/lib/accountingWorkload';
 
 export interface AccountingWorkloadListProps {
@@ -27,7 +28,9 @@ export function AccountingWorkloadList({ events }: AccountingWorkloadListProps) 
             <div className="accounting-workload-list__summary">
               <div className="accounting-workload-list__details">
                 <span className="accounting-workload-list__title-text">{event.title}</span>
-                <span className="accounting-workload-list__date">{event.eventDate}</span>
+                <span className="accounting-workload-list__date">
+                  {formatIsoDateRange(event.eventDate, event.endDate)}
+                </span>
               </div>
               {event.unmappedCount > 0 ? (
                 <span

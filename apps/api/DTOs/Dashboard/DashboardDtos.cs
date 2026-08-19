@@ -19,7 +19,22 @@ public record EventCardDto(
     bool HasVarianceConcern,
     int UnmappedCount,
     DateTimeOffset? LastSyncedAt,
-    string BookingPlacementStatus = "CONFIRMED");
+    string BookingPlacementStatus = "CONFIRMED",
+    string EventType = "STANDARD",
+    string? EndDate = null);
+
+public record PinnedPerformanceDto(
+    Guid BlockId,
+    Guid EventId,
+    Guid VenueId,
+    string FestivalTitle,
+    string Title,
+    string DayDate,
+    string StartTime,
+    string EndTime,
+    string StageName,
+    string? ArtistName,
+    bool IsPinned = true);
 
 public record UnmappedEventSummaryDto(
     Guid EventId,
@@ -50,4 +65,5 @@ public record DashboardResponse(
     IReadOnlyList<EventCardDto> RecentEvents,
     IReadOnlyList<EventCardDto> UpcomingEvents,
     ActionCenterDto ActionCenter,
-    FinancialHealthDto FinancialHealth);
+    FinancialHealthDto FinancialHealth,
+    IReadOnlyList<PinnedPerformanceDto>? PinnedPerformances = null);

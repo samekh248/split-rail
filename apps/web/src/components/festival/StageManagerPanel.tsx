@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLayerGroup, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { useCreateStage, useDeleteStage, useStages } from '@/api/festivals';
+import { StageDeleteConfirm } from '@/components/festival/StageDeleteConfirm';
 
 export interface StageManagerPanelProps {
   venueId: string;
@@ -28,6 +29,12 @@ export function StageManagerPanel({ venueId, eventId, canManage }: StageManagerP
 
   const [newStageName, setNewStageName] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+    blockCount: number;
+  } | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const stages = stagesQuery.data ?? [];
   const isLastStage = stages.length <= 1;
@@ -47,12 +54,20 @@ export function StageManagerPanel({ venueId, eventId, canManage }: StageManagerP
     }
   };
 
-  const handleDelete = async (stageId: string) => {
+  const handleDeleteConfirm = async () => {
+    if (!deleteTarget) {
+      return;
+    }
+
+    setDeleteError(null);
     setError(null);
     try {
-      await deleteStage.mutateAsync(stageId);
+      await deleteStage.mutateAsync(deleteTarget.id);
+      setDeleteTarget(null);
     } catch (err) {
-      setError(mapStageError(err));
+      const message = mapStageError(err);
+      setDeleteError(message);
+      setError(message);
     }
   };
 
@@ -70,29 +85,52 @@ export function StageManagerPanel({ venueId, eventId, canManage }: StageManagerP
         </p>
       ) : null}
 
-      <ul className="stage-manager__list">
-        {stages.map((stage) => (
-          <li key={stage.id} className="stage-manager__item" data-testid={`stage-row-${stage.id}`}>
-            <span className="stage-manager__name">{stage.name}</span>
-            <span className="stage-manager__count">
-              {stage.blockCount} {stage.blockCount === 1 ? 'block' : 'blocks'}
-            </span>
-            {canManage ? (
-              <button
-                type="button"
-                className="stage-manager__delete btn-icon-label"
-                data-testid={`stage-delete-${stage.id}`}
-                onClick={() => void handleDelete(stage.id ?? '')}
-                disabled={deleteStage.isPending || isLastStage}
-                title={isLastStage ? 'A festival must keep at least one stage.' : undefined}
-              >
-                <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
-                <span className="sr-only">Delete {stage.name}</span>
-              </button>
-            ) : null}
-          </li>
-        ))}
-      </ul>
+      <div className="stage-manager__table-wrap">
+        <table className="ledger-table stage-manager__table">
+          <thead>
+            <tr>
+              <th scope="col">Stage</th>
+              <th scope="col">Blocks</th>
+              {canManage ? (
+                <th scope="col" className="stage-manager__actions-col">
+                  Actions
+                </th>
+              ) : null}
+            </tr>
+          </thead>
+          <tbody>
+            {stages.map((stage) => (
+              <tr key={stage.id} data-testid={`stage-row-${stage.id}`}>
+                <td className="stage-manager__name">{stage.name}</td>
+                <td className="stage-manager__count">
+                  {stage.blockCount} {stage.blockCount === 1 ? 'block' : 'blocks'}
+                </td>
+                {canManage ? (
+                  <td className="stage-manager__actions">
+                    <button
+                      type="button"
+                      className="stage-manager__delete btn-danger-outline btn-icon-label"
+                      data-testid={`stage-delete-${stage.id}`}
+                      onClick={() =>
+                        setDeleteTarget({
+                          id: stage.id ?? '',
+                          name: stage.name ?? 'Stage',
+                          blockCount: stage.blockCount ?? 0,
+                        })
+                      }
+                      disabled={deleteStage.isPending || isLastStage}
+                      title={isLastStage ? 'A festival must keep at least one stage.' : undefined}
+                    >
+                      <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
+                      Delete
+                    </button>
+                  </td>
+                ) : null}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {canManage ? (
         <div className="stage-manager__add">
@@ -102,7 +140,7 @@ export function StageManagerPanel({ venueId, eventId, canManage }: StageManagerP
           <input
             id="stage-manager-new-name"
             type="text"
-            className="stage-manager__input"
+            className="form-field__input stage-manager__input"
             value={newStageName}
             onChange={(event) => setNewStageName(event.target.value)}
             placeholder="e.g. Rodeo Arena"
@@ -111,7 +149,7 @@ export function StageManagerPanel({ venueId, eventId, canManage }: StageManagerP
           />
           <button
             type="button"
-            className="stage-manager__add-button btn-icon-label"
+            className="stage-manager__add-button btn-primary--compact btn-icon-label"
             onClick={() => void handleAdd()}
             disabled={createStage.isPending}
             data-testid="stage-manager-add"
@@ -121,6 +159,22 @@ export function StageManagerPanel({ venueId, eventId, canManage }: StageManagerP
           </button>
         </div>
       ) : null}
+
+      <StageDeleteConfirm
+        stageName={deleteTarget?.name ?? 'Stage'}
+        blockCount={deleteTarget?.blockCount ?? 0}
+        open={Boolean(deleteTarget)}
+        isPending={deleteStage.isPending}
+        error={deleteError}
+        onCancel={() => {
+          if (deleteStage.isPending) {
+            return;
+          }
+          setDeleteTarget(null);
+          setDeleteError(null);
+        }}
+        onConfirm={() => void handleDeleteConfirm()}
+      />
     </section>
   );
 }

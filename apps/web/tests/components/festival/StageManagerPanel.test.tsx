@@ -73,6 +73,20 @@ describe('StageManagerPanel', () => {
     expect(screen.getByTestId('stage-delete-stage-2')).toBeEnabled();
   });
 
+  it('requires confirmation before deleting a stage', async () => {
+    mockStages.data = [mainStage, rodeoStage];
+    render(<StageManagerPanel venueId="v1" eventId="e1" canManage />, { wrapper: Wrapper });
+
+    await userEvent.click(screen.getByTestId('stage-delete-stage-2'));
+
+    expect(screen.getByTestId('stage-delete-confirm')).toBeInTheDocument();
+    expect(mockDelete.mutateAsync).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByTestId('stage-delete-confirm-button'));
+
+    expect(mockDelete.mutateAsync).toHaveBeenCalledWith('stage-2');
+  });
+
   it('surfaces the server message when a stage delete is rejected', async () => {
     mockStages.data = [mainStage, rodeoStage];
     mockDelete.mutateAsync.mockRejectedValue(
@@ -81,10 +95,12 @@ describe('StageManagerPanel', () => {
     render(<StageManagerPanel venueId="v1" eventId="e1" canManage />, { wrapper: Wrapper });
 
     await userEvent.click(screen.getByTestId('stage-delete-stage-2'));
+    await userEvent.click(screen.getByTestId('stage-delete-confirm-button'));
 
     expect(await screen.findByTestId('stage-manager-error')).toHaveTextContent(
       /programming block/,
     );
+    expect(screen.getByTestId('stage-delete-confirm')).toBeInTheDocument();
   });
 
   it('hides management controls without permission', () => {

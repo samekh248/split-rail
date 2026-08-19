@@ -9,6 +9,7 @@ import { BOOKING_PREVIEW_TOOLTIP, eventCardBookingBadgeClass, getBookingStatusLa
 import type { BookingPlacementStatus } from '@/lib/bookingCalendar';
 import { resolveEventCardQuickLinks, type WorkspaceFocus } from '@/lib/eventCardQuickLinks';
 import { eventHasNegativeVariance } from '@/lib/eventCardVariance';
+import { formatEventDateRange } from '@/lib/eventDateRange';
 import type { EventCardDto, EventResponse, LineItemDto, PermissionsDto } from '@/types/generated-api';
 import { EventCardProgressBar } from '@/components/dashboard/EventCardProgressBar';
 import { EventCardBadgeList, type EventCardTag } from '@/components/dashboard/EventCardBadgeList';
@@ -33,19 +34,8 @@ function isEventCardDto(event: EventCardEvent): event is EventCardDto {
   return 'hasVarianceConcern' in event || 'unmappedCount' in event || 'isPinned' in event;
 }
 
-function formatEventDate(eventDate: string | null | undefined): string {
-  if (!eventDate) {
-    return 'Date TBD';
-  }
-  const [year, month, day] = eventDate.split('-').map(Number);
-  if (!year || !month || !day) {
-    return 'Date TBD';
-  }
-  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+function eventEndDate(event: EventCardEvent): string | null | undefined {
+  return 'endDate' in event ? event.endDate : undefined;
 }
 
 export function EventCard({
@@ -78,6 +68,8 @@ export function EventCard({
   const bookingBadgeClass = eventCardBookingBadgeClass(
     (bookingStatus ?? 'CONFIRMED') as BookingPlacementStatus,
   );
+  const eventType = 'eventType' in event ? event.eventType : undefined;
+  const dateLabel = formatEventDateRange(event.eventDate, eventEndDate(event));
 
   const quickLinksNav = quickLinks.length > 0 ? (
     <nav className="event-card__quick-links" aria-label="Event actions">
@@ -108,6 +100,15 @@ export function EventCard({
       title: BOOKING_PREVIEW_TOOLTIP,
     },
   ];
+
+  if (eventType === 'FESTIVAL') {
+    tags.push({
+      key: 'festival',
+      label: 'Festival',
+      testId: `event-card-festival-${eventId}`,
+      className: 'event-card__festival-badge',
+    });
+  }
 
   if (showVariance) {
     tags.push({
@@ -150,7 +151,7 @@ export function EventCard({
           <h3 className="event-card__title">{title}</h3>
           {!compact && (
             <p className="event-card__date" data-testid={`event-card-date-${eventId}`}>
-              {formatEventDate(event.eventDate)}
+              {dateLabel}
             </p>
           )}
         </div>
@@ -178,7 +179,7 @@ export function EventCard({
       {compact ? (
         <div className="event-card__meta-row">
           <span className="event-card__date" data-testid={`event-card-date-${eventId}`}>
-            {formatEventDate(event.eventDate)}
+            {dateLabel}
           </span>
           {tags.length > 1 && (
             <EventCardBadgeList tags={tags} eventId={eventId} eventDate={event.eventDate} />

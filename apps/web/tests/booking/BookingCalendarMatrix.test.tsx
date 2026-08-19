@@ -126,4 +126,66 @@ describe('BookingCalendarMatrix', () => {
     await userEvent.click(screen.getByTestId(`booking-cell-quick-add-${date}`));
     expect(onCellQuickAdd).toHaveBeenCalledWith(date);
   });
+
+  it('renders a multi-day festival as one spanning bar', () => {
+    const festival: BookingPlacement = {
+      ...makePlacement('fest', '2026-06-15', 'Summer Fest'),
+      endDate: '2026-06-17',
+      eventType: 'FESTIVAL',
+    };
+
+    render(
+      <BookingCalendarMatrix
+        month="2026-06"
+        placementsByDate={{
+          '2026-06-15': [festival],
+          '2026-06-16': [festival],
+          '2026-06-17': [festival],
+        }}
+        onDateClick={vi.fn()}
+        onPlacementClick={vi.fn()}
+      />,
+    );
+
+    const span = screen.getByTestId('booking-calendar-span-fest-2026-06-15');
+    expect(span).toHaveAttribute('data-span-days', '3');
+    expect(span).toHaveClass('booking-calendar-matrix__event--span');
+    expect(screen.getAllByText('Summer Fest')).toHaveLength(1);
+  });
+
+  it('continues a weekend-wrapping festival on the next week', () => {
+    const festival: BookingPlacement = {
+      ...makePlacement('fest', '2026-06-19', 'Weekend Fest'),
+      endDate: '2026-06-21',
+      eventType: 'FESTIVAL',
+    };
+
+    render(
+      <BookingCalendarMatrix
+        month="2026-06"
+        placementsByDate={{
+          '2026-06-19': [festival],
+          '2026-06-20': [festival],
+          '2026-06-21': [festival],
+        }}
+        onDateClick={vi.fn()}
+        onPlacementClick={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId('booking-calendar-span-fest-2026-06-19')).toHaveAttribute(
+      'data-span-days',
+      '2',
+    );
+    expect(screen.getByTestId('booking-calendar-span-fest-2026-06-21')).toHaveAttribute(
+      'data-span-days',
+      '1',
+    );
+    expect(screen.getByTestId('booking-calendar-span-fest-2026-06-19')).toHaveClass(
+      'booking-calendar-matrix__event--continues-after',
+    );
+    expect(screen.getByTestId('booking-calendar-span-fest-2026-06-21')).toHaveClass(
+      'booking-calendar-matrix__event--continues-before',
+    );
+  });
 });

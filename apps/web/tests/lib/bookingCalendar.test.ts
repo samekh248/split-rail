@@ -6,6 +6,7 @@ import {
   getUpcomingPlacementsBounds,
   groupPlacementsByDate,
   groupPlacementsByDateAndVenue,
+  layoutWeekPlacementLanes,
   MAX_CALENDAR_QUERY_SPAN_DAYS,
   pickNextUpcomingPlacements,
   previewConflict,
@@ -72,6 +73,73 @@ describe('bookingCalendar', () => {
     );
 
     expect(upcoming.map((item) => item.eventId)).toEqual(['e2', 'e3', 'e4']);
+  });
+
+  it('groupPlacementsByDate repeats a festival on every occupied day', () => {
+    const grouped = groupPlacementsByDate([
+      placement({
+        eventId: 'fest',
+        eventDate: '2026-06-14',
+        endDate: '2026-06-16',
+        eventType: 'FESTIVAL',
+      }),
+    ]);
+
+    expect(grouped['2026-06-14']?.map((item) => item.eventId)).toEqual(['fest']);
+    expect(grouped['2026-06-15']?.map((item) => item.eventId)).toEqual(['fest']);
+    expect(grouped['2026-06-16']?.map((item) => item.eventId)).toEqual(['fest']);
+    expect(grouped['2026-06-17']).toBeUndefined();
+  });
+
+  it('layoutWeekPlacementLanes spans a festival across contiguous week columns', () => {
+    const grouped = groupPlacementsByDate([
+      placement({
+        eventId: 'fest',
+        eventDate: '2026-06-15',
+        endDate: '2026-06-17',
+        eventType: 'FESTIVAL',
+      }),
+    ]);
+    const lanes = layoutWeekPlacementLanes(
+      ['2026-06-14', '2026-06-15', '2026-06-16', '2026-06-17', '2026-06-18', '2026-06-19', '2026-06-20'],
+      grouped,
+    );
+
+    expect(lanes).toEqual([
+      expect.objectContaining({
+        startIndex: 1,
+        span: 3,
+        lane: 0,
+        continuesBefore: false,
+        continuesAfter: false,
+      }),
+    ]);
+  });
+
+  it('layoutWeekPlacementLanes splits a festival at the week boundary', () => {
+    const grouped = groupPlacementsByDate([
+      placement({
+        eventId: 'fest',
+        eventDate: '2026-06-19',
+        endDate: '2026-06-21',
+        eventType: 'FESTIVAL',
+      }),
+    ]);
+    const firstWeek = layoutWeekPlacementLanes(
+      ['2026-06-14', '2026-06-15', '2026-06-16', '2026-06-17', '2026-06-18', '2026-06-19', '2026-06-20'],
+      grouped,
+    );
+    const secondWeek = layoutWeekPlacementLanes(
+      ['2026-06-21', '2026-06-22', '2026-06-23', '2026-06-24', '2026-06-25', '2026-06-26', '2026-06-27'],
+      grouped,
+    );
+
+    expect(firstWeek).toEqual([
+      expect.objectContaining({ startIndex: 5, span: 2, continuesBefore: false, continuesAfter: true }),
+    ]);
+    expect(secondWeek).toEqual([
+      expect.objectContaining({ startIndex: 0, span: 1, continuesBefore: true, continuesAfter: false }),
+    ]);
   });
 
   it('groupPlacementsByDate sorts each day', () => {

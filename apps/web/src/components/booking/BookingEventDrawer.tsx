@@ -6,6 +6,8 @@ import { useDashboard, usePinEvent, useUnpinEvent } from '@/api/dashboard';
 import { useUserProfile } from '@/api/user';
 import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
 import { ModalHeader } from '@/components/shell/ModalHeader';
+import { KebabMenu } from '@/components/shell/KebabMenu';
+import { formatEventDateRangeLong } from '@/lib/eventDateRange';
 import type { BookingPlacement } from '@/lib/bookingCalendar';
 import { placementStatusLabel } from '@/components/booking/BookingCalendarMatrix';
 import type { DashboardResponse } from '@/types/generated-api';
@@ -180,6 +182,9 @@ export function BookingEventDrawer({
     </button>
   ) : null;
 
+  const showCancelAction = placement.eventType !== 'FESTIVAL' || isHold;
+  const cancelActionLabel = isHold ? 'Release hold' : 'Cancel booking';
+
   return (
     <div
       className="booking-event-drawer"
@@ -201,30 +206,51 @@ export function BookingEventDrawer({
       {mode === 'detail' ? (
         <div>
           <p>{placement.venueName}</p>
-          <p>{placement.eventDate}</p>
+          <p className="booking-event-drawer__date" data-testid="booking-event-drawer-date">
+            {formatEventDateRangeLong(placement.eventDate, placement.endDate)}
+          </p>
           <p>{placementStatusLabel(placement.bookingPlacementStatus)}</p>
-          <div className="booking-event-drawer__actions">
-            <button type="button" onClick={() => setMode('edit')}>
-              Edit
-            </button>
-            {isHold ? (
-              <button type="button" onClick={handlePromote}>
-                Promote
-              </button>
-            ) : null}
+          <div className="booking-event-drawer__actions section-header">
+            <div className="booking-event-drawer__secondary-actions">
+              {placement.eventType === 'FESTIVAL' ? null : (
+                <button type="button" onClick={() => setMode('edit')}>
+                  Edit
+                </button>
+              )}
+              {isHold ? (
+                <button type="button" onClick={handlePromote}>
+                  Promote
+                </button>
+              ) : null}
+              {showCancelAction ? (
+                <KebabMenu
+                  ariaLabel="More booking actions"
+                  testId="booking-event-drawer-actions-menu"
+                  items={[
+                    {
+                      label: cancelActionLabel,
+                      testId: 'booking-event-drawer-cancel-booking',
+                      destructive: true,
+                      onSelect: () => void handleDelete(),
+                    },
+                  ]}
+                />
+              ) : null}
+            </div>
             {placement.workspaceAllowed ? (
-              <button
-                type="button"
-                onClick={() =>
-                  navigateToEventWorkspace(placement.venueId, placement.eventId)
-                }
-              >
-                Open workspace
-              </button>
+              <div className="section-header__actions">
+                <button
+                  type="button"
+                  className="btn-primary"
+                  data-testid="booking-event-drawer-open-workspace"
+                  onClick={() =>
+                    navigateToEventWorkspace(placement.venueId, placement.eventId)
+                  }
+                >
+                  Open workspace
+                </button>
+              </div>
             ) : null}
-            <button type="button" onClick={handleDelete}>
-              {isHold ? 'Release hold' : 'Cancel booking'}
-            </button>
           </div>
         </div>
       ) : (
@@ -238,10 +264,16 @@ export function BookingEventDrawer({
             Title
             <input value={title} onChange={(event) => setTitle(event.target.value)} />
           </label>
-          <label>
-            Date
-            <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} />
-          </label>
+          {placement.eventType === 'FESTIVAL' ? (
+            <p className="booking-event-drawer__date" data-testid="booking-event-drawer-date">
+              {formatEventDateRangeLong(placement.eventDate, placement.endDate)}
+            </p>
+          ) : (
+            <label>
+              Date
+              <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} />
+            </label>
+          )}
           {error ? <p role="alert">{error}</p> : null}
           <button type="submit">Save</button>
         </form>

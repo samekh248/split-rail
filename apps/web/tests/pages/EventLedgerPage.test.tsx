@@ -122,6 +122,7 @@ vi.mock('@/api/settlement', () => ({
 
 import { useLedger } from '@/api/ledger';
 import { useCanEditLedgerStructure } from '@/hooks/useCanEditLedgerStructure';
+import { useCanTriggerQboSync } from '@/api/user';
 
 function renderPage(focus?: WorkspaceFocus | null) {
   const queryClient = new QueryClient({
@@ -140,6 +141,7 @@ describe('EventLedgerPage', () => {
     mutateAsync.mockReset();
     mutateAsync.mockResolvedValue(mockLedger);
     scrollToWorkspaceFocusMock.mockClear();
+    vi.mocked(useCanTriggerQboSync).mockReturnValue(false);
   });
 
   it('shows loading state', () => {
@@ -341,6 +343,36 @@ describe('EventLedgerPage', () => {
     await waitFor(() => {
       expect(scrollToWorkspaceFocusMock).toHaveBeenCalledWith('sync');
     });
+    expect(screen.getByTestId('workspace-focus-sync')).toBeInTheDocument();
+  });
+
+  it('places Sync Now in the ledger hero and omits the floating toolbar', () => {
+    vi.mocked(useCanTriggerQboSync).mockReturnValue(true);
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: mockLedger,
+    } as ReturnType<typeof useLedger>);
+
+    renderPage();
+
+    expect(document.querySelector('.event-ledger-page__toolbar')).not.toBeInTheDocument();
+    expect(screen.getByTestId('sync-now-button').closest('.section-header__actions')).toBeInTheDocument();
+    expect(screen.getByTestId('workspace-focus-sync')).toBeInTheDocument();
+  });
+
+  it('omits Sync Now without leaving an empty toolbar when sync is not permitted', () => {
+    vi.mocked(useCanTriggerQboSync).mockReturnValue(false);
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: mockLedger,
+    } as ReturnType<typeof useLedger>);
+
+    renderPage();
+
+    expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument();
+    expect(document.querySelector('.event-ledger-page__toolbar')).not.toBeInTheDocument();
     expect(screen.getByTestId('workspace-focus-sync')).toBeInTheDocument();
   });
 

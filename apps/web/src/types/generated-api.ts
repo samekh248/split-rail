@@ -2266,6 +2266,64 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/venues/{venueId}/festivals/{eventId}/blocks/{blockId}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    venueId: string;
+                    eventId: string;
+                    blockId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/venues/{venueId}/festivals/{eventId}/itinerary": {
         parameters: {
             query?: never;
@@ -5292,6 +5350,8 @@ export interface components {
             qboTagName?: string | null;
             hasLineItems?: boolean;
             workspaceAllowed?: boolean;
+            endDate?: string | null;
+            eventType?: string | null;
         };
         ChangeRoleRequest: {
             /** Format: uuid */
@@ -5453,6 +5513,7 @@ export interface components {
             upcomingEvents?: components["schemas"]["EventCardDto"][] | null;
             actionCenter?: components["schemas"]["ActionCenterDto"];
             financialHealth?: components["schemas"]["FinancialHealthDto"];
+            pinnedPerformances?: components["schemas"]["PinnedPerformanceDto"][] | null;
         };
         DeleteRegionRequest: {
             /** Format: uuid */
@@ -5502,6 +5563,8 @@ export interface components {
             /** Format: date-time */
             lastSyncedAt?: string | null;
             bookingPlacementStatus?: string | null;
+            eventType?: string | null;
+            endDate?: string | null;
         };
         EventResponse: {
             /** Format: uuid */
@@ -5529,6 +5592,7 @@ export interface components {
             workspaceAllowed?: boolean;
             eventType?: string | null;
             endDate?: string | null;
+            isPinned?: boolean;
         };
         ExpectedSettlementDto: {
             computedNetPayout?: string | null;
@@ -5843,6 +5907,7 @@ export interface components {
             /** Format: date-time */
             settledAt?: string | null;
             settlementPdfAvailable?: boolean;
+            endDate?: string | null;
         };
         LedgerSummaryDto: {
             grossRevenue?: string;
@@ -5949,6 +6014,22 @@ export interface components {
             canOverrideSettlements?: boolean;
             canPublishPublicItinerary?: boolean;
         };
+        PinnedPerformanceDto: {
+            /** Format: uuid */
+            blockId?: string;
+            /** Format: uuid */
+            eventId?: string;
+            /** Format: uuid */
+            venueId?: string;
+            festivalTitle?: string | null;
+            title?: string | null;
+            dayDate?: string | null;
+            startTime?: string | null;
+            endTime?: string | null;
+            stageName?: string | null;
+            artistName?: string | null;
+            isPinned?: boolean;
+        };
         PreflightBlockerDto: {
             category?: string | null;
             message?: string | null;
@@ -5980,6 +6061,7 @@ export interface components {
             loadInTime?: string | null;
             soundcheckTime?: string | null;
             warnings?: components["schemas"]["FestivalWarning"][] | null;
+            isPinned?: boolean;
         };
         PublicItineraryResponse: {
             days?: components["schemas"]["FestivalDayDto"][] | null;
@@ -6563,6 +6645,7 @@ export type OrganizationQboSummaryDto = components['schemas']['OrganizationQboSu
 export type OrganizationResponse = components['schemas']['OrganizationResponse'];
 export type OrganizationSummaryDto = components['schemas']['OrganizationSummaryDto'];
 export type PermissionsDto = components['schemas']['PermissionsDto'];
+export type PinnedPerformanceDto = components['schemas']['PinnedPerformanceDto'];
 export type PreflightBlockerDto = components['schemas']['PreflightBlockerDto'];
 export type ProgrammingBlockResponse = components['schemas']['ProgrammingBlockResponse'];
 export type PublicItineraryResponse = components['schemas']['PublicItineraryResponse'];

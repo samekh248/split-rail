@@ -1,6 +1,8 @@
 import { useTriggerSync } from '@/api/qbo';
 import { useCanTriggerQboSync } from '@/api/user';
 import { useQueryClient } from '@tanstack/react-query';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowsRotate } from '@fortawesome/free-solid-svg-icons';
 import { ledgerKeys } from '@/api/ledger';
 import { qboKeys } from '@/api/qbo';
 
@@ -29,11 +31,12 @@ export function SyncNowButton({ venueId, eventId }: SyncNowButtonProps) {
   return (
     <button
       type="button"
-      className="sync-now-button btn-primary--compact"
+      className="sync-now-button btn-primary--compact btn-icon-label"
       data-testid="sync-now-button"
       disabled={triggerSync.isPending}
       onClick={() => void handleSync()}
     >
+      {!triggerSync.isPending ? <FontAwesomeIcon icon={faArrowsRotate} aria-hidden="true" /> : null}
       {triggerSync.isPending ? 'Syncing…' : 'Sync Now'}
     </button>
   );

@@ -28,8 +28,10 @@ vi.mock('@/pages/EventLedgerPage', () => ({
     eventId: string;
     focus?: string | null;
   }) => (
-    <div data-testid="mock-ledger-page" data-focus={focus ?? ''}>
-      {venueId}:{eventId}
+    <div data-testid="event-ledger-page">
+      <div data-testid="mock-ledger-page" data-focus={focus ?? ''}>
+        {venueId}:{eventId}
+      </div>
     </div>
   ),
 }));
@@ -422,5 +424,18 @@ describe('EventWorkspacePage', () => {
     await waitFor(() => {
       expect(screen.getByTestId('mock-ledger-page')).toHaveAttribute('data-focus', 'settlement');
     });
+  });
+
+  it('wraps the festival section and ledger in a shared event-workspace inset', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    const workspace = await screen.findByTestId('event-workspace');
+    expect(workspace).toContainElement(screen.getByTestId('festival-mode-card'));
+    expect(workspace).toContainElement(screen.getByTestId('event-ledger-page'));
   });
 });

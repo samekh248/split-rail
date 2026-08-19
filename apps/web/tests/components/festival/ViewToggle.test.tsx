@@ -10,13 +10,17 @@ describe('ViewToggle', () => {
 
   it('shows the active view label', () => {
     render(<ViewToggle mode="internal" onChange={vi.fn()} />);
-    expect(screen.getByTestId('festival-view-active-label')).toHaveTextContent('Internal view');
+    expect(screen.getByTestId('festival-view-active-label')).toHaveTextContent(
+      'Internal schedule with booking controls',
+    );
   });
 
   it('persists view mode via storage helper', () => {
     writeItineraryViewMode('public');
     render(<ViewToggle mode="public" onChange={vi.fn()} />);
-    expect(screen.getByTestId('festival-view-active-label')).toHaveTextContent('Public view');
+    expect(screen.getByTestId('festival-view-active-label')).toHaveTextContent(
+      'Public itinerary preview',
+    );
     expect(screen.getByTestId('festival-view-public')).toHaveAttribute('aria-pressed', 'true');
   });
 

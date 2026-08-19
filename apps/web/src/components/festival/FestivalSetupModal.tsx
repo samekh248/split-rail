@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faLayerGroup } from '@fortawesome/free-solid-svg-icons';
+import { faFloppyDisk, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { FormField } from '@/components/auth/FormField';
 import { SelectField } from '@/components/auth/SelectField';
 import { ModalHeader } from '@/components/shell/ModalHeader';
-import { useCreateFestival } from '@/api/festivals';
+import { useCreateFestival, useUpdateFestival } from '@/api/festivals';
 import { countFestivalDays, MAX_FESTIVAL_DAYS, validateFestivalRange } from '@/lib/festivalRange';
 import type { VenueResponse } from '@/types/generated-api';
 
@@ -15,12 +15,18 @@ export interface FestivalSetupModalProps {
   open: boolean;
   onClose: () => void;
   onCreated: (eventId: string) => void;
+  /** Edit an existing festival's name and date range. Distinct from convert (`existingEventId`). */
+  mode?: 'create' | 'edit';
+  /** Required when `mode` is `edit`. */
+  eventId?: string;
   /** When set, converts this standard event into a festival instead of creating a new one. */
   existingEventId?: string;
-  /** Pre-fills the name when converting an existing event. */
+  /** Pre-fills the name when converting or editing an existing event. */
   initialTitle?: string;
-  /** Pre-fills the start date when converting an existing event. */
+  /** Pre-fills the start date when converting or editing an existing event. */
   initialStartDate?: string;
+  /** Pre-fills the end date when editing an existing festival. */
+  initialEndDate?: string;
   /** Offers a venue choice when the caller is not already scoped to one venue. */
   venues?: VenueResponse[];
 }
@@ -42,20 +48,25 @@ export function FestivalSetupModal({
   open,
   onClose,
   onCreated,
+  mode = 'create',
+  eventId,
   existingEventId,
   initialTitle = '',
   initialStartDate = '',
+  initialEndDate = '',
   venues,
 }: FestivalSetupModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
+  const isEdit = mode === 'edit';
   const [selectedVenueId, setSelectedVenueId] = useState(venueId);
   const createFestival = useCreateFestival(selectedVenueId);
-  const showVenuePicker = !existingEventId && (venues?.length ?? 0) > 1;
+  const updateFestival = useUpdateFestival(selectedVenueId, eventId ?? '');
+  const showVenuePicker = !isEdit && !existingEventId && (venues?.length ?? 0) > 1;
 
   const [title, setTitle] = useState(initialTitle);
   const [startDate, setStartDate] = useState(initialStartDate);
-  const [endDate, setEndDate] = useState(initialStartDate);
+  const [endDate, setEndDate] = useState(initialEndDate || initialStartDate);
   const [titleError, setTitleError] = useState<string | undefined>();
   const [rangeError, setRangeError] = useState<string | undefined>();
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -67,7 +78,7 @@ export function FestivalSetupModal({
     setSelectedVenueId(venueId);
     setTitle(initialTitle);
     setStartDate(initialStartDate);
-    setEndDate(initialStartDate);
+    setEndDate(initialEndDate || initialStartDate);
     setTitleError(undefined);
     setRangeError(undefined);
     setSubmitError(null);
@@ -86,14 +97,14 @@ export function FestivalSetupModal({
       document.removeEventListener('keydown', handleKeyDown);
       previousFocusRef.current?.focus();
     };
-  }, [open, onClose, initialTitle, initialStartDate, venueId]);
+  }, [open, onClose, initialTitle, initialStartDate, initialEndDate, venueId]);
 
   if (!open) {
     return null;
   }
 
-  const isPending = createFestival.isPending;
-  const isConversion = Boolean(existingEventId);
+  const isPending = isEdit ? updateFestival.isPending : createFestival.isPending;
+  const isConversion = !isEdit && Boolean(existingEventId);
   const dayCount = countFestivalDays(startDate, endDate);
 
   const handleSubmit = async () => {
@@ -107,6 +118,17 @@ export function FestivalSetupModal({
 
     setSubmitError(null);
     try {
+      if (isEdit) {
+        const festival = await updateFestival.mutateAsync({
+          title: title.trim(),
+          startDate,
+          endDate,
+        });
+        onCreated(festival.eventId ?? eventId ?? '');
+        onClose();
+        return;
+      }
+
       const festival = await createFestival.mutateAsync({
         title: title.trim(),
         startDate,
@@ -126,7 +148,7 @@ export function FestivalSetupModal({
     <div className="welcome-modal__backdrop" onClick={onClose} role="presentation">
       <div
         ref={dialogRef}
-        className="welcome-modal team-modal festival-setup-modal"
+        className="welcome-modal venue-modal-form festival-setup-modal"
         role="dialog"
         aria-modal="true"
         aria-labelledby="festival-setup-title"
@@ -135,15 +157,17 @@ export function FestivalSetupModal({
         data-testid="festival-setup-modal"
       >
         <ModalHeader
-          title={isConversion ? 'Convert to festival' : 'Create festival'}
+          title={isEdit ? 'Edit festival' : isConversion ? 'Convert to festival' : 'Create festival'}
           titleId="festival-setup-title"
           onClose={onClose}
           closeDisabled={isPending}
         />
-        <p className="team-confirm__text">
-          {isConversion
-            ? 'Festival mode adds days, stages, and programming blocks. Your existing event and ledger are kept.'
-            : 'A festival spans multiple days with one or more stages.'}
+        <p className="team-modal__subtitle">
+          {isEdit
+            ? 'Update the festival name and dates. Changing dates updates the festival calendar span.'
+            : isConversion
+              ? 'Festival mode adds days, stages, and programming blocks. Your existing event and ledger are kept.'
+              : 'A festival spans multiple days with one or more stages.'}
         </p>
         {submitError ? (
           <p id={errorId} className="team-modal__error" role="alert">
@@ -176,39 +200,41 @@ export function FestivalSetupModal({
           disabled={isPending}
           describedBy={errorId}
         />
-        <FormField
-          id="festival-start-date"
-          label="Start date"
-          type="date"
-          value={startDate}
-          onChange={(value) => {
-            setStartDate(value);
-            if (!endDate || endDate < value) {
+        <div className="festival-setup-modal__dates">
+          <FormField
+            id="festival-start-date"
+            label="Start date"
+            type="date"
+            value={startDate}
+            onChange={(value) => {
+              setStartDate(value);
+              if (!endDate || endDate < value) {
+                setEndDate(value);
+              }
+            }}
+            required
+            disabled={isPending}
+          />
+          <FormField
+            id="festival-end-date"
+            label="End date"
+            type="date"
+            value={endDate}
+            onChange={(value) => {
               setEndDate(value);
-            }
-          }}
-          required
-          disabled={isPending}
-        />
-        <FormField
-          id="festival-end-date"
-          label="End date"
-          type="date"
-          value={endDate}
-          onChange={(value) => {
-            setEndDate(value);
-            setRangeError(validateFestivalRange(startDate, value));
-          }}
-          error={rangeError}
-          required
-          disabled={isPending}
-        />
+              setRangeError(validateFestivalRange(startDate, value));
+            }}
+            error={rangeError}
+            required
+            disabled={isPending}
+          />
+        </div>
         {!rangeError && dayCount !== null && dayCount >= 1 ? (
           <p className="festival-setup-modal__day-count" data-testid="festival-day-count">
             {dayCount} {dayCount === 1 ? 'day' : 'days'}
           </p>
         ) : null}
-        <div className="team-modal__actions">
+        <div className="team-modal__actions booking-create-modal__actions">
           <button
             type="button"
             className="team-modal__save btn-icon-label"
@@ -216,16 +242,16 @@ export function FestivalSetupModal({
             onClick={() => void handleSubmit()}
             disabled={isPending}
           >
-            <FontAwesomeIcon icon={faLayerGroup} aria-hidden="true" />
-            {isPending ? 'Saving…' : isConversion ? 'Convert' : 'Create festival'}
-          </button>
-          <button
-            type="button"
-            className="team-modal__cancel"
-            onClick={onClose}
-            disabled={isPending}
-          >
-            Cancel
+            {isPending ? null : (
+              <FontAwesomeIcon icon={isEdit ? faFloppyDisk : faLayerGroup} aria-hidden="true" />
+            )}
+            {isPending
+              ? 'Saving…'
+              : isEdit
+                ? 'Save changes'
+                : isConversion
+                  ? 'Convert'
+                  : 'Create festival'}
           </button>
         </div>
       </div>

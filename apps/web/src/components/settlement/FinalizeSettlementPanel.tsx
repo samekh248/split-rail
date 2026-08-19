@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFileSignature } from '@fortawesome/free-solid-svg-icons';
 import { useFinalizeSettlement } from '@/api/settlement';
 import { useCanSignSettlement } from '@/api/user';
 import { SignaturePad } from './SignaturePad';
@@ -38,18 +40,21 @@ export function FinalizeSettlementPanel({
         I confirm this settlement is accurate and ready to freeze.
       </label>
 
-      <button
-        type="button"
-        className="btn-primary"
-        data-testid="finalize-settlement-btn"
-        disabled={!signatureData || !confirmed || finalize.isPending}
-        onClick={() => {
-          if (!signatureData) return;
-          void finalize.mutateAsync({ signatureData, confirmed: true });
-        }}
-      >
-        {finalize.isPending ? 'Finalizing…' : 'Finalize Settlement'}
-      </button>
+      <div className="section-header__actions finalize-settlement-panel__actions">
+        <button
+          type="button"
+          className="btn-primary btn-icon-label"
+          data-testid="finalize-settlement-btn"
+          disabled={!signatureData || !confirmed || finalize.isPending}
+          onClick={() => {
+            if (!signatureData) return;
+            void finalize.mutateAsync({ signatureData, confirmed: true });
+          }}
+        >
+          {!finalize.isPending ? <FontAwesomeIcon icon={faFileSignature} aria-hidden="true" /> : null}
+          {finalize.isPending ? 'Finalizing…' : 'Finalize Settlement'}
+        </button>
+      </div>
 
       {finalize.isError && (
         <p role="alert" data-testid="finalize-error">

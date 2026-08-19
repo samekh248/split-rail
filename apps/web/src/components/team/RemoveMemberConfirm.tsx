@@ -78,7 +78,7 @@ export function RemoveMemberConfirm({
         <div className="team-confirm__actions">
           <button
             type="button"
-            className="team-confirm__danger"
+            className="btn-primary--compact btn-primary--danger"
             data-testid="remove-member-confirm-button"
             onClick={() => void onConfirm()}
             disabled={isPending}

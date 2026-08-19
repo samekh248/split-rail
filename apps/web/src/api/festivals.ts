@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiFetch } from './client';
+import { dashboardQueryKey } from './dashboard';
 import type {
   ArtistAppearanceDto,
   CopyDealTermsRequest,
@@ -76,6 +77,7 @@ export function useUpdateFestival(venueId: string, eventId: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: festivalQueryKey(venueId, eventId) });
       void queryClient.invalidateQueries({ queryKey: ['events'] });
+      void queryClient.invalidateQueries({ queryKey: ['calendar'] });
     },
   });
 }
@@ -308,6 +310,93 @@ function invalidateItinerary(
 ) {
   void queryClient.invalidateQueries({ queryKey: ['festival', venueId, eventId, 'itinerary'] });
   invalidateBlocks(queryClient, venueId, eventId);
+}
+
+export interface BlockPinMutationVariables {
+  venueId: string;
+  eventId: string;
+  blockId: string;
+}
+
+function applyBlockPinOptimistic(
+  queryClient: ReturnType<typeof useQueryClient>,
+  venueId: string,
+  eventId: string,
+  blockId: string,
+  pinned: boolean,
+) {
+  const previous = queryClient.getQueriesData<ItineraryResponse>({
+    queryKey: ['festival', venueId, eventId, 'itinerary'],
+  });
+  queryClient.setQueriesData<ItineraryResponse>(
+    { queryKey: ['festival', venueId, eventId, 'itinerary'] },
+    (current) =>
+      current
+        ? {
+            ...current,
+            blocks: (current.blocks ?? []).map((block) =>
+              block.id === blockId ? { ...block, isPinned: pinned } : block,
+            ),
+          }
+        : current,
+  );
+  return previous;
+}
+
+export function usePinProgrammingBlock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ venueId, eventId, blockId }: BlockPinMutationVariables) =>
+      apiFetch<void>(`/venues/${venueId}/festivals/${eventId}/blocks/${blockId}/pin`, {
+        method: 'PUT',
+        skipVenueContext: true,
+      }),
+    onMutate: async ({ venueId, eventId, blockId }) => {
+      await queryClient.cancelQueries({ queryKey: ['festival', venueId, eventId, 'itinerary'] });
+      const previous = applyBlockPinOptimistic(queryClient, venueId, eventId, blockId, true);
+      return { previous, venueId, eventId };
+    },
+    onError: (_error, _vars, context) => {
+      context?.previous.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+    },
+    onSettled: (_data, _error, vars) => {
+      if (!vars) {
+        return;
+      }
+      invalidateItinerary(queryClient, vars.venueId, vars.eventId);
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKey(vars.venueId) });
+    },
+  });
+}
+
+export function useUnpinProgrammingBlock() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ venueId, eventId, blockId }: BlockPinMutationVariables) =>
+      apiFetch<void>(`/venues/${venueId}/festivals/${eventId}/blocks/${blockId}/pin`, {
+        method: 'DELETE',
+        skipVenueContext: true,
+      }),
+    onMutate: async ({ venueId, eventId, blockId }) => {
+      await queryClient.cancelQueries({ queryKey: ['festival', venueId, eventId, 'itinerary'] });
+      const previous = applyBlockPinOptimistic(queryClient, venueId, eventId, blockId, false);
+      return { previous, venueId, eventId };
+    },
+    onError: (_error, _vars, context) => {
+      context?.previous.forEach(([key, data]) => {
+        queryClient.setQueryData(key, data);
+      });
+    },
+    onSettled: (_data, _error, vars) => {
+      if (!vars) {
+        return;
+      }
+      invalidateItinerary(queryClient, vars.venueId, vars.eventId);
+      void queryClient.invalidateQueries({ queryKey: dashboardQueryKey(vars.venueId) });
+    },
+  });
 }
 
 export function useItinerary(
