@@ -24,9 +24,12 @@ public record VenueScopeDto(Guid VenueId, string VenueName);
 public record UserProfileResponse(
     Guid Id,
     string Email,
+    string DateDisplayFormat,
     OrganizationSummaryDto? Organization,
     RoleDetailDto? Role,
     IReadOnlyList<VenueScopeDto> VenueScopes);
+
+public record UpdateUserPreferencesRequest(string? DateDisplayFormat);
 
 public record UserListResponse(
     Guid Id,

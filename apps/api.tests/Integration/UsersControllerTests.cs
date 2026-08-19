@@ -4,6 +4,7 @@ using FluentAssertions;
 using SplitRail.Api.DTOs.Auth;
 using SplitRail.Api.DTOs.Invitations;
 using SplitRail.Api.DTOs.Roles;
+using SplitRail.Api.Constants;
 using SplitRail.Api.DTOs.Users;
 using SplitRail.Api.DTOs.Venues;
 using SplitRail.Api.Services;
@@ -22,6 +23,34 @@ public class UsersControllerTests : IntegrationTestBase
         var roles = await client.GetFromJsonAsync<List<RoleResponse>>("/api/roles");
         var promoterRoleId = roles!.Single(r => r.RoleName == RoleNames.Promoter).Id;
         return (client, email, userId, promoterRoleId);
+    }
+
+    [Fact]
+    public async Task GetMe_ReturnsDefaultDateDisplayFormat()
+    {
+        var (client, _, _, _) = await SetupAsync();
+        var profile = await client.GetFromJsonAsync<UserProfileResponse>("/api/users/me");
+        profile!.DateDisplayFormat.Should().Be(DateDisplayFormats.Default);
+    }
+
+    [Fact]
+    public async Task UpdatePreferences_PersistsDateDisplayFormat()
+    {
+        var (client, _, _, _) = await SetupAsync();
+        var response = await client.PatchAsJsonAsync("/api/users/me/preferences",
+            new UpdateUserPreferencesRequest("yyyy-MM-dd"));
+        response.EnsureSuccessStatusCode();
+        var profile = await response.Content.ReadFromJsonAsync<UserProfileResponse>();
+        profile!.DateDisplayFormat.Should().Be("yyyy-MM-dd");
+    }
+
+    [Fact]
+    public async Task UpdatePreferences_RejectsUnsupportedFormat()
+    {
+        var (client, _, _, _) = await SetupAsync();
+        var response = await client.PatchAsJsonAsync("/api/users/me/preferences",
+            new UpdateUserPreferencesRequest("MM-DD-YY"));
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 
     [Fact]

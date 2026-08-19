@@ -3,6 +3,7 @@ import { faArrowLeft } from '@fortawesome/free-solid-svg-icons';
 import {
   getAppPath,
   navigateReturnToApp,
+  navigateToAccountSettings,
   navigateToIntegrationsSettings,
   navigateToOrganizationSettings,
   navigateToSettings,
@@ -20,7 +21,12 @@ export interface SettingsNavProps {
 type SettingsNavItem = {
   id: string;
   label: string;
-  path: '/settings' | '/settings/team' | '/settings/organization' | '/settings/integrations';
+  path:
+    | '/settings'
+    | '/settings/account'
+    | '/settings/team'
+    | '/settings/organization'
+    | '/settings/integrations';
   onClick: () => void;
 };
 
@@ -41,6 +47,12 @@ export function SettingsNav({
       label: 'Overview',
       path: '/settings',
       onClick: navigateToSettings,
+    },
+    {
+      id: 'account',
+      label: 'Account',
+      path: '/settings/account',
+      onClick: navigateToAccountSettings,
     },
     ...(canManageTeam
       ? [

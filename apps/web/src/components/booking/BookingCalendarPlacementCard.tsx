@@ -1,6 +1,6 @@
 import type { BookingPlacement, BookingPlacementStatus } from '@/lib/bookingCalendar';
 import { placementLegendHighlightClass } from '@/lib/bookingCalendar';
-import { formatEventDateRange } from '@/lib/eventDateRange';
+import { formatEventDateRange, formatEventDateRangeLong } from '@/lib/eventDateRange';
 import { placementStatusLabel, statusClass } from '@/components/booking/BookingCalendarMatrix';
 
 export interface BookingCalendarPlacementCardProps {
@@ -11,18 +11,11 @@ export interface BookingCalendarPlacementCardProps {
 }
 
 function formatListDateRange(placement: BookingPlacement): string {
-  const [startYear, startMonth, startDay] = placement.eventDate.split('-').map(Number);
-  const start = new Date(startYear, startMonth - 1, startDay);
   const endKey = placement.endDate && placement.endDate !== placement.eventDate
     ? placement.endDate
     : null;
   if (!endKey) {
-    return start.toLocaleDateString('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return formatEventDateRangeLong(placement.eventDate, placement.eventDate);
   }
   return formatEventDateRange(placement.eventDate, endKey);
 }

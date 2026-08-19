@@ -1,6 +1,7 @@
 import { SettingsLayout } from '@/components/settings/SettingsLayout';
 import { useCanManageTeam } from '@/hooks/useCanManageTeam';
 import {
+  navigateToAccountSettings,
   navigateToIntegrationsSettings,
   navigateToOrganizationSettings,
   navigateToTeamSettings,
@@ -12,9 +13,20 @@ export function SettingsLandingPage() {
   return (
     <SettingsLayout title="Settings">
       <p className="settings-landing__intro">
-        Manage your organization preferences and team access.
+        Manage your personal preferences, organization settings, and team access.
       </p>
       <div className="settings-landing__cards">
+        <button
+          type="button"
+          className="settings-landing__card"
+          data-testid="settings-card-account"
+          onClick={() => navigateToAccountSettings()}
+        >
+          <h2 className="settings-landing__card-title">Account</h2>
+          <p className="settings-landing__card-text">
+            Choose how dates appear across the app.
+          </p>
+        </button>
         {canManageTeam ? (
           <button
             type="button"

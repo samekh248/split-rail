@@ -33,6 +33,7 @@ describe('SettingsLandingPage', () => {
   it('shows Team card for admins', () => {
     vi.mocked(useCanManageTeam).mockReturnValue(true);
     render(<SettingsLandingPage />, { wrapper: createWrapper() });
+    expect(screen.getByTestId('settings-card-account')).toBeInTheDocument();
     expect(screen.getByTestId('settings-card-team')).toBeInTheDocument();
     expect(screen.getByTestId('settings-card-organization')).toBeInTheDocument();
     expect(screen.getByTestId('settings-card-integrations')).toBeInTheDocument();
@@ -41,8 +42,17 @@ describe('SettingsLandingPage', () => {
   it('hides Team card for non-admins', () => {
     vi.mocked(useCanManageTeam).mockReturnValue(false);
     render(<SettingsLandingPage />, { wrapper: createWrapper() });
+    expect(screen.getByTestId('settings-card-account')).toBeInTheDocument();
     expect(screen.queryByTestId('settings-card-team')).not.toBeInTheDocument();
     expect(screen.getByTestId('settings-card-organization')).toBeInTheDocument();
+  });
+
+  it('navigates to account settings from Account card', async () => {
+    vi.mocked(useCanManageTeam).mockReturnValue(false);
+    const user = userEvent.setup();
+    render(<SettingsLandingPage />, { wrapper: createWrapper() });
+    await user.click(screen.getByTestId('settings-card-account'));
+    expect(getAppPath()).toBe('/settings/account');
   });
 
   it('navigates to team settings from Team card', async () => {

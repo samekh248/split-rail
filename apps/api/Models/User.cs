@@ -5,6 +5,7 @@ public class User
     public Guid Id { get; set; }
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
+    public string DateDisplayFormat { get; set; } = Constants.DateDisplayFormats.Default;
     public DateTimeOffset CreatedAt { get; set; }
 
     public ICollection<UserOrganizationMapping> OrganizationMappings { get; set; } = [];

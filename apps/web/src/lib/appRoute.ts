@@ -8,6 +8,7 @@ export type AppPath =
   | '/booking'
   | '/accounting'
   | '/settings'
+  | '/settings/account'
   | '/settings/team'
   | '/settings/organization'
   | '/settings/integrations'
@@ -180,6 +181,8 @@ export function getAppPath(): AppPath | string {
       return '/venues';
     case '/settings':
       return '/settings';
+    case '/settings/account':
+      return '/settings/account';
     case '/settings/team':
       return '/settings/team';
     case '/settings/organization':
@@ -253,6 +256,10 @@ export function navigateReturnToApp(): void {
 
 export function navigateToTeamSettings(): void {
   pushPath('/settings/team');
+}
+
+export function navigateToAccountSettings(): void {
+  pushPath('/settings/account');
 }
 
 export function navigateToOrganizationSettings(): void {
