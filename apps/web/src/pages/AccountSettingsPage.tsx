@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { SelectField } from '@/components/auth/SelectField';
 import { SettingsLayout } from '@/components/settings/SettingsLayout';
 import { useUpdateUserPreferences, useUserProfile } from '@/api/user';
