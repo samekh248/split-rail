@@ -297,6 +297,21 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         await db.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Sets BookingPlacementStatus directly, bypassing the promote/cancel endpoints — those are
+    /// the only two placement transitions the API exposes, so a test that needs an event to
+    /// simply "be" in a hold (e.g. to prove show-start-time gating) has no API-only path to get
+    /// there. Mirrors SetEventStatusDirectAsync's pattern for EventStatus.
+    /// </summary>
+    protected async Task SetBookingPlacementStatusDirectAsync(Guid eventId, BookingPlacementStatus status)
+    {
+        using var scope = Factory.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var evt = await db.Events.FirstAsync(e => e.Id == eventId);
+        evt.BookingPlacementStatus = status;
+        await db.SaveChangesAsync();
+    }
+
     private static IDisposable? ResolveFrozenEventSaveAuthorization(
         IFrozenEventSaveContext saveContext,
         EventStatus originalStatus,

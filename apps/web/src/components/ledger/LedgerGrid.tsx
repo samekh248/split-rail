@@ -1,12 +1,18 @@
 import { formatMoney } from '@/lib/money';
-import { formatIsoDateRange } from '@/lib/eventDateRange';
+import { formatEventDateRange } from '@/lib/eventDateRange';
 import { resolveVarianceDisplay } from '@/lib/ledgerVariance';
 import type { CreateLineItemRequest, LedgerGridResponse } from '@/types/generated-api';
 import type { MoveDirection } from '@/lib/reorderLineItems';
 import type { ReactNode } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLock } from '@fortawesome/free-solid-svg-icons';
+import { PinToggleButton } from '@/components/PinToggleButton';
 import { BlockSection } from './BlockSection';
+
+interface LedgerEventPinProps {
+  isPinned: boolean;
+  onToggle: () => void;
+}
 
 interface LedgerGridProps {
   ledger: LedgerGridResponse;
@@ -23,6 +29,12 @@ interface LedgerGridProps {
   lockBudgetPending?: boolean;
   canLockBudget?: boolean;
   headerActions?: ReactNode;
+  /** Rendered after Lock Budget so kebab menus stay rightmost. */
+  trailingHeaderActions?: ReactNode;
+  /** When true, omits the event title/meta row (e.g. festival workspace shows them in FestivalModeCard). */
+  hideEventHeader?: boolean;
+  /** Pin control inline on the event meta row (standard events only). */
+  eventPin?: LedgerEventPinProps;
 }
 
 export function LedgerGrid({
@@ -40,6 +52,9 @@ export function LedgerGrid({
   lockBudgetPending = false,
   canLockBudget = true,
   headerActions,
+  trailingHeaderActions,
+  hideEventHeader = false,
+  eventPin,
 }: LedgerGridProps) {
   const blocks = ledger.blocks ?? [];
   const summary = ledger.summary;
@@ -64,19 +79,38 @@ export function LedgerGrid({
     qboActuals: 'locked',
   };
   const showLockBudget = !ledger.isBudgetLocked && status === 'PRE_SHOW';
-  const hasHeaderActions = showLockBudget || headerActions != null;
+  const hasHeaderActions =
+    showLockBudget || headerActions != null || trailingHeaderActions != null;
 
   return (
     <div className="ledger-grid" data-testid="ledger-grid">
       <header className="ledger-grid__hero">
-        <div className="ledger-grid__header section-header" data-testid="workspace-focus-sync">
-          <div>
+        {!hideEventHeader ? (
+          <div className="ledger-grid__event-header">
             <h2 className="ledger-grid__title">{ledger.title}</h2>
-            <p className="ledger-grid__meta">
-              {formatIsoDateRange(ledger.eventDate, ledger.endDate)} · {status.replace('_', '-')}
-              {ledger.isBudgetLocked ? ' · Budget locked' : ''}
+            <p className="ledger-grid__meta" data-testid="ledger-event-meta">
+              <span>
+                {formatEventDateRange(ledger.eventDate, ledger.endDate)} · {status.replace('_', '-')}
+                {ledger.isBudgetLocked ? ' · Budget locked' : ''}
+              </span>
+              {eventPin ? (
+                <PinToggleButton
+                  pinned={eventPin.isPinned}
+                  pinnedLabel="Unpin event"
+                  unpinnedLabel="Pin event"
+                  testId={`ledger-pin-${ledger.eventId ?? ''}`}
+                  onToggle={eventPin.onToggle}
+                />
+              ) : null}
             </p>
           </div>
+        ) : null}
+
+        <div
+          className="ledger-grid__summary-header section-header"
+          data-testid="workspace-focus-sync"
+        >
+          <h3 className="ledger-grid__summary-title">Summary</h3>
           {hasHeaderActions ? (
             <div className="section-header__actions">
               {headerActions}
@@ -92,6 +126,7 @@ export function LedgerGrid({
                   {lockBudgetPending ? 'Locking…' : 'Lock Budget'}
                 </button>
               ) : null}
+              {trailingHeaderActions}
             </div>
           ) : null}
         </div>

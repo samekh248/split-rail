@@ -1,8 +1,9 @@
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LedgerGrid } from '@/components/ledger/LedgerGrid';
 import type { LedgerGridResponse } from '@/types/generated-api';
+import { DEFAULT_DATE_DISPLAY_FORMAT, setDateDisplayFormat } from '@/lib/dateDisplayFormat';
 
 const mockLedger: LedgerGridResponse = {
   eventId: 'evt-1',
@@ -72,6 +73,41 @@ const mockLedger: LedgerGridResponse = {
 };
 
 describe('LedgerGrid', () => {
+  beforeEach(() => {
+    setDateDisplayFormat(DEFAULT_DATE_DISPLAY_FORMAT);
+  });
+
+  it('renders event meta with formatted date and inline pin control', () => {
+    const onTogglePin = vi.fn();
+
+    render(
+      <LedgerGrid
+        ledger={mockLedger}
+        eventPin={{ isPinned: false, onToggle: onTogglePin }}
+      />,
+    );
+
+    expect(screen.getByTestId('ledger-event-meta')).toHaveTextContent('07/04/2026 · PRE-SHOW');
+    const pinButton = screen.getByTestId('ledger-pin-evt-1');
+    expect(pinButton).toHaveClass('event-card__pin');
+    expect(pinButton).toHaveAttribute('aria-label', 'Pin event');
+  });
+
+  it('calls eventPin.onToggle when the pin button is clicked', async () => {
+    const user = userEvent.setup();
+    const onTogglePin = vi.fn();
+
+    render(
+      <LedgerGrid
+        ledger={mockLedger}
+        eventPin={{ isPinned: true, onToggle: onTogglePin }}
+      />,
+    );
+
+    await user.click(screen.getByTestId('ledger-pin-evt-1'));
+    expect(onTogglePin).toHaveBeenCalledTimes(1);
+  });
+
   it('renders all three block sections', () => {
     render(<LedgerGrid ledger={mockLedger} />);
 
@@ -90,6 +126,7 @@ describe('LedgerGrid', () => {
   it('renders summary stat cards', () => {
     render(<LedgerGrid ledger={mockLedger} />);
 
+    expect(screen.getByRole('heading', { name: 'Summary', level: 3 })).toBeInTheDocument();
     const summary = screen.getByTestId('ledger-summary');
     expect(summary).toBeInTheDocument();
     expect(within(summary).getByText('Gross')).toBeInTheDocument();
@@ -139,6 +176,26 @@ describe('LedgerGrid', () => {
     expect(screen.getByTestId('workspace-focus-sync')).toBeInTheDocument();
   });
 
+  it('renders trailing header actions after Lock Budget', () => {
+    render(
+      <LedgerGrid
+        ledger={mockLedger}
+        headerActions={<button type="button" data-testid="sync-now-button">Sync Now</button>}
+        trailingHeaderActions={
+          <button type="button" data-testid="festival-convert-menu-trigger">More</button>
+        }
+      />,
+    );
+
+    const cluster = screen.getByTestId('sync-now-button').closest('.section-header__actions');
+    expect(cluster).toBeInTheDocument();
+
+    const buttons = cluster!.querySelectorAll('button');
+    expect(buttons[0]).toHaveAttribute('data-testid', 'sync-now-button');
+    expect(buttons[1]).toHaveAttribute('data-testid', 'lock-budget-btn');
+    expect(buttons[2]).toHaveAttribute('data-testid', 'festival-convert-menu-trigger');
+  });
+
   it('omits the action cluster when neither Sync Now nor Lock Budget is shown', () => {
     render(
       <LedgerGrid ledger={{ ...mockLedger, isBudgetLocked: true, status: 'SETTLED' }} />,
@@ -148,6 +205,17 @@ describe('LedgerGrid', () => {
     expect(screen.queryByTestId('sync-now-button')).not.toBeInTheDocument();
     expect(document.querySelector('.section-header__actions')).not.toBeInTheDocument();
     expect(screen.getByTestId('workspace-focus-sync')).toBeInTheDocument();
+  });
+
+  it('hides the event title and meta when hideEventHeader is true', () => {
+    render(<LedgerGrid ledger={mockLedger} hideEventHeader />);
+
+    expect(screen.queryByRole('heading', { name: 'Friday Headliner' })).not.toBeInTheDocument();
+    expect(screen.queryByText(/07\/04\/2026 · PRE-SHOW/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId('ledger-pin-evt-1')).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Summary', level: 3 })).toBeInTheDocument();
+    expect(screen.getByTestId('ledger-summary')).toBeInTheDocument();
+    expect(screen.getByTestId('workspace-focus-sync')).toHaveClass('ledger-grid__summary-header');
   });
 
   it('shows variance banner when reconciled rows have non-zero derived variance', () => {

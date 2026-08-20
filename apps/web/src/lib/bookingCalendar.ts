@@ -24,6 +24,8 @@ export interface BookingPlacement {
   loadInTime?: string | null;
   curfewTime?: string | null;
   supportLineup?: string | null;
+  showStartTime?: string | null;
+  notes?: string | null;
   workspaceAllowed: boolean;
 }
 

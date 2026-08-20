@@ -1,6 +1,7 @@
 import type { BookingPlacement, BookingPlacementStatus } from '@/lib/bookingCalendar';
 import { placementLegendHighlightClass } from '@/lib/bookingCalendar';
 import { formatEventDateRange, formatEventDateRangeLong } from '@/lib/eventDateRange';
+import { formatTimeWithPreference } from '@/lib/timeDisplayFormat';
 import { placementStatusLabel, statusClass } from '@/components/booking/BookingCalendarMatrix';
 
 export interface BookingCalendarPlacementCardProps {
@@ -41,7 +42,9 @@ export function BookingCalendarPlacementCard({
     .join(' ');
 
   if (variant === 'compact') {
-    const timeLabel = placement.doorsTime ?? 'Time TBD';
+    const timeLabel = placement.doorsTime
+      ? formatTimeWithPreference(placement.doorsTime)
+      : 'Time TBD';
 
     return (
       <button type="button" className={cardClassName} onClick={() => onClick(placement)}>
@@ -65,7 +68,9 @@ export function BookingCalendarPlacementCard({
       <div className="booking-calendar-list__card-header">
         <div className="booking-calendar-list__card-meta">
           <span className="booking-calendar-list__date">{formatListDateRange(placement)}</span>
-          <span className="booking-calendar-list__time">{placement.doorsTime ?? 'Time TBD'}</span>
+          <span className="booking-calendar-list__time">
+            {placement.doorsTime ? formatTimeWithPreference(placement.doorsTime) : 'Time TBD'}
+          </span>
         </div>
         <span className="booking-calendar-list__status">
           {placementStatusLabel(placement.bookingPlacementStatus)}

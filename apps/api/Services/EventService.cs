@@ -63,6 +63,11 @@ public class EventService
             ? string.Empty
             : request.QboTagName.Trim();
 
+        var doorsTime = ParseTime(request.DoorsTime);
+        var showStartTime = ParseTime(request.ShowStartTime);
+        ValidateShowStartTime(placementStatus, doorsTime, showStartTime);
+        var notes = ValidateAndNormalizeNotes(request.Notes);
+
         var evt = new Event
         {
             VenueId = venueId,
@@ -71,10 +76,12 @@ public class EventService
             QboTagName = qboTagName,
             Status = EventStatus.PreShow,
             BookingPlacementStatus = placementStatus,
-            DoorsTime = ParseTime(request.DoorsTime),
+            DoorsTime = doorsTime,
             LoadInTime = ParseTime(request.LoadInTime),
             CurfewTime = ParseTime(request.CurfewTime),
             SupportLineup = NormalizeOptionalText(request.SupportLineup),
+            ShowStartTime = showStartTime,
+            Notes = notes,
         };
 
         _db.Events.Add(evt);
@@ -167,13 +174,23 @@ public class EventService
             ? string.Empty
             : request.QboTagName.Trim();
 
+        var updatedDoorsTime = ParseTime(request.DoorsTime);
+        var updatedShowStartTime = ParseTime(request.ShowStartTime);
+        // This path never changes BookingPlacementStatus (that happens in
+        // CancelConfirmedEventAsync/PromoteHoldAsync above), so evt.BookingPlacementStatus is
+        // still the event's current placement — the correct baseline for the confirmed-only gate.
+        ValidateShowStartTime(evt.BookingPlacementStatus, updatedDoorsTime, updatedShowStartTime);
+        var updatedNotes = ValidateAndNormalizeNotes(request.Notes);
+
         evt.Title = request.Title.Trim();
         evt.EventDate = eventDate;
         evt.QboTagName = qboTagName;
-        evt.DoorsTime = ParseTime(request.DoorsTime);
+        evt.DoorsTime = updatedDoorsTime;
         evt.LoadInTime = ParseTime(request.LoadInTime);
         evt.CurfewTime = ParseTime(request.CurfewTime);
         evt.SupportLineup = NormalizeOptionalText(request.SupportLineup);
+        evt.ShowStartTime = updatedShowStartTime;
+        evt.Notes = updatedNotes;
 
         await _db.SaveChangesAsync(cancellationToken);
 
@@ -385,6 +402,47 @@ public class EventService
     private static string? NormalizeOptionalText(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
+    private const int MaxNotesLength = 2000;
+
+    private static string? ValidateAndNormalizeNotes(string? value)
+    {
+        var normalized = NormalizeOptionalText(value);
+        if (normalized is not null && normalized.Length > MaxNotesLength)
+        {
+            throw new ValidationException(
+                $"Notes cannot exceed {MaxNotesLength} characters.");
+        }
+
+        return normalized;
+    }
+
+    /// <summary>
+    /// Show start time is only settable while the placement is confirmed (spec 086 FR-004),
+    /// and must not precede doors time on the same event (FR-005). Doors time without a show
+    /// start time, or a show start time with no doors time to compare against, are both fine —
+    /// only an explicit start-before-doors conflict is refused.
+    /// </summary>
+    private static void ValidateShowStartTime(
+        BookingPlacementStatus placementStatus,
+        TimeOnly? doorsTime,
+        TimeOnly? showStartTime)
+    {
+        if (showStartTime is not TimeOnly start)
+            return;
+
+        if (placementStatus != BookingPlacementStatus.Confirmed)
+        {
+            throw new ValidationException(
+                "Show start time can only be set while the booking is confirmed.");
+        }
+
+        if (doorsTime is TimeOnly doors && start < doors)
+        {
+            throw new ValidationException(
+                $"Show start time ({start:HH\\:mm}) cannot be earlier than doors time ({doors:HH\\:mm}).");
+        }
+    }
+
     private async Task<HashSet<Guid>> PinnedEventIdsAsync(Guid userId, CancellationToken cancellationToken)
     {
         var ids = await _db.UserEventPins
@@ -426,6 +484,8 @@ public class EventService
             workspaceAllowed,
             EventTypeFormat.ToApiString(evt.EventType),
             evt.EndDate?.ToString("yyyy-MM-dd"),
-            isPinned);
+            isPinned,
+            evt.ShowStartTime?.ToString("HH:mm"),
+            evt.Notes);
     }
 }

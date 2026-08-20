@@ -1363,7 +1363,8 @@ th {
   position: absolute;
   right: 0;
   top: calc(100% + 0.35rem);
-  min-width: 10rem;
+  min-width: 12rem;
+  width: max-content;
   background: var(--color-surface-white);
   color: var(--color-primary-brown);
   border: 1px solid var(--color-border-subtle);
@@ -1385,6 +1386,7 @@ th {
   font-family: var(--font-ui);
   font-size: 0.875rem;
   color: var(--color-primary-brown);
+  white-space: nowrap;
 }
 
 .kebab-menu__menu-item:hover {
@@ -1630,12 +1632,19 @@ th {
   gap: 1.25rem;
 }
 
-.ledger-grid__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 1rem;
+.ledger-grid__event-header {
   margin-bottom: 0;
+}
+
+.ledger-grid__summary-header {
+  margin-bottom: 0;
+}
+
+.ledger-grid__summary-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-family: var(--font-brand);
+  color: var(--color-primary-brown);
 }
 
 .ledger-grid__title {
@@ -1649,6 +1658,9 @@ th {
   color: var(--color-text-muted);
   margin: 0.375rem 0 0;
   font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
 }
 
 .ledger-grid__summary {
@@ -2071,10 +2083,21 @@ th {
   border-top: 1px solid var(--color-border-subtle);
 }
 
-.artist-deal-panel__form .select-field {
+.artist-deal-panel__deal-type-field {
+  max-width: calc((100% - 2rem) / 3);
+}
+
+.artist-deal-panel__deal-type-field .select-field {
   display: block;
   width: 100%;
   min-width: 0;
+}
+
+.artist-deal-panel__form .select-field--field-width .select-field__trigger {
+  box-sizing: border-box;
+  padding: 0.625rem 0.75rem;
+  font-size: 1rem;
+  line-height: normal;
 }
 
 .artist-deal-panel__financials {
@@ -2099,7 +2122,17 @@ th {
   margin-top: 0.25rem;
 }
 
+.artist-deal-panel__foot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
 @media (max-width: 640px) {
+  .artist-deal-panel__deal-type-field {
+    max-width: none;
+  }
+
   .artist-deal-panel__financials {
     grid-template-columns: 1fr;
   }
@@ -2185,10 +2218,6 @@ th {
     grid-template-columns: 1fr;
   }
 
-  .ledger-grid__header {
-    flex-direction: column;
-    align-items: stretch;
-  }
 }
 
 /* Auth layout */
@@ -2346,6 +2375,30 @@ select.form-field__input {
   display: inline-block;
   min-width: 6rem;
   vertical-align: middle;
+}
+
+.select-field--field-width {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.select-field--field-width .select-field__trigger {
+  width: 100%;
+}
+
+.select-field--compact {
+  align-self: flex-start;
+  width: auto;
+  max-width: 100%;
+}
+
+.select-field--compact .select-field__trigger {
+  width: auto;
+}
+
+.select-field--compact .select-field__value {
+  flex: 0 1 auto;
 }
 
 .select-field__trigger {
@@ -2574,10 +2627,16 @@ select.form-field__input {
   border-radius: var(--radius-card);
 }
 
-.event-form-panel__actions,
 .event-delete-confirm__actions {
   display: flex;
   justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.event-form-panel__actions {
+  display: flex;
+  justify-content: space-between;
   gap: 0.75rem;
   margin-top: 1rem;
 }
@@ -2617,9 +2676,14 @@ select.form-field__input {
   background: var(--color-surface-muted);
 }
 
-.event-form-panel__type-option:has(input:checked) {
+.event-form-panel__type-option:has(input:checked),
+.event-form-panel__type-option--active {
   border-color: var(--color-accent-orange);
   background: var(--color-surface-muted);
+  /* A border-color change alone is too subtle to read as "selected" versus merely
+     hovered — the same problem already fixed on .block-editor__category-btn--active and
+     .block-editor__booking-btn--active with the identical box-shadow-ring technique. */
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-accent-orange) 45%, transparent);
 }
 
 .event-form-panel__type-option:has(input:focus-visible) {
@@ -5709,8 +5773,46 @@ button.welcome-modal__dismiss {
   letter-spacing: 0.01em;
 }
 
-.booking-event-drawer__actions {
+.booking-event-drawer__group {
   margin-top: 1rem;
+}
+
+.booking-event-drawer__group-heading {
+  margin: 0 0 0.35rem;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.booking-event-drawer__group-body {
+  font-size: 0.9375rem;
+}
+
+.booking-event-drawer__schedule-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.25rem;
+}
+
+.booking-event-drawer__group-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.booking-event-drawer__lineup-text,
+.booking-event-drawer__notes-text {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.booking-event-drawer__actions {
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border-subtle);
 }
 
 .booking-event-drawer__secondary-actions {
@@ -6016,33 +6118,28 @@ textarea.form-field__input {
   gap: 1.5rem;
 }
 
-.festival-mode-card__prompt {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.festival-mode-card__text {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: 0.9375rem;
-  line-height: 1.5;
-}
-
 .festival-mode-card__heading {
   margin: 0;
+  align-items: flex-start;
 }
 
 .festival-mode-card__title {
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
   font-family: var(--font-brand);
   color: var(--color-primary-brown);
   display: flex;
   align-items: center;
   gap: 0.625rem;
+}
+
+.festival-mode-card__subtitle {
+  color: var(--color-text-muted);
+  margin: 0.375rem 0 0;
+  font-size: 0.875rem;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
 }
 
 .festival-mode-card__content {
@@ -6084,6 +6181,53 @@ textarea.form-field__input {
   font-weight: 600;
   color: var(--color-primary-brown);
   overflow-wrap: anywhere;
+}
+
+.festival-mode-card__tag {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.festival-mode-card__tag-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-weight: inherit;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+  min-width: 0;
+}
+
+.festival-mode-card__tag-copy:hover {
+  color: var(--color-accent-orange);
+}
+
+.festival-mode-card__tag-copy:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.festival-mode-card__tag-value {
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.festival-mode-card__tag-icon {
+  flex-shrink: 0;
+  font-size: 0.875rem;
+  color: var(--color-text-muted);
+}
+
+.festival-mode-card__tag-copy:hover .festival-mode-card__tag-icon,
+.festival-mode-card__tag-copy:focus-visible .festival-mode-card__tag-icon {
+  color: var(--color-accent-orange);
 }
 
 .festival-setup-modal {
@@ -6139,15 +6283,20 @@ textarea.form-field__input {
   min-width: 100%;
 }
 
-.stage-manager__actions-col,
-.stage-manager__actions {
+.ledger-table th.stage-manager__actions-col,
+.ledger-table td.stage-manager__actions {
   width: 1%;
   white-space: nowrap;
-  text-align: right;
+  text-align: center;
+  vertical-align: middle;
 }
 
-.stage-manager__actions {
-  vertical-align: middle;
+.stage-manager__delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem;
+  min-width: 2rem;
 }
 
 .stage-manager__name {
@@ -6549,20 +6698,6 @@ textarea.form-field__input {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-}
-
-.festival-mode-card__link {
-  padding: 0.5rem 1rem;
-  font-weight: 600;
-  background: var(--color-bg-cream);
-  border-color: var(--color-border-subtle);
-  box-shadow: var(--shadow-soft);
-}
-
-.festival-mode-card__link:hover:not(:disabled) {
-  background: var(--color-surface-white);
-  border-color: color-mix(in srgb, var(--color-accent-orange) 35%, var(--color-border-subtle));
-  box-shadow: var(--shadow-soft);
 }
 
 @media (max-width: 768px) {

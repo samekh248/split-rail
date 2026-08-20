@@ -55,6 +55,8 @@ function toBookingPlacement(dto: CalendarPlacementDto): BookingPlacement {
     loadInTime: dto.loadInTime ?? null,
     curfewTime: dto.curfewTime ?? null,
     supportLineup: dto.supportLineup ?? null,
+    showStartTime: dto.showStartTime ?? null,
+    notes: dto.notes ?? null,
     workspaceAllowed: dto.workspaceAllowed ?? true,
   };
 }

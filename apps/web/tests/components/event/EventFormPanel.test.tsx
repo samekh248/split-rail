@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { EventFormPanel } from '@/components/event/EventFormPanel';
@@ -164,5 +164,61 @@ describe('EventFormPanel', () => {
 
     await user.click(screen.getByRole('button', { name: 'Close' }));
     expect(onCancel).toHaveBeenCalled();
+  });
+
+  it('places a Cancel action on the left and the primary submit on the right, with a leading icon, in create mode', () => {
+    render(<EventFormPanel mode="create" onSubmit={vi.fn()} onCancel={vi.fn()} />);
+
+    const actions = screen.getByTestId('event-form-panel').querySelector('.event-form-panel__actions')!;
+    const buttons = within(actions).getAllByRole('button');
+    expect(buttons[0]).toHaveTextContent('Cancel');
+    expect(buttons[1]).toHaveTextContent('Create event');
+    expect(buttons[1].querySelector('svg')).toBeInTheDocument();
+  });
+
+  it('places a Cancel action on the left and the primary submit on the right, with a leading icon, in edit mode', () => {
+    render(
+      <EventFormPanel
+        mode="edit"
+        initialValues={{ title: 'Spring Show', eventDate: '2026-05-01', qboTagName: '' }}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    const actions = screen.getByTestId('event-form-panel').querySelector('.event-form-panel__actions')!;
+    const buttons = within(actions).getAllByRole('button');
+    expect(buttons[0]).toHaveTextContent('Cancel');
+    expect(buttons[1]).toHaveTextContent('Save changes');
+    expect(buttons[1].querySelector('svg')).toBeInTheDocument();
+  });
+
+  it('calls onCancel when the action-row Cancel button is clicked', async () => {
+    const onCancel = vi.fn();
+    const user = userEvent.setup();
+
+    render(<EventFormPanel mode="create" onSubmit={vi.fn()} onCancel={onCancel} />);
+
+    const actions = screen.getByTestId('event-form-panel').querySelector('.event-form-panel__actions')!;
+    await user.click(within(actions).getByRole('button', { name: 'Cancel' }));
+    expect(onCancel).toHaveBeenCalled();
+  });
+
+  it('gives the selected event type a visual indicator beyond the hover-only cue', async () => {
+    const user = userEvent.setup();
+    render(
+      <EventFormPanel mode="create" onSubmit={vi.fn()} onCancel={vi.fn()} onCreateFestival={vi.fn()} />,
+    );
+
+    const standardOption = screen.getByTestId('event-type-standard').closest('label')!;
+    const festivalOption = screen.getByTestId('event-type-festival').closest('label')!;
+
+    expect(standardOption).toHaveClass('event-form-panel__type-option--active');
+    expect(festivalOption).not.toHaveClass('event-form-panel__type-option--active');
+
+    await user.click(screen.getByTestId('event-type-festival'));
+
+    expect(festivalOption).toHaveClass('event-form-panel__type-option--active');
+    expect(standardOption).not.toHaveClass('event-form-panel__type-option--active');
   });
 });

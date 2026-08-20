@@ -3,6 +3,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faBan,
   faCalendarDays,
+  faCheck,
+  faCopy,
   faFileInvoiceDollar,
   faLayerGroup,
   faPen,
@@ -13,6 +15,7 @@ import { StageManagerPanel } from '@/components/festival/StageManagerPanel';
 import { PinToggleButton } from '@/components/PinToggleButton';
 import { KebabMenu } from '@/components/shell/KebabMenu';
 import { formatEventDateRange } from '@/lib/eventDateRange';
+import { copyTextToClipboard } from '@/lib/copyToClipboard';
 import { useFestival } from '@/api/festivals';
 import { useDeleteEvent, useUpdateEvent } from '@/api/events';
 import { usePinEvent, useUnpinEvent } from '@/api/dashboard';
@@ -36,9 +39,10 @@ function isHoldPlacement(status: string | null | undefined): boolean {
 }
 
 /**
- * Progressive-enhancement entry point. Standard events show only an opt-in affordance
- * (and nothing at all without manage permission); festivals show their day/stage structure.
- * Festival concepts never appear until the user asks for them (spec FR-001).
+ * Renders the active-festival day/stage structure. Standard (non-festival) events render
+ * nothing here — the "Convert to festival" action for those lives in the ledger header
+ * via {@link ConvertToFestivalAction}, so festival concepts never appear until the user
+ * asks for them (spec FR-001).
  */
 export function FestivalModeCard({
   venueId,
@@ -49,10 +53,10 @@ export function FestivalModeCard({
   onEditRequestHandled,
   onBookingCancelled,
 }: FestivalModeCardProps) {
-  const [setupOpen, setSetupOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [tagCopied, setTagCopied] = useState(false);
   const isFestival = event?.eventType === 'FESTIVAL';
   const isFrozen = event?.status === 'SETTLED' || event?.status === 'RECONCILED';
   const isCancelled = event?.bookingPlacementStatus === 'CANCELLED';
@@ -67,7 +71,16 @@ export function FestivalModeCard({
     setEditOpen(false);
     setCancelOpen(false);
     setCancelError(null);
+    setTagCopied(false);
   }, [event?.eventId]);
+
+  useEffect(() => {
+    if (!tagCopied) {
+      return;
+    }
+    const timer = window.setTimeout(() => setTagCopied(false), 2000);
+    return () => window.clearTimeout(timer);
+  }, [tagCopied]);
 
   useEffect(() => {
     if (
@@ -96,47 +109,22 @@ export function FestivalModeCard({
   }
 
   if (!isFestival) {
-    if (!canManage || isFrozen) {
-      return null;
-    }
-
-    return (
-      <section className="festival-mode-card" data-testid="festival-mode-card">
-        <div className="festival-mode-card__prompt section-header">
-          <p className="festival-mode-card__text">
-            Running this over multiple days or stages?
-          </p>
-          <div className="section-header__actions">
-            <button
-              type="button"
-              className="btn-primary--compact btn-icon-label"
-              data-testid="festival-convert-button"
-              onClick={() => setSetupOpen(true)}
-            >
-              <FontAwesomeIcon icon={faLayerGroup} aria-hidden="true" />
-              Convert to festival
-            </button>
-          </div>
-        </div>
-
-        <FestivalSetupModal
-          venueId={venueId}
-          open={setupOpen}
-          onClose={() => setSetupOpen(false)}
-          onCreated={() => setSetupOpen(false)}
-          existingEventId={event.eventId}
-          initialTitle={event.title ?? ''}
-          initialStartDate={event.eventDate ?? ''}
-        />
-      </section>
-    );
+    return null;
   }
 
   const festival = festivalQuery.data;
   const eventId = event.eventId ?? '';
+  const masterTag = festival?.qboTagName ?? event.qboTagName ?? '';
   const isPinned = event.isPinned === true;
   const canEditFestival = canManage && !isFrozen && !isCancelled;
   const canCancelBooking = canManageEvents && !isFrozen && !isCancelled;
+  const eventStatus = event.status ?? 'PRE_SHOW';
+  const eventMeta = [
+    eventStatus.replace('_', '-'),
+    event.isBudgetLocked ? 'Budget locked' : null,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   const toggleFestivalPin = () => {
     if (!eventId) {
@@ -144,6 +132,14 @@ export function FestivalModeCard({
     }
     const mutation = isPinned ? unpinEvent : pinEvent;
     mutation.mutate({ venueId, eventId });
+  };
+
+  const handleCopyMasterTag = async () => {
+    if (!masterTag) {
+      return;
+    }
+    const copied = await copyTextToClipboard(masterTag);
+    setTagCopied(copied);
   };
 
   const handleCancelConfirm = async () => {
@@ -170,22 +166,25 @@ export function FestivalModeCard({
   return (
     <section className="festival-mode-card festival-mode-card--active" data-testid="festival-mode-card">
       <div className="festival-mode-card__heading section-header">
-        <h2 className="festival-mode-card__title">
-          <FontAwesomeIcon icon={faLayerGroup} aria-hidden="true" /> Festival
-        </h2>
+        <div>
+          <h2 className="festival-mode-card__title" data-testid="festival-event-title">
+            <FontAwesomeIcon icon={faLayerGroup} aria-hidden="true" /> {event.title ?? 'Festival'}
+          </h2>
+          <p className="festival-mode-card__subtitle" data-testid="festival-event-meta">
+            <span>{eventMeta}</span>
+            <PinToggleButton
+              pinned={isPinned}
+              pinnedLabel="Unpin festival"
+              unpinnedLabel="Pin festival"
+              testId={`festival-pin-${eventId}`}
+              onToggle={toggleFestivalPin}
+            />
+          </p>
+        </div>
         <div className="section-header__actions">
-          <PinToggleButton
-            pinned={isPinned}
-            pinnedLabel="Unpin festival"
-            unpinnedLabel="Pin festival"
-            testId={`festival-pin-${eventId}`}
-            showLabel
-            className="btn-secondary"
-            onToggle={toggleFestivalPin}
-          />
           <button
             type="button"
-            className="btn-secondary btn-icon-label festival-mode-card__link"
+            className="btn-secondary btn-icon-label"
             data-testid="festival-itinerary-link"
             onClick={() => navigateToFestivalItinerary(venueId, event.eventId ?? '')}
           >
@@ -194,7 +193,7 @@ export function FestivalModeCard({
           </button>
           <button
             type="button"
-            className="btn-secondary btn-icon-label festival-mode-card__link"
+            className="btn-secondary btn-icon-label"
             data-testid="festival-ledger-link"
             onClick={() => navigateToFestivalLedger(venueId, event.eventId ?? '')}
           >
@@ -247,7 +246,26 @@ export function FestivalModeCard({
           </div>
           <div className="festival-mode-card__meta-item">
             <dt>QuickBooks tag</dt>
-            <dd data-testid="festival-master-tag">{festival?.qboTagName ?? event.qboTagName}</dd>
+            <dd className="festival-mode-card__tag" data-testid="festival-master-tag">
+              {masterTag ? (
+                <button
+                  type="button"
+                  className="festival-mode-card__tag-copy btn-icon-label"
+                  data-testid="festival-master-tag-copy"
+                  aria-label={tagCopied ? 'Copied QuickBooks tag' : `Copy QuickBooks tag ${masterTag}`}
+                  onClick={() => void handleCopyMasterTag()}
+                >
+                  <span className="festival-mode-card__tag-value">{masterTag}</span>
+                  <FontAwesomeIcon
+                    icon={tagCopied ? faCheck : faCopy}
+                    className="festival-mode-card__tag-icon"
+                    aria-hidden="true"
+                  />
+                </button>
+              ) : (
+                '—'
+              )}
+            </dd>
           </div>
         </dl>
 

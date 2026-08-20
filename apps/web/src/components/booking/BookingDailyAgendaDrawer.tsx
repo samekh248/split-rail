@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { sortAgendaPlacements, type BookingPlacement } from '@/lib/bookingCalendar';
+import { formatTimeWithPreference } from '@/lib/timeDisplayFormat';
 import { placementStatusLabel } from '@/components/booking/BookingCalendarMatrix';
 import { ModalHeader } from '@/components/shell/ModalHeader';
 
@@ -61,7 +62,7 @@ export function BookingDailyAgendaDrawer({
           <li key={placement.eventId}>
             <button type="button" onClick={() => onPlacementClick(placement)}>
               <span>{placement.venueName}</span>
-              <span>{placement.doorsTime ?? 'Time TBD'}</span>
+              <span>{placement.doorsTime ? formatTimeWithPreference(placement.doorsTime) : 'Time TBD'}</span>
               <span>{placement.title}</span>
               <span>{placementStatusLabel(placement.bookingPlacementStatus)}</span>
             </button>

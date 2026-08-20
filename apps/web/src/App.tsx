@@ -19,6 +19,7 @@ import { AcceptInvitePage } from '@/pages/AcceptInvitePage';
 import { OrganizationCreateStep } from '@/components/onboarding/OrganizationCreateStep';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { DateDisplayFormatSync } from '@/components/preferences/DateDisplayFormatSync';
+import { TimeDisplayFormatSync } from '@/components/preferences/TimeDisplayFormatSync';
 import { AppShell } from '@/components/shell/AppShell';
 import { useAuth } from '@/auth/useAuth';
 import { VenueProvider } from '@/venue/VenueContext';
@@ -36,6 +37,7 @@ function AuthenticatedShell({
   return (
     <VenueProvider>
       <DateDisplayFormatSync />
+      <TimeDisplayFormatSync />
       <AppShell sidebarNavigation={sidebarNavigation} topBarContent={topBarContent}>
         {children}
       </AppShell>

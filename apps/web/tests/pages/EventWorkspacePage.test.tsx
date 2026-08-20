@@ -10,6 +10,7 @@ import { VenueProvider } from '@/venue/VenueContext';
 import { getActiveVenueId, setActiveVenueId } from '@/venue/activeVenueStorage';
 import { getActiveEventId, setActiveEventId } from '@/venue/activeEventStorage';
 import { buildEventWorkspacePath } from '@/lib/appRoute';
+import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
 import { EVENT_A, EVENT_B, EVENT_C, newlyCreatedEvent, noEvents } from '../fixtures/events';
 import { VENUE_A, VENUE_B } from '../fixtures/venues';
 import {
@@ -23,15 +24,24 @@ vi.mock('@/pages/EventLedgerPage', () => ({
     venueId,
     eventId,
     focus,
+    extraHeaderActions,
+    hideEventHeader,
   }: {
     venueId: string;
     eventId: string;
     focus?: string | null;
+    extraHeaderActions?: ReactNode;
+    hideEventHeader?: boolean;
   }) => (
     <div data-testid="event-ledger-page">
-      <div data-testid="mock-ledger-page" data-focus={focus ?? ''}>
+      <div
+        data-testid="mock-ledger-page"
+        data-focus={focus ?? ''}
+        data-hide-event-header={hideEventHeader ? 'true' : 'false'}
+      >
         {venueId}:{eventId}
       </div>
+      {extraHeaderActions}
     </div>
   ),
 }));
@@ -204,6 +214,41 @@ describe('EventWorkspacePage', () => {
         `${VENUE_B.id}:${EVENT_B.eventId}`,
       );
     });
+  });
+
+  it('keeps the deep-linked event when opening workspace from another venue context', async () => {
+    setActiveVenueId(VENUE_A.id);
+    setActiveEventId(VENUE_A.id, EVENT_A.eventId!);
+
+    mockWorkspaceFetch({
+      venues: [VENUE_A, VENUE_B],
+      eventsByVenue: {
+        [VENUE_A.id]: [EVENT_A],
+        [VENUE_B.id]: [EVENT_B],
+      },
+      profile: workspaceAdminProfile,
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(EVENT_A.eventId!),
+    );
+
+    // Mirrors calendar / dashboard "Open workspace": storage + path update before React
+    // venue state has switched.
+    act(() => {
+      navigateToEventWorkspace(VENUE_B.id, EVENT_B.eventId!);
+    });
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe(workspacePath(VENUE_B.id, EVENT_B.eventId!));
+      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(
+        `${VENUE_B.id}:${EVENT_B.eventId}`,
+      );
+    });
+    expect(getActiveVenueId()).toBe(VENUE_B.id);
+    expect(getActiveEventId(VENUE_B.id)).toBe(EVENT_B.eventId);
   });
 
   it('supports browser back after event switch', async () => {
@@ -426,7 +471,7 @@ describe('EventWorkspacePage', () => {
     });
   });
 
-  it('wraps the festival section and ledger in a shared event-workspace inset', async () => {
+  it('wraps the ledger in the event-workspace inset', async () => {
     mockWorkspaceFetch({
       venues: [VENUE_A],
       eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
@@ -435,7 +480,70 @@ describe('EventWorkspacePage', () => {
     render(<EventWorkspacePage />, { wrapper: createWrapper() });
 
     const workspace = await screen.findByTestId('event-workspace');
-    expect(workspace).toContainElement(screen.getByTestId('festival-mode-card'));
     expect(workspace).toContainElement(screen.getByTestId('event-ledger-page'));
+  });
+
+  it('offers Convert to festival in the ledger header for a user who can manage the festival schedule', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceAdminProfile,
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    expect(await screen.findByTestId('festival-convert-menu-trigger')).toBeInTheDocument();
+  });
+
+  it('omits Convert to festival for a user who cannot manage the festival schedule', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceMemberProfile,
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    await screen.findByTestId('event-ledger-page');
+    expect(screen.queryByTestId('festival-convert-menu-trigger')).not.toBeInTheDocument();
+  });
+
+  it('omits Convert to festival once the event is settled', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceAdminProfile,
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [{ ...EVENT_A, status: 'SETTLED' }] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    await screen.findByTestId('event-ledger-page');
+    expect(screen.queryByTestId('festival-convert-menu-trigger')).not.toBeInTheDocument();
+  });
+
+  it('passes hideEventHeader=false for standard events so ledger shows meta with pin', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    const ledger = await screen.findByTestId('mock-ledger-page');
+    expect(ledger).toHaveAttribute('data-hide-event-header', 'false');
+  });
+
+  it('passes hideEventHeader=true for festival events', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: {
+        [VENUE_A.id]: [{ ...EVENT_A, eventType: 'FESTIVAL' }],
+      },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    const ledger = await screen.findByTestId('mock-ledger-page');
+    expect(ledger).toHaveAttribute('data-hide-event-header', 'true');
   });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faThumbtack, faThumbtackSlash } from '@fortawesome/free-solid-svg-icons';
 import { useDeleteEvent, useUpdateEvent } from '@/api/events';
@@ -7,10 +7,23 @@ import { useUserProfile } from '@/api/user';
 import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
 import { ModalHeader } from '@/components/shell/ModalHeader';
 import { KebabMenu } from '@/components/shell/KebabMenu';
+import { FormField } from '@/components/auth/FormField';
 import { formatEventDateRangeLong } from '@/lib/eventDateRange';
+import { formatTimeWithPreference } from '@/lib/timeDisplayFormat';
 import type { BookingPlacement } from '@/lib/bookingCalendar';
 import { placementStatusLabel } from '@/components/booking/BookingCalendarMatrix';
 import type { DashboardResponse } from '@/types/generated-api';
+
+const MAX_NOTES_LENGTH = 2000;
+
+function DetailGroup({ heading, children }: { heading: string; children: ReactNode }) {
+  return (
+    <div className="booking-event-drawer__group">
+      <h3 className="booking-event-drawer__group-heading">{heading}</h3>
+      <div className="booking-event-drawer__group-body">{children}</div>
+    </div>
+  );
+}
 
 export interface BookingEventDrawerProps {
   open: boolean;
@@ -46,6 +59,11 @@ export function BookingEventDrawer({
   const [mode, setMode] = useState<DrawerMode>('detail');
   const [title, setTitle] = useState('');
   const [eventDate, setEventDate] = useState('');
+  const [doorsTime, setDoorsTime] = useState('');
+  const [showStartTime, setShowStartTime] = useState('');
+  const [supportLineup, setSupportLineup] = useState('');
+  const [notes, setNotes] = useState('');
+  const [notesError, setNotesError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pinError, setPinError] = useState<string | null>(null);
 
@@ -68,8 +86,13 @@ export function BookingEventDrawer({
     }
     setTitle(placement.title);
     setEventDate(placement.eventDate);
+    setDoorsTime(placement.doorsTime ?? '');
+    setShowStartTime(placement.showStartTime ?? '');
+    setSupportLineup(placement.supportLineup ?? '');
+    setNotes(placement.notes ?? '');
     setMode('detail');
     setError(null);
+    setNotesError(null);
     setPinError(null);
   }, [placement]);
 
@@ -96,12 +119,23 @@ export function BookingEventDrawer({
 
   const handleSave = async () => {
     setError(null);
+    if (notes.length > MAX_NOTES_LENGTH) {
+      setNotesError(`Notes cannot exceed ${MAX_NOTES_LENGTH} characters.`);
+      return;
+    }
+    setNotesError(null);
     try {
       await updateEvent.mutateAsync({
         title,
         eventDate,
         qboTagName: null,
-        doorsTime: placement.doorsTime,
+        // Always send the current state value for every field below, even ones not currently
+        // rendered (e.g. showStartTime while on a hold) — gating on visibility here would
+        // silently clear a retained value and violate FR-006.
+        doorsTime: doorsTime || null,
+        showStartTime: showStartTime || null,
+        supportLineup: supportLineup || null,
+        notes: notes || null,
       });
       onUpdated();
       setMode('detail');
@@ -210,6 +244,41 @@ export function BookingEventDrawer({
             {formatEventDateRangeLong(placement.eventDate, placement.endDate)}
           </p>
           <p>{placementStatusLabel(placement.bookingPlacementStatus)}</p>
+
+          <DetailGroup heading="Schedule">
+            {(() => {
+              // A retained show start time stays hidden while off-confirmed (FR-006) — it
+              // reappears once the placement returns to confirmed, rather than leaking through
+              // detail view regardless of status.
+              const visibleShowStartTime =
+                placement.bookingPlacementStatus === 'CONFIRMED' ? placement.showStartTime : null;
+              return placement.doorsTime || visibleShowStartTime ? (
+                <ul className="booking-event-drawer__schedule-list">
+                  {placement.doorsTime ? (
+                    <li>Doors: {formatTimeWithPreference(placement.doorsTime)}</li>
+                  ) : null}
+                  {visibleShowStartTime ? (
+                    <li>Show start: {formatTimeWithPreference(visibleShowStartTime)}</li>
+                  ) : null}
+                </ul>
+              ) : (
+                <p className="booking-event-drawer__group-empty">No schedule times set.</p>
+              );
+            })()}
+          </DetailGroup>
+
+          {placement.supportLineup ? (
+            <DetailGroup heading="Lineup">
+              <p className="booking-event-drawer__lineup-text">{placement.supportLineup}</p>
+            </DetailGroup>
+          ) : null}
+
+          {placement.notes ? (
+            <DetailGroup heading="Notes">
+              <p className="booking-event-drawer__notes-text">{placement.notes}</p>
+            </DetailGroup>
+          ) : null}
+
           <div className="booking-event-drawer__actions section-header">
             <div className="booking-event-drawer__secondary-actions">
               {placement.eventType === 'FESTIVAL' ? null : (
@@ -274,6 +343,40 @@ export function BookingEventDrawer({
               <input type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} />
             </label>
           )}
+          <FormField
+            id="booking-event-doors-time"
+            label="Doors time"
+            type="time"
+            value={doorsTime}
+            onChange={setDoorsTime}
+          />
+          {placement.bookingPlacementStatus === 'CONFIRMED' ? (
+            <FormField
+              id="booking-event-show-start-time"
+              label="Show start time"
+              type="time"
+              value={showStartTime}
+              onChange={setShowStartTime}
+            />
+          ) : null}
+          <label className="booking-event-drawer__field">
+            Supporting lineup
+            <textarea
+              value={supportLineup}
+              onChange={(event) => setSupportLineup(event.target.value)}
+            />
+          </label>
+          <label className="booking-event-drawer__field">
+            Notes
+            <textarea
+              value={notes}
+              onChange={(event) => {
+                setNotes(event.target.value);
+                setNotesError(null);
+              }}
+            />
+          </label>
+          {notesError ? <p role="alert">{notesError}</p> : null}
           {error ? <p role="alert">{error}</p> : null}
           <button type="submit">Save</button>
         </form>

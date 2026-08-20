@@ -5,8 +5,11 @@ import { FestivalModeCard } from '@/components/festival/FestivalModeCard';
 import type { EventResponse } from '@/types/generated-api';
 import { DEFAULT_DATE_DISPLAY_FORMAT, setDateDisplayFormat } from '@/lib/dateDisplayFormat';
 
-const mockUpdateEvent = { mutateAsync: vi.fn(), isPending: false };
-const mockDeleteEvent = { mutateAsync: vi.fn(), isPending: false };
+const { mockUpdateEvent, mockDeleteEvent, copyTextToClipboard } = vi.hoisted(() => ({
+  mockUpdateEvent: { mutateAsync: vi.fn(), isPending: false },
+  mockDeleteEvent: { mutateAsync: vi.fn(), isPending: false },
+  copyTextToClipboard: vi.fn(),
+}));
 
 vi.mock('@/api/festivals', () => ({
   useFestival: () => ({ data: { days: [{ id: 'd1' }, { id: 'd2' }], qboTagName: 'FEST-TAG' } }),
@@ -44,6 +47,10 @@ vi.mock('@/lib/festivalLedgerRoute', () => ({
   navigateToFestivalLedger: vi.fn(),
 }));
 
+vi.mock('@/lib/copyToClipboard', () => ({
+  copyTextToClipboard: (...args: unknown[]) => copyTextToClipboard(...args),
+}));
+
 const standardEvent: EventResponse = {
   eventId: 'evt-standard',
   venueId: 'venue-1',
@@ -70,31 +77,18 @@ describe('FestivalModeCard', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     setDateDisplayFormat(DEFAULT_DATE_DISPLAY_FORMAT);
+    copyTextToClipboard.mockResolvedValue(true);
   });
-  it('renders nothing for a standard event without manage permission', () => {
-    const { container } = render(
+  it('renders nothing for a standard event, regardless of permission or status', () => {
+    const { container: withoutManage } = render(
       <FestivalModeCard venueId="venue-1" event={standardEvent} canManage={false} />,
     );
-    expect(container).toBeEmptyDOMElement();
-  });
+    expect(withoutManage).toBeEmptyDOMElement();
 
-  it('renders nothing for a frozen standard event even with manage permission', () => {
-    const { container } = render(
+    const { container: frozenWithManage } = render(
       <FestivalModeCard venueId="venue-1" event={frozenEvent} canManage />,
     );
-    expect(container).toBeEmptyDOMElement();
-  });
-
-  it('keeps the convert action on the trailing edge of the prompt', () => {
-    render(<FestivalModeCard venueId="venue-1" event={standardEvent} canManage />);
-
-    const card = screen.getByTestId('festival-mode-card');
-    expect(card).toHaveClass('festival-mode-card');
-    expect(card.className.split(' ')).toEqual(['festival-mode-card']);
-
-    const convert = screen.getByTestId('festival-convert-button');
-    expect(convert.closest('.festival-mode-card__prompt')).toHaveClass('section-header');
-    expect(convert.closest('.section-header__actions')).toBeInTheDocument();
+    expect(frozenWithManage).toBeEmptyDOMElement();
   });
 
   it('shows the active festival card without a competing outer layout class', () => {
@@ -104,14 +98,48 @@ describe('FestivalModeCard', () => {
     expect(card).toHaveClass('festival-mode-card');
     expect(card).toHaveClass('festival-mode-card--active');
     expect(card).not.toHaveClass('event-workspace');
-    expect(screen.getByTestId('festival-date-range')).toHaveTextContent('08/01/2026 – 08/03/2026');
-    expect(screen.getByTestId('stage-manager-stub')).toBeInTheDocument();
+    expect(screen.getByTestId('festival-event-title')).toHaveTextContent('Friday Headliner');
+    const meta = screen.getByTestId('festival-event-meta');
+    expect(meta).toHaveTextContent('PRE-SHOW');
+    expect(meta).toContainElement(screen.getByTestId('festival-pin-evt-festival'));
     expect(screen.getByTestId('festival-pin-evt-festival')).toHaveAttribute('aria-label', 'Pin festival');
+    expect(screen.getByTestId('festival-pin-evt-festival')).toHaveClass('event-card__pin');
+    expect(screen.getByTestId('festival-date-range')).toHaveTextContent('08/01/2026 – 08/03/2026');
+    expect(screen.getByTestId('festival-master-tag')).toHaveTextContent('FEST-TAG');
+    expect(screen.getByTestId('festival-master-tag-copy')).toBeInTheDocument();
+    expect(screen.getByTestId('stage-manager-stub')).toBeInTheDocument();
     expect(screen.getByTestId('festival-edit-button').closest('.festival-mode-card__heading')).toHaveClass(
       'section-header',
     );
     expect(screen.getByTestId('festival-edit-button').closest('.section-header__actions')).toBeInTheDocument();
     expect(screen.queryByTestId('festival-actions-menu')).not.toBeInTheDocument();
+  });
+
+  it('shows budget locked in the header meta when applicable', () => {
+    render(
+      <FestivalModeCard
+        venueId="venue-1"
+        event={{ ...festivalEvent, isBudgetLocked: true }}
+        canManage
+      />,
+    );
+
+    expect(screen.getByTestId('festival-event-meta')).toHaveTextContent('PRE-SHOW · Budget locked');
+  });
+
+  it('copies the QuickBooks tag to the clipboard when clicked', async () => {
+    const user = userEvent.setup();
+    render(<FestivalModeCard venueId="venue-1" event={festivalEvent} canManage />);
+
+    await user.click(screen.getByTestId('festival-master-tag-copy'));
+
+    await waitFor(() => {
+      expect(copyTextToClipboard).toHaveBeenCalledWith('FEST-TAG');
+    });
+    expect(screen.getByTestId('festival-master-tag-copy')).toHaveAttribute(
+      'aria-label',
+      'Copied QuickBooks tag',
+    );
   });
 
   it('keeps itinerary and master ledger in the section header actions', () => {
@@ -120,8 +148,9 @@ describe('FestivalModeCard', () => {
     const actions = screen.getByTestId('festival-edit-button').closest('.section-header__actions');
     expect(actions).toContainElement(screen.getByTestId('festival-itinerary-link'));
     expect(actions).toContainElement(screen.getByTestId('festival-ledger-link'));
-    expect(screen.getByTestId('festival-itinerary-link')).toHaveClass('festival-mode-card__link');
-    expect(screen.getByTestId('festival-ledger-link')).toHaveClass('festival-mode-card__link');
+    expect(actions).not.toContainElement(screen.getByTestId('festival-pin-evt-festival'));
+    expect(screen.getByTestId('festival-itinerary-link')).toHaveClass('btn-secondary');
+    expect(screen.getByTestId('festival-ledger-link')).toHaveClass('btn-secondary');
     expect(screen.queryByRole('navigation', { name: 'Festival views' })).not.toBeInTheDocument();
   });
 

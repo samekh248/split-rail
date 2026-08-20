@@ -38,7 +38,7 @@ public class UsersControllerTests : IntegrationTestBase
     {
         var (client, _, _, _) = await SetupAsync();
         var response = await client.PatchAsJsonAsync("/api/users/me/preferences",
-            new UpdateUserPreferencesRequest("yyyy-MM-dd"));
+            new UpdateUserPreferencesRequest("yyyy-MM-dd", null));
         response.EnsureSuccessStatusCode();
         var profile = await response.Content.ReadFromJsonAsync<UserProfileResponse>();
         profile!.DateDisplayFormat.Should().Be("yyyy-MM-dd");
@@ -49,7 +49,35 @@ public class UsersControllerTests : IntegrationTestBase
     {
         var (client, _, _, _) = await SetupAsync();
         var response = await client.PatchAsJsonAsync("/api/users/me/preferences",
-            new UpdateUserPreferencesRequest("MM-DD-YY"));
+            new UpdateUserPreferencesRequest("MM-DD-YY", null));
+        response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    public async Task GetMe_ReturnsDefaultTimeDisplayFormat()
+    {
+        var (client, _, _, _) = await SetupAsync();
+        var profile = await client.GetFromJsonAsync<UserProfileResponse>("/api/users/me");
+        profile!.TimeDisplayFormat.Should().Be(TimeDisplayFormats.Default);
+    }
+
+    [Fact]
+    public async Task UpdatePreferences_PersistsTimeDisplayFormat()
+    {
+        var (client, _, _, _) = await SetupAsync();
+        var response = await client.PatchAsJsonAsync("/api/users/me/preferences",
+            new UpdateUserPreferencesRequest(null, "24h"));
+        response.EnsureSuccessStatusCode();
+        var profile = await response.Content.ReadFromJsonAsync<UserProfileResponse>();
+        profile!.TimeDisplayFormat.Should().Be("24h");
+    }
+
+    [Fact]
+    public async Task UpdatePreferences_RejectsUnsupportedTimeFormat()
+    {
+        var (client, _, _, _) = await SetupAsync();
+        var response = await client.PatchAsJsonAsync("/api/users/me/preferences",
+            new UpdateUserPreferencesRequest(null, "ampm"));
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   useCreateArtist,
   useCreateLineItem,
@@ -10,6 +10,8 @@ import {
   useUpdateArtist,
   useUpdateLineItem,
 } from '@/api/ledger';
+import { useEvents } from '@/api/events';
+import { usePinEvent, useUnpinEvent } from '@/api/dashboard';
 import { ArtistDealPanel } from '@/components/artists/ArtistDealPanel';
 import { LedgerGrid } from '@/components/ledger/LedgerGrid';
 import { SyncNowButton } from '@/components/qbo/SyncNowButton';
@@ -34,6 +36,9 @@ interface EventLedgerPageProps {
   venueId: string;
   eventId: string;
   focus?: WorkspaceFocus | null;
+  extraHeaderActions?: ReactNode;
+  /** When true, LedgerGrid omits the duplicate event title/meta row. */
+  hideEventHeader?: boolean;
 }
 
 function findRow(ledger: NonNullable<ReturnType<typeof useLedger>['data']>, id: string) {
@@ -42,7 +47,13 @@ function findRow(ledger: NonNullable<ReturnType<typeof useLedger>['data']>, id: 
     .find((row) => row.id === id);
 }
 
-export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProps) {
+export function EventLedgerPage({
+  venueId,
+  eventId,
+  focus,
+  extraHeaderActions,
+  hideEventHeader = false,
+}: EventLedgerPageProps) {
   const { data: ledger, isLoading, error, refetch } = useLedger(venueId, eventId);
   const recalculate = useRecalculateLedger(venueId, eventId);
   const updateLineItem = useUpdateLineItem(venueId, eventId);
@@ -52,8 +63,22 @@ export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProp
   const createArtist = useCreateArtist(venueId, eventId);
   const updateArtist = useUpdateArtist(venueId, eventId);
   const deleteArtist = useDeleteArtist(venueId, eventId);
+  const { data: events = [] } = useEvents(venueId);
+  const pinEvent = usePinEvent();
+  const unpinEvent = useUnpinEvent();
   const [formulaError, setFormulaError] = useState<string | null>(null);
   const [structuralError, setStructuralError] = useState<string | null>(null);
+
+  const workspaceEvent = events.find((event) => event.eventId === eventId);
+  const isPinned = workspaceEvent?.isPinned === true;
+
+  const toggleEventPin = useCallback(() => {
+    if (!eventId) {
+      return;
+    }
+    const mutation = isPinned ? unpinEvent : pinEvent;
+    mutation.mutate({ venueId, eventId });
+  }, [eventId, isPinned, pinEvent, unpinEvent, venueId]);
 
   const canEditStructure = useCanEditLedgerStructure(
     ledger?.status,
@@ -309,7 +334,14 @@ export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProp
         canEditStructure={canEditStructure}
         lockBudgetPending={lockBudget.isPending}
         onLockBudget={() => lockBudget.mutate()}
+        hideEventHeader={hideEventHeader}
+        eventPin={
+          hideEventHeader
+            ? undefined
+            : { isPinned, onToggle: toggleEventPin }
+        }
         headerActions={canSync ? <SyncNowButton venueId={venueId} eventId={eventId} /> : undefined}
+        trailingHeaderActions={extraHeaderActions}
         onProformaChange={(id, value) => void saveLineItemField(id, 'proformaValue', value)}
         onSettlementChange={(id, value) =>
           void saveLineItemField(id, 'settlementValue', value)

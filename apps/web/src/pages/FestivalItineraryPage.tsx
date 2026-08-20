@@ -254,7 +254,6 @@ export function FestivalItineraryPage({
               pinnedLabel="Unpin festival"
               unpinnedLabel="Pin festival"
               testId={`festival-itinerary-pin-${eventId}`}
-              showLabel
               className="btn-secondary"
               onToggle={handleFestivalPinToggle}
             />

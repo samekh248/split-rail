@@ -5,6 +5,7 @@ import { EventCombobox } from '@/components/event/EventCombobox';
 import { EventFormPanel } from '@/components/event/EventFormPanel';
 import { EventDeleteConfirm } from '@/components/event/EventDeleteConfirm';
 import { FestivalModeCard } from '@/components/festival/FestivalModeCard';
+import { ConvertToFestivalAction } from '@/components/festival/ConvertToFestivalAction';
 import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
 import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from '@/api/events';
 import { useCreateFestival } from '@/api/festivals';
@@ -50,6 +51,9 @@ export function EventWorkspacePage() {
   const [festivalEditEventId, setFestivalEditEventId] = useState<string | null>(null);
   const [venueAccessDenied, setVenueAccessDenied] = useState(false);
   const venueSyncedRef = useRef(false);
+  const activeVenueIdRef = useRef(activeVenueId);
+  const pendingUrlVenueRef = useRef<string | null>(null);
+  activeVenueIdRef.current = activeVenueId;
 
   const createEvent = useCreateEvent(activeVenueId);
   const createFestival = useCreateFestival(activeVenueId ?? '');
@@ -69,8 +73,13 @@ export function EventWorkspacePage() {
     }
 
     setVenueAccessDenied(false);
-    activateVenueId(urlVenueId);
     venueSyncedRef.current = true;
+    // Only activate when the URL venue differs — activateVenueId invalidates all queries,
+    // so re-running on every venues refetch would keep the workspace in a loading loop.
+    if (activeVenueIdRef.current !== urlVenueId) {
+      pendingUrlVenueRef.current = urlVenueId;
+      activateVenueId(urlVenueId);
+    }
   }, [venues, isLoading, urlVenueId, activateVenueId]);
 
   useEffect(() => {
@@ -95,6 +104,13 @@ export function EventWorkspacePage() {
       return;
     }
     if (activeVenueId === urlVenueId) {
+      pendingUrlVenueRef.current = null;
+      return;
+    }
+
+    // Calendar / deep-link navigation updates the URL before VenueProvider state catches up.
+    // Do not remap to an event on the previous venue while that activation is in flight.
+    if (pendingUrlVenueRef.current === urlVenueId) {
       return;
     }
 
@@ -111,8 +127,13 @@ export function EventWorkspacePage() {
     if (events.some((event) => event.eventId === urlEventId)) {
       return urlEventId;
     }
-    return resolveActiveEventId(events, activeVenueId ?? '');
-  }, [urlEventId, events, eventsLoading, activeVenueId]);
+    // Do not fall back to another event while the URL venue is still syncing into
+    // VenueProvider — that briefly (or permanently) shows the wrong show.
+    if (!activeVenueId || activeVenueId !== urlVenueId) {
+      return null;
+    }
+    return resolveActiveEventId(events, activeVenueId);
+  }, [urlEventId, events, eventsLoading, activeVenueId, urlVenueId]);
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.eventId === selectedEventId) ?? null,
@@ -395,7 +416,21 @@ export function EventWorkspacePage() {
               }
             }}
           />
-          <EventLedgerPage venueId={activeVenueId} eventId={selectedEventId} focus={ledgerFocus} />
+          <EventLedgerPage
+            venueId={activeVenueId}
+            eventId={selectedEventId}
+            focus={ledgerFocus}
+            hideEventHeader={selectedEvent?.eventType === 'FESTIVAL'}
+            extraHeaderActions={
+              selectedEvent
+              && selectedEvent.eventType !== 'FESTIVAL'
+              && canManageFestivalSchedule
+              && selectedEvent.status !== 'SETTLED'
+              && selectedEvent.status !== 'RECONCILED' ? (
+                <ConvertToFestivalAction venueId={activeVenueId} event={selectedEvent} />
+              ) : undefined
+            }
+          />
         </div>
       ) : null}
 

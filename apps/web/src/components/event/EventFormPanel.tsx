@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faFloppyDisk, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FormField } from '@/components/auth/FormField';
 import { ModalHeader } from '@/components/shell/ModalHeader';
 import { validateEventForm, type EventFormValues } from '@/auth/validation';
@@ -130,7 +132,9 @@ export function EventFormPanel({
         {offerFestival ? (
           <fieldset className="event-form-panel__type" data-testid="event-type-picker">
             <legend className="event-form-panel__type-legend">Event type</legend>
-            <label className="event-form-panel__type-option">
+            <label
+              className={`event-form-panel__type-option${creationType === 'standard' ? ' event-form-panel__type-option--active' : ''}`}
+            >
               <input
                 type="radio"
                 name="event-creation-type"
@@ -147,7 +151,9 @@ export function EventFormPanel({
                 </span>
               </span>
             </label>
-            <label className="event-form-panel__type-option">
+            <label
+              className={`event-form-panel__type-option${creationType === 'festival' ? ' event-form-panel__type-option--active' : ''}`}
+            >
               <input
                 type="radio"
                 name="event-creation-type"
@@ -232,7 +238,20 @@ export function EventFormPanel({
           </p>
         ) : null}
         <div className="event-form-panel__actions">
-          <button type="submit" className="event-form-panel__submit" disabled={isPending}>
+          <button
+            type="button"
+            className="event-form-panel__cancel"
+            onClick={onCancel}
+            disabled={isPending}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            className="event-form-panel__submit btn-icon-label"
+            disabled={isPending}
+          >
+            <FontAwesomeIcon icon={mode === 'edit' ? faFloppyDisk : faPlus} aria-hidden="true" />
             {submitLabel}
           </button>
         </div>

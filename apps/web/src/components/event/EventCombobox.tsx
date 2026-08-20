@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { formatIsoDateRange } from '@/lib/eventDateRange';
+import { formatEventDateRange } from '@/lib/eventDateRange';
 import type { EventResponse } from '@/types/generated-api';
 import {
   formatStatusBadgeLabel,
@@ -113,7 +113,7 @@ export function EventCombobox({
           Event
         </span>
         <span className="event-combobox__current" data-testid="event-combobox-current">
-          {selectedEvent.title} · {selectedEvent.eventDate}
+          {selectedEvent.title} · {formatEventDateRange(selectedEvent.eventDate, selectedEvent.endDate)}
         </span>
         <span className="event-combobox__badge">
           {formatStatusBadgeLabel(selectedEvent.status, selectedEvent.isBudgetLocked)}
@@ -140,7 +140,7 @@ export function EventCombobox({
         </span>
         <span className="event-combobox__current" data-testid="event-combobox-current">
           {selectedEvent
-            ? `${selectedEvent.title} · ${selectedEvent.eventDate}`
+            ? `${selectedEvent.title} · ${formatEventDateRange(selectedEvent.eventDate, selectedEvent.endDate)}`
             : 'Select event'}
         </span>
         <span className="event-combobox__chevron" aria-hidden="true">
@@ -204,7 +204,7 @@ export function EventCombobox({
                     >
                       <span className="event-combobox__option-title">{event.title}</span>
                       <span className="event-combobox__option-meta">
-                        {formatIsoDateRange(event.eventDate, event.endDate)} · {formatStatusBadgeLabel(event.status, event.isBudgetLocked)}
+                        {formatEventDateRange(event.eventDate, event.endDate)} · {formatStatusBadgeLabel(event.status, event.isBudgetLocked)}
                       </span>
                       {isActive ? (
                         <span className="event-combobox__check" aria-hidden="true">

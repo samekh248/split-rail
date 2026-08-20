@@ -79,6 +79,8 @@ const mockLedger: LedgerGridResponse = {
 
 const mutateAsync = vi.fn().mockResolvedValue(mockLedger);
 const mutate = vi.fn();
+const pinMutate = vi.fn();
+const unpinMutate = vi.fn();
 
 vi.mock('@/api/ledger', () => ({
   useLedger: vi.fn(),
@@ -90,6 +92,15 @@ vi.mock('@/api/ledger', () => ({
   useCreateArtist: vi.fn(() => ({ mutateAsync })),
   useUpdateArtist: vi.fn(() => ({ mutateAsync })),
   useDeleteArtist: vi.fn(() => ({ mutateAsync })),
+}));
+
+vi.mock('@/api/events', () => ({
+  useEvents: vi.fn(() => ({ data: [] })),
+}));
+
+vi.mock('@/api/dashboard', () => ({
+  usePinEvent: vi.fn(() => ({ mutate: pinMutate })),
+  useUnpinEvent: vi.fn(() => ({ mutate: unpinMutate })),
 }));
 
 vi.mock('@/hooks/useCanEditLedgerStructure', () => ({
@@ -121,6 +132,7 @@ vi.mock('@/api/settlement', () => ({
 }));
 
 import { useLedger } from '@/api/ledger';
+import { useEvents } from '@/api/events';
 import { useCanEditLedgerStructure } from '@/hooks/useCanEditLedgerStructure';
 import { useCanTriggerQboSync } from '@/api/user';
 
@@ -141,7 +153,10 @@ describe('EventLedgerPage', () => {
     mutateAsync.mockReset();
     mutateAsync.mockResolvedValue(mockLedger);
     scrollToWorkspaceFocusMock.mockClear();
+    pinMutate.mockClear();
+    unpinMutate.mockClear();
     vi.mocked(useCanTriggerQboSync).mockReturnValue(false);
+    vi.mocked(useEvents).mockReturnValue({ data: [] } as ReturnType<typeof useEvents>);
   });
 
   it('shows loading state', () => {
@@ -400,5 +415,62 @@ describe('EventLedgerPage', () => {
 
     renderPage('deal');
     expect(scrollToWorkspaceFocusMock).not.toHaveBeenCalled();
+  });
+
+  it('renders inline pin on the event meta row for standard events', () => {
+    vi.mocked(useEvents).mockReturnValue({
+      data: [{ eventId: 'evt-1', venueId: 'ven-1', isPinned: false }],
+    } as ReturnType<typeof useEvents>);
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: mockLedger,
+    } as ReturnType<typeof useLedger>);
+
+    renderPage();
+
+    expect(screen.getByTestId('ledger-event-meta')).toBeInTheDocument();
+    expect(screen.getByTestId('ledger-pin-evt-1')).toHaveClass('event-card__pin');
+  });
+
+  it('calls pin mutation when the ledger meta pin is clicked', async () => {
+    const user = userEvent.setup();
+    vi.mocked(useEvents).mockReturnValue({
+      data: [{ eventId: 'evt-1', venueId: 'ven-1', isPinned: false }],
+    } as ReturnType<typeof useEvents>);
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: mockLedger,
+    } as ReturnType<typeof useLedger>);
+
+    renderPage();
+
+    await user.click(screen.getByTestId('ledger-pin-evt-1'));
+    expect(pinMutate).toHaveBeenCalledWith({ venueId: 'ven-1', eventId: 'evt-1' });
+  });
+
+  it('omits inline pin when hideEventHeader is true', () => {
+    vi.mocked(useEvents).mockReturnValue({
+      data: [{ eventId: 'evt-1', venueId: 'ven-1', isPinned: false }],
+    } as ReturnType<typeof useEvents>);
+    vi.mocked(useLedger).mockReturnValue({
+      isLoading: false,
+      error: null,
+      data: mockLedger,
+    } as ReturnType<typeof useLedger>);
+
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <EventLedgerPage venueId="ven-1" eventId="evt-1" hideEventHeader />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.queryByTestId('ledger-event-meta')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('ledger-pin-evt-1')).not.toBeInTheDocument();
   });
 });

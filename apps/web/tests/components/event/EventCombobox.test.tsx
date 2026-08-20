@@ -1,7 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventCombobox } from '@/components/event/EventCombobox';
+import { DEFAULT_DATE_DISPLAY_FORMAT, setDateDisplayFormat } from '@/lib/dateDisplayFormat';
 import { EVENT_A, EVENT_C } from '../../fixtures/events';
 import type { EventResponse } from '@/types/generated-api';
 
@@ -26,6 +27,10 @@ const SETTLED_EVENT: EventResponse = {
 };
 
 describe('EventCombobox', () => {
+  beforeEach(() => {
+    setDateDisplayFormat(DEFAULT_DATE_DISPLAY_FORMAT);
+  });
+
   it('renders provided events with title and date visible', async () => {
     const user = userEvent.setup();
 
@@ -40,7 +45,7 @@ describe('EventCombobox', () => {
 
     await user.click(screen.getByTestId('event-combobox-trigger'));
     expect(screen.getByTestId(`event-option-${EVENT_A.eventId}`)).toHaveTextContent('Show A');
-    expect(screen.getByTestId(`event-option-${EVENT_A.eventId}`)).toHaveTextContent('2026-08-01');
+    expect(screen.getByTestId(`event-option-${EVENT_A.eventId}`)).toHaveTextContent('08/01/2026');
     expect(screen.getByTestId(`event-option-${EVENT_C.eventId}`)).toHaveTextContent('Show C');
   });
 

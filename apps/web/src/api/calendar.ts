@@ -43,6 +43,8 @@ export function buildCalendarPlacementFromEvent(
     loadInTime: event.loadInTime ?? null,
     curfewTime: event.curfewTime ?? null,
     supportLineup: event.supportLineup ?? null,
+    showStartTime: event.showStartTime ?? null,
+    notes: event.notes ?? null,
     financialStatus: event.status ?? 'PRE_SHOW',
     isBudgetLocked: event.isBudgetLocked ?? false,
     qboTagName: event.qboTagName ?? '',
