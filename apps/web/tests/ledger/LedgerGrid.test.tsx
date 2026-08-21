@@ -192,6 +192,37 @@ describe('LedgerGrid', () => {
     expect(screen.getByTestId('workspace-focus-sync')).toHaveClass('ledger-grid__summary-header');
   });
 
+  it('renders show details and title actions inside the hero', () => {
+    render(
+      <LedgerGrid
+        ledger={mockLedger}
+        eventHeaderActions={
+          <button type="button" data-testid="event-details-edit">
+            Edit
+          </button>
+        }
+        eventDetails={<div data-testid="event-details-card">Doors: 7:00 PM</div>}
+      />,
+    );
+
+    const hero = document.querySelector('.ledger-grid__hero')!;
+    expect(hero).toContainElement(screen.getByTestId('event-details-edit'));
+    expect(hero).toContainElement(screen.getByTestId('event-details-card'));
+    expect(hero).toContainElement(screen.getByTestId('ledger-summary'));
+  });
+
+  it('omits show details when the event header is hidden', () => {
+    render(
+      <LedgerGrid
+        ledger={mockLedger}
+        hideEventHeader
+        eventDetails={<div data-testid="event-details-card">Doors: 7:00 PM</div>}
+      />,
+    );
+
+    expect(screen.queryByTestId('event-details-card')).not.toBeInTheDocument();
+  });
+
   it('shows variance banner when reconciled rows have non-zero derived variance', () => {
     const ledgerWithVariance: LedgerGridResponse = {
       ...mockLedger,

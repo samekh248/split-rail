@@ -173,7 +173,12 @@ export function getAppPath(): AppPath | string {
   if (isEventWorkspacePath(pathname)) {
     return pathname;
   }
-  if (isFestivalItineraryPath(pathname)) {
+  if (
+    isFestivalItineraryPath(pathname)
+    || isFestivalLedgerPath(pathname)
+    || isFestivalReportsPath(pathname)
+    || isBlockSettlementPath(pathname)
+  ) {
     return pathname;
   }
   switch (pathname) {

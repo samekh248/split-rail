@@ -125,6 +125,22 @@ describe('appRoute', () => {
     expect(isEventWorkspacePath(WORKSPACE_PATH)).toBe(true);
   });
 
+  it('getAppPath returns festival workspace pathnames', () => {
+    const itinerary = `/venues/${VENUE_ID}/festivals/${EVENT_ID}/itinerary`;
+    const ledger = `/venues/${VENUE_ID}/festivals/${EVENT_ID}/ledger`;
+    const reports = `/venues/${VENUE_ID}/festivals/${EVENT_ID}/reports`;
+    const settlement = `/venues/${VENUE_ID}/festivals/${EVENT_ID}/blocks/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/settlement`;
+
+    window.history.pushState({}, '', itinerary);
+    expect(getAppPath()).toBe(itinerary);
+    window.history.pushState({}, '', ledger);
+    expect(getAppPath()).toBe(ledger);
+    window.history.pushState({}, '', reports);
+    expect(getAppPath()).toBe(reports);
+    window.history.pushState({}, '', settlement);
+    expect(getAppPath()).toBe(settlement);
+  });
+
   it('buildEventWorkspacePath and parseEventWorkspacePath round-trip', () => {
     expect(buildEventWorkspacePath(VENUE_ID, EVENT_ID)).toBe(WORKSPACE_PATH);
     expect(parseEventWorkspacePath(WORKSPACE_PATH)).toEqual({

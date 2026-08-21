@@ -10,8 +10,11 @@ import { KebabMenu } from '@/components/shell/KebabMenu';
 import { FormField } from '@/components/auth/FormField';
 import { formatEventDateRangeLong } from '@/lib/eventDateRange';
 import { formatTimeWithPreference } from '@/lib/timeDisplayFormat';
-import type { BookingPlacement } from '@/lib/bookingCalendar';
-import { placementStatusLabel } from '@/components/booking/BookingCalendarMatrix';
+import {
+  bookingStatusSwatchClass,
+  formatBookingStatusLabel,
+  type BookingPlacement,
+} from '@/lib/bookingCalendar';
 import type { DashboardResponse } from '@/types/generated-api';
 
 const MAX_NOTES_LENGTH = 2000;
@@ -238,12 +241,31 @@ export function BookingEventDrawer({
       />
 
       {mode === 'detail' ? (
-        <div>
-          <p>{placement.venueName}</p>
-          <p className="booking-event-drawer__date" data-testid="booking-event-drawer-date">
-            {formatEventDateRangeLong(placement.eventDate, placement.endDate)}
-          </p>
-          <p>{placementStatusLabel(placement.bookingPlacementStatus)}</p>
+        <div className="booking-event-drawer__body">
+          <div className="booking-event-drawer__summary">
+            <p
+              className={`booking-event-drawer__status booking-event-drawer__status--${placement.bookingPlacementStatus.toLowerCase().replace('_', '-')}`}
+              data-testid="booking-event-drawer-status"
+            >
+              <span
+                className={`booking-calendar-legend__swatch ${bookingStatusSwatchClass(placement.bookingPlacementStatus)}`}
+                aria-hidden="true"
+              />
+              {formatBookingStatusLabel(placement.bookingPlacementStatus)}
+            </p>
+            <dl className="booking-event-drawer__meta">
+              <div className="booking-event-drawer__meta-item">
+                <dt>Venue</dt>
+                <dd data-testid="booking-event-drawer-venue">{placement.venueName}</dd>
+              </div>
+              <div className="booking-event-drawer__meta-item">
+                <dt>Date</dt>
+                <dd className="booking-event-drawer__date" data-testid="booking-event-drawer-date">
+                  {formatEventDateRangeLong(placement.eventDate, placement.endDate)}
+                </dd>
+              </div>
+            </dl>
+          </div>
 
           <DetailGroup heading="Schedule">
             {(() => {
@@ -281,7 +303,7 @@ export function BookingEventDrawer({
 
           <div className="booking-event-drawer__actions section-header">
             <div className="booking-event-drawer__secondary-actions">
-              {placement.eventType === 'FESTIVAL' ? null : (
+              {placement.eventType === 'FESTIVAL' || placement.workspaceAllowed ? null : (
                 <button type="button" onClick={() => setMode('edit')}>
                   Edit
                 </button>

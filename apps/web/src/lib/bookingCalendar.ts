@@ -407,6 +407,21 @@ export function formatBookingStatusLabel(status: BookingPlacementStatus): string
   }
 }
 
+export function bookingStatusSwatchClass(status: BookingPlacementStatus): string {
+  switch (status) {
+    case 'HOLD_1':
+      return 'booking-calendar-legend__swatch--hold-1';
+    case 'HOLD_2':
+      return 'booking-calendar-legend__swatch--hold-2';
+    case 'CONFIRMED':
+      return 'booking-calendar-legend__swatch--confirmed';
+    case 'CANCELLED':
+      return 'booking-calendar-legend__swatch--cancelled';
+    default:
+      return 'booking-calendar-legend__swatch--hold-1';
+  }
+}
+
 export function placementStatusClass(status: BookingPlacementStatus): string {
   if (status === 'CANCELLED') {
     return 'booking-placement--cancelled';

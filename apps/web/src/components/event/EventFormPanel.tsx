@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFloppyDisk, faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FormField } from '@/components/auth/FormField';
-import { ModalHeader } from '@/components/shell/ModalHeader';
 import { validateEventForm, type EventFormValues } from '@/auth/validation';
+import type { BookingPlacementStatus } from '@/lib/bookingCalendar';
 import {
   countFestivalDays,
   MAX_FESTIVAL_DAYS,
@@ -26,13 +26,59 @@ export interface EventFormPanelProps {
   isPending?: boolean;
   /** When provided, create mode offers a festival alongside the standard single-day event. */
   onCreateFestival?: (values: FestivalFormValues) => Promise<void>;
+  /** Gates show start time in edit mode (confirmed placements only). */
+  bookingPlacementStatus?: BookingPlacementStatus | string | null;
 }
 
 const EMPTY_VALUES: EventFormValues = {
   title: '',
   eventDate: '',
   qboTagName: '',
+  doorsTime: '',
+  showStartTime: '',
+  supportLineup: '',
+  notes: '',
 };
+
+function TextAreaField({
+  id,
+  label,
+  value,
+  onChange,
+  error,
+  disabled,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  error?: string;
+  disabled?: boolean;
+}) {
+  const errorId = `${id}-error`;
+  return (
+    <div className="form-field">
+      <label htmlFor={id} className="form-field__label">
+        {label}
+      </label>
+      <textarea
+        id={id}
+        className="form-field__input"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={disabled}
+        rows={3}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+      />
+      {error ? (
+        <p id={errorId} className="form-field__error" role="alert">
+          {error}
+        </p>
+      ) : null}
+    </div>
+  );
+}
 
 export function EventFormPanel({
   mode,
@@ -41,6 +87,7 @@ export function EventFormPanel({
   onCancel,
   isPending = false,
   onCreateFestival,
+  bookingPlacementStatus = null,
 }: EventFormPanelProps) {
   const [values, setValues] = useState<EventFormValues>(initialValues);
   const [endDate, setEndDate] = useState('');
@@ -91,6 +138,10 @@ export function EventFormPanel({
       title: values.title.trim(),
       eventDate: values.eventDate,
       qboTagName: values.qboTagName.trim(),
+      doorsTime: values.doorsTime ?? '',
+      showStartTime: values.showStartTime ?? '',
+      supportLineup: values.supportLineup ?? '',
+      notes: values.notes ?? '',
     });
   };
 
@@ -121,13 +172,11 @@ export function EventFormPanel({
       aria-labelledby="event-form-panel-heading"
       data-testid="event-form-panel"
     >
-      <ModalHeader
-        title={mode === 'create' ? (isFestival ? 'Create festival' : 'Create event') : 'Edit event'}
-        titleId="event-form-panel-heading"
-        onClose={onCancel}
-        closeDisabled={isPending}
-        titleClassName="event-form-panel__heading"
-      />
+      <header className="event-form-panel__header section-header">
+        <h2 id="event-form-panel-heading" className="event-form-panel__heading">
+          {mode === 'create' ? (isFestival ? 'Create festival' : 'Create event') : 'Edit event'}
+        </h2>
+      </header>
       <form className="event-form-panel__form" onSubmit={(event) => void handleSubmit(event)}>
         {offerFestival ? (
           <fieldset className="event-form-panel__type" data-testid="event-type-picker">
@@ -173,31 +222,33 @@ export function EventFormPanel({
             </label>
           </fieldset>
         ) : null}
-        <FormField
-          id="event-title"
-          label={isFestival ? 'Festival name' : 'Event title'}
-          type="text"
-          value={values.title}
-          onChange={(value) => setValues((current) => ({ ...current, title: value }))}
-          error={fieldErrors.title}
-          disabled={isPending}
-        />
-        <FormField
-          id="event-date"
-          label={isFestival ? 'Start date' : 'Event date'}
-          type="date"
-          value={values.eventDate}
-          onChange={(value) => {
-            setValues((current) => ({ ...current, eventDate: value }));
-            if (isFestival) {
-              const nextEnd = !endDate || endDate < value ? value : endDate;
-              setEndDate(nextEnd);
-              setRangeError(validateFestivalRange(value, nextEnd));
-            }
-          }}
-          error={fieldErrors.eventDate}
-          disabled={isPending}
-        />
+        <div className="event-form-panel__row">
+          <FormField
+            id="event-title"
+            label={isFestival ? 'Festival name' : 'Event title'}
+            type="text"
+            value={values.title}
+            onChange={(value) => setValues((current) => ({ ...current, title: value }))}
+            error={fieldErrors.title}
+            disabled={isPending}
+          />
+          <FormField
+            id="event-date"
+            label={isFestival ? 'Start date' : 'Event date'}
+            type="date"
+            value={values.eventDate}
+            onChange={(value) => {
+              setValues((current) => ({ ...current, eventDate: value }));
+              if (isFestival) {
+                const nextEnd = !endDate || endDate < value ? value : endDate;
+                setEndDate(nextEnd);
+                setRangeError(validateFestivalRange(value, nextEnd));
+              }
+            }}
+            error={fieldErrors.eventDate}
+            disabled={isPending}
+          />
+        </div>
         {isFestival ? (
           <>
             <FormField
@@ -232,6 +283,50 @@ export function EventFormPanel({
             disabled={isPending}
           />
         )}
+        {mode === 'edit' && !isFestival ? (
+          <div className="event-form-panel__show-details">
+            <div className="event-form-panel__group">
+              <h3 className="event-form-panel__group-heading">Schedule</h3>
+              <div className="event-form-panel__group-body event-form-panel__schedule">
+                <FormField
+                  id="event-doors-time"
+                  label="Doors time"
+                  type="time"
+                  value={values.doorsTime ?? ''}
+                  onChange={(value) => setValues((current) => ({ ...current, doorsTime: value }))}
+                  disabled={isPending}
+                />
+                {bookingPlacementStatus === 'CONFIRMED' ? (
+                  <FormField
+                    id="event-show-start-time"
+                    label="Show start time"
+                    type="time"
+                    value={values.showStartTime ?? ''}
+                    onChange={(value) =>
+                      setValues((current) => ({ ...current, showStartTime: value }))
+                    }
+                    disabled={isPending}
+                  />
+                ) : null}
+              </div>
+            </div>
+            <TextAreaField
+              id="event-support-lineup"
+              label="Supporting lineup"
+              value={values.supportLineup ?? ''}
+              onChange={(value) => setValues((current) => ({ ...current, supportLineup: value }))}
+              disabled={isPending}
+            />
+            <TextAreaField
+              id="event-notes"
+              label="Notes"
+              value={values.notes ?? ''}
+              onChange={(value) => setValues((current) => ({ ...current, notes: value }))}
+              error={fieldErrors.notes}
+              disabled={isPending}
+            />
+          </div>
+        ) : null}
         {submitError ? (
           <p className="event-form-panel__error" role="alert">
             {submitError}

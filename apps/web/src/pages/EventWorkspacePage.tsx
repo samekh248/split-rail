@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPen } from '@fortawesome/free-solid-svg-icons';
 import { EventLedgerPage } from '@/pages/EventLedgerPage';
 import { VenueSwitcher } from '@/components/venue/VenueSwitcher';
 import { EventCombobox } from '@/components/event/EventCombobox';
@@ -24,6 +26,8 @@ import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
 import { isRecognizedWorkspaceFocus } from '@/lib/workspaceFocusScroll';
 import { setActiveEventId } from '@/venue/activeEventStorage';
 import { resolveActiveEventId } from '@/venue/eventSelection';
+import { canEditEventMetadata } from '@/venue/eventLifecycle';
+import { EventDetailsCard } from '@/components/event/EventDetailsCard';
 import type { EventResponse } from '@/types/generated-api';
 
 type PanelMode = 'closed' | 'create' | 'edit';
@@ -196,6 +200,27 @@ export function EventWorkspacePage() {
     panelMode === 'closed' &&
     !deleteTarget;
 
+  const handleEditEvent = useCallback(
+    (event: EventResponse) => {
+      if (event.eventType === 'FESTIVAL') {
+        if (canManageFestivalSchedule && event.eventId) {
+          setFestivalEditEventId(event.eventId);
+        }
+        if (event.eventId && activeVenueId && event.eventId !== selectedEventId) {
+          navigateToEventWorkspace(activeVenueId, event.eventId);
+        }
+        setPanelMode('closed');
+        setEditingEvent(null);
+        setDeleteTarget(null);
+        return;
+      }
+      setEditingEvent(event);
+      setPanelMode('edit');
+      setDeleteTarget(null);
+    },
+    [activeVenueId, canManageFestivalSchedule, selectedEventId],
+  );
+
   const workspaceBarContent = useMemo(
     () => (
       <div className="dashboard-workspace-bar" data-testid="dashboard-workspace-bar">
@@ -215,27 +240,7 @@ export function EventWorkspacePage() {
                   }
                 : undefined
             }
-            onEditClick={
-              canManageEvents
-                ? (event) => {
-                    if (event.eventType === 'FESTIVAL') {
-                      if (canManageFestivalSchedule && event.eventId) {
-                        setFestivalEditEventId(event.eventId);
-                      }
-                      if (event.eventId && activeVenueId && event.eventId !== selectedEventId) {
-                        navigateToEventWorkspace(activeVenueId, event.eventId);
-                      }
-                      setPanelMode('closed');
-                      setEditingEvent(null);
-                      setDeleteTarget(null);
-                      return;
-                    }
-                    setEditingEvent(event);
-                    setPanelMode('edit');
-                    setDeleteTarget(null);
-                  }
-                : undefined
-            }
+            onEditClick={canManageEvents ? handleEditEvent : undefined}
             onDeleteClick={
               canManageEvents
                 ? (event) => {
@@ -261,6 +266,7 @@ export function EventWorkspacePage() {
       canManageEvents,
       canManageFestivalSchedule,
       activeVenueId,
+      handleEditEvent,
     ],
   );
 
@@ -374,7 +380,12 @@ export function EventWorkspacePage() {
             title: editingEvent.title ?? '',
             eventDate: editingEvent.eventDate ?? '',
             qboTagName: editingEvent.qboTagName ?? '',
+            doorsTime: editingEvent.doorsTime ?? '',
+            showStartTime: editingEvent.showStartTime ?? '',
+            supportLineup: editingEvent.supportLineup ?? '',
+            notes: editingEvent.notes ?? '',
           }}
+          bookingPlacementStatus={editingEvent.bookingPlacementStatus}
           onCancel={() => {
             setPanelMode('closed');
             setEditingEvent(null);
@@ -384,6 +395,10 @@ export function EventWorkspacePage() {
               title: values.title,
               eventDate: values.eventDate,
               qboTagName: values.qboTagName || null,
+              doorsTime: values.doorsTime || null,
+              showStartTime: values.showStartTime || null,
+              supportLineup: values.supportLineup || null,
+              notes: values.notes || null,
             });
             setPanelMode('closed');
             setEditingEvent(null);
@@ -438,6 +453,27 @@ export function EventWorkspacePage() {
             eventId={selectedEventId}
             focus={ledgerFocus}
             hideEventHeader={selectedEvent?.eventType === 'FESTIVAL'}
+            eventDetails={
+              selectedEvent && selectedEvent.eventType !== 'FESTIVAL' ? (
+                <EventDetailsCard event={selectedEvent} />
+              ) : undefined
+            }
+            eventHeaderActions={
+              selectedEvent
+              && selectedEvent.eventType !== 'FESTIVAL'
+              && canManageEvents
+              && canEditEventMetadata(selectedEvent) ? (
+                <button
+                  type="button"
+                  className="btn-primary--compact btn-icon-label"
+                  data-testid="event-details-edit"
+                  onClick={() => handleEditEvent(selectedEvent)}
+                >
+                  <FontAwesomeIcon icon={faPen} aria-hidden="true" />
+                  Edit
+                </button>
+              ) : undefined
+            }
             extraHeaderActions={
               selectedEvent
               && selectedEvent.eventType !== 'FESTIVAL'

@@ -25,12 +25,16 @@ vi.mock('@/pages/EventLedgerPage', () => ({
     eventId,
     focus,
     extraHeaderActions,
+    eventDetails,
+    eventHeaderActions,
     hideEventHeader,
   }: {
     venueId: string;
     eventId: string;
     focus?: string | null;
     extraHeaderActions?: ReactNode;
+    eventDetails?: ReactNode;
+    eventHeaderActions?: ReactNode;
     hideEventHeader?: boolean;
   }) => (
     <div data-testid="event-ledger-page">
@@ -41,6 +45,8 @@ vi.mock('@/pages/EventLedgerPage', () => ({
       >
         {venueId}:{eventId}
       </div>
+      {eventHeaderActions}
+      {eventDetails}
       {extraHeaderActions}
     </div>
   ),
@@ -481,6 +487,55 @@ describe('EventWorkspacePage', () => {
 
     const workspace = await screen.findByTestId('event-workspace');
     expect(workspace).toContainElement(screen.getByTestId('event-ledger-page'));
+  });
+
+  it('shows show details with a visible Edit action on a standard event workspace', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceAdminProfile,
+      venues: [VENUE_A],
+      eventsByVenue: {
+        [VENUE_A.id]: [{ ...EVENT_A, bookingPlacementStatus: 'CONFIRMED', doorsTime: '19:00' }],
+      },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    expect(await screen.findByTestId('event-details-card')).toBeInTheDocument();
+    expect(screen.getByText('Doors: 7:00 PM')).toBeInTheDocument();
+    expect(screen.getByTestId('event-details-edit')).toBeInTheDocument();
+  });
+
+  it('opens the workspace edit form from the show-details Edit action', async () => {
+    const user = userEvent.setup();
+    mockWorkspaceFetch({
+      profile: workspaceAdminProfile,
+      venues: [VENUE_A],
+      eventsByVenue: {
+        [VENUE_A.id]: [{ ...EVENT_A, bookingPlacementStatus: 'CONFIRMED', doorsTime: '19:00' }],
+      },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    await user.click(await screen.findByTestId('event-details-edit'));
+
+    const panel = await screen.findByTestId('event-form-panel');
+    expect(within(panel).getByLabelText('Doors time')).toBeInTheDocument();
+    expect(within(panel).getByLabelText('Show start time')).toBeInTheDocument();
+    expect(screen.queryByTestId('event-ledger-page')).not.toBeInTheDocument();
+  });
+
+  it('omits the show-details Edit action without event-manage permission', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceMemberProfile,
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    expect(await screen.findByTestId('event-details-card')).toBeInTheDocument();
+    expect(screen.queryByTestId('event-details-edit')).not.toBeInTheDocument();
   });
 
   it('offers Convert to festival in the ledger header for a user who can manage the festival schedule', async () => {

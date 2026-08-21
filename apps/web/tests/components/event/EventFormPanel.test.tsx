@@ -38,6 +38,10 @@ describe('EventFormPanel', () => {
         title: 'Spring Show',
         eventDate: '2026-05-01',
         qboTagName: '',
+        doorsTime: '',
+        showStartTime: '',
+        supportLineup: '',
+        notes: '',
       }),
     );
   });
@@ -150,20 +154,12 @@ describe('EventFormPanel', () => {
         title: 'Spring Show',
         eventDate: '2026-05-01',
         qboTagName: '',
+        doorsTime: '',
+        showStartTime: '',
+        supportLineup: '',
+        notes: '',
       }),
     );
-  });
-
-  it('calls cancel handler', async () => {
-    const onCancel = vi.fn();
-    const user = userEvent.setup();
-
-    render(
-      <EventFormPanel mode="create" onSubmit={vi.fn()} onCancel={onCancel} />,
-    );
-
-    await user.click(screen.getByRole('button', { name: 'Close' }));
-    expect(onCancel).toHaveBeenCalled();
   });
 
   it('places a Cancel action on the left and the primary submit on the right, with a leading icon, in create mode', () => {
@@ -220,5 +216,164 @@ describe('EventFormPanel', () => {
 
     expect(festivalOption).toHaveClass('event-form-panel__type-option--active');
     expect(standardOption).not.toHaveClass('event-form-panel__type-option--active');
+  });
+
+  const editValues = {
+    title: 'Spring Show',
+    eventDate: '2026-05-01',
+    qboTagName: '',
+    doorsTime: '19:00',
+    showStartTime: '20:00',
+    supportLineup: 'Openers: The Support Act',
+    notes: 'Line one\nLine two',
+  };
+
+  it('does not offer show-detail fields in create mode', () => {
+    render(<EventFormPanel mode="create" onSubmit={vi.fn()} onCancel={vi.fn()} />);
+
+    expect(screen.queryByLabelText('Doors time')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Show start time')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Supporting lineup')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Notes')).not.toBeInTheDocument();
+  });
+
+  it('renders doors and show start times in edit mode on a confirmed placement', () => {
+    render(
+      <EventFormPanel
+        mode="edit"
+        bookingPlacementStatus="CONFIRMED"
+        initialValues={editValues}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('Doors time')).toHaveValue('19:00');
+    expect(screen.getByLabelText('Show start time')).toHaveValue('20:00');
+  });
+
+  it('omits the show-start-time field in edit mode on a hold placement', () => {
+    render(
+      <EventFormPanel
+        mode="edit"
+        bookingPlacementStatus="HOLD_1"
+        initialValues={editValues}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('Doors time')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Show start time')).not.toBeInTheDocument();
+  });
+
+  it('pre-fills supporting lineup and notes in edit mode', () => {
+    render(
+      <EventFormPanel
+        mode="edit"
+        bookingPlacementStatus="CONFIRMED"
+        initialValues={editValues}
+        onSubmit={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('Supporting lineup')).toHaveValue('Openers: The Support Act');
+    expect(screen.getByLabelText('Notes')).toHaveValue('Line one\nLine two');
+  });
+
+  it('submits retained show start time when saving a hold placement without rendering the field', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+
+    render(
+      <EventFormPanel
+        mode="edit"
+        bookingPlacementStatus="HOLD_1"
+        initialValues={editValues}
+        onSubmit={onSubmit}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByLabelText('Show start time')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ showStartTime: '20:00' })),
+    );
+  });
+
+  it('submits lineup without artist-relationship fields', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+
+    render(
+      <EventFormPanel
+        mode="edit"
+        bookingPlacementStatus="CONFIRMED"
+        initialValues={editValues}
+        onSubmit={onSubmit}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith(
+        expect.not.objectContaining({
+          artists: expect.anything(),
+          eventArtists: expect.anything(),
+        }),
+      ),
+    );
+  });
+
+  it('shows a length-limit message before saving when notes exceed the accepted length', async () => {
+    const onSubmit = vi.fn().mockResolvedValue(undefined);
+    const user = userEvent.setup();
+
+    render(
+      <EventFormPanel
+        mode="edit"
+        bookingPlacementStatus="CONFIRMED"
+        initialValues={{ ...editValues, notes: 'a'.repeat(2001) }}
+        onSubmit={onSubmit}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(await screen.findByText('Notes cannot exceed 2000 characters.')).toBeInTheDocument();
+    expect(onSubmit).not.toHaveBeenCalled();
+  });
+
+  it('surfaces a server conflict message and keeps the submitted times after a rejected save', async () => {
+    const onSubmit = vi
+      .fn()
+      .mockRejectedValue(new Error('Show start time (18:00) cannot be earlier than doors time (19:00).'));
+    const user = userEvent.setup();
+
+    render(
+      <EventFormPanel
+        mode="edit"
+        bookingPlacementStatus="CONFIRMED"
+        initialValues={editValues}
+        onSubmit={onSubmit}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    const showStartInput = screen.getByLabelText('Show start time');
+    await user.clear(showStartInput);
+    await user.type(showStartInput, '18:00');
+    await user.click(screen.getByRole('button', { name: 'Save changes' }));
+
+    expect(
+      await screen.findByText('Show start time (18:00) cannot be earlier than doors time (19:00).'),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText('Show start time')).toHaveValue('18:00');
   });
 });

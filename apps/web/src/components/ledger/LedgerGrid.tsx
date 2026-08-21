@@ -25,6 +25,10 @@ interface LedgerGridProps {
   headerActions?: ReactNode;
   /** Rendered after Lock Budget so kebab menus stay rightmost. */
   trailingHeaderActions?: ReactNode;
+  /** Show-day details (schedule, lineup, notes) inside the hero, below the title. */
+  eventDetails?: ReactNode;
+  /** Actions aligned with the event title (e.g. Edit). */
+  eventHeaderActions?: ReactNode;
   /** When true, omits the event title/meta row (e.g. festival workspace shows them in FestivalModeCard). */
   hideEventHeader?: boolean;
 }
@@ -45,6 +49,8 @@ export function LedgerGrid({
   canLockBudget = true,
   headerActions,
   trailingHeaderActions,
+  eventDetails,
+  eventHeaderActions,
   hideEventHeader = false,
 }: LedgerGridProps) {
   const blocks = ledger.blocks ?? [];
@@ -77,14 +83,21 @@ export function LedgerGrid({
     <div className="ledger-grid" data-testid="ledger-grid">
       <header className="ledger-grid__hero">
         {!hideEventHeader ? (
-          <div className="ledger-grid__event-header">
-            <h2 className="ledger-grid__title">{ledger.title}</h2>
-            <p className="ledger-grid__meta" data-testid="ledger-event-meta">
-              {formatEventDateRange(ledger.eventDate, ledger.endDate)} · {status.replace('_', '-')}
-              {ledger.isBudgetLocked ? ' · Budget locked' : ''}
-            </p>
+          <div className="ledger-grid__event-header section-header">
+            <div>
+              <h2 className="ledger-grid__title">{ledger.title}</h2>
+              <p className="ledger-grid__meta" data-testid="ledger-event-meta">
+                {formatEventDateRange(ledger.eventDate, ledger.endDate)} · {status.replace('_', '-')}
+                {ledger.isBudgetLocked ? ' · Budget locked' : ''}
+              </p>
+            </div>
+            {eventHeaderActions ? (
+              <div className="section-header__actions">{eventHeaderActions}</div>
+            ) : null}
           </div>
         ) : null}
+
+        {!hideEventHeader && eventDetails ? eventDetails : null}
 
         <div
           className="ledger-grid__summary-header section-header"

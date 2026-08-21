@@ -170,15 +170,49 @@ describe('BookingEventDrawer', () => {
     expect(screen.getByRole('button', { name: 'Open workspace' })).toBeInTheDocument();
   });
 
-  it('keeps edit and cancel booking on a standard event', async () => {
+  it('groups venue and date together and styles confirmed status with the calendar color', () => {
+    renderDrawer();
+
+    const status = screen.getByTestId('booking-event-drawer-status');
+    expect(status).toHaveTextContent('Confirmed');
+    expect(status).toHaveClass('booking-event-drawer__status--confirmed');
+    expect(status.querySelector('.booking-calendar-legend__swatch--confirmed')).toBeInTheDocument();
+
+    const venue = screen.getByTestId('booking-event-drawer-venue');
+    const date = screen.getByTestId('booking-event-drawer-date');
+    expect(venue).toHaveTextContent('The Majestic Valley Arena');
+    expect(venue.closest('.booking-event-drawer__meta')).toBe(date.closest('.booking-event-drawer__meta'));
+  });
+
+  it.each([
+    ['HOLD_1', 'Hold 1', 'hold-1'],
+    ['HOLD_2', 'Hold 2', 'hold-2'],
+    ['CANCELLED', 'Cancelled', 'cancelled'],
+  ] as const)('styles %s with the matching calendar legend color', (status, label, modifier) => {
+    renderDrawer({ bookingPlacementStatus: status });
+
+    const badge = screen.getByTestId('booking-event-drawer-status');
+    expect(badge).toHaveTextContent(label);
+    expect(badge).toHaveClass(`booking-event-drawer__status--${modifier}`);
+    expect(badge.querySelector(`.booking-calendar-legend__swatch--${modifier}`)).toBeInTheDocument();
+  });
+
+  it('keeps cancel booking on a standard event and omits the calendar edit form', async () => {
     const user = userEvent.setup();
     renderDrawer();
 
-    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
     await user.click(screen.getByTestId('booking-event-drawer-actions-menu-trigger'));
     expect(screen.getByTestId('booking-event-drawer-cancel-booking')).toHaveTextContent(
       'Cancel booking',
     );
+  });
+
+  it('keeps Edit on a hold placement that cannot open the workspace', () => {
+    renderDrawer({ bookingPlacementStatus: 'HOLD_1', workspaceAllowed: false });
+
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(screen.queryByTestId('booking-event-drawer-open-workspace')).not.toBeInTheDocument();
   });
 
   it('places Open workspace on the right as a primary action', () => {
@@ -191,26 +225,6 @@ describe('BookingEventDrawer', () => {
   });
 
   // --- Show start time (spec 086 US2) ---------------------------------------
-
-  it('renders doors-time and show-start-time fields in edit mode on a confirmed placement', async () => {
-    const user = userEvent.setup();
-    renderDrawer({ bookingPlacementStatus: 'CONFIRMED', doorsTime: '19:00', showStartTime: '20:00' });
-
-    await user.click(screen.getByRole('button', { name: 'Edit' }));
-
-    expect(screen.getByLabelText('Doors time')).toBeEnabled();
-    expect(screen.getByLabelText('Show start time')).toBeEnabled();
-  });
-
-  it('omits the show-start-time field entirely in edit mode on a hold placement', async () => {
-    const user = userEvent.setup();
-    renderDrawer({ bookingPlacementStatus: 'HOLD_1', doorsTime: '19:00' });
-
-    await user.click(screen.getByRole('button', { name: 'Edit' }));
-
-    expect(screen.getByLabelText('Doors time')).toBeInTheDocument();
-    expect(screen.queryByLabelText('Show start time')).not.toBeInTheDocument();
-  });
 
   it('groups doors and show start together under one labelled schedule heading in detail mode', () => {
     renderDrawer({ bookingPlacementStatus: 'CONFIRMED', doorsTime: '19:00', showStartTime: '20:00' });
@@ -227,25 +241,6 @@ describe('BookingEventDrawer', () => {
     const heading = screen.getByRole('heading', { name: 'Schedule' });
     const group = heading.closest('.booking-event-drawer__group')!;
     expect(within(group).getByText('No schedule times set.')).toBeInTheDocument();
-  });
-
-  it('surfaces the server conflict message and keeps the submitted times on a rejected save', async () => {
-    updateEventMutateAsync.mockRejectedValueOnce(
-      new Error('Show start time (18:00) cannot be earlier than doors time (19:00).'),
-    );
-    const user = userEvent.setup();
-    renderDrawer({ bookingPlacementStatus: 'CONFIRMED', doorsTime: '19:00', showStartTime: '20:00' });
-
-    await user.click(screen.getByRole('button', { name: 'Edit' }));
-    const showStartInput = screen.getByLabelText('Show start time');
-    await user.clear(showStartInput);
-    await user.type(showStartInput, '18:00');
-    await user.click(screen.getByRole('button', { name: 'Save' }));
-
-    expect(
-      await screen.findByText('Show start time (18:00) cannot be earlier than doors time (19:00).'),
-    ).toBeInTheDocument();
-    expect(screen.getByLabelText('Show start time')).toHaveValue('18:00');
   });
 
   it('hides a retained show start time in detail mode while on hold, and shows it again once reconfirmed', () => {
@@ -282,7 +277,12 @@ describe('BookingEventDrawer', () => {
 
   it('retains a hidden show start time when saving an unrelated field on a hold placement', async () => {
     const user = userEvent.setup();
-    renderDrawer({ bookingPlacementStatus: 'HOLD_1', doorsTime: '19:00', showStartTime: '20:00' });
+    renderDrawer({
+      bookingPlacementStatus: 'HOLD_1',
+      workspaceAllowed: false,
+      doorsTime: '19:00',
+      showStartTime: '20:00',
+    });
 
     await user.click(screen.getByRole('button', { name: 'Edit' }));
     expect(screen.queryByLabelText('Show start time')).not.toBeInTheDocument();
@@ -301,7 +301,11 @@ describe('BookingEventDrawer', () => {
 
   it('renders a supporting-lineup textarea pre-filled from the placement in edit mode', async () => {
     const user = userEvent.setup();
-    renderDrawer({ supportLineup: 'Openers: The Support Act' });
+    renderDrawer({
+      bookingPlacementStatus: 'HOLD_1',
+      workspaceAllowed: false,
+      supportLineup: 'Openers: The Support Act',
+    });
 
     await user.click(screen.getByRole('button', { name: 'Edit' }));
 
@@ -323,7 +327,11 @@ describe('BookingEventDrawer', () => {
 
   it('saving a lineup change does not include any artist-relationship fields in the payload', async () => {
     const user = userEvent.setup();
-    renderDrawer({ supportLineup: 'Openers: The Support Act' });
+    renderDrawer({
+      bookingPlacementStatus: 'HOLD_1',
+      workspaceAllowed: false,
+      supportLineup: 'Openers: The Support Act',
+    });
 
     await user.click(screen.getByRole('button', { name: 'Edit' }));
     const lineupInput = screen.getByLabelText('Supporting lineup');
@@ -351,7 +359,7 @@ describe('BookingEventDrawer', () => {
 
   it('renders a multi-line notes textarea pre-filled from the placement in edit mode', async () => {
     const user = userEvent.setup();
-    renderDrawer({ notes: 'Line one\nLine two' });
+    renderDrawer({ bookingPlacementStatus: 'HOLD_1', workspaceAllowed: false, notes: 'Line one\nLine two' });
 
     await user.click(screen.getByRole('button', { name: 'Edit' }));
 
@@ -376,7 +384,7 @@ describe('BookingEventDrawer', () => {
 
   it('shows a length-limit message before saving when notes exceed the accepted length', async () => {
     const user = userEvent.setup();
-    renderDrawer({ notes: null });
+    renderDrawer({ bookingPlacementStatus: 'HOLD_1', workspaceAllowed: false, notes: null });
 
     await user.click(screen.getByRole('button', { name: 'Edit' }));
     const notesInput = screen.getByLabelText('Notes');

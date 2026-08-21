@@ -35,6 +35,8 @@ interface EventLedgerPageProps {
   eventId: string;
   focus?: WorkspaceFocus | null;
   extraHeaderActions?: ReactNode;
+  eventDetails?: ReactNode;
+  eventHeaderActions?: ReactNode;
   /** When true, LedgerGrid omits the duplicate event title/meta row. */
   hideEventHeader?: boolean;
 }
@@ -50,6 +52,8 @@ export function EventLedgerPage({
   eventId,
   focus,
   extraHeaderActions,
+  eventDetails,
+  eventHeaderActions,
   hideEventHeader = false,
 }: EventLedgerPageProps) {
   const { data: ledger, isLoading, error, refetch } = useLedger(venueId, eventId);
@@ -321,6 +325,8 @@ export function EventLedgerPage({
         hideEventHeader={hideEventHeader}
         headerActions={canSync ? <SyncNowButton venueId={venueId} eventId={eventId} /> : undefined}
         trailingHeaderActions={extraHeaderActions}
+        eventDetails={eventDetails}
+        eventHeaderActions={eventHeaderActions}
         onProformaChange={(id, value) => void saveLineItemField(id, 'proformaValue', value)}
         onSettlementChange={(id, value) =>
           void saveLineItemField(id, 'settlementValue', value)
