@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faGripVertical, faPen, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faGripVertical, faPen, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
+import { KebabMenu } from '@/components/shell/KebabMenu';
 import { useReassignVenueRegion } from '@/api/venues';
 import type { VenueRegionSection } from '@/lib/venueListView';
 import type { VenueResponse } from '@/types/generated-api';
@@ -10,6 +11,10 @@ export interface VenueListGroupedProps {
   canManage?: boolean;
   onEdit: (venue: VenueResponse) => void;
   onAddVenue?: (regionId: string) => void;
+  editingRegionId?: string | null;
+  regionEditor?: ReactNode;
+  onEditRegion?: (regionId: string) => void;
+  onDeleteRegion?: (regionId: string) => void;
 }
 
 interface DraggedVenue {
@@ -42,6 +47,10 @@ export function VenueListGrouped({
   canManage = false,
   onEdit,
   onAddVenue,
+  editingRegionId = null,
+  regionEditor,
+  onEditRegion,
+  onDeleteRegion,
 }: VenueListGroupedProps) {
   const reassignVenueRegion = useReassignVenueRegion();
   const [draggedVenue, setDraggedVenue] = useState<DraggedVenue | null>(null);
@@ -136,6 +145,30 @@ export function VenueListGrouped({
       ) : null}
       {sections.map((section) => {
         const isDropTarget = dragOverSectionKey === section.sectionKey;
+        const isEditingRegion = editingRegionId === section.sectionKey;
+        const regionMenuItems = [
+          ...(onEditRegion
+            ? [
+                {
+                  label: 'Edit region',
+                  icon: faPen,
+                  testId: `edit-region-${section.sectionKey}`,
+                  onSelect: () => onEditRegion(section.sectionKey),
+                },
+              ]
+            : []),
+          ...(onDeleteRegion
+            ? [
+                {
+                  label: 'Delete region',
+                  icon: faTrash,
+                  destructive: true,
+                  testId: `delete-region-${section.sectionKey}`,
+                  onSelect: () => onDeleteRegion(section.sectionKey),
+                },
+              ]
+            : []),
+        ];
         const dropTargetProps = {
           onDragEnter: handleDragEnter(section.sectionKey),
           onDragOver: handleDragOver,
@@ -154,17 +187,32 @@ export function VenueListGrouped({
             data-testid={`venues-region-section-${section.sectionKey}`}
           >
             <div className="venues-group__header">
-              <h2 className="venues-group__heading">{section.title}</h2>
-              {canManage && onAddVenue && section.sectionKey !== 'unassigned' ? (
-                <button
-                  type="button"
-                  className="venues-group__add btn-primary--compact btn-icon-label"
-                  data-testid={`venues-add-venue-${section.sectionKey}`}
-                  onClick={() => onAddVenue(section.sectionKey)}
-                >
-                  <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
-                  Add venue
-                </button>
+              {isEditingRegion && regionEditor ? (
+                regionEditor
+              ) : (
+                <h2 className="venues-group__heading">{section.title}</h2>
+              )}
+              {canManage && section.sectionKey !== 'unassigned' ? (
+                <div className="venues-group__actions">
+                  {onAddVenue ? (
+                    <button
+                      type="button"
+                      className="venues-group__add btn-primary--compact btn-icon-label"
+                      data-testid={`venues-add-venue-${section.sectionKey}`}
+                      onClick={() => onAddVenue(section.sectionKey)}
+                    >
+                      <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+                      Add venue
+                    </button>
+                  ) : null}
+                  {!isEditingRegion && regionMenuItems.length > 0 ? (
+                    <KebabMenu
+                      ariaLabel={`Region actions for ${section.title}`}
+                      testId={`venues-region-menu-${section.sectionKey}`}
+                      items={regionMenuItems}
+                    />
+                  ) : null}
+                </div>
               ) : null}
             </div>
 

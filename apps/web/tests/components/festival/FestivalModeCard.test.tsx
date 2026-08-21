@@ -12,7 +12,7 @@ const { mockUpdateEvent, mockDeleteEvent, copyTextToClipboard } = vi.hoisted(() 
 }));
 
 vi.mock('@/api/festivals', () => ({
-  useFestival: () => ({ data: { days: [{ id: 'd1' }, { id: 'd2' }], qboTagName: 'FEST-TAG' } }),
+  useFestival: () => ({ data: { qboTagName: 'FEST-TAG' } }),
 }));
 
 vi.mock('@/api/dashboard', () => ({
@@ -100,12 +100,10 @@ describe('FestivalModeCard', () => {
     expect(card).not.toHaveClass('event-workspace');
     expect(screen.getByTestId('festival-event-title')).toHaveTextContent('Friday Headliner');
     const meta = screen.getByTestId('festival-event-meta');
-    expect(meta).toHaveTextContent('PRE-SHOW');
-    expect(meta).toContainElement(screen.getByTestId('festival-pin-evt-festival'));
-    expect(screen.getByTestId('festival-pin-evt-festival')).toHaveAttribute('aria-label', 'Pin festival');
-    expect(screen.getByTestId('festival-pin-evt-festival')).toHaveClass('event-card__pin');
-    expect(screen.getByTestId('festival-date-range')).toHaveTextContent('08/01/2026 – 08/03/2026');
+    expect(meta).toHaveTextContent('08/01/2026 – 08/03/2026 · PRE-SHOW');
+    expect(screen.getByTestId('festival-date-range')).toHaveTextContent('08/01/2026 – 08/03/2026 · PRE-SHOW');
     expect(screen.getByTestId('festival-master-tag')).toHaveTextContent('FEST-TAG');
+    expect(screen.getByTestId('festival-master-tag').closest('.festival-mode-card__intro')).toBeInTheDocument();
     expect(screen.getByTestId('festival-master-tag-copy')).toBeInTheDocument();
     expect(screen.getByTestId('stage-manager-stub')).toBeInTheDocument();
     expect(screen.getByTestId('festival-edit-button').closest('.festival-mode-card__heading')).toHaveClass(
@@ -124,7 +122,9 @@ describe('FestivalModeCard', () => {
       />,
     );
 
-    expect(screen.getByTestId('festival-event-meta')).toHaveTextContent('PRE-SHOW · Budget locked');
+    expect(screen.getByTestId('festival-event-meta')).toHaveTextContent(
+      '08/01/2026 – 08/03/2026 · PRE-SHOW · Budget locked',
+    );
   });
 
   it('copies the QuickBooks tag to the clipboard when clicked', async () => {
@@ -148,7 +148,6 @@ describe('FestivalModeCard', () => {
     const actions = screen.getByTestId('festival-edit-button').closest('.section-header__actions');
     expect(actions).toContainElement(screen.getByTestId('festival-itinerary-link'));
     expect(actions).toContainElement(screen.getByTestId('festival-ledger-link'));
-    expect(actions).not.toContainElement(screen.getByTestId('festival-pin-evt-festival'));
     expect(screen.getByTestId('festival-itinerary-link')).toHaveClass('btn-secondary');
     expect(screen.getByTestId('festival-ledger-link')).toHaveClass('btn-secondary');
     expect(screen.queryByRole('navigation', { name: 'Festival views' })).not.toBeInTheDocument();

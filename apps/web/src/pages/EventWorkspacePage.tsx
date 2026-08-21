@@ -7,6 +7,7 @@ import { EventDeleteConfirm } from '@/components/event/EventDeleteConfirm';
 import { FestivalModeCard } from '@/components/festival/FestivalModeCard';
 import { ConvertToFestivalAction } from '@/components/festival/ConvertToFestivalAction';
 import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
+import { usePinEvent, useUnpinEvent } from '@/api/dashboard';
 import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from '@/api/events';
 import { useCreateFestival } from '@/api/festivals';
 import { useActiveVenue } from '@/venue/useActiveVenue';
@@ -59,6 +60,8 @@ export function EventWorkspacePage() {
   const createFestival = useCreateFestival(activeVenueId ?? '');
   const updateEvent = useUpdateEvent(activeVenueId, editingEvent?.eventId ?? null);
   const deleteEvent = useDeleteEvent(activeVenueId);
+  const pinEvent = usePinEvent();
+  const unpinEvent = useUnpinEvent();
 
   useEffect(() => {
     if (isLoading || !urlVenueId) {
@@ -170,6 +173,16 @@ export function EventWorkspacePage() {
     setFestivalEditEventId(null);
   }, []);
 
+  const isEventPinned = selectedEvent?.isPinned === true;
+
+  const toggleEventPin = useCallback(() => {
+    if (!activeVenueId || !selectedEventId) {
+      return;
+    }
+    const mutation = isEventPinned ? unpinEvent : pinEvent;
+    mutation.mutate({ venueId: activeVenueId, eventId: selectedEventId });
+  }, [activeVenueId, selectedEventId, isEventPinned, pinEvent, unpinEvent]);
+
   const showEventWorkspace = !isLoading && !isError && Boolean(activeVenueId) && !venueAccessDenied;
   const showEventsEmpty =
     showEventWorkspace && !eventsLoading && !eventsError && events.length === 0;
@@ -232,6 +245,8 @@ export function EventWorkspacePage() {
                   }
                 : undefined
             }
+            isPinned={isEventPinned}
+            onPinToggle={selectedEventId ? toggleEventPin : undefined}
           />
         ) : null}
       </div>
@@ -241,6 +256,8 @@ export function EventWorkspacePage() {
       eventsLoading,
       events,
       selectedEventId,
+      isEventPinned,
+      toggleEventPin,
       canManageEvents,
       canManageFestivalSchedule,
       activeVenueId,

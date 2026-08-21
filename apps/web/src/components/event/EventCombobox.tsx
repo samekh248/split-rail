@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { PinToggleButton } from '@/components/PinToggleButton';
 import { formatEventDateRange } from '@/lib/eventDateRange';
 import type { EventResponse } from '@/types/generated-api';
 import {
@@ -20,6 +21,8 @@ export interface EventComboboxProps {
   onCreateClick?: () => void;
   onEditClick?: (event: EventResponse) => void;
   onDeleteClick?: (event: EventResponse) => void;
+  isPinned?: boolean;
+  onPinToggle?: () => void;
 }
 
 export function EventCombobox({
@@ -30,6 +33,8 @@ export function EventCombobox({
   onCreateClick,
   onEditClick,
   onDeleteClick,
+  isPinned = false,
+  onPinToggle,
 }: EventComboboxProps) {
   const [open, setOpen] = useState(false);
   const [filterQuery, setFilterQuery] = useState('');
@@ -45,6 +50,22 @@ export function EventCombobox({
   );
 
   const selectedEvent = events.find((event) => event.eventId === selectedEventId) ?? null;
+
+  const pinButton =
+    selectedEvent?.eventId && onPinToggle ? (
+      <PinToggleButton
+        pinned={isPinned}
+        pinnedLabel={
+          selectedEvent.eventType === 'FESTIVAL' ? 'Unpin festival' : 'Unpin event'
+        }
+        unpinnedLabel={
+          selectedEvent.eventType === 'FESTIVAL' ? 'Pin festival' : 'Pin event'
+        }
+        testId={`event-combobox-pin-${selectedEvent.eventId}`}
+        className="event-combobox__pin"
+        onToggle={onPinToggle}
+      />
+    ) : null;
 
   useEffect(() => {
     if (!open) {
@@ -115,38 +136,39 @@ export function EventCombobox({
         <span className="event-combobox__current" data-testid="event-combobox-current">
           {selectedEvent.title} · {formatEventDateRange(selectedEvent.eventDate, selectedEvent.endDate)}
         </span>
-        <span className="event-combobox__badge">
-          {formatStatusBadgeLabel(selectedEvent.status, selectedEvent.isBudgetLocked)}
-        </span>
+        {pinButton}
       </div>
     );
   }
 
   return (
     <div className="event-combobox" ref={containerRef} data-testid="event-combobox">
-      <button
-        type="button"
-        className="event-combobox__trigger"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={listboxId}
-        aria-labelledby={labelId}
-        data-testid="event-combobox-trigger"
-        onClick={() => setOpen((value) => !value)}
-        onKeyDown={handleKeyDown}
-      >
-        <span className="event-combobox__label" id={labelId}>
-          Event
-        </span>
-        <span className="event-combobox__current" data-testid="event-combobox-current">
-          {selectedEvent
-            ? `${selectedEvent.title} · ${formatEventDateRange(selectedEvent.eventDate, selectedEvent.endDate)}`
-            : 'Select event'}
-        </span>
-        <span className="event-combobox__chevron" aria-hidden="true">
-          ▾
-        </span>
-      </button>
+      <div className="event-combobox__surface">
+        <button
+          type="button"
+          className="event-combobox__trigger"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={listboxId}
+          aria-labelledby={labelId}
+          data-testid="event-combobox-trigger"
+          onClick={() => setOpen((value) => !value)}
+          onKeyDown={handleKeyDown}
+        >
+          <span className="event-combobox__label" id={labelId}>
+            Event
+          </span>
+          <span className="event-combobox__current" data-testid="event-combobox-current">
+            {selectedEvent
+              ? `${selectedEvent.title} · ${formatEventDateRange(selectedEvent.eventDate, selectedEvent.endDate)}`
+              : 'Select event'}
+          </span>
+          <span className="event-combobox__chevron" aria-hidden="true">
+            ▾
+          </span>
+        </button>
+        {pinButton}
+      </div>
       {open ? (
         <div className="event-combobox__panel" data-testid="event-combobox-menu">
           <input

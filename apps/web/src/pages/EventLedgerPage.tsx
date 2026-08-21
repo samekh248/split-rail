@@ -10,8 +10,6 @@ import {
   useUpdateArtist,
   useUpdateLineItem,
 } from '@/api/ledger';
-import { useEvents } from '@/api/events';
-import { usePinEvent, useUnpinEvent } from '@/api/dashboard';
 import { ArtistDealPanel } from '@/components/artists/ArtistDealPanel';
 import { LedgerGrid } from '@/components/ledger/LedgerGrid';
 import { SyncNowButton } from '@/components/qbo/SyncNowButton';
@@ -63,22 +61,8 @@ export function EventLedgerPage({
   const createArtist = useCreateArtist(venueId, eventId);
   const updateArtist = useUpdateArtist(venueId, eventId);
   const deleteArtist = useDeleteArtist(venueId, eventId);
-  const { data: events = [] } = useEvents(venueId);
-  const pinEvent = usePinEvent();
-  const unpinEvent = useUnpinEvent();
   const [formulaError, setFormulaError] = useState<string | null>(null);
   const [structuralError, setStructuralError] = useState<string | null>(null);
-
-  const workspaceEvent = events.find((event) => event.eventId === eventId);
-  const isPinned = workspaceEvent?.isPinned === true;
-
-  const toggleEventPin = useCallback(() => {
-    if (!eventId) {
-      return;
-    }
-    const mutation = isPinned ? unpinEvent : pinEvent;
-    mutation.mutate({ venueId, eventId });
-  }, [eventId, isPinned, pinEvent, unpinEvent, venueId]);
 
   const canEditStructure = useCanEditLedgerStructure(
     ledger?.status,
@@ -335,11 +319,6 @@ export function EventLedgerPage({
         lockBudgetPending={lockBudget.isPending}
         onLockBudget={() => lockBudget.mutate()}
         hideEventHeader={hideEventHeader}
-        eventPin={
-          hideEventHeader
-            ? undefined
-            : { isPinned, onToggle: toggleEventPin }
-        }
         headerActions={canSync ? <SyncNowButton venueId={venueId} eventId={eventId} /> : undefined}
         trailingHeaderActions={extraHeaderActions}
         onProformaChange={(id, value) => void saveLineItemField(id, 'proformaValue', value)}

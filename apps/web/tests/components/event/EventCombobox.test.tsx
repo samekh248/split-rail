@@ -118,7 +118,7 @@ describe('EventCombobox', () => {
     expect(onCreateClick).toHaveBeenCalled();
   });
 
-  it('shows Budget locked badge for Pre-Show event with locked budget', () => {
+  it('omits status badge text from the closed single-event combobox', () => {
     render(
       <EventCombobox
         events={[BUDGET_LOCKED_EVENT]}
@@ -128,7 +128,7 @@ describe('EventCombobox', () => {
       />,
     );
 
-    expect(screen.getByText('Budget locked')).toBeInTheDocument();
+    expect(screen.queryByText('Budget locked')).not.toBeInTheDocument();
     expect(screen.queryByText('Planning')).not.toBeInTheDocument();
   });
 
@@ -189,5 +189,73 @@ describe('EventCombobox', () => {
     expect(screen.queryByTestId(`event-edit-${SETTLED_EVENT.eventId}`)).not.toBeInTheDocument();
     expect(screen.queryByTestId(`event-delete-${SETTLED_EVENT.eventId}`)).not.toBeInTheDocument();
     expect(screen.getByText('Event locked')).toBeInTheDocument();
+  });
+
+  it('renders pin control inside the single-event combobox', async () => {
+    const onPinToggle = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <EventCombobox
+        events={[EVENT_A]}
+        selectedEventId={EVENT_A.eventId!}
+        canManageEvents={false}
+        onSelect={vi.fn()}
+        isPinned={false}
+        onPinToggle={onPinToggle}
+      />,
+    );
+
+    const combobox = screen.getByTestId('event-combobox');
+    const pinButton = screen.getByTestId(`event-combobox-pin-${EVENT_A.eventId}`);
+    expect(combobox).toContainElement(pinButton);
+    expect(pinButton).toHaveClass('event-combobox__pin');
+    expect(pinButton).toHaveAttribute('aria-label', 'Pin event');
+
+    await user.click(pinButton);
+    expect(onPinToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders pin control inside the multi-event combobox trigger surface', async () => {
+    const onPinToggle = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <EventCombobox
+        events={[EVENT_A, EVENT_C]}
+        selectedEventId={EVENT_A.eventId!}
+        canManageEvents={false}
+        onSelect={vi.fn()}
+        isPinned
+        onPinToggle={onPinToggle}
+      />,
+    );
+
+    const combobox = screen.getByTestId('event-combobox');
+    const pinButton = screen.getByTestId(`event-combobox-pin-${EVENT_A.eventId}`);
+    expect(combobox).toContainElement(pinButton);
+    expect(pinButton).toHaveAttribute('aria-label', 'Unpin event');
+
+    await user.click(pinButton);
+    expect(onPinToggle).toHaveBeenCalledTimes(1);
+  });
+
+  it('uses festival pin labels when the selected event is a festival', () => {
+    const festivalEvent = { ...EVENT_A, eventType: 'FESTIVAL' as const, title: 'Big Fest' };
+
+    render(
+      <EventCombobox
+        events={[festivalEvent]}
+        selectedEventId={festivalEvent.eventId!}
+        canManageEvents={false}
+        onSelect={vi.fn()}
+        onPinToggle={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByTestId(`event-combobox-pin-${festivalEvent.eventId}`)).toHaveAttribute(
+      'aria-label',
+      'Pin festival',
+    );
   });
 });

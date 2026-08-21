@@ -12,13 +12,11 @@ import {
 import { FestivalCancelConfirm } from '@/components/festival/FestivalCancelConfirm';
 import { FestivalSetupModal } from '@/components/festival/FestivalSetupModal';
 import { StageManagerPanel } from '@/components/festival/StageManagerPanel';
-import { PinToggleButton } from '@/components/PinToggleButton';
 import { KebabMenu } from '@/components/shell/KebabMenu';
 import { formatEventDateRange } from '@/lib/eventDateRange';
 import { copyTextToClipboard } from '@/lib/copyToClipboard';
 import { useFestival } from '@/api/festivals';
 import { useDeleteEvent, useUpdateEvent } from '@/api/events';
-import { usePinEvent, useUnpinEvent } from '@/api/dashboard';
 import { navigateToFestivalItinerary } from '@/lib/festivalItineraryRoute';
 import { navigateToFestivalLedger } from '@/lib/festivalLedgerRoute';
 import type { EventResponse } from '@/types/generated-api';
@@ -60,8 +58,6 @@ export function FestivalModeCard({
   const isFestival = event?.eventType === 'FESTIVAL';
   const isFrozen = event?.status === 'SETTLED' || event?.status === 'RECONCILED';
   const isCancelled = event?.bookingPlacementStatus === 'CANCELLED';
-  const pinEvent = usePinEvent();
-  const unpinEvent = useUnpinEvent();
   const updateEvent = useUpdateEvent(venueId, event?.eventId ?? null);
   const deleteEvent = useDeleteEvent(venueId);
 
@@ -115,24 +111,16 @@ export function FestivalModeCard({
   const festival = festivalQuery.data;
   const eventId = event.eventId ?? '';
   const masterTag = festival?.qboTagName ?? event.qboTagName ?? '';
-  const isPinned = event.isPinned === true;
   const canEditFestival = canManage && !isFrozen && !isCancelled;
   const canCancelBooking = canManageEvents && !isFrozen && !isCancelled;
   const eventStatus = event.status ?? 'PRE_SHOW';
   const eventMeta = [
+    formatEventDateRange(event.eventDate, event.endDate),
     eventStatus.replace('_', '-'),
     event.isBudgetLocked ? 'Budget locked' : null,
   ]
     .filter(Boolean)
     .join(' · ');
-
-  const toggleFestivalPin = () => {
-    if (!eventId) {
-      return;
-    }
-    const mutation = isPinned ? unpinEvent : pinEvent;
-    mutation.mutate({ venueId, eventId });
-  };
 
   const handleCopyMasterTag = async () => {
     if (!masterTag) {
@@ -166,20 +154,33 @@ export function FestivalModeCard({
   return (
     <section className="festival-mode-card festival-mode-card--active" data-testid="festival-mode-card">
       <div className="festival-mode-card__heading section-header">
-        <div>
+        <div className="festival-mode-card__intro">
           <h2 className="festival-mode-card__title" data-testid="festival-event-title">
             <FontAwesomeIcon icon={faLayerGroup} aria-hidden="true" /> {event.title ?? 'Festival'}
           </h2>
           <p className="festival-mode-card__subtitle" data-testid="festival-event-meta">
-            <span>{eventMeta}</span>
-            <PinToggleButton
-              pinned={isPinned}
-              pinnedLabel="Unpin festival"
-              unpinnedLabel="Pin festival"
-              testId={`festival-pin-${eventId}`}
-              onToggle={toggleFestivalPin}
-            />
+            <span data-testid="festival-date-range">{eventMeta}</span>
           </p>
+          <div className="festival-mode-card__tag" data-testid="festival-master-tag">
+            {masterTag ? (
+              <button
+                type="button"
+                className="festival-mode-card__tag-copy btn-icon-label"
+                data-testid="festival-master-tag-copy"
+                aria-label={tagCopied ? 'Copied QuickBooks tag' : `Copy QuickBooks tag ${masterTag}`}
+                onClick={() => void handleCopyMasterTag()}
+              >
+                <span className="festival-mode-card__tag-value">{masterTag}</span>
+                <FontAwesomeIcon
+                  icon={tagCopied ? faCheck : faCopy}
+                  className="festival-mode-card__tag-icon"
+                  aria-hidden="true"
+                />
+              </button>
+            ) : (
+              '—'
+            )}
+          </div>
         </div>
         <div className="section-header__actions">
           <button
@@ -233,42 +234,6 @@ export function FestivalModeCard({
       </div>
 
       <div className="festival-mode-card__content">
-        <dl className="festival-mode-card__meta">
-          <div className="festival-mode-card__meta-item">
-            <dt>Dates</dt>
-            <dd data-testid="festival-date-range">
-              {formatEventDateRange(event.eventDate, event.endDate)}
-            </dd>
-          </div>
-          <div className="festival-mode-card__meta-item">
-            <dt>Days</dt>
-            <dd data-testid="festival-day-total">{festival?.days?.length ?? '—'}</dd>
-          </div>
-          <div className="festival-mode-card__meta-item">
-            <dt>QuickBooks tag</dt>
-            <dd className="festival-mode-card__tag" data-testid="festival-master-tag">
-              {masterTag ? (
-                <button
-                  type="button"
-                  className="festival-mode-card__tag-copy btn-icon-label"
-                  data-testid="festival-master-tag-copy"
-                  aria-label={tagCopied ? 'Copied QuickBooks tag' : `Copy QuickBooks tag ${masterTag}`}
-                  onClick={() => void handleCopyMasterTag()}
-                >
-                  <span className="festival-mode-card__tag-value">{masterTag}</span>
-                  <FontAwesomeIcon
-                    icon={tagCopied ? faCheck : faCopy}
-                    className="festival-mode-card__tag-icon"
-                    aria-hidden="true"
-                  />
-                </button>
-              ) : (
-                '—'
-              )}
-            </dd>
-          </div>
-        </dl>
-
         <StageManagerPanel venueId={venueId} eventId={event.eventId ?? ''} canManage={canManage} />
       </div>
 

@@ -2,14 +2,17 @@ import { useEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRotate } from '@fortawesome/free-solid-svg-icons';
 import { LoadingPlaceholder } from '@/components/shell/LoadingPlaceholder';
-import { useRegions } from '@/api/regions';
-import { RegionManagementPanel } from '@/components/booking/RegionManagementPanel';
+import { useCreateRegion, useDeleteRegion, useRegions, useUpdateRegion } from '@/api/regions';
+import { AddRegionControl } from '@/components/venue/AddRegionControl';
 import { AddVenueModal } from '@/components/venue/AddVenueModal';
+import { DeleteRegionConfirm } from '@/components/venue/DeleteRegionConfirm';
 import { DeleteVenueConfirm } from '@/components/venue/DeleteVenueConfirm';
+import { RegionDeleteResolutionModal } from '@/components/venue/RegionDeleteResolutionModal';
+import { RegionNameForm } from '@/components/venue/RegionNameForm';
 import { VenueEditModal } from '@/components/venue/VenueEditModal';
 import { VenueList } from '@/components/venue/VenueList';
+import { VenueListFilters } from '@/components/venue/VenueListFilters';
 import { VenueListGrouped } from '@/components/venue/VenueListGrouped';
-import { VenuesPageControls } from '@/components/venue/VenuesPageControls';
 import { useDeleteVenue } from '@/api/venues';
 import { useUserProfile } from '@/api/user';
 import { useCanManageVenues } from '@/hooks/useCanManageVenues';
@@ -25,7 +28,7 @@ import {
   type VenueRegionFilter,
 } from '@/lib/venueListViewStorage';
 import { useActiveVenue } from '@/venue/useActiveVenue';
-import type { VenueResponse } from '@/types/generated-api';
+import type { RegionResponse, VenueResponse } from '@/types/generated-api';
 
 function mapDeleteError(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error);
@@ -42,17 +45,28 @@ export function VenuesPage() {
   const { isLoading: profileLoading } = useUserProfile();
   const canManageVenues = useCanManageVenues();
   const { venues, isPending, isError, refetch } = useActiveVenue();
-  const { data: regions = [], isLoading: regionsLoading } = useRegions();
+  const { data: regions = [], isLoading: regionsLoading, refetch: refetchRegions } = useRegions();
+  const createRegion = useCreateRegion();
+  const deleteRegion = useDeleteRegion();
   const deleteVenue = useDeleteVenue();
 
   const [regionFilter, setRegionFilter] = useState<VenueRegionFilter>(
     () => readVenuesPageRegionFilter() ?? 'all',
   );
-  const [regionsPanelOpen, setRegionsPanelOpen] = useState(false);
+  const [addRegionError, setAddRegionError] = useState<string | null>(null);
+  const [editingRegionId, setEditingRegionId] = useState<string | null>(null);
+  const [editingRegionName, setEditingRegionName] = useState('');
+  const [editingRegionNotes, setEditingRegionNotes] = useState<string | null>(null);
+  const [editRegionError, setEditRegionError] = useState<string | null>(null);
+  const [deleteResolutionRegion, setDeleteResolutionRegion] = useState<RegionResponse | null>(null);
+  const [deletingRegion, setDeletingRegion] = useState<RegionResponse | null>(null);
+  const [deleteRegionError, setDeleteRegionError] = useState<string | null>(null);
   const [editingVenue, setEditingVenue] = useState<VenueResponse | null>(null);
   const [deletingVenue, setDeletingVenue] = useState<VenueResponse | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [addVenueRegionId, setAddVenueRegionId] = useState<string | null>(null);
+
+  const updateRegion = useUpdateRegion(editingRegionId ?? '');
 
   useEffect(() => {
     writeVenuesPageRegionFilter(regionFilter);
@@ -74,16 +88,78 @@ export function VenuesPage() {
   );
 
   const hasRegions = !regionsLoading && regions.length > 0;
+  const canManage = !profileLoading && canManageVenues;
   const showEmpty = !isPending && !isError && !hasRegions && venues.length === 0;
   const showVenueList = !isPending && !isError && (hasRegions || venues.length > 0);
-  const showControls = !isPending && !isError && !regionsLoading;
-  const controlsProps = {
-    regionFilter,
-    filterOptions,
-    hasRegions,
-    canManageVenues: !profileLoading && canManageVenues,
-    onRegionFilterChange: setRegionFilter,
-    onManageRegions: () => setRegionsPanelOpen(true),
+  const showBody = !isPending && !isError && !regionsLoading;
+  const showToolbar = showBody && (hasRegions || canManage);
+
+  const handleAddRegion = async (name: string): Promise<boolean> => {
+    setAddRegionError(null);
+    try {
+      await createRegion.mutateAsync({ name, notes: null });
+      await refetchRegions();
+      return true;
+    } catch (caught) {
+      setAddRegionError(caught instanceof Error ? caught.message : 'Unable to create region.');
+      return false;
+    }
+  };
+
+  const handleStartEditRegion = (regionId: string) => {
+    const region = regions.find((entry) => entry.id === regionId);
+    setEditingRegionId(regionId);
+    setEditingRegionName(region?.name ?? '');
+    setEditingRegionNotes(region?.notes ?? null);
+    setEditRegionError(null);
+  };
+
+  const handleSaveRegion = async () => {
+    if (!editingRegionId) {
+      return;
+    }
+    setEditRegionError(null);
+    try {
+      await updateRegion.mutateAsync({
+        name: editingRegionName,
+        notes: editingRegionNotes,
+      });
+      setEditingRegionId(null);
+      setEditingRegionName('');
+      setEditingRegionNotes(null);
+      await refetchRegions();
+    } catch (caught) {
+      setEditRegionError(caught instanceof Error ? caught.message : 'Unable to update region.');
+    }
+  };
+
+  const handleDeleteRegion = (regionId: string) => {
+    const region = regions.find((entry) => entry.id === regionId);
+    if (!region?.id) {
+      return;
+    }
+    if ((region.venueCount ?? 0) > 0) {
+      setDeleteResolutionRegion(region);
+      return;
+    }
+    setDeleteRegionError(null);
+    setDeletingRegion(region);
+  };
+
+  const handleDeleteRegionConfirm = async () => {
+    if (!deletingRegion?.id) {
+      return;
+    }
+    setDeleteRegionError(null);
+    try {
+      await deleteRegion.mutateAsync({ regionId: deletingRegion.id });
+      setDeletingRegion(null);
+      await refetchRegions();
+    } catch (caught) {
+      setDeleteRegionError(
+        caught instanceof Error ? caught.message : 'Unable to delete region. Please try again.',
+      );
+    }
   };
 
   const handleDeleteConfirm = async () => {
@@ -109,12 +185,7 @@ export function VenuesPage() {
     <main className="venues-page" data-testid="venues-page">
       <header className="venues-page__header section-header">
         <h1 className="venues-page__title">Venues</h1>
-        <div className="venues-page__actions">
-          {showControls && !hasRegions ? <VenuesPageControls {...controlsProps} /> : null}
-        </div>
       </header>
-
-      {showControls && hasRegions ? <VenuesPageControls {...controlsProps} /> : null}
 
       {isPending ? (
         <LoadingPlaceholder
@@ -138,32 +209,76 @@ export function VenuesPage() {
         </div>
       ) : null}
 
-      {showEmpty ? (
-        <section className="dashboard-empty" aria-labelledby="venues-empty-heading">
-          <h2 id="venues-empty-heading" className="dashboard-empty__heading">
-            No venues yet
-          </h2>
-          <p className="dashboard-empty__text">
-            {!profileLoading && canManageVenues
-              ? 'Create a region to start adding venues.'
-              : !profileLoading
-                ? 'Your organization does not have any venues yet. Ask someone with venue management access to set up a region and add venues before you can begin.'
-                : 'Create a region to start adding venues.'}
-          </p>
-        </section>
-      ) : null}
-
-      {showVenueList ? (
+      {showBody ? (
         <section className="venues-page__body" data-testid="venues-page-body">
-          {hasRegions ? (
-            <VenueListGrouped
-              sections={groupedSections}
-              onAddVenue={setAddVenueRegionId}
-              {...listHandlers}
-            />
-          ) : (
-            <VenueList venues={filteredVenues} {...listHandlers} />
-          )}
+          {showToolbar ? (
+            <div className="venues-page__toolbar" data-testid="venues-page-toolbar">
+              {hasRegions ? (
+                <VenueListFilters
+                  regionFilter={regionFilter}
+                  filterOptions={filterOptions}
+                  onRegionFilterChange={setRegionFilter}
+                />
+              ) : null}
+              {canManage ? (
+                <AddRegionControl
+                  pending={createRegion.isPending}
+                  error={addRegionError}
+                  submitLabel={hasRegions ? 'Add region' : 'Create region'}
+                  onSubmit={handleAddRegion}
+                />
+              ) : null}
+            </div>
+          ) : null}
+
+          {showEmpty ? (
+            <div className="dashboard-empty" aria-labelledby="venues-empty-heading">
+              <h2 id="venues-empty-heading" className="dashboard-empty__heading">
+                No venues yet
+              </h2>
+              <p className="dashboard-empty__text">
+                {!profileLoading && canManageVenues
+                  ? 'Create a region to start adding venues.'
+                  : !profileLoading
+                    ? 'Your organization does not have any venues yet. Ask someone with venue management access to set up a region and add venues before you can begin.'
+                    : 'Create a region to start adding venues.'}
+              </p>
+            </div>
+          ) : null}
+
+          {showVenueList ? (
+            hasRegions ? (
+              <VenueListGrouped
+                sections={groupedSections}
+                onAddVenue={setAddVenueRegionId}
+                editingRegionId={editingRegionId}
+                regionEditor={
+                  <RegionNameForm
+                    idPrefix="venues-edit-region"
+                    name={editingRegionName}
+                    onNameChange={setEditingRegionName}
+                    onSubmit={() => void handleSaveRegion()}
+                    onCancel={() => {
+                      setEditingRegionId(null);
+                      setEditingRegionName('');
+                      setEditingRegionNotes(null);
+                      setEditRegionError(null);
+                    }}
+                    submitLabel="Save"
+                    fieldLabel="Region name"
+                    pending={updateRegion.isPending}
+                    error={editRegionError}
+                    testId="venues-edit-region"
+                  />
+                }
+                onEditRegion={canManage ? handleStartEditRegion : undefined}
+                onDeleteRegion={canManage ? handleDeleteRegion : undefined}
+                {...listHandlers}
+              />
+            ) : (
+              <VenueList venues={filteredVenues} {...listHandlers} />
+            )
+          ) : null}
         </section>
       ) : null}
 
@@ -206,7 +321,28 @@ export function VenuesPage() {
         />
       ) : null}
 
-      <RegionManagementPanel open={regionsPanelOpen} onClose={() => setRegionsPanelOpen(false)} />
+      {deletingRegion ? (
+        <DeleteRegionConfirm
+          region={deletingRegion}
+          open
+          isPending={deleteRegion.isPending}
+          error={deleteRegionError}
+          onCancel={() => {
+            setDeleteRegionError(null);
+            setDeletingRegion(null);
+          }}
+          onConfirm={handleDeleteRegionConfirm}
+        />
+      ) : null}
+
+      {deleteResolutionRegion ? (
+        <RegionDeleteResolutionModal
+          region={deleteResolutionRegion}
+          open
+          onClose={() => setDeleteResolutionRegion(null)}
+          onDeleted={() => void refetchRegions()}
+        />
+      ) : null}
     </main>
   );
 }

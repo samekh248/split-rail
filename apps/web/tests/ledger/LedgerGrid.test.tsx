@@ -77,35 +77,10 @@ describe('LedgerGrid', () => {
     setDateDisplayFormat(DEFAULT_DATE_DISPLAY_FORMAT);
   });
 
-  it('renders event meta with formatted date and inline pin control', () => {
-    const onTogglePin = vi.fn();
-
-    render(
-      <LedgerGrid
-        ledger={mockLedger}
-        eventPin={{ isPinned: false, onToggle: onTogglePin }}
-      />,
-    );
+  it('renders event meta with formatted date', () => {
+    render(<LedgerGrid ledger={mockLedger} />);
 
     expect(screen.getByTestId('ledger-event-meta')).toHaveTextContent('07/04/2026 · PRE-SHOW');
-    const pinButton = screen.getByTestId('ledger-pin-evt-1');
-    expect(pinButton).toHaveClass('event-card__pin');
-    expect(pinButton).toHaveAttribute('aria-label', 'Pin event');
-  });
-
-  it('calls eventPin.onToggle when the pin button is clicked', async () => {
-    const user = userEvent.setup();
-    const onTogglePin = vi.fn();
-
-    render(
-      <LedgerGrid
-        ledger={mockLedger}
-        eventPin={{ isPinned: true, onToggle: onTogglePin }}
-      />,
-    );
-
-    await user.click(screen.getByTestId('ledger-pin-evt-1'));
-    expect(onTogglePin).toHaveBeenCalledTimes(1);
   });
 
   it('renders all three block sections', () => {
@@ -212,7 +187,6 @@ describe('LedgerGrid', () => {
 
     expect(screen.queryByRole('heading', { name: 'Friday Headliner' })).not.toBeInTheDocument();
     expect(screen.queryByText(/07\/04\/2026 · PRE-SHOW/)).not.toBeInTheDocument();
-    expect(screen.queryByTestId('ledger-pin-evt-1')).not.toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Summary', level: 3 })).toBeInTheDocument();
     expect(screen.getByTestId('ledger-summary')).toBeInTheDocument();
     expect(screen.getByTestId('workspace-focus-sync')).toHaveClass('ledger-grid__summary-header');

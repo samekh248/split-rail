@@ -6,13 +6,7 @@ import type { MoveDirection } from '@/lib/reorderLineItems';
 import type { ReactNode } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faLock } from '@fortawesome/free-solid-svg-icons';
-import { PinToggleButton } from '@/components/PinToggleButton';
 import { BlockSection } from './BlockSection';
-
-interface LedgerEventPinProps {
-  isPinned: boolean;
-  onToggle: () => void;
-}
 
 interface LedgerGridProps {
   ledger: LedgerGridResponse;
@@ -33,8 +27,6 @@ interface LedgerGridProps {
   trailingHeaderActions?: ReactNode;
   /** When true, omits the event title/meta row (e.g. festival workspace shows them in FestivalModeCard). */
   hideEventHeader?: boolean;
-  /** Pin control inline on the event meta row (standard events only). */
-  eventPin?: LedgerEventPinProps;
 }
 
 export function LedgerGrid({
@@ -54,7 +46,6 @@ export function LedgerGrid({
   headerActions,
   trailingHeaderActions,
   hideEventHeader = false,
-  eventPin,
 }: LedgerGridProps) {
   const blocks = ledger.blocks ?? [];
   const summary = ledger.summary;
@@ -89,19 +80,8 @@ export function LedgerGrid({
           <div className="ledger-grid__event-header">
             <h2 className="ledger-grid__title">{ledger.title}</h2>
             <p className="ledger-grid__meta" data-testid="ledger-event-meta">
-              <span>
-                {formatEventDateRange(ledger.eventDate, ledger.endDate)} · {status.replace('_', '-')}
-                {ledger.isBudgetLocked ? ' · Budget locked' : ''}
-              </span>
-              {eventPin ? (
-                <PinToggleButton
-                  pinned={eventPin.isPinned}
-                  pinnedLabel="Unpin event"
-                  unpinnedLabel="Pin event"
-                  testId={`ledger-pin-${ledger.eventId ?? ''}`}
-                  onToggle={eventPin.onToggle}
-                />
-              ) : null}
+              {formatEventDateRange(ledger.eventDate, ledger.endDate)} · {status.replace('_', '-')}
+              {ledger.isBudgetLocked ? ' · Budget locked' : ''}
             </p>
           </div>
         ) : null}

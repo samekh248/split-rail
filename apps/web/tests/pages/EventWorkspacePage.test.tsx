@@ -521,7 +521,7 @@ describe('EventWorkspacePage', () => {
     expect(screen.queryByTestId('festival-convert-menu-trigger')).not.toBeInTheDocument();
   });
 
-  it('passes hideEventHeader=false for standard events so ledger shows meta with pin', async () => {
+  it('passes hideEventHeader=false for standard events so ledger shows meta', async () => {
     mockWorkspaceFetch({
       venues: [VENUE_A],
       eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
@@ -531,6 +531,46 @@ describe('EventWorkspacePage', () => {
 
     const ledger = await screen.findByTestId('mock-ledger-page');
     expect(ledger).toHaveAttribute('data-hide-event-header', 'false');
+  });
+
+  it('renders pin control inside the event combobox for standard events', async () => {
+    const user = userEvent.setup();
+    const mock = mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    const combobox = await screen.findByTestId('event-combobox');
+    const pinButton = await within(combobox).findByTestId(
+      `event-combobox-pin-${EVENT_A.eventId}`,
+    );
+    expect(pinButton).toHaveClass('event-combobox__pin');
+    expect(pinButton).toHaveAttribute('aria-label', 'Pin event');
+
+    await user.click(pinButton);
+
+    await waitFor(() => {
+      expect(mock.pinRequests.some((request) => request.method === 'PUT')).toBe(true);
+    });
+  });
+
+  it('renders pin control inside the event combobox for festival events', async () => {
+    const festivalEvent = { ...EVENT_A, eventType: 'FESTIVAL' as const, title: 'Big Fest' };
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [festivalEvent] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    const combobox = await screen.findByTestId('event-combobox');
+    const pinButton = await within(combobox).findByTestId(
+      `event-combobox-pin-${festivalEvent.eventId}`,
+    );
+    expect(pinButton).toHaveClass('event-combobox__pin');
+    expect(pinButton).toHaveAttribute('aria-label', 'Pin festival');
   });
 
   it('passes hideEventHeader=true for festival events', async () => {
