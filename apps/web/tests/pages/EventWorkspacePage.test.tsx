@@ -410,8 +410,15 @@ describe('EventWorkspacePage', () => {
     render(<EventWorkspacePage />, { wrapper: createWrapper() });
 
     const workspaceBar = await screen.findByTestId('workspace-bar');
-    expect(within(workspaceBar).getByTestId('dashboard-workspace-bar')).toBeInTheDocument();
-    expect(await within(workspaceBar).findByTestId('venue-switcher')).toBeInTheDocument();
+    const scope = await waitFor(() => {
+      const bar = within(workspaceBar).getByTestId('dashboard-workspace-bar');
+      expect(bar).toHaveClass('dashboard-workspace-bar--nested');
+      return bar;
+    });
+    expect(within(scope).getByTestId('workspace-bar-venue')).toBeInTheDocument();
+    expect(within(scope).getByTestId('workspace-bar-separator')).toBeInTheDocument();
+    expect(within(scope).getByTestId('workspace-bar-event')).toBeInTheDocument();
+    expect(within(workspaceBar).getByTestId('venue-switcher')).toBeInTheDocument();
     expect(screen.getByTestId('top-bar')).toBeInTheDocument();
     expect(screen.queryByTestId('sidebar-workspace')).not.toBeInTheDocument();
     expect(screen.queryByTestId('header-settings')).not.toBeInTheDocument();

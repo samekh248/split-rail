@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPen } from '@fortawesome/free-solid-svg-icons';
+import { faChevronRight, faPen } from '@fortawesome/free-solid-svg-icons';
 import { EventLedgerPage } from '@/pages/EventLedgerPage';
 import { VenueSwitcher } from '@/components/venue/VenueSwitcher';
 import { EventCombobox } from '@/components/event/EventCombobox';
@@ -221,44 +221,57 @@ export function EventWorkspacePage() {
     [activeVenueId, canManageFestivalSchedule, selectedEventId],
   );
 
+  const showEventPicker = showEventWorkspace && !eventsLoading && events.length > 0;
+
   const workspaceBarContent = useMemo(
     () => (
-      <div className="dashboard-workspace-bar" data-testid="dashboard-workspace-bar">
-        <VenueSwitcher />
-        {showEventWorkspace && !eventsLoading && events.length > 0 ? (
-          <EventCombobox
-            events={events}
-            selectedEventId={selectedEventId}
-            canManageEvents={canManageEvents}
-            onSelect={handleSelectEvent}
-            onCreateClick={
-              canManageEvents
-                ? () => {
-                    setEditingEvent(null);
-                    setPanelMode('create');
-                    setDeleteTarget(null);
-                  }
-                : undefined
-            }
-            onEditClick={canManageEvents ? handleEditEvent : undefined}
-            onDeleteClick={
-              canManageEvents
-                ? (event) => {
-                    setDeleteTarget(event);
-                    setPanelMode('closed');
-                    setEditingEvent(null);
-                  }
-                : undefined
-            }
-            isPinned={isEventPinned}
-            onPinToggle={selectedEventId ? toggleEventPin : undefined}
-          />
+      <div
+        className={`dashboard-workspace-bar${showEventPicker ? ' dashboard-workspace-bar--nested' : ''}`}
+        data-testid="dashboard-workspace-bar"
+      >
+        <div className="dashboard-workspace-bar__parent" data-testid="workspace-bar-venue">
+          <VenueSwitcher />
+        </div>
+        {showEventPicker ? (
+          <>
+            <span className="dashboard-workspace-bar__separator" aria-hidden="true" data-testid="workspace-bar-separator">
+              <FontAwesomeIcon icon={faChevronRight} />
+            </span>
+            <div className="dashboard-workspace-bar__child" data-testid="workspace-bar-event">
+              <EventCombobox
+                events={events}
+                selectedEventId={selectedEventId}
+                canManageEvents={canManageEvents}
+                onSelect={handleSelectEvent}
+                onCreateClick={
+                  canManageEvents
+                    ? () => {
+                        setEditingEvent(null);
+                        setPanelMode('create');
+                        setDeleteTarget(null);
+                      }
+                    : undefined
+                }
+                onEditClick={canManageEvents ? handleEditEvent : undefined}
+                onDeleteClick={
+                  canManageEvents
+                    ? (event) => {
+                        setDeleteTarget(event);
+                        setPanelMode('closed');
+                        setEditingEvent(null);
+                      }
+                    : undefined
+                }
+                isPinned={isEventPinned}
+                onPinToggle={selectedEventId ? toggleEventPin : undefined}
+              />
+            </div>
+          </>
         ) : null}
       </div>
     ),
     [
-      showEventWorkspace,
-      eventsLoading,
+      showEventPicker,
       events,
       selectedEventId,
       isEventPinned,
