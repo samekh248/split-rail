@@ -34,6 +34,16 @@ export function isEventWorkspacePath(pathname: string): boolean {
   return WORKSPACE_PATH_PATTERN.test(pathname);
 }
 
+export function isEventOrFestivalWorkspacePath(pathname: string): boolean {
+  return (
+    isEventWorkspacePath(pathname)
+    || isFestivalItineraryPath(pathname)
+    || isFestivalLedgerPath(pathname)
+    || isFestivalReportsPath(pathname)
+    || isBlockSettlementPath(pathname)
+  );
+}
+
 export function isFestivalItineraryPath(pathname: string): boolean {
   return FESTIVAL_ITINERARY_PATH_PATTERN.test(pathname);
 }
@@ -149,13 +159,32 @@ export function getBookingMonthFromUrl(): string | null {
   return parseBookingMonth(new URLSearchParams(window.location.search).get('month'));
 }
 
+const BOOKING_VENUE_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+export function parseBookingVenueId(value: string | null | undefined): string | null {
+  if (!value || !BOOKING_VENUE_ID_PATTERN.test(value)) {
+    return null;
+  }
+  return value;
+}
+
+export function getBookingVenueFromUrl(): string | null {
+  return parseBookingVenueId(new URLSearchParams(window.location.search).get('venue'));
+}
+
 export function resolveBookingMonthFromUrl(): string {
   return getBookingMonthFromUrl() ?? defaultBookingMonth();
 }
 
-export function buildBookingPath(month?: string): string {
+export function buildBookingPath(month?: string, venueId?: string | null): string {
   const valid = parseBookingMonth(month) ?? defaultBookingMonth();
-  return `/booking?month=${valid}`;
+  const params = new URLSearchParams({ month: valid });
+  const venue = venueId === undefined ? getBookingVenueFromUrl() : parseBookingVenueId(venueId);
+  if (venue) {
+    params.set('venue', venue);
+  }
+  return `/booking?${params.toString()}`;
 }
 
 export function pushPath(path: string): void {
@@ -239,6 +268,10 @@ export function navigateToAccounting(): void {
 
 export function navigateToBooking(month?: string): void {
   pushPath(buildBookingPath(month));
+}
+
+export function navigateToBookingVenue(venueId: string): void {
+  pushPath(buildBookingPath(undefined, venueId));
 }
 
 export function navigateToBookingMonth(month: string): void {

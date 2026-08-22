@@ -1,5 +1,7 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { ConvertToFestivalAction } from '@/components/festival/ConvertToFestivalAction';
 import type { EventResponse } from '@/types/generated-api';
@@ -7,6 +9,12 @@ import type { EventResponse } from '@/types/generated-api';
 vi.mock('@/components/festival/FestivalSetupModal', () => ({
   FestivalSetupModal: ({ open, mode }: { open: boolean; mode?: string }) =>
     open ? <div data-testid="festival-setup-modal" data-mode={mode ?? 'create'} /> : null,
+}));
+
+const updateEventMutateAsync = vi.fn().mockResolvedValue(undefined);
+
+vi.mock('@/api/events', () => ({
+  useUpdateEvent: () => ({ mutateAsync: updateEventMutateAsync, isPending: false }),
 }));
 
 const standardEvent: EventResponse = {
@@ -18,9 +26,18 @@ const standardEvent: EventResponse = {
   eventType: 'STANDARD',
 };
 
+function renderAction(ui: ReactNode) {
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+  });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
+
 describe('ConvertToFestivalAction', () => {
   it('is not present as a top-level button before the kebab menu is opened', () => {
-    render(<ConvertToFestivalAction venueId="venue-1" event={standardEvent} />);
+    renderAction(
+      <ConvertToFestivalAction venueId="venue-1" event={standardEvent} canCancelBooking />,
+    );
 
     expect(screen.queryByTestId('festival-convert-button')).not.toBeInTheDocument();
     expect(screen.getByTestId('festival-convert-menu-trigger')).toBeInTheDocument();
@@ -28,7 +45,7 @@ describe('ConvertToFestivalAction', () => {
 
   it('opens FestivalSetupModal when Convert to festival is selected from the kebab menu', async () => {
     const user = userEvent.setup();
-    render(<ConvertToFestivalAction venueId="venue-1" event={standardEvent} />);
+    renderAction(<ConvertToFestivalAction venueId="venue-1" event={standardEvent} />);
 
     await user.click(screen.getByTestId('festival-convert-menu-trigger'));
     await user.click(screen.getByTestId('festival-convert-button'));
@@ -38,7 +55,7 @@ describe('ConvertToFestivalAction', () => {
 
   it('closes the overflow menu on Escape without invoking Convert to festival', async () => {
     const user = userEvent.setup();
-    render(<ConvertToFestivalAction venueId="venue-1" event={standardEvent} />);
+    renderAction(<ConvertToFestivalAction venueId="venue-1" event={standardEvent} />);
 
     await user.click(screen.getByTestId('festival-convert-menu-trigger'));
     expect(screen.getByTestId('festival-convert-button')).toBeInTheDocument();
@@ -47,5 +64,38 @@ describe('ConvertToFestivalAction', () => {
 
     expect(screen.queryByTestId('festival-convert-button')).not.toBeInTheDocument();
     expect(screen.queryByTestId('festival-setup-modal')).not.toBeInTheDocument();
+  });
+
+  it('offers Cancel booking in the same kebab and confirms it', async () => {
+    const user = userEvent.setup();
+    renderAction(
+      <ConvertToFestivalAction venueId="venue-1" event={standardEvent} canCancelBooking />,
+    );
+
+    await user.click(screen.getByTestId('festival-convert-menu-trigger'));
+    await user.click(screen.getByTestId('event-workspace-cancel-booking'));
+
+    expect(screen.getByRole('alertdialog', { name: 'Cancel booking?' })).toBeInTheDocument();
+    await user.click(screen.getByTestId('festival-cancel-confirm-button'));
+
+    expect(updateEventMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ bookingPlacementStatus: 'CANCELLED' }),
+    );
+  });
+
+  it('omits Convert to festival when conversion is not allowed', async () => {
+    const user = userEvent.setup();
+    renderAction(
+      <ConvertToFestivalAction
+        venueId="venue-1"
+        event={standardEvent}
+        canConvert={false}
+        canCancelBooking
+      />,
+    );
+
+    await user.click(screen.getByTestId('festival-convert-menu-trigger'));
+    expect(screen.queryByTestId('festival-convert-button')).not.toBeInTheDocument();
+    expect(screen.getByTestId('event-workspace-cancel-booking')).toBeInTheDocument();
   });
 });

@@ -488,12 +488,22 @@ export function EventWorkspacePage() {
               ) : undefined
             }
             extraHeaderActions={
-              selectedEvent
-              && selectedEvent.eventType !== 'FESTIVAL'
-              && canManageFestivalSchedule
-              && selectedEvent.status !== 'SETTLED'
-              && selectedEvent.status !== 'RECONCILED' ? (
-                <ConvertToFestivalAction venueId={activeVenueId} event={selectedEvent} />
+              selectedEvent && selectedEvent.eventType !== 'FESTIVAL' ? (
+                <ConvertToFestivalAction
+                  venueId={activeVenueId}
+                  event={selectedEvent}
+                  canConvert={
+                    canManageFestivalSchedule
+                    && selectedEvent.status !== 'SETTLED'
+                    && selectedEvent.status !== 'RECONCILED'
+                  }
+                  canCancelBooking={
+                    canManageEvents
+                    && selectedEvent.status !== 'SETTLED'
+                    && selectedEvent.status !== 'RECONCILED'
+                    && selectedEvent.bookingPlacementStatus !== 'CANCELLED'
+                  }
+                />
               ) : undefined
             }
           />
@@ -528,3 +538,5 @@ export function EventWorkspacePage() {
     </div>
   );
 }
+
+export default EventWorkspacePage;

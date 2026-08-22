@@ -12,6 +12,7 @@ import {
   navigateToAcceptInvite,
   navigateToBooking,
   navigateToBookingMonth,
+  navigateToBookingVenue,
   navigateToDashboard,
   navigateToSignIn,
   navigateToVenues,
@@ -68,6 +69,21 @@ describe('appRoute', () => {
     vi.useRealTimers();
   });
 
+  it('buildBookingPath can scope the calendar to a venue', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15));
+    expect(buildBookingPath('2026-08', VENUE_ID)).toBe(
+      `/booking?month=2026-08&venue=${VENUE_ID}`,
+    );
+    expect(buildBookingPath('2026-08', null)).toBe('/booking?month=2026-08');
+    vi.useRealTimers();
+  });
+
+  it('buildBookingPath preserves a venue already in the URL', () => {
+    window.history.pushState({}, '', `/booking?month=2026-08&venue=${VENUE_ID}`);
+    expect(buildBookingPath('2026-09')).toBe(`/booking?month=2026-09&venue=${VENUE_ID}`);
+  });
+
   it('navigateToBooking pushes the current month query', () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 5, 15));
@@ -77,10 +93,13 @@ describe('appRoute', () => {
     vi.useRealTimers();
   });
 
-  it('navigateToBooking accepts an explicit month', () => {
-    navigateToBooking('2026-08');
-    expect(window.location.pathname).toBe('/booking');
-    expect(window.location.search).toBe('?month=2026-08');
+  it('navigateToBookingVenue writes a venue-scoped booking path', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 15));
+    navigateToBookingVenue(VENUE_ID);
+    expect(getAppPath()).toBe('/booking');
+    expect(window.location.search).toBe(`?month=2026-06&venue=${VENUE_ID}`);
+    vi.useRealTimers();
   });
 
   it('navigateToBookingMonth is a no-op when the URL already matches', () => {

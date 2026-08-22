@@ -6,7 +6,6 @@ import { useDashboard, usePinEvent, useUnpinEvent } from '@/api/dashboard';
 import { useUserProfile } from '@/api/user';
 import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
 import { ModalHeader } from '@/components/shell/ModalHeader';
-import { KebabMenu } from '@/components/shell/KebabMenu';
 import { FormField } from '@/components/auth/FormField';
 import { formatEventDateRangeLong } from '@/lib/eventDateRange';
 import { formatTimeWithPreference } from '@/lib/timeDisplayFormat';
@@ -219,9 +218,6 @@ export function BookingEventDrawer({
     </button>
   ) : null;
 
-  const showCancelAction = placement.eventType !== 'FESTIVAL' || isHold;
-  const cancelActionLabel = isHold ? 'Release hold' : 'Cancel booking';
-
   return (
     <div
       className="booking-event-drawer"
@@ -302,6 +298,7 @@ export function BookingEventDrawer({
           ) : null}
 
           <div className="booking-event-drawer__actions section-header">
+          {(placement.eventType !== 'FESTIVAL' && !placement.workspaceAllowed) || isHold ? (
             <div className="booking-event-drawer__secondary-actions">
               {placement.eventType === 'FESTIVAL' || placement.workspaceAllowed ? null : (
                 <button type="button" onClick={() => setMode('edit')}>
@@ -313,21 +310,18 @@ export function BookingEventDrawer({
                   Promote
                 </button>
               ) : null}
-              {showCancelAction ? (
-                <KebabMenu
-                  ariaLabel="More booking actions"
-                  testId="booking-event-drawer-actions-menu"
-                  items={[
-                    {
-                      label: cancelActionLabel,
-                      testId: 'booking-event-drawer-cancel-booking',
-                      destructive: true,
-                      onSelect: () => void handleDelete(),
-                    },
-                  ]}
-                />
+              {isHold ? (
+                <button
+                  type="button"
+                  className="btn-icon-label"
+                  data-testid="booking-event-drawer-release-hold"
+                  onClick={() => void handleDelete()}
+                >
+                  Release hold
+                </button>
               ) : null}
             </div>
+          ) : null}
             {placement.workspaceAllowed ? (
               <div className="section-header__actions">
                 <button

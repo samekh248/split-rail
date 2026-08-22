@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { isEventWorkspacePath, navigateToDashboard } from '@/lib/appRoute';
+import { isEventOrFestivalWorkspacePath, navigateToBookingVenue, navigateToDashboard } from '@/lib/appRoute';
 import { useActiveVenue } from '@/venue/useActiveVenue';
 import { useRegions } from '@/api/regions';
 import {
@@ -114,13 +114,24 @@ export function VenueSwitcher() {
     }
     if (option.kind === 'all') {
       setActiveVenue(null);
-      if (isEventWorkspacePath(window.location.pathname)) {
+      if (isEventOrFestivalWorkspacePath(window.location.pathname)) {
         navigateToDashboard();
       }
     } else if (option.id) {
       setActiveVenue(option.id);
+      if (isEventOrFestivalWorkspacePath(window.location.pathname)) {
+        navigateToBookingVenue(option.id);
+      }
     }
     setOpen(false);
+  };
+
+  const handleTriggerClick = () => {
+    if (isEventOrFestivalWorkspacePath(window.location.pathname) && activeVenueId) {
+      navigateToBookingVenue(activeVenueId);
+      return;
+    }
+    setOpen((value) => !value);
   };
 
   const selectableIndexes = options.reduce<number[]>((indexes, option, index) => {
@@ -177,29 +188,57 @@ export function VenueSwitcher() {
     }
   };
 
+  const handleTriggerKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (
+      !open
+      && (event.key === 'Enter' || event.key === ' ')
+      && isEventOrFestivalWorkspacePath(window.location.pathname)
+      && activeVenueId
+    ) {
+      event.preventDefault();
+      navigateToBookingVenue(activeVenueId);
+      return;
+    }
+    handleKeyDown(event);
+  };
+
   return (
     <div className="venue-switcher" ref={containerRef} data-testid="venue-switcher">
-      <button
-        type="button"
-        className="venue-switcher__trigger"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={listboxId}
-        aria-labelledby={labelId}
-        data-testid="venue-switcher-trigger"
-        onClick={() => setOpen((value) => !value)}
-        onKeyDown={handleKeyDown}
-      >
-        <span className="venue-switcher__label" id={labelId}>
-          Venue
-        </span>
-        <span className="venue-switcher__current" data-testid="venue-switcher-current">
-          {currentLabel}
-        </span>
-        <span className="venue-switcher__chevron" aria-hidden="true">
-          ▾
-        </span>
-      </button>
+      <div className="venue-switcher__cluster">
+        <button
+          type="button"
+          className="venue-switcher__trigger"
+          aria-haspopup={isEventOrFestivalWorkspacePath(window.location.pathname) ? undefined : 'listbox'}
+          aria-expanded={isEventOrFestivalWorkspacePath(window.location.pathname) ? undefined : open}
+          aria-controls={isEventOrFestivalWorkspacePath(window.location.pathname) ? undefined : listboxId}
+          aria-labelledby={labelId}
+          data-testid="venue-switcher-trigger"
+          onClick={handleTriggerClick}
+          onKeyDown={handleTriggerKeyDown}
+        >
+          <span className="venue-switcher__label" id={labelId}>
+            Venue
+          </span>
+          <span className="venue-switcher__current" data-testid="venue-switcher-current">
+            {currentLabel}
+          </span>
+        </button>
+        <button
+          type="button"
+          className="venue-switcher__chevron-btn"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={listboxId}
+          aria-label="Switch venue"
+          data-testid="venue-switcher-menu-toggle"
+          onClick={() => setOpen((value) => !value)}
+          onKeyDown={handleKeyDown}
+        >
+          <span className="venue-switcher__chevron" aria-hidden="true">
+            ▾
+          </span>
+        </button>
+      </div>
       {open ? (
         <div className="venue-switcher__menu" data-testid="venue-switcher-menu">
           {showRegionFilter ? (

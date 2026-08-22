@@ -167,6 +167,7 @@ describe('BookingEventDrawer', () => {
     );
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Cancel booking' })).not.toBeInTheDocument();
+    expect(screen.queryByTestId('booking-event-drawer-actions-menu')).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Open workspace' })).toBeInTheDocument();
   });
 
@@ -197,21 +198,22 @@ describe('BookingEventDrawer', () => {
     expect(badge.querySelector(`.booking-calendar-legend__swatch--${modifier}`)).toBeInTheDocument();
   });
 
-  it('keeps cancel booking on a standard event and omits the calendar edit form', async () => {
-    const user = userEvent.setup();
+  it('omits the drawer kebab and cancel booking on a standard event', () => {
     renderDrawer();
 
     expect(screen.queryByRole('button', { name: 'Edit' })).not.toBeInTheDocument();
-    await user.click(screen.getByTestId('booking-event-drawer-actions-menu-trigger'));
-    expect(screen.getByTestId('booking-event-drawer-cancel-booking')).toHaveTextContent(
-      'Cancel booking',
-    );
+    expect(screen.queryByTestId('booking-event-drawer-actions-menu')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Cancel booking' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open workspace' })).toBeInTheDocument();
   });
 
-  it('keeps Edit on a hold placement that cannot open the workspace', () => {
+  it('keeps Edit and Release hold on a hold placement that cannot open the workspace', () => {
     renderDrawer({ bookingPlacementStatus: 'HOLD_1', workspaceAllowed: false });
 
     expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Promote' })).toBeInTheDocument();
+    expect(screen.getByTestId('booking-event-drawer-release-hold')).toHaveTextContent('Release hold');
+    expect(screen.queryByTestId('booking-event-drawer-actions-menu')).not.toBeInTheDocument();
     expect(screen.queryByTestId('booking-event-drawer-open-workspace')).not.toBeInTheDocument();
   });
 

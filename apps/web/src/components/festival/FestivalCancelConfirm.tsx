@@ -10,6 +10,7 @@ export interface FestivalCancelConfirmProps {
   onCancel: () => void;
   isPending?: boolean;
   error?: string | null;
+  description?: string;
 }
 
 export function FestivalCancelConfirm({
@@ -19,6 +20,7 @@ export function FestivalCancelConfirm({
   onCancel,
   isPending = false,
   error = null,
+  description,
 }: FestivalCancelConfirmProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
@@ -69,8 +71,12 @@ export function FestivalCancelConfirm({
           titleClassName="team-confirm__heading"
         />
         <p id="festival-cancel-description" className="team-confirm__text">
-          Cancel the booking for &ldquo;{eventTitle}&rdquo;? This deletes the festival from the
-          calendar and cannot be undone.
+          {description ?? (
+            <>
+              Cancel the booking for &ldquo;{eventTitle}&rdquo;? This deletes the festival from the
+              calendar and cannot be undone.
+            </>
+          )}
         </p>
         {error ? (
           <p className="team-confirm__error" role="alert">

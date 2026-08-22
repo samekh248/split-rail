@@ -2,11 +2,7 @@ import type { AppPath } from '@/lib/appRoute';
 import { getActiveVenueId } from '@/venue/activeVenueStorage';
 import {
   getAppPath,
-  isBlockSettlementPath,
-  isEventWorkspacePath,
-  isFestivalItineraryPath,
-  isFestivalLedgerPath,
-  isFestivalReportsPath,
+  isEventOrFestivalWorkspacePath,
   navigateToAccounting,
   navigateToBooking,
   navigateToDashboard,
@@ -65,13 +61,7 @@ export const GLOBAL_NAV_ITEMS: GlobalNavItemConfig[] = [
 ];
 
 export function matchesBookingWorkspaceNavPath(pathname: string): boolean {
-  return (
-    isEventWorkspacePath(pathname)
-    || isFestivalItineraryPath(pathname)
-    || isFestivalLedgerPath(pathname)
-    || isFestivalReportsPath(pathname)
-    || isBlockSettlementPath(pathname)
-  );
+  return isEventOrFestivalWorkspacePath(pathname);
 }
 
 export function resolveActiveGlobalNavId(path: AppPath | string = getAppPath()): GlobalNavId | null {

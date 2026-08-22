@@ -33,8 +33,11 @@ import {
   writeBookingCalendarDisplayMode,
 } from '@/lib/bookingCalendarViewStorage';
 import {
+  buildBookingPath,
+  getBookingVenueFromUrl,
   navigateToBookingMonth,
   parseBookingMonth,
+  replacePath,
   useBookingCalendarMonth,
 } from '@/lib/appRoute';
 import type { CalendarPlacementDto } from '@/types/generated-api';
@@ -65,18 +68,50 @@ export function BookingCalendarPage() {
   const { venues } = useActiveVenue();
   const { data: regions = [] } = useRegions();
   const routeMonth = useBookingCalendarMonth();
-  const [context, setContext] = useState<CalendarViewContext>(() => ({
-    viewMode: 'global',
-    regionId: null,
-    venueId: null,
-    month: routeMonth,
-    showCancelled: false,
-    displayMode: readBookingCalendarDisplayMode() ?? 'calendar',
-  }));
+  const routeVenueId = getBookingVenueFromUrl();
+  const [context, setContext] = useState<CalendarViewContext>(() => {
+    const venueId = getBookingVenueFromUrl();
+    return {
+      viewMode: venueId ? 'venue' : 'global',
+      regionId: null,
+      venueId,
+      month: routeMonth,
+      showCancelled: false,
+      displayMode: readBookingCalendarDisplayMode() ?? 'calendar',
+    };
+  });
 
   useEffect(() => {
-    setContext((current) => (current.month === routeMonth ? current : { ...current, month: routeMonth }));
-  }, [routeMonth]);
+    setContext((current) => {
+      if (routeVenueId) {
+        if (
+          current.viewMode === 'venue'
+          && current.venueId === routeVenueId
+          && current.month === routeMonth
+        ) {
+          return current;
+        }
+        return { ...current, viewMode: 'venue', venueId: routeVenueId, month: routeMonth };
+      }
+      if (current.month === routeMonth && current.viewMode !== 'venue') {
+        return current;
+      }
+      if (current.viewMode === 'venue') {
+        return { ...current, viewMode: 'global', venueId: null, month: routeMonth };
+      }
+      return { ...current, month: routeMonth };
+    });
+  }, [routeMonth, routeVenueId]);
+
+  const handleContextChange = (next: CalendarViewContext) => {
+    setContext(next);
+    const venueId = next.viewMode === 'venue' ? next.venueId : null;
+    const nextPath = buildBookingPath(next.month, venueId);
+    const current = `${window.location.pathname}${window.location.search}`;
+    if (current !== nextPath) {
+      replacePath(nextPath);
+    }
+  };
 
   useEffect(() => {
     writeBookingCalendarDisplayMode(context.displayMode);
@@ -153,7 +188,7 @@ export function BookingCalendarPage() {
         context={context}
         regions={regions}
         venues={venues}
-        onContextChange={setContext}
+        onContextChange={handleContextChange}
       />
 
       <section

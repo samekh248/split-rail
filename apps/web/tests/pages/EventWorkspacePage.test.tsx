@@ -191,7 +191,7 @@ describe('EventWorkspacePage', () => {
     });
   });
 
-  it('resets event and URL when venue switches', async () => {
+  it('opens the booking calendar filtered to the selected venue', async () => {
     setActiveVenueId(VENUE_A.id);
     setActiveEventId(VENUE_A.id, EVENT_A.eventId!);
 
@@ -210,15 +210,33 @@ describe('EventWorkspacePage', () => {
       expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(EVENT_A.eventId!),
     );
 
-    await user.click(screen.getByTestId('venue-switcher-trigger'));
+    await user.click(screen.getByTestId('venue-switcher-menu-toggle'));
     await user.click(screen.getByTestId(`venue-option-${VENUE_B.id}`));
 
     await waitFor(() => {
-      expect(window.location.pathname).toBe(workspacePath(VENUE_B.id, EVENT_B.eventId!));
-      expect(window.location.search).toBe('');
-      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(
-        `${VENUE_B.id}:${EVENT_B.eventId}`,
-      );
+      expect(window.location.pathname).toBe('/booking');
+      expect(new URLSearchParams(window.location.search).get('venue')).toBe(VENUE_B.id);
+    });
+  });
+
+  it('opens the booking calendar for the current venue when the venue crumb is clicked', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    const user = userEvent.setup();
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(EVENT_A.eventId!),
+    );
+
+    await user.click(screen.getByTestId('venue-switcher-trigger'));
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/booking');
+      expect(new URLSearchParams(window.location.search).get('venue')).toBe(VENUE_A.id);
     });
   });
 
@@ -545,7 +563,8 @@ describe('EventWorkspacePage', () => {
     expect(screen.queryByTestId('event-details-edit')).not.toBeInTheDocument();
   });
 
-  it('offers Convert to festival in the ledger header for a user who can manage the festival schedule', async () => {
+  it('offers Cancel booking in the workspace kebab for a user who can manage events', async () => {
+    const user = userEvent.setup();
     mockWorkspaceFetch({
       profile: workspaceAdminProfile,
       venues: [VENUE_A],
@@ -554,7 +573,9 @@ describe('EventWorkspacePage', () => {
 
     render(<EventWorkspacePage />, { wrapper: createWrapper() });
 
-    expect(await screen.findByTestId('festival-convert-menu-trigger')).toBeInTheDocument();
+    await user.click(await screen.findByTestId('festival-convert-menu-trigger'));
+    expect(screen.getByTestId('event-workspace-cancel-booking')).toHaveTextContent('Cancel booking');
+    expect(screen.getByTestId('festival-convert-button')).toBeInTheDocument();
   });
 
   it('omits Convert to festival for a user who cannot manage the festival schedule', async () => {
