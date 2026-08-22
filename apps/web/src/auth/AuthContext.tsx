@@ -10,6 +10,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { configureApiClient, resetSessionExpiredLatch } from '@/api/client';
 import { fetchUserProfile } from '@/api/user';
 import { setDateDisplayFormat } from '@/lib/dateDisplayFormat';
+import { setTimeDisplayFormat } from '@/lib/timeDisplayFormat';
 import { navigateToDashboard, navigateToSignIn } from '@/lib/appRoute';
 import type { AcceptInvitationRequest, LoginRequest, UserProfileResponse } from '@/types/generated-api';
 import { clearActiveVenueId } from '@/venue/activeVenueStorage';
@@ -98,7 +99,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setDateDisplayFormat(profile?.dateDisplayFormat);
-  }, [profile?.dateDisplayFormat]);
+    setTimeDisplayFormat(profile?.timeDisplayFormat);
+  }, [profile?.dateDisplayFormat, profile?.timeDisplayFormat]);
 
   const clearError = useCallback(() => setError(null), []);
 

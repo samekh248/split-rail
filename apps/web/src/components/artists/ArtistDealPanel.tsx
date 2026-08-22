@@ -246,20 +246,6 @@ export function ArtistDealPanel({
     <section className="artist-deal-panel" data-testid="artist-deal-panel">
       <div className="artist-deal-panel__header section-header">
         <h3 className="artist-deal-panel__title">Artist Deals</h3>
-        {editable && formMode === 'add' ? (
-          <div className="section-header__actions">
-            <button
-              type="button"
-              className="btn-primary--compact btn-icon-label"
-              data-testid="add-artist-btn"
-              disabled={!artistName.trim() || !onAddArtist}
-              onClick={() => void handleSubmit()}
-            >
-              <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
-              Add artist
-            </button>
-          </div>
-        ) : null}
       </div>
 
       <ul className="artist-deal-panel__list">
@@ -362,6 +348,8 @@ export function ArtistDealPanel({
               label: dealTypeOption.label,
             }))}
             onChange={(value) => setDealType(value as DealType)}
+            wrapperClassName="form-field artist-deal-panel__deal-type-field"
+            className="select-field--field-width"
             data-testid="deal-type-select"
           />
 
@@ -454,6 +442,21 @@ export function ArtistDealPanel({
           </div>
         </div>
       )}
+
+      {editable && formMode === 'add' ? (
+        <div className="artist-deal-panel__foot">
+          <button
+            type="button"
+            className="btn-primary--compact btn-icon-label"
+            data-testid="add-artist-btn"
+            disabled={!artistName.trim() || !onAddArtist}
+            onClick={() => void handleSubmit()}
+          >
+            <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
+            Add artist
+          </button>
+        </div>
+      ) : null}
     </section>
   );
 }

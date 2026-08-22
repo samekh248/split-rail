@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
@@ -263,5 +265,55 @@ describe('ArtistDealPanel', () => {
     expect(screen.queryByTestId('artist-add-form')).not.toBeInTheDocument();
     expect(screen.queryByTestId('edit-artist-artist-1')).not.toBeInTheDocument();
     expect(screen.getByTestId('payout-artist-1')).toBeInTheDocument();
+  });
+
+  it('renders deal type select at field width matching financial inputs', () => {
+    render(
+      <ArtistDealPanel
+        artists={artists}
+        eventStatus="PRE_SHOW"
+        canEditStructure
+        onAddArtist={vi.fn()}
+      />,
+    );
+
+    const dealTypeSelect = screen.getByTestId('deal-type-select');
+    expect(dealTypeSelect.closest('.select-field')).toHaveClass('select-field--field-width');
+    expect(dealTypeSelect.closest('.artist-deal-panel__deal-type-field')).toBeInTheDocument();
+  });
+
+  it('styles deal type select trigger to match form-field input sizing', () => {
+    const css = readFileSync(resolve(__dirname, '../../src/index.css'), 'utf-8');
+    const triggerBlock = css.match(
+      /\.artist-deal-panel__form[\s\S]*?\.select-field--field-width[\s\S]*?\.select-field__trigger[\s\S]*?\{[\s\S]*?\n\}/,
+    );
+
+    expect(triggerBlock).toBeTruthy();
+    expect(triggerBlock![0]).toMatch(/padding:\s*0\.625rem 0\.75rem/);
+    expect(triggerBlock![0]).toMatch(/font-size:\s*1rem/);
+    expect(triggerBlock![0]).toMatch(/box-sizing:\s*border-box/);
+  });
+
+  it('renders Add artist at the foot of the section after the form, not inside the section header', () => {
+    render(
+      <ArtistDealPanel
+        artists={artists}
+        eventStatus="PRE_SHOW"
+        canEditStructure
+        onAddArtist={vi.fn()}
+      />,
+    );
+
+    const addButton = screen.getByTestId('add-artist-btn');
+    expect(addButton.closest('.artist-deal-panel__header')).toBeNull();
+    expect(addButton.closest('.artist-deal-panel__foot')).toBeInTheDocument();
+    const form = screen.getByTestId('artist-add-form');
+    expect(form.compareDocumentPosition(addButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it('keeps add-artist-btn absent for a user without artist-manage permission', () => {
+    render(<ArtistDealPanel artists={artists} eventStatus="PRE_SHOW" canEditStructure={false} />);
+
+    expect(screen.queryByTestId('add-artist-btn')).not.toBeInTheDocument();
   });
 });

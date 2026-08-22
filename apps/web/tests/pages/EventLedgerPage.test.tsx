@@ -79,6 +79,8 @@ const mockLedger: LedgerGridResponse = {
 
 const mutateAsync = vi.fn().mockResolvedValue(mockLedger);
 const mutate = vi.fn();
+const pinMutate = vi.fn();
+const unpinMutate = vi.fn();
 
 vi.mock('@/api/ledger', () => ({
   useLedger: vi.fn(),
@@ -90,6 +92,15 @@ vi.mock('@/api/ledger', () => ({
   useCreateArtist: vi.fn(() => ({ mutateAsync })),
   useUpdateArtist: vi.fn(() => ({ mutateAsync })),
   useDeleteArtist: vi.fn(() => ({ mutateAsync })),
+}));
+
+vi.mock('@/api/events', () => ({
+  useEvents: vi.fn(() => ({ data: [] })),
+}));
+
+vi.mock('@/api/dashboard', () => ({
+  usePinEvent: vi.fn(() => ({ mutate: pinMutate })),
+  useUnpinEvent: vi.fn(() => ({ mutate: unpinMutate })),
 }));
 
 vi.mock('@/hooks/useCanEditLedgerStructure', () => ({
@@ -121,6 +132,7 @@ vi.mock('@/api/settlement', () => ({
 }));
 
 import { useLedger } from '@/api/ledger';
+import { useEvents } from '@/api/events';
 import { useCanEditLedgerStructure } from '@/hooks/useCanEditLedgerStructure';
 import { useCanTriggerQboSync } from '@/api/user';
 
@@ -141,7 +153,10 @@ describe('EventLedgerPage', () => {
     mutateAsync.mockReset();
     mutateAsync.mockResolvedValue(mockLedger);
     scrollToWorkspaceFocusMock.mockClear();
+    pinMutate.mockClear();
+    unpinMutate.mockClear();
     vi.mocked(useCanTriggerQboSync).mockReturnValue(false);
+    vi.mocked(useEvents).mockReturnValue({ data: [] } as ReturnType<typeof useEvents>);
   });
 
   it('shows loading state', () => {

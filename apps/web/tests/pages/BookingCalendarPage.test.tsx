@@ -135,6 +135,23 @@ describe('BookingCalendarPage', () => {
     expect(screen.queryByTestId('booking-manage-regions')).not.toBeInTheDocument();
   });
 
+  it('applies a venue filter from the booking URL', () => {
+    window.history.pushState(
+      {},
+      '',
+      `/booking?month=2026-06&venue=${FESTIVAL_VENUE_ID}`,
+    );
+
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <BookingCalendarPage />
+      </QueryClientProvider>,
+    );
+
+    expect(screen.getByTestId('booking-view-mode')).toHaveTextContent('Venue');
+    expect(screen.getByTestId('booking-venue-filter')).toHaveTextContent('Hall A');
+  });
+
   it('opens placement type chooser from an empty day quick-add', () => {
     render(
       <QueryClientProvider client={new QueryClient()}>

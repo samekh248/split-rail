@@ -10,6 +10,7 @@ import { VenueProvider } from '@/venue/VenueContext';
 import { getActiveVenueId, setActiveVenueId } from '@/venue/activeVenueStorage';
 import { getActiveEventId, setActiveEventId } from '@/venue/activeEventStorage';
 import { buildEventWorkspacePath } from '@/lib/appRoute';
+import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
 import { EVENT_A, EVENT_B, EVENT_C, newlyCreatedEvent, noEvents } from '../fixtures/events';
 import { VENUE_A, VENUE_B } from '../fixtures/venues';
 import {
@@ -23,15 +24,30 @@ vi.mock('@/pages/EventLedgerPage', () => ({
     venueId,
     eventId,
     focus,
+    extraHeaderActions,
+    eventDetails,
+    eventHeaderActions,
+    hideEventHeader,
   }: {
     venueId: string;
     eventId: string;
     focus?: string | null;
+    extraHeaderActions?: ReactNode;
+    eventDetails?: ReactNode;
+    eventHeaderActions?: ReactNode;
+    hideEventHeader?: boolean;
   }) => (
     <div data-testid="event-ledger-page">
-      <div data-testid="mock-ledger-page" data-focus={focus ?? ''}>
+      <div
+        data-testid="mock-ledger-page"
+        data-focus={focus ?? ''}
+        data-hide-event-header={hideEventHeader ? 'true' : 'false'}
+      >
         {venueId}:{eventId}
       </div>
+      {eventHeaderActions}
+      {eventDetails}
+      {extraHeaderActions}
     </div>
   ),
 }));
@@ -175,7 +191,7 @@ describe('EventWorkspacePage', () => {
     });
   });
 
-  it('resets event and URL when venue switches', async () => {
+  it('opens the booking calendar filtered to the selected venue', async () => {
     setActiveVenueId(VENUE_A.id);
     setActiveEventId(VENUE_A.id, EVENT_A.eventId!);
 
@@ -194,16 +210,69 @@ describe('EventWorkspacePage', () => {
       expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(EVENT_A.eventId!),
     );
 
-    await user.click(screen.getByTestId('venue-switcher-trigger'));
+    await user.click(screen.getByTestId('venue-switcher-menu-toggle'));
     await user.click(screen.getByTestId(`venue-option-${VENUE_B.id}`));
 
     await waitFor(() => {
+      expect(window.location.pathname).toBe('/booking');
+      expect(new URLSearchParams(window.location.search).get('venue')).toBe(VENUE_B.id);
+    });
+  });
+
+  it('opens the booking calendar for the current venue when the venue crumb is clicked', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    const user = userEvent.setup();
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(EVENT_A.eventId!),
+    );
+
+    await user.click(screen.getByTestId('venue-switcher-trigger'));
+
+    await waitFor(() => {
+      expect(window.location.pathname).toBe('/booking');
+      expect(new URLSearchParams(window.location.search).get('venue')).toBe(VENUE_A.id);
+    });
+  });
+
+  it('keeps the deep-linked event when opening workspace from another venue context', async () => {
+    setActiveVenueId(VENUE_A.id);
+    setActiveEventId(VENUE_A.id, EVENT_A.eventId!);
+
+    mockWorkspaceFetch({
+      venues: [VENUE_A, VENUE_B],
+      eventsByVenue: {
+        [VENUE_A.id]: [EVENT_A],
+        [VENUE_B.id]: [EVENT_B],
+      },
+      profile: workspaceAdminProfile,
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    await waitFor(() =>
+      expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(EVENT_A.eventId!),
+    );
+
+    // Mirrors calendar / dashboard "Open workspace": storage + path update before React
+    // venue state has switched.
+    act(() => {
+      navigateToEventWorkspace(VENUE_B.id, EVENT_B.eventId!);
+    });
+
+    await waitFor(() => {
       expect(window.location.pathname).toBe(workspacePath(VENUE_B.id, EVENT_B.eventId!));
-      expect(window.location.search).toBe('');
       expect(screen.getByTestId('mock-ledger-page')).toHaveTextContent(
         `${VENUE_B.id}:${EVENT_B.eventId}`,
       );
     });
+    expect(getActiveVenueId()).toBe(VENUE_B.id);
+    expect(getActiveEventId(VENUE_B.id)).toBe(EVENT_B.eventId);
   });
 
   it('supports browser back after event switch', async () => {
@@ -359,8 +428,15 @@ describe('EventWorkspacePage', () => {
     render(<EventWorkspacePage />, { wrapper: createWrapper() });
 
     const workspaceBar = await screen.findByTestId('workspace-bar');
-    expect(within(workspaceBar).getByTestId('dashboard-workspace-bar')).toBeInTheDocument();
-    expect(await within(workspaceBar).findByTestId('venue-switcher')).toBeInTheDocument();
+    const scope = await waitFor(() => {
+      const bar = within(workspaceBar).getByTestId('dashboard-workspace-bar');
+      expect(bar).toHaveClass('dashboard-workspace-bar--nested');
+      return bar;
+    });
+    expect(within(scope).getByTestId('workspace-bar-venue')).toBeInTheDocument();
+    expect(within(scope).getByTestId('workspace-bar-separator')).toBeInTheDocument();
+    expect(within(scope).getByTestId('workspace-bar-event')).toBeInTheDocument();
+    expect(within(workspaceBar).getByTestId('venue-switcher')).toBeInTheDocument();
     expect(screen.getByTestId('top-bar')).toBeInTheDocument();
     expect(screen.queryByTestId('sidebar-workspace')).not.toBeInTheDocument();
     expect(screen.queryByTestId('header-settings')).not.toBeInTheDocument();
@@ -426,7 +502,7 @@ describe('EventWorkspacePage', () => {
     });
   });
 
-  it('wraps the festival section and ledger in a shared event-workspace inset', async () => {
+  it('wraps the ledger in the event-workspace inset', async () => {
     mockWorkspaceFetch({
       venues: [VENUE_A],
       eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
@@ -435,7 +511,162 @@ describe('EventWorkspacePage', () => {
     render(<EventWorkspacePage />, { wrapper: createWrapper() });
 
     const workspace = await screen.findByTestId('event-workspace');
-    expect(workspace).toContainElement(screen.getByTestId('festival-mode-card'));
     expect(workspace).toContainElement(screen.getByTestId('event-ledger-page'));
+  });
+
+  it('shows show details with a visible Edit action on a standard event workspace', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceAdminProfile,
+      venues: [VENUE_A],
+      eventsByVenue: {
+        [VENUE_A.id]: [{ ...EVENT_A, bookingPlacementStatus: 'CONFIRMED', doorsTime: '19:00' }],
+      },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    expect(await screen.findByTestId('event-details-card')).toBeInTheDocument();
+    expect(screen.getByText('Doors: 7:00 PM')).toBeInTheDocument();
+    expect(screen.getByTestId('event-details-edit')).toBeInTheDocument();
+  });
+
+  it('opens the workspace edit form from the show-details Edit action', async () => {
+    const user = userEvent.setup();
+    mockWorkspaceFetch({
+      profile: workspaceAdminProfile,
+      venues: [VENUE_A],
+      eventsByVenue: {
+        [VENUE_A.id]: [{ ...EVENT_A, bookingPlacementStatus: 'CONFIRMED', doorsTime: '19:00' }],
+      },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    await user.click(await screen.findByTestId('event-details-edit'));
+
+    const panel = await screen.findByTestId('event-form-panel');
+    expect(within(panel).getByLabelText('Doors time')).toBeInTheDocument();
+    expect(within(panel).getByLabelText('Show start time')).toBeInTheDocument();
+    expect(screen.queryByTestId('event-ledger-page')).not.toBeInTheDocument();
+  });
+
+  it('omits the show-details Edit action without event-manage permission', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceMemberProfile,
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    expect(await screen.findByTestId('event-details-card')).toBeInTheDocument();
+    expect(screen.queryByTestId('event-details-edit')).not.toBeInTheDocument();
+  });
+
+  it('offers Cancel booking in the workspace kebab for a user who can manage events', async () => {
+    const user = userEvent.setup();
+    mockWorkspaceFetch({
+      profile: workspaceAdminProfile,
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    await user.click(await screen.findByTestId('festival-convert-menu-trigger'));
+    expect(screen.getByTestId('event-workspace-cancel-booking')).toHaveTextContent('Cancel booking');
+    expect(screen.getByTestId('festival-convert-button')).toBeInTheDocument();
+  });
+
+  it('omits Convert to festival for a user who cannot manage the festival schedule', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceMemberProfile,
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    await screen.findByTestId('event-ledger-page');
+    expect(screen.queryByTestId('festival-convert-menu-trigger')).not.toBeInTheDocument();
+  });
+
+  it('omits Convert to festival once the event is settled', async () => {
+    mockWorkspaceFetch({
+      profile: workspaceAdminProfile,
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [{ ...EVENT_A, status: 'SETTLED' }] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    await screen.findByTestId('event-ledger-page');
+    expect(screen.queryByTestId('festival-convert-menu-trigger')).not.toBeInTheDocument();
+  });
+
+  it('passes hideEventHeader=false for standard events so ledger shows meta', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    const ledger = await screen.findByTestId('mock-ledger-page');
+    expect(ledger).toHaveAttribute('data-hide-event-header', 'false');
+  });
+
+  it('renders pin control inside the event combobox for standard events', async () => {
+    const user = userEvent.setup();
+    const mock = mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [EVENT_A] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    const combobox = await screen.findByTestId('event-combobox');
+    const pinButton = await within(combobox).findByTestId(
+      `event-combobox-pin-${EVENT_A.eventId}`,
+    );
+    expect(pinButton).toHaveClass('event-combobox__pin');
+    expect(pinButton).toHaveAttribute('aria-label', 'Pin event');
+
+    await user.click(pinButton);
+
+    await waitFor(() => {
+      expect(mock.pinRequests.some((request) => request.method === 'PUT')).toBe(true);
+    });
+  });
+
+  it('renders pin control inside the event combobox for festival events', async () => {
+    const festivalEvent = { ...EVENT_A, eventType: 'FESTIVAL' as const, title: 'Big Fest' };
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: { [VENUE_A.id]: [festivalEvent] },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    const combobox = await screen.findByTestId('event-combobox');
+    const pinButton = await within(combobox).findByTestId(
+      `event-combobox-pin-${festivalEvent.eventId}`,
+    );
+    expect(pinButton).toHaveClass('event-combobox__pin');
+    expect(pinButton).toHaveAttribute('aria-label', 'Pin festival');
+  });
+
+  it('passes hideEventHeader=true for festival events', async () => {
+    mockWorkspaceFetch({
+      venues: [VENUE_A],
+      eventsByVenue: {
+        [VENUE_A.id]: [{ ...EVENT_A, eventType: 'FESTIVAL' }],
+      },
+    });
+
+    render(<EventWorkspacePage />, { wrapper: createWrapper() });
+
+    const ledger = await screen.findByTestId('mock-ledger-page');
+    expect(ledger).toHaveAttribute('data-hide-event-header', 'true');
   });
 });

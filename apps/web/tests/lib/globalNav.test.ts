@@ -19,13 +19,36 @@ describe('globalNav', () => {
     expect(resolveActiveGlobalNavId('/accounting')).toBe('accounting');
   });
 
-  it('keeps dashboard active on root and workspace routes', () => {
+  it('keeps dashboard active on the root route', () => {
     expect(resolveActiveGlobalNavId('/')).toBe('dashboard');
+  });
+
+  it('resolves booking as active on event and festival workspace routes', () => {
     expect(
       resolveActiveGlobalNavId(
         '/venues/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/events/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
       ),
-    ).toBe('dashboard');
+    ).toBe('booking');
+    expect(
+      resolveActiveGlobalNavId(
+        '/venues/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/festivals/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/itinerary',
+      ),
+    ).toBe('booking');
+    expect(
+      resolveActiveGlobalNavId(
+        '/venues/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/festivals/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/ledger',
+      ),
+    ).toBe('booking');
+    expect(
+      resolveActiveGlobalNavId(
+        '/venues/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/festivals/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/reports',
+      ),
+    ).toBe('booking');
+    expect(
+      resolveActiveGlobalNavId(
+        '/venues/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/festivals/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/blocks/bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb/settlement',
+      ),
+    ).toBe('booking');
   });
 
   it('resolves venues as active on /venues', () => {

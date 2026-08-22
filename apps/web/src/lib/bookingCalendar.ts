@@ -24,6 +24,8 @@ export interface BookingPlacement {
   loadInTime?: string | null;
   curfewTime?: string | null;
   supportLineup?: string | null;
+  showStartTime?: string | null;
+  notes?: string | null;
   workspaceAllowed: boolean;
 }
 
@@ -402,6 +404,21 @@ export function formatBookingStatusLabel(status: BookingPlacementStatus): string
       return 'Cancelled';
     default:
       return status;
+  }
+}
+
+export function bookingStatusSwatchClass(status: BookingPlacementStatus): string {
+  switch (status) {
+    case 'HOLD_1':
+      return 'booking-calendar-legend__swatch--hold-1';
+    case 'HOLD_2':
+      return 'booking-calendar-legend__swatch--hold-2';
+    case 'CONFIRMED':
+      return 'booking-calendar-legend__swatch--confirmed';
+    case 'CANCELLED':
+      return 'booking-calendar-legend__swatch--cancelled';
+    default:
+      return 'booking-calendar-legend__swatch--hold-1';
   }
 }
 

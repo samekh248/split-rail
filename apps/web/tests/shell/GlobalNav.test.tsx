@@ -43,14 +43,26 @@ describe('GlobalNav', () => {
     });
   });
 
-  it('highlights dashboard on workspace routes', () => {
+  it('highlights booking on event workspace routes', () => {
     window.history.pushState(
       {},
       '',
       '/venues/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/events/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee',
     );
     renderNav();
-    expect(screen.getByTestId('global-nav-dashboard')).toHaveClass('global-nav__item--active');
+    expect(screen.getByTestId('global-nav-booking')).toHaveClass('global-nav__item--active');
+    expect(screen.getByTestId('global-nav-dashboard')).not.toHaveClass('global-nav__item--active');
+  });
+
+  it('highlights booking on festival workspace routes', () => {
+    window.history.pushState(
+      {},
+      '',
+      '/venues/aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa/festivals/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee/itinerary',
+    );
+    renderNav();
+    expect(screen.getByTestId('global-nav-booking')).toHaveClass('global-nav__item--active');
+    expect(screen.getByTestId('global-nav-dashboard')).not.toHaveClass('global-nav__item--active');
   });
 
   it('highlights venues on /venues', () => {

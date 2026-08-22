@@ -1,6 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTriangleExclamation } from '@fortawesome/free-solid-svg-icons';
 import { ModalHeader } from '@/components/shell/ModalHeader';
+import { formatTimeRangeWithWord } from '@/lib/timeDisplayFormat';
 import type { BlockConflictInfo } from '@/components/festival/conflictTypes';
 
 export interface ConflictDialogProps {
@@ -28,7 +29,7 @@ export function ConflictDialog({
 
   const timeRange =
     conflict.conflictingStartTime && conflict.conflictingEndTime
-      ? `${conflict.conflictingStartTime} to ${conflict.conflictingEndTime}`
+      ? formatTimeRangeWithWord(conflict.conflictingStartTime, conflict.conflictingEndTime)
       : null;
 
   return (

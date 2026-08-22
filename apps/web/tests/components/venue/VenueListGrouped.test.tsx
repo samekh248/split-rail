@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { VenueListGrouped } from '@/components/venue/VenueListGrouped';
@@ -200,6 +201,53 @@ describe('VenueListGrouped', () => {
 
     fireEvent.click(screen.getByTestId('venues-add-venue-region-a'));
     expect(onAddVenue).toHaveBeenCalledWith('region-a');
+  });
+
+  it('shows region edit and delete actions in the section menu', async () => {
+    const onEditRegion = vi.fn();
+    const onDeleteRegion = vi.fn();
+    const user = userEvent.setup();
+
+    render(
+      <VenueListGrouped
+        sections={SECTIONS}
+        canManage
+        onEdit={vi.fn()}
+        onAddVenue={vi.fn()}
+        onEditRegion={onEditRegion}
+        onDeleteRegion={onDeleteRegion}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    await user.click(screen.getByTestId('venues-region-menu-region-a-trigger'));
+    await user.click(screen.getByTestId('edit-region-region-a'));
+    expect(onEditRegion).toHaveBeenCalledWith('region-a');
+
+    await user.click(screen.getByTestId('venues-region-menu-region-a-trigger'));
+    await user.click(screen.getByTestId('delete-region-region-a'));
+    expect(onDeleteRegion).toHaveBeenCalledWith('region-a');
+  });
+
+  it('replaces the region heading with the editor while a region is being renamed', () => {
+    render(
+      <VenueListGrouped
+        sections={SECTIONS}
+        canManage
+        onEdit={vi.fn()}
+        onAddVenue={vi.fn()}
+        editingRegionId="region-a"
+        regionEditor={<div data-testid="venues-edit-region">Editor</div>}
+        onEditRegion={vi.fn()}
+        onDeleteRegion={vi.fn()}
+      />,
+      { wrapper: createWrapper() },
+    );
+
+    const west = screen.getByTestId('venues-region-section-region-a');
+    expect(west).toContainElement(screen.getByTestId('venues-edit-region'));
+    expect(west.querySelector('.venues-group__heading')).toBeNull();
+    expect(screen.queryByTestId('venues-region-menu-region-a')).not.toBeInTheDocument();
   });
 
   describe('drag-and-drop reassignment (US1)', () => {

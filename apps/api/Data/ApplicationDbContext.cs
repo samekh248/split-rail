@@ -341,6 +341,12 @@ public class ApplicationDbContext : DbContext
                 .HasDefaultValue(Constants.DateDisplayFormats.Default)
                 .IsRequired();
 
+            entity.Property(e => e.TimeDisplayFormat)
+                .HasColumnName("time_display_format")
+                .HasMaxLength(8)
+                .HasDefaultValue(Constants.TimeDisplayFormats.Default)
+                .IsRequired();
+
             entity.Property(e => e.CreatedAt)
                 .HasColumnName("created_at")
                 .HasDefaultValueSql("NOW()");
@@ -669,6 +675,13 @@ public class ApplicationDbContext : DbContext
 
             entity.Property(e => e.SupportLineup)
                 .HasColumnName("support_lineup")
+                .HasMaxLength(2000);
+
+            entity.Property(e => e.ShowStartTime)
+                .HasColumnName("show_start_time");
+
+            entity.Property(e => e.Notes)
+                .HasColumnName("notes")
                 .HasMaxLength(2000);
 
             entity.HasIndex(e => e.VenueId).HasDatabaseName("IX_events_venue_id");

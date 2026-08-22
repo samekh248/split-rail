@@ -37,6 +37,21 @@ describe('FestivalCancelConfirm', () => {
     expect(onConfirm).toHaveBeenCalled();
   });
 
+  it('renders a custom description when provided', () => {
+    render(
+      <FestivalCancelConfirm
+        eventTitle="Friday Headliner"
+        open
+        description="Cancel the booking for this show?"
+        onConfirm={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText('Cancel the booking for this show?')).toBeInTheDocument();
+    expect(screen.queryByText(/deletes the festival from the calendar/)).not.toBeInTheDocument();
+  });
+
   it('does not confirm when the dialog is dismissed', async () => {
     const onConfirm = vi.fn();
     const onCancel = vi.fn();

@@ -17,6 +17,7 @@ import {
   normalizeBookingStatus,
 } from '@/lib/festivalBookingStatus';
 import type { ProgrammingBlockResponse } from '@/types/generated-api';
+import { formatTimeRangeWithPreference } from '@/lib/timeDisplayFormat';
 
 export interface ArtistAppearancesPanelProps {
   venueId: string;
@@ -163,8 +164,8 @@ export function ArtistAppearancesPanel({
                 >
                   <span className="artist-appearances__item-title">{appearance.title}</span>
                   <span className="artist-appearances__item-meta">
-                    {appearance.dayDate} · {appearance.stageName} · {appearance.startTime}–
-                    {appearance.endTime}
+                    {appearance.dayDate} · {appearance.stageName} ·{' '}
+                    {formatTimeRangeWithPreference(appearance.startTime, appearance.endTime)}
                   </span>
                   <span
                     className={`festival-booking-status ${bookingStatusClass(appearance.bookingStatus)}`}

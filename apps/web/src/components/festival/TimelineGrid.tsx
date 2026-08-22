@@ -10,6 +10,11 @@ import {
 import { PinToggleButton } from '@/components/PinToggleButton';
 import { isBlockConflictError, parseBlockConflictError } from '@/components/festival/conflictTypes';
 import {
+  formatTimeRangeWithPreference,
+  formatTimeRangeWithWord,
+  formatTimeWithPreference,
+} from '@/lib/timeDisplayFormat';
+import {
   blockCardDensity,
   blockGridStyle,
   buildTimeSlots,
@@ -494,7 +499,7 @@ export function TimelineGrid({
             {timeSlots.map((slot) => (
               <div key={slot} className="timeline-grid__time-label">
                 <FontAwesomeIcon icon={faClock} aria-hidden="true" />
-                {slot}
+                {formatTimeWithPreference(slot)}
               </div>
             ))}
           </div>
@@ -553,7 +558,7 @@ export function TimelineGrid({
                   >
                     <span className="timeline-block-card__title">New block</span>
                     <span className="timeline-block-card__time">
-                      {previewRange!.startTime}–{previewRange!.endTime}
+                      {formatTimeRangeWithPreference(previewRange!.startTime, previewRange!.endTime)}
                     </span>
                   </article>
                 ) : null}
@@ -603,7 +608,7 @@ export function TimelineGrid({
                       }}
                       role="button"
                       tabIndex={0}
-                      aria-label={`${block.title}, ${display.startTime} to ${display.endTime}${bookingStatus ? `, ${bookingStatusLabel(bookingStatus)}` : ''}${isSyncing ? ', saving' : ''}`}
+                      aria-label={`${block.title}, ${formatTimeRangeWithWord(display.startTime, display.endTime)}${bookingStatus ? `, ${bookingStatusLabel(bookingStatus)}` : ''}${isSyncing ? ', saving' : ''}`}
                     >
                       {canManage && !isSyncing ? (
                         <>
@@ -645,7 +650,7 @@ export function TimelineGrid({
                       <span className="timeline-block-card__title">{block.title}</span>
                       {showTime ? (
                         <span className="timeline-block-card__time">
-                          {display.startTime}–{display.endTime}
+                          {formatTimeRangeWithPreference(display.startTime, display.endTime)}
                         </span>
                       ) : null}
                       {showStatus ? (

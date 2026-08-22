@@ -42,8 +42,8 @@ describe('ConflictDialog', () => {
 
     expect(screen.getByTestId('conflict-dialog')).toBeInTheDocument();
     expect(screen.getByText(/Headliner/i)).toBeInTheDocument();
-    expect(screen.getByText(/20:00/)).toBeInTheDocument();
-    expect(screen.getByText(/21:30/)).toBeInTheDocument();
+    expect(screen.getByText(/8:00 PM/)).toBeInTheDocument();
+    expect(screen.getByText(/9:30 PM/)).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: /Pick a new time/i }));
     expect(onReschedule).toHaveBeenCalled();

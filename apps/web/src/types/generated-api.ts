@@ -5395,6 +5395,8 @@ export interface components {
             workspaceAllowed?: boolean;
             endDate?: string | null;
             eventType?: string | null;
+            showStartTime?: string | null;
+            notes?: string | null;
         };
         ChangeRoleRequest: {
             /** Format: uuid */
@@ -5436,6 +5438,8 @@ export interface components {
             loadInTime?: string | null;
             curfewTime?: string | null;
             supportLineup?: string | null;
+            showStartTime?: string | null;
+            notes?: string | null;
         };
         CreateExpenseAllocationRequest: {
             targetType?: string | null;
@@ -5636,6 +5640,8 @@ export interface components {
             eventType?: string | null;
             endDate?: string | null;
             isPinned?: boolean;
+            showStartTime?: string | null;
+            notes?: string | null;
         };
         ExpectedSettlementDto: {
             computedNetPayout?: string | null;
@@ -6425,6 +6431,8 @@ export interface components {
             loadInTime?: string | null;
             curfewTime?: string | null;
             supportLineup?: string | null;
+            showStartTime?: string | null;
+            notes?: string | null;
         };
         UpdateFestivalRequest: {
             title?: string | null;
@@ -6512,6 +6520,7 @@ export interface components {
         };
         UpdateUserPreferencesRequest: {
             dateDisplayFormat?: string | null;
+            timeDisplayFormat?: string | null;
         };
         UpdateVenueRequest: {
             name?: string | null;
@@ -6538,6 +6547,7 @@ export interface components {
             id?: string;
             email?: string | null;
             dateDisplayFormat?: string | null;
+            timeDisplayFormat?: string | null;
             organization?: components["schemas"]["OrganizationSummaryDto"];
             role?: components["schemas"]["RoleDetailDto"];
             venueScopes?: components["schemas"]["VenueScopeDto"][] | null;

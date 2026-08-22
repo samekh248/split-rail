@@ -69,7 +69,7 @@ describe('ScheduleHistoryPanel', () => {
     expect(items.length).toBe(3);
 
     expect(screen.getByText(/Rescheduled/i)).toBeInTheDocument();
-    expect(screen.getByText(/14:00.*16:00/)).toBeInTheDocument();
+    expect(screen.getByText(/2:00 PM.*4:00 PM/)).toBeInTheDocument();
 
     expect(screen.getByText(/Status changed/i)).toBeInTheDocument();
     expect(screen.getByText(/SCHEDULED.*DELAYED/i)).toBeInTheDocument();

@@ -109,8 +109,13 @@ export function StageManagerPanel({ venueId, eventId, canManage }: StageManagerP
                   <td className="stage-manager__actions">
                     <button
                       type="button"
-                      className="stage-manager__delete btn-danger-outline btn-icon-label"
+                      className="stage-manager__delete btn-danger-outline"
                       data-testid={`stage-delete-${stage.id}`}
+                      aria-label={
+                        isLastStage
+                          ? `Delete ${stage.name ?? 'stage'} — a festival must keep at least one stage`
+                          : `Delete ${stage.name ?? 'stage'}`
+                      }
                       onClick={() =>
                         setDeleteTarget({
                           id: stage.id ?? '',
@@ -122,7 +127,6 @@ export function StageManagerPanel({ venueId, eventId, canManage }: StageManagerP
                       title={isLastStage ? 'A festival must keep at least one stage.' : undefined}
                     >
                       <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
-                      Delete
                     </button>
                   </td>
                 ) : null}

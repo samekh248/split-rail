@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFloppyDisk, faPen, faPlus, faTrash } from '@fortawesome/free-solid-svg-icons';
 import { FormField } from '@/components/auth/FormField';
 import { ModalHeader } from '@/components/shell/ModalHeader';
+import { DeleteRegionConfirm } from '@/components/venue/DeleteRegionConfirm';
 import { RegionDeleteResolutionModal } from '@/components/venue/RegionDeleteResolutionModal';
 import { useCreateRegion, useDeleteRegion, useRegions, useUpdateRegion } from '@/api/regions';
 import type { RegionResponse } from '@/types/generated-api';
@@ -23,6 +24,8 @@ export function RegionManagementPanel({ open, onClose }: RegionManagementPanelPr
   const [editingId, setEditingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleteResolutionRegion, setDeleteResolutionRegion] = useState<RegionResponse | null>(null);
+  const [confirmingRegion, setConfirmingRegion] = useState<RegionResponse | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const updateRegion = useUpdateRegion(editingId ?? '');
 
   useEffect(() => {
@@ -159,10 +162,8 @@ export function RegionManagementPanel({ open, onClose }: RegionManagementPanelPr
                               setDeleteResolutionRegion(region);
                               return;
                             }
-                            deleteRegion.mutate(
-                              { regionId: region.id },
-                              { onSuccess: () => void refetch() },
-                            );
+                            setConfirmError(null);
+                            setConfirmingRegion(region);
                           }}
                         >
                           <FontAwesomeIcon icon={faTrash} aria-hidden="true" />
@@ -242,6 +243,33 @@ export function RegionManagementPanel({ open, onClose }: RegionManagementPanelPr
           </div>
         </form>
       </div>
+      {confirmingRegion ? (
+        <DeleteRegionConfirm
+          region={confirmingRegion}
+          open
+          isPending={deleteRegion.isPending}
+          error={confirmError}
+          onCancel={() => {
+            setConfirmError(null);
+            setConfirmingRegion(null);
+          }}
+          onConfirm={async () => {
+            if (!confirmingRegion.id) {
+              return;
+            }
+            setConfirmError(null);
+            try {
+              await deleteRegion.mutateAsync({ regionId: confirmingRegion.id });
+              setConfirmingRegion(null);
+              await refetch();
+            } catch (caught) {
+              setConfirmError(
+                caught instanceof Error ? caught.message : 'Unable to delete region.',
+              );
+            }
+          }}
+        />
+      ) : null}
       {deleteResolutionRegion ? (
         <RegionDeleteResolutionModal
           region={deleteResolutionRegion}

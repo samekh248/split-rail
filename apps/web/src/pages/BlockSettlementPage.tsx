@@ -14,6 +14,7 @@ import { FinalizePreflightPanel } from '@/components/festival/FinalizePreflightP
 import { ReopenDialog } from '@/components/festival/ReopenDialog';
 import { buildFestivalItineraryPath, pushPath } from '@/lib/appRoute';
 import { formatMoney } from '@/lib/money';
+import { formatTimeRangeWithPreference } from '@/lib/timeDisplayFormat';
 
 export interface BlockSettlementPageProps {
   venueId: string;
@@ -131,7 +132,8 @@ export function BlockSettlementPage({
               <section className="block-settlement-page__summary" id="deal-terms">
                 <h2>{sheet.title}</h2>
                 <p>
-                  {sheet.dayDate} · {sheet.stageName} · {sheet.startTime}–{sheet.endTime}
+                  {sheet.dayDate} · {sheet.stageName} ·{' '}
+                  {formatTimeRangeWithPreference(sheet.startTime, sheet.endTime)}
                 </p>
                 <dl className="block-settlement-page__money">
                   <div>

@@ -121,7 +121,9 @@ public record EventResponse(
     bool WorkspaceAllowed = true,
     string EventType = "STANDARD",
     string? EndDate = null,
-    bool IsPinned = false);
+    bool IsPinned = false,
+    string? ShowStartTime = null,
+    string? Notes = null);
 
 public record CreateEventRequest(
     string Title,
@@ -131,7 +133,9 @@ public record CreateEventRequest(
     string? DoorsTime = null,
     string? LoadInTime = null,
     string? CurfewTime = null,
-    string? SupportLineup = null);
+    string? SupportLineup = null,
+    string? ShowStartTime = null,
+    string? Notes = null);
 
 public record UpdateEventRequest(
     string Title,
@@ -141,7 +145,9 @@ public record UpdateEventRequest(
     string? DoorsTime = null,
     string? LoadInTime = null,
     string? CurfewTime = null,
-    string? SupportLineup = null);
+    string? SupportLineup = null,
+    string? ShowStartTime = null,
+    string? Notes = null);
 
 public record CreateLineItemRequest(
     string BlockType,

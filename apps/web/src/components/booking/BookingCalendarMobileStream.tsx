@@ -5,6 +5,7 @@ import {
   type BookingPlacement,
   type BookingPlacementStatus,
 } from '@/lib/bookingCalendar';
+import { formatTimeWithPreference } from '@/lib/timeDisplayFormat';
 import { placementStatusLabel } from '@/components/booking/BookingCalendarMatrix';
 
 export interface BookingCalendarMobileStreamProps {
@@ -49,7 +50,7 @@ export function BookingCalendarMobileStream({
                       .join(' ')}
                     onClick={() => onPlacementClick(placement)}
                   >
-                    <span>{placement.doorsTime ?? 'Time TBD'}</span>
+                    <span>{placement.doorsTime ? formatTimeWithPreference(placement.doorsTime) : 'Time TBD'}</span>
                     <strong>{placement.title}</strong>
                     <span>{placement.venueName}</span>
                     <span>{placementStatusLabel(placement.bookingPlacementStatus)}</span>

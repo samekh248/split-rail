@@ -35,7 +35,7 @@ describe('PinnedPerformanceCard', () => {
 
     expect(screen.getByTestId('pinned-performance-block-1')).toHaveTextContent('Cody Jinks');
     expect(screen.getByTestId('pinned-performance-festival-block-1')).toHaveTextContent('Red Dirt Fest');
-    expect(screen.getByTestId('pinned-performance-when-block-1')).toHaveTextContent('20:00–21:30');
+    expect(screen.getByTestId('pinned-performance-when-block-1')).toHaveTextContent('8:00 PM–9:30 PM');
     expect(screen.getByTestId('pinned-performance-when-block-1')).toHaveTextContent('Main Stage');
 
     fireEvent.click(screen.getByTestId('pinned-performance-pin-block-1'));
