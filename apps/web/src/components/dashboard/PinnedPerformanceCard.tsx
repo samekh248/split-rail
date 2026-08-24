@@ -3,6 +3,7 @@ import { faCalendarDays, faLayerGroup } from '@fortawesome/free-solid-svg-icons'
 import { PinToggleButton } from '@/components/PinToggleButton';
 import { navigateToFestivalItinerary } from '@/lib/festivalItineraryRoute';
 import type { PinnedPerformanceDto } from '@/types/generated-api';
+import { formatTimeRangeWithPreference, formatTimeWithPreference } from '@/lib/timeDisplayFormat';
 
 export interface PinnedPerformanceCardProps {
   performance: PinnedPerformanceDto;
@@ -15,7 +16,13 @@ function formatPerformanceWhen(performance: PinnedPerformanceDto): string {
   const start = performance.startTime ?? '';
   const end = performance.endTime ?? '';
   const stage = performance.stageName?.trim();
-  const when = [date, start && end ? `${start}–${end}` : start].filter(Boolean).join(' · ');
+  const timeLabel =
+    start && end
+      ? formatTimeRangeWithPreference(start, end)
+      : start
+        ? formatTimeWithPreference(start)
+        : '';
+  const when = [date, timeLabel].filter(Boolean).join(' · ');
   return stage ? `${when} · ${stage}` : when;
 }
 

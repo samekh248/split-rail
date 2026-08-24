@@ -34,7 +34,7 @@ public class UserService
 
         if (_tenantContext.OrganizationId is not Guid orgId)
         {
-            return new UserProfileResponse(user.Id, user.Email, user.DateDisplayFormat, null, null, []);
+            return new UserProfileResponse(user.Id, user.Email, user.DateDisplayFormat, user.TimeDisplayFormat, null, null, []);
         }
 
         var mapping = await _db.UserOrganizationMappings
@@ -52,6 +52,7 @@ public class UserService
             user.Id,
             user.Email,
             user.DateDisplayFormat,
+            user.TimeDisplayFormat,
             new OrganizationSummaryDto(mapping.Organization.Id, mapping.Organization.Name),
             ToRoleDetail(mapping.Role),
             venueScopes);
@@ -67,12 +68,18 @@ public class UserService
         if (request.DateDisplayFormat is not null && !DateDisplayFormats.IsAllowed(request.DateDisplayFormat))
             throw new ValidationException("Date display format is not supported.");
 
+        if (request.TimeDisplayFormat is not null && !TimeDisplayFormats.IsAllowed(request.TimeDisplayFormat))
+            throw new ValidationException("Time display format is not supported.");
+
         var user = await _db.Users
             .FirstOrDefaultAsync(u => u.Id == userId, cancellationToken)
             ?? throw new NotFoundException("User not found.");
 
         if (request.DateDisplayFormat is not null)
             user.DateDisplayFormat = request.DateDisplayFormat;
+
+        if (request.TimeDisplayFormat is not null)
+            user.TimeDisplayFormat = request.TimeDisplayFormat;
 
         await _db.SaveChangesAsync(cancellationToken);
         return await GetProfileAsync(cancellationToken);

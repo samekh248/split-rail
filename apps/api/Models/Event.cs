@@ -32,6 +32,16 @@ public class Event
     public TimeOnly? CurfewTime { get; set; }
     public string? SupportLineup { get; set; }
 
+    /// <summary>
+    /// When music starts. Only settable while BookingPlacementStatus is Confirmed (spec 086
+    /// FR-004). Retained (not cleared) if the placement later moves away from confirmed, and
+    /// becomes visible again if it returns to confirmed (FR-006).
+    /// </summary>
+    public TimeOnly? ShowStartTime { get; set; }
+
+    /// <summary>Free-text operational notes (spec 086 FR-008/FR-009), max 2000 characters.</summary>
+    public string? Notes { get; set; }
+
     public Venue Venue { get; set; } = null!;
     public User? SettledByUser { get; set; }
     public User? ReconciledByUser { get; set; }

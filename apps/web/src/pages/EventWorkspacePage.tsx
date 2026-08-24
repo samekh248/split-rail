@@ -1,11 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronRight, faPen } from '@fortawesome/free-solid-svg-icons';
 import { EventLedgerPage } from '@/pages/EventLedgerPage';
 import { VenueSwitcher } from '@/components/venue/VenueSwitcher';
 import { EventCombobox } from '@/components/event/EventCombobox';
 import { EventFormPanel } from '@/components/event/EventFormPanel';
 import { EventDeleteConfirm } from '@/components/event/EventDeleteConfirm';
 import { FestivalModeCard } from '@/components/festival/FestivalModeCard';
+import { ConvertToFestivalAction } from '@/components/festival/ConvertToFestivalAction';
 import { useShellWorkspaceBar } from '@/components/shell/ShellWorkspaceBarContext';
+import { usePinEvent, useUnpinEvent } from '@/api/dashboard';
 import { useEvents, useCreateEvent, useUpdateEvent, useDeleteEvent } from '@/api/events';
 import { useCreateFestival } from '@/api/festivals';
 import { useActiveVenue } from '@/venue/useActiveVenue';
@@ -22,6 +26,8 @@ import { navigateToEventWorkspace } from '@/lib/eventWorkspaceRoute';
 import { isRecognizedWorkspaceFocus } from '@/lib/workspaceFocusScroll';
 import { setActiveEventId } from '@/venue/activeEventStorage';
 import { resolveActiveEventId } from '@/venue/eventSelection';
+import { canEditEventMetadata } from '@/venue/eventLifecycle';
+import { EventDetailsCard } from '@/components/event/EventDetailsCard';
 import type { EventResponse } from '@/types/generated-api';
 
 type PanelMode = 'closed' | 'create' | 'edit';
@@ -50,11 +56,16 @@ export function EventWorkspacePage() {
   const [festivalEditEventId, setFestivalEditEventId] = useState<string | null>(null);
   const [venueAccessDenied, setVenueAccessDenied] = useState(false);
   const venueSyncedRef = useRef(false);
+  const activeVenueIdRef = useRef(activeVenueId);
+  const pendingUrlVenueRef = useRef<string | null>(null);
+  activeVenueIdRef.current = activeVenueId;
 
   const createEvent = useCreateEvent(activeVenueId);
   const createFestival = useCreateFestival(activeVenueId ?? '');
   const updateEvent = useUpdateEvent(activeVenueId, editingEvent?.eventId ?? null);
   const deleteEvent = useDeleteEvent(activeVenueId);
+  const pinEvent = usePinEvent();
+  const unpinEvent = useUnpinEvent();
 
   useEffect(() => {
     if (isLoading || !urlVenueId) {
@@ -69,8 +80,13 @@ export function EventWorkspacePage() {
     }
 
     setVenueAccessDenied(false);
-    activateVenueId(urlVenueId);
     venueSyncedRef.current = true;
+    // Only activate when the URL venue differs — activateVenueId invalidates all queries,
+    // so re-running on every venues refetch would keep the workspace in a loading loop.
+    if (activeVenueIdRef.current !== urlVenueId) {
+      pendingUrlVenueRef.current = urlVenueId;
+      activateVenueId(urlVenueId);
+    }
   }, [venues, isLoading, urlVenueId, activateVenueId]);
 
   useEffect(() => {
@@ -95,6 +111,13 @@ export function EventWorkspacePage() {
       return;
     }
     if (activeVenueId === urlVenueId) {
+      pendingUrlVenueRef.current = null;
+      return;
+    }
+
+    // Calendar / deep-link navigation updates the URL before VenueProvider state catches up.
+    // Do not remap to an event on the previous venue while that activation is in flight.
+    if (pendingUrlVenueRef.current === urlVenueId) {
       return;
     }
 
@@ -111,8 +134,13 @@ export function EventWorkspacePage() {
     if (events.some((event) => event.eventId === urlEventId)) {
       return urlEventId;
     }
-    return resolveActiveEventId(events, activeVenueId ?? '');
-  }, [urlEventId, events, eventsLoading, activeVenueId]);
+    // Do not fall back to another event while the URL venue is still syncing into
+    // VenueProvider — that briefly (or permanently) shows the wrong show.
+    if (!activeVenueId || activeVenueId !== urlVenueId) {
+      return null;
+    }
+    return resolveActiveEventId(events, activeVenueId);
+  }, [urlEventId, events, eventsLoading, activeVenueId, urlVenueId]);
 
   const selectedEvent = useMemo(
     () => events.find((event) => event.eventId === selectedEventId) ?? null,
@@ -149,6 +177,16 @@ export function EventWorkspacePage() {
     setFestivalEditEventId(null);
   }, []);
 
+  const isEventPinned = selectedEvent?.isPinned === true;
+
+  const toggleEventPin = useCallback(() => {
+    if (!activeVenueId || !selectedEventId) {
+      return;
+    }
+    const mutation = isEventPinned ? unpinEvent : pinEvent;
+    mutation.mutate({ venueId: activeVenueId, eventId: selectedEventId });
+  }, [activeVenueId, selectedEventId, isEventPinned, pinEvent, unpinEvent]);
+
   const showEventWorkspace = !isLoading && !isError && Boolean(activeVenueId) && !venueAccessDenied;
   const showEventsEmpty =
     showEventWorkspace && !eventsLoading && !eventsError && events.length === 0;
@@ -162,67 +200,86 @@ export function EventWorkspacePage() {
     panelMode === 'closed' &&
     !deleteTarget;
 
+  const handleEditEvent = useCallback(
+    (event: EventResponse) => {
+      if (event.eventType === 'FESTIVAL') {
+        if (canManageFestivalSchedule && event.eventId) {
+          setFestivalEditEventId(event.eventId);
+        }
+        if (event.eventId && activeVenueId && event.eventId !== selectedEventId) {
+          navigateToEventWorkspace(activeVenueId, event.eventId);
+        }
+        setPanelMode('closed');
+        setEditingEvent(null);
+        setDeleteTarget(null);
+        return;
+      }
+      setEditingEvent(event);
+      setPanelMode('edit');
+      setDeleteTarget(null);
+    },
+    [activeVenueId, canManageFestivalSchedule, selectedEventId],
+  );
+
+  const showEventPicker = showEventWorkspace && !eventsLoading && events.length > 0;
+
   const workspaceBarContent = useMemo(
     () => (
-      <div className="dashboard-workspace-bar" data-testid="dashboard-workspace-bar">
-        <VenueSwitcher />
-        {showEventWorkspace && !eventsLoading && events.length > 0 ? (
-          <EventCombobox
-            events={events}
-            selectedEventId={selectedEventId}
-            canManageEvents={canManageEvents}
-            onSelect={handleSelectEvent}
-            onCreateClick={
-              canManageEvents
-                ? () => {
-                    setEditingEvent(null);
-                    setPanelMode('create');
-                    setDeleteTarget(null);
-                  }
-                : undefined
-            }
-            onEditClick={
-              canManageEvents
-                ? (event) => {
-                    if (event.eventType === 'FESTIVAL') {
-                      if (canManageFestivalSchedule && event.eventId) {
-                        setFestivalEditEventId(event.eventId);
+      <div
+        className={`dashboard-workspace-bar${showEventPicker ? ' dashboard-workspace-bar--nested' : ''}`}
+        data-testid="dashboard-workspace-bar"
+      >
+        <div className="dashboard-workspace-bar__parent" data-testid="workspace-bar-venue">
+          <VenueSwitcher />
+        </div>
+        {showEventPicker ? (
+          <>
+            <span className="dashboard-workspace-bar__separator" aria-hidden="true" data-testid="workspace-bar-separator">
+              <FontAwesomeIcon icon={faChevronRight} />
+            </span>
+            <div className="dashboard-workspace-bar__child" data-testid="workspace-bar-event">
+              <EventCombobox
+                events={events}
+                selectedEventId={selectedEventId}
+                canManageEvents={canManageEvents}
+                onSelect={handleSelectEvent}
+                onCreateClick={
+                  canManageEvents
+                    ? () => {
+                        setEditingEvent(null);
+                        setPanelMode('create');
+                        setDeleteTarget(null);
                       }
-                      if (event.eventId && activeVenueId && event.eventId !== selectedEventId) {
-                        navigateToEventWorkspace(activeVenueId, event.eventId);
+                    : undefined
+                }
+                onEditClick={canManageEvents ? handleEditEvent : undefined}
+                onDeleteClick={
+                  canManageEvents
+                    ? (event) => {
+                        setDeleteTarget(event);
+                        setPanelMode('closed');
+                        setEditingEvent(null);
                       }
-                      setPanelMode('closed');
-                      setEditingEvent(null);
-                      setDeleteTarget(null);
-                      return;
-                    }
-                    setEditingEvent(event);
-                    setPanelMode('edit');
-                    setDeleteTarget(null);
-                  }
-                : undefined
-            }
-            onDeleteClick={
-              canManageEvents
-                ? (event) => {
-                    setDeleteTarget(event);
-                    setPanelMode('closed');
-                    setEditingEvent(null);
-                  }
-                : undefined
-            }
-          />
+                    : undefined
+                }
+                isPinned={isEventPinned}
+                onPinToggle={selectedEventId ? toggleEventPin : undefined}
+              />
+            </div>
+          </>
         ) : null}
       </div>
     ),
     [
-      showEventWorkspace,
-      eventsLoading,
+      showEventPicker,
       events,
       selectedEventId,
+      isEventPinned,
+      toggleEventPin,
       canManageEvents,
       canManageFestivalSchedule,
       activeVenueId,
+      handleEditEvent,
     ],
   );
 
@@ -336,7 +393,12 @@ export function EventWorkspacePage() {
             title: editingEvent.title ?? '',
             eventDate: editingEvent.eventDate ?? '',
             qboTagName: editingEvent.qboTagName ?? '',
+            doorsTime: editingEvent.doorsTime ?? '',
+            showStartTime: editingEvent.showStartTime ?? '',
+            supportLineup: editingEvent.supportLineup ?? '',
+            notes: editingEvent.notes ?? '',
           }}
+          bookingPlacementStatus={editingEvent.bookingPlacementStatus}
           onCancel={() => {
             setPanelMode('closed');
             setEditingEvent(null);
@@ -346,6 +408,10 @@ export function EventWorkspacePage() {
               title: values.title,
               eventDate: values.eventDate,
               qboTagName: values.qboTagName || null,
+              doorsTime: values.doorsTime || null,
+              showStartTime: values.showStartTime || null,
+              supportLineup: values.supportLineup || null,
+              notes: values.notes || null,
             });
             setPanelMode('closed');
             setEditingEvent(null);
@@ -395,7 +461,52 @@ export function EventWorkspacePage() {
               }
             }}
           />
-          <EventLedgerPage venueId={activeVenueId} eventId={selectedEventId} focus={ledgerFocus} />
+          <EventLedgerPage
+            venueId={activeVenueId}
+            eventId={selectedEventId}
+            focus={ledgerFocus}
+            hideEventHeader={selectedEvent?.eventType === 'FESTIVAL'}
+            eventDetails={
+              selectedEvent && selectedEvent.eventType !== 'FESTIVAL' ? (
+                <EventDetailsCard event={selectedEvent} />
+              ) : undefined
+            }
+            eventHeaderActions={
+              selectedEvent
+              && selectedEvent.eventType !== 'FESTIVAL'
+              && canManageEvents
+              && canEditEventMetadata(selectedEvent) ? (
+                <button
+                  type="button"
+                  className="btn-primary--compact btn-icon-label"
+                  data-testid="event-details-edit"
+                  onClick={() => handleEditEvent(selectedEvent)}
+                >
+                  <FontAwesomeIcon icon={faPen} aria-hidden="true" />
+                  Edit
+                </button>
+              ) : undefined
+            }
+            extraHeaderActions={
+              selectedEvent && selectedEvent.eventType !== 'FESTIVAL' ? (
+                <ConvertToFestivalAction
+                  venueId={activeVenueId}
+                  event={selectedEvent}
+                  canConvert={
+                    canManageFestivalSchedule
+                    && selectedEvent.status !== 'SETTLED'
+                    && selectedEvent.status !== 'RECONCILED'
+                  }
+                  canCancelBooking={
+                    canManageEvents
+                    && selectedEvent.status !== 'SETTLED'
+                    && selectedEvent.status !== 'RECONCILED'
+                    && selectedEvent.bookingPlacementStatus !== 'CANCELLED'
+                  }
+                />
+              ) : undefined
+            }
+          />
         </div>
       ) : null}
 
@@ -427,3 +538,5 @@ export function EventWorkspacePage() {
     </div>
   );
 }
+
+export default EventWorkspacePage;

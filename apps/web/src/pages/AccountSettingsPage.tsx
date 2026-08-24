@@ -9,29 +9,44 @@ import {
   setDateDisplayFormat,
   type DateDisplayFormat,
 } from '@/lib/dateDisplayFormat';
+import {
+  resolveTimeDisplayFormat,
+  setTimeDisplayFormat,
+  TIME_DISPLAY_FORMAT_OPTIONS,
+  type TimeDisplayFormat,
+} from '@/lib/timeDisplayFormat';
 
 export function AccountSettingsPage() {
   const queryClient = useQueryClient();
   const { data: profile, isLoading } = useUserProfile();
   const updatePreferences = useUpdateUserPreferences();
-  const [selectedFormat, setSelectedFormat] = useState<DateDisplayFormat>(
+  const [selectedDateFormat, setSelectedDateFormat] = useState<DateDisplayFormat>(
     resolveDateDisplayFormat(profile?.dateDisplayFormat),
+  );
+  const [selectedTimeFormat, setSelectedTimeFormat] = useState<TimeDisplayFormat>(
+    resolveTimeDisplayFormat(profile?.timeDisplayFormat),
   );
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    setSelectedFormat(resolveDateDisplayFormat(profile?.dateDisplayFormat));
+    setSelectedDateFormat(resolveDateDisplayFormat(profile?.dateDisplayFormat));
   }, [profile?.dateDisplayFormat]);
+
+  useEffect(() => {
+    setSelectedTimeFormat(resolveTimeDisplayFormat(profile?.timeDisplayFormat));
+  }, [profile?.timeDisplayFormat]);
 
   const handleSave = async () => {
     setError(null);
     setSaved(false);
     try {
       const updated = await updatePreferences.mutateAsync({
-        dateDisplayFormat: selectedFormat,
+        dateDisplayFormat: selectedDateFormat,
+        timeDisplayFormat: selectedTimeFormat,
       });
       setDateDisplayFormat(updated.dateDisplayFormat);
+      setTimeDisplayFormat(updated.timeDisplayFormat);
       void queryClient.invalidateQueries({ queryKey: ['user', 'me'] });
       setSaved(true);
     } catch (caught) {
@@ -48,17 +63,32 @@ export function AccountSettingsPage() {
         <SelectField
           id="account-date-display-format"
           label="Date display format"
-          value={selectedFormat}
+          value={selectedDateFormat}
           options={DATE_DISPLAY_FORMAT_OPTIONS.map((option) => ({
             value: option.value,
             label: `${option.label} (${option.example})`,
           }))}
           onChange={(value) => {
-            setSelectedFormat(resolveDateDisplayFormat(value));
+            setSelectedDateFormat(resolveDateDisplayFormat(value));
             setSaved(false);
           }}
           disabled={isLoading || updatePreferences.isPending}
           data-testid="account-date-display-format"
+        />
+        <SelectField
+          id="account-time-display-format"
+          label="Time display format"
+          value={selectedTimeFormat}
+          options={TIME_DISPLAY_FORMAT_OPTIONS.map((option) => ({
+            value: option.value,
+            label: `${option.label} (${option.example})`,
+          }))}
+          onChange={(value) => {
+            setSelectedTimeFormat(resolveTimeDisplayFormat(value));
+            setSaved(false);
+          }}
+          disabled={isLoading || updatePreferences.isPending}
+          data-testid="account-time-display-format"
         />
         {error ? (
           <p className="account-settings__error" role="alert">

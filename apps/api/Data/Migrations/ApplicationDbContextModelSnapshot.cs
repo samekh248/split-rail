@@ -200,6 +200,11 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnType("time without time zone")
                         .HasColumnName("load_in_time");
 
+                    b.Property<string>("Notes")
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("notes");
+
                     b.Property<string>("QboTagName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -225,6 +230,10 @@ namespace SplitRail.Api.Data.Migrations
                     b.Property<string>("SettlementPdfUrl")
                         .HasColumnType("text")
                         .HasColumnName("settlement_pdf_url");
+
+                    b.Property<TimeOnly?>("ShowStartTime")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("show_start_time");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -1721,6 +1730,22 @@ namespace SplitRail.Api.Data.Migrations
                         .HasColumnName("created_at")
                         .HasDefaultValueSql("NOW()");
 
+                    b.Property<string>("DateDisplayFormat")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("MM/dd/yyyy")
+                        .HasColumnName("date_display_format");
+
+                    b.Property<string>("TimeDisplayFormat")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasDefaultValue("12h")
+                        .HasColumnName("time_display_format");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -1731,14 +1756,6 @@ namespace SplitRail.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("password_hash");
-
-                    b.Property<string>("DateDisplayFormat")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasDefaultValue("MM/dd/yyyy")
-                        .HasColumnName("date_display_format");
 
                     b.HasKey("Id");
 
@@ -1771,29 +1788,6 @@ namespace SplitRail.Api.Data.Migrations
                     b.ToTable("user_event_pins", (string)null);
                 });
 
-            modelBuilder.Entity("SplitRail.Api.Models.UserProgrammingBlockPin", b =>
-                {
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<Guid>("ProgrammingBlockId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("programming_block_id");
-
-                    b.Property<DateTimeOffset>("PinnedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("pinned_at")
-                        .HasDefaultValueSql("NOW()");
-
-                    b.HasKey("UserId", "ProgrammingBlockId");
-
-                    b.HasIndex("ProgrammingBlockId");
-
-                    b.ToTable("user_programming_block_pins", (string)null);
-                });
-
             modelBuilder.Entity("SplitRail.Api.Models.UserOrganizationMapping", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -1815,6 +1809,29 @@ namespace SplitRail.Api.Data.Migrations
                     b.HasIndex("RoleId");
 
                     b.ToTable("user_organization_mappings", (string)null);
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.UserProgrammingBlockPin", b =>
+                {
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<Guid>("ProgrammingBlockId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("programming_block_id");
+
+                    b.Property<DateTimeOffset>("PinnedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("pinned_at")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.HasKey("UserId", "ProgrammingBlockId");
+
+                    b.HasIndex("ProgrammingBlockId");
+
+                    b.ToTable("user_programming_block_pins", (string)null);
                 });
 
             modelBuilder.Entity("SplitRail.Api.Models.UserVenueScope", b =>
@@ -2309,25 +2326,6 @@ namespace SplitRail.Api.Data.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SplitRail.Api.Models.UserProgrammingBlockPin", b =>
-                {
-                    b.HasOne("SplitRail.Api.Models.ProgrammingBlock", "ProgrammingBlock")
-                        .WithMany("UserProgrammingBlockPins")
-                        .HasForeignKey("ProgrammingBlockId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("SplitRail.Api.Models.User", "User")
-                        .WithMany("ProgrammingBlockPins")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ProgrammingBlock");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("SplitRail.Api.Models.UserOrganizationMapping", b =>
                 {
                     b.HasOne("SplitRail.Api.Models.Organization", "Organization")
@@ -2351,6 +2349,25 @@ namespace SplitRail.Api.Data.Migrations
                     b.Navigation("Organization");
 
                     b.Navigation("Role");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("SplitRail.Api.Models.UserProgrammingBlockPin", b =>
+                {
+                    b.HasOne("SplitRail.Api.Models.ProgrammingBlock", "ProgrammingBlock")
+                        .WithMany("UserProgrammingBlockPins")
+                        .HasForeignKey("ProgrammingBlockId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("SplitRail.Api.Models.User", "User")
+                        .WithMany("ProgrammingBlockPins")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ProgrammingBlock");
 
                     b.Navigation("User");
                 });

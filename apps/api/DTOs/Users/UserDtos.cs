@@ -25,11 +25,12 @@ public record UserProfileResponse(
     Guid Id,
     string Email,
     string DateDisplayFormat,
+    string TimeDisplayFormat,
     OrganizationSummaryDto? Organization,
     RoleDetailDto? Role,
     IReadOnlyList<VenueScopeDto> VenueScopes);
 
-public record UpdateUserPreferencesRequest(string? DateDisplayFormat);
+public record UpdateUserPreferencesRequest(string? DateDisplayFormat, string? TimeDisplayFormat);
 
 public record UserListResponse(
     Guid Id,

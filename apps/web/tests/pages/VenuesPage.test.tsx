@@ -106,7 +106,10 @@ describe('VenuesPage', () => {
     await screen.findByText('No venues yet');
     expect(screen.getByText('Create a region to start adding venues.')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add venue' })).not.toBeInTheDocument();
-    expect(screen.getByTestId('venues-manage-regions')).toHaveTextContent('Create your first region');
+    const body = await screen.findByTestId('venues-page-body');
+    expect(body).toContainElement(screen.getByTestId('venues-add-region-open'));
+    expect(screen.getByRole('button', { name: 'Create region' })).toBeInTheDocument();
+    expect(screen.queryByTestId('venues-add-region')).not.toBeInTheDocument();
   });
 
   it('shows read-only empty state for member', async () => {
@@ -237,15 +240,30 @@ describe('VenuesPage', () => {
     expect(globalThis.fetch).toHaveBeenCalled();
   });
 
-  it('shows manage regions for admin and opens region panel', async () => {
+  it('keeps the region filter and add-region action as separate controls in the main section', async () => {
     mockWorkspaceFetch({ venues: [VENUE_A], regions: [REGION_WEST, REGION_EAST] });
     const user = userEvent.setup();
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
-    expect(await screen.findByTestId('venues-manage-regions')).toBeInTheDocument();
-    await user.click(screen.getByTestId('venues-manage-regions'));
-    expect(screen.getByTestId('booking-region-panel')).toBeInTheDocument();
+    const body = await screen.findByTestId('venues-page-body');
+    const toolbar = await screen.findByTestId('venues-page-toolbar');
+    expect(body).toContainElement(toolbar);
+    expect(toolbar).toContainElement(screen.getByTestId('venue-list-filters'));
+    expect(toolbar).toContainElement(screen.getByTestId('add-region-control'));
+    expect(screen.queryByTestId('venues-add-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('booking-region-panel')).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId('venues-add-region-open'));
+    await user.type(screen.getByLabelText('Region name'), 'North');
+    await user.click(screen.getByTestId('venues-add-region-save'));
+
+    await waitFor(() => {
+      expect(vi.mocked(globalThis.fetch).mock.calls.some((call) => {
+        const url = String(call[0]);
+        return url.includes('/regions') && call[1]?.method === 'POST';
+      })).toBe(true);
+    });
   });
 
   it('drag-and-drop reassigns a venue to a different region end-to-end (US1)', async () => {
@@ -270,7 +288,84 @@ describe('VenuesPage', () => {
     ).not.toHaveTextContent('Hall A');
   });
 
-  it('hides manage regions for read-only users', async () => {
+  it('edits a region name from the section menu', async () => {
+    mockWorkspaceFetch({ venues: [VENUE_A], regions: [REGION_WEST, REGION_EAST] });
+    const user = userEvent.setup();
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await user.click(await screen.findByTestId(`venues-region-menu-${REGION_WEST.id}-trigger`));
+    await user.click(screen.getByTestId(`edit-region-${REGION_WEST.id}`));
+
+    const editor = await screen.findByTestId('venues-edit-region');
+    expect(editor).toBeInTheDocument();
+    const nameInput = screen.getByLabelText('Region name');
+    await user.clear(nameInput);
+    await user.type(nameInput, 'Pacific');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => {
+      expect(vi.mocked(globalThis.fetch).mock.calls.some((call) => {
+        const url = String(call[0]);
+        return url.includes(`/regions/${REGION_WEST.id}`) && call[1]?.method === 'PATCH';
+      })).toBe(true);
+    });
+  });
+
+  it('asks for confirmation before deleting an empty region', async () => {
+    mockWorkspaceFetch({ venues: [VENUE_A], regions: [REGION_WEST, REGION_EAST] });
+    const user = userEvent.setup();
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await user.click(await screen.findByTestId(`venues-region-menu-${REGION_EAST.id}-trigger`));
+    await user.click(screen.getByTestId(`delete-region-${REGION_EAST.id}`));
+
+    expect(screen.getByTestId('delete-region-confirm')).toBeInTheDocument();
+    expect(screen.queryByTestId('region-delete-resolution-modal')).not.toBeInTheDocument();
+    expect(vi.mocked(globalThis.fetch).mock.calls.some((call) => call[1]?.method === 'DELETE')).toBe(
+      false,
+    );
+
+    await user.click(screen.getByTestId('delete-region-confirm-button'));
+
+    await waitFor(() => {
+      expect(vi.mocked(globalThis.fetch).mock.calls.some((call) => {
+        const url = String(call[0]);
+        return url.includes(`/regions/${REGION_EAST.id}`) && call[1]?.method === 'DELETE';
+      })).toBe(true);
+    });
+  });
+
+  it('does not delete an empty region when the confirm dialog is cancelled', async () => {
+    mockWorkspaceFetch({ venues: [VENUE_A], regions: [REGION_WEST, REGION_EAST] });
+    const user = userEvent.setup();
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await user.click(await screen.findByTestId(`venues-region-menu-${REGION_EAST.id}-trigger`));
+    await user.click(screen.getByTestId(`delete-region-${REGION_EAST.id}`));
+    await user.click(screen.getByRole('button', { name: 'Close' }));
+
+    expect(screen.queryByTestId('delete-region-confirm')).not.toBeInTheDocument();
+    expect(vi.mocked(globalThis.fetch).mock.calls.some((call) => call[1]?.method === 'DELETE')).toBe(
+      false,
+    );
+  });
+
+  it('opens the resolution modal when deleting a region that still has venues', async () => {
+    mockWorkspaceFetch({ venues: [VENUE_A], regions: [REGION_WEST, REGION_EAST] });
+    const user = userEvent.setup();
+
+    render(<VenuesPage />, { wrapper: createWrapper() });
+
+    await user.click(await screen.findByTestId(`venues-region-menu-${REGION_WEST.id}-trigger`));
+    await user.click(screen.getByTestId(`delete-region-${REGION_WEST.id}`));
+
+    expect(await screen.findByTestId('region-delete-resolution-modal')).toBeInTheDocument();
+  });
+
+  it('hides region create and edit actions for read-only users', async () => {
     mockWorkspaceFetch({
       profile: workspaceMemberProfile,
       venues: [VENUE_A],
@@ -280,7 +375,8 @@ describe('VenuesPage', () => {
     render(<VenuesPage />, { wrapper: createWrapper() });
 
     await screen.findByText('Hall A');
-    expect(screen.queryByTestId('venues-manage-regions')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('venues-add-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId(`venues-region-menu-${REGION_WEST.id}`)).not.toBeInTheDocument();
   });
 
   it('filters venues by region', async () => {
@@ -363,25 +459,34 @@ describe('VenuesPage', () => {
     expect(screen.getByTestId('venue-list-table')).toBeInTheDocument();
   });
 
-  it('shows exactly one create-regions prompt for admins when there are zero regions', async () => {
+  it('opens the create-region modal from the main section when there are zero regions', async () => {
     mockWorkspaceFetch({ venues: [VENUE_A] });
+    const user = userEvent.setup();
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
     await screen.findByText('Hall A');
-    expect(screen.getAllByTestId('venues-manage-regions')).toHaveLength(1);
+    const body = screen.getByTestId('venues-page-body');
+    const header = screen.getByTestId('venues-page').querySelector('header');
+    expect(body).toContainElement(screen.getByTestId('venues-add-region-open'));
+    expect(header).not.toContainElement(screen.getByTestId('venues-add-region-open'));
+    expect(screen.queryByTestId('venues-region-filter')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('venue-list-filters')).not.toBeInTheDocument();
     expect(screen.queryByTestId('venues-no-regions-helper')).not.toBeInTheDocument();
+
+    await user.click(screen.getByTestId('venues-add-region-open'));
+    expect(screen.getByTestId('venues-add-region')).toHaveAttribute('role', 'dialog');
   });
 
-  it('shows only the create-regions prompt in the header, with no Add venue action, when there are zero regions', async () => {
+  it('shows the create-region form instead of a manage-regions button when there are zero regions', async () => {
     mockWorkspaceFetch({ venues: [VENUE_A] });
 
     render(<VenuesPage />, { wrapper: createWrapper() });
 
     await screen.findByText('Hall A');
-    const header = screen.getByTestId('venues-page').querySelector('header');
-    expect(header).not.toBeNull();
-    expect(header).toContainElement(screen.getByTestId('venues-manage-regions'));
+    expect(screen.getByTestId('venues-add-region-open')).toBeInTheDocument();
+    expect(screen.queryByTestId('venues-add-region')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('venues-manage-regions')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add venue' })).not.toBeInTheDocument();
   });
 
@@ -391,7 +496,7 @@ describe('VenuesPage', () => {
     render(<VenuesPage />, { wrapper: createWrapper() });
 
     await screen.findByText('Hall A');
-    expect(screen.queryAllByTestId('venues-manage-regions')).toHaveLength(0);
+    expect(screen.queryByTestId('venues-add-region')).not.toBeInTheDocument();
     expect(screen.queryByTestId('venues-region-filter')).not.toBeInTheDocument();
   });
 

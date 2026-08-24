@@ -368,7 +368,7 @@ describe('TimelineGrid', () => {
       const moved = within(screen.getByTestId('timeline-stage-row-stage-2')).getByTestId(
         'timeline-block-block-1',
       );
-      expect(moved).toHaveTextContent('10:00–11:00');
+      expect(moved).toHaveTextContent('10:00 AM–11:00 AM');
       expect(
         within(screen.getByTestId('timeline-stage-row-stage-1')).queryByTestId('timeline-block-block-1'),
       ).not.toBeInTheDocument();
@@ -810,7 +810,7 @@ describe('TimelineGrid', () => {
       const card = screen.getByTestId('timeline-block-block-1');
       expect(card).toHaveAttribute('data-density', 'compact');
       expect(card).toHaveTextContent('Tiny Set');
-      expect(card).not.toHaveTextContent('14:00–14:30');
+      expect(card).not.toHaveTextContent('2:00 PM–2:30 PM');
       expect(card).not.toHaveTextContent('Scheduled');
       expect(screen.queryByTestId('timeline-block-booking-block-1')).not.toBeInTheDocument();
     });
@@ -821,7 +821,7 @@ describe('TimelineGrid', () => {
       const card = screen.getByTestId('timeline-block-block-1');
       expect(card).toHaveAttribute('data-density', 'short');
       expect(card).toHaveTextContent('Tiny Set');
-      expect(card).toHaveTextContent('14:00–15:00');
+      expect(card).toHaveTextContent('2:00 PM–3:00 PM');
       expect(card).not.toHaveTextContent('Scheduled');
       expect(screen.getByTestId('timeline-block-booking-block-1')).toBeInTheDocument();
     });
@@ -832,7 +832,7 @@ describe('TimelineGrid', () => {
       const card = screen.getByTestId('timeline-block-block-1');
       expect(card).toHaveAttribute('data-density', 'full');
       expect(card).toHaveTextContent('Tiny Set');
-      expect(card).toHaveTextContent('14:00–16:00');
+      expect(card).toHaveTextContent('2:00 PM–4:00 PM');
       expect(card).toHaveTextContent('Scheduled');
     });
 

@@ -50,11 +50,16 @@ export function validateVenueName(name: string): string | undefined {
 }
 
 export const EVENT_TITLE_MAX_LENGTH = 200;
+export const EVENT_NOTES_MAX_LENGTH = 2000;
 
 export interface EventFormValues {
   title: string;
   eventDate: string;
   qboTagName: string;
+  doorsTime?: string;
+  showStartTime?: string;
+  supportLineup?: string;
+  notes?: string;
 }
 
 export function validateEventForm(values: EventFormValues): Partial<Record<keyof EventFormValues, string>> {
@@ -68,6 +73,9 @@ export function validateEventForm(values: EventFormValues): Partial<Record<keyof
     errors.eventDate = 'Event date is required.';
   } else if (Number.isNaN(Date.parse(values.eventDate))) {
     errors.eventDate = 'Enter a valid event date.';
+  }
+  if (values.notes && values.notes.length > EVENT_NOTES_MAX_LENGTH) {
+    errors.notes = `Notes cannot exceed ${EVENT_NOTES_MAX_LENGTH} characters.`;
   }
   return errors;
 }

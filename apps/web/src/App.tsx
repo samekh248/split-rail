@@ -1,8 +1,7 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, lazy, Suspense } from 'react';
 import { BookingCalendarPage } from '@/pages/BookingCalendarPage';
 import { DashboardOverviewPage } from '@/pages/DashboardOverviewPage';
 import { AccountingOverviewPage } from '@/pages/AccountingOverviewPage';
-import { EventWorkspacePage } from '@/pages/EventWorkspacePage';
 import { BlockSettlementPage } from '@/pages/BlockSettlementPage';
 import { FestivalItineraryRoute } from '@/pages/FestivalItineraryRoute';
 import { FestivalLedgerPage } from '@/pages/FestivalLedgerPage';
@@ -19,10 +18,21 @@ import { AcceptInvitePage } from '@/pages/AcceptInvitePage';
 import { OrganizationCreateStep } from '@/components/onboarding/OrganizationCreateStep';
 import { WelcomeModal } from '@/components/onboarding/WelcomeModal';
 import { DateDisplayFormatSync } from '@/components/preferences/DateDisplayFormatSync';
+import { TimeDisplayFormatSync } from '@/components/preferences/TimeDisplayFormatSync';
 import { AppShell } from '@/components/shell/AppShell';
 import { useAuth } from '@/auth/useAuth';
 import { VenueProvider } from '@/venue/VenueContext';
 import { parseEventWorkspacePath, parseFestivalItineraryPath, parseFestivalLedgerPath, parseFestivalReportsPath, parseBlockSettlementPath, useAppRoute } from '@/lib/appRoute';
+
+const EventWorkspacePage = lazy(() => import('@/pages/EventWorkspacePage'));
+
+function RouteFallback() {
+  return (
+    <div className="auth-resolving" role="status" aria-live="polite">
+      Loading…
+    </div>
+  );
+}
 
 function AuthenticatedShell({
   sidebarNavigation = 'global',
@@ -36,6 +46,7 @@ function AuthenticatedShell({
   return (
     <VenueProvider>
       <DateDisplayFormatSync />
+      <TimeDisplayFormatSync />
       <AppShell sidebarNavigation={sidebarNavigation} topBarContent={topBarContent}>
         {children}
       </AppShell>
@@ -168,7 +179,9 @@ export default function App() {
             eventId={festivalItineraryRoute.eventId}
           />
         ) : workspaceRoute ? (
-          <EventWorkspacePage />
+          <Suspense fallback={<RouteFallback />}>
+            <EventWorkspacePage />
+          </Suspense>
         ) : appPath === '/venues' ? (
           <VenuesPage />
         ) : appPath === '/accounting' ? (

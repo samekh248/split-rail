@@ -10,6 +10,7 @@ import {
   MAX_CALENDAR_QUERY_SPAN_DAYS,
   pickNextUpcomingPlacements,
   previewConflict,
+  bookingStatusSwatchClass,
   placementStatusClass,
   placementLegendHighlightClass,
   sortAgendaPlacements,
@@ -240,6 +241,13 @@ describe('bookingCalendar', () => {
     expect(placementStatusClass('HOLD_1')).toBe('booking-placement--hold booking-placement--hold-1');
     expect(placementStatusClass('HOLD_2')).toBe('booking-placement--hold booking-placement--hold-2');
     expect(placementStatusClass('CANCELLED')).toBe('booking-placement--cancelled');
+  });
+
+  it('maps placement statuses to the matching legend swatch class', () => {
+    expect(bookingStatusSwatchClass('CONFIRMED')).toBe('booking-calendar-legend__swatch--confirmed');
+    expect(bookingStatusSwatchClass('HOLD_1')).toBe('booking-calendar-legend__swatch--hold-1');
+    expect(bookingStatusSwatchClass('HOLD_2')).toBe('booking-calendar-legend__swatch--hold-2');
+    expect(bookingStatusSwatchClass('CANCELLED')).toBe('booking-calendar-legend__swatch--cancelled');
   });
 
   it('returns legend highlight classes when a status is highlighted', () => {

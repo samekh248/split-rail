@@ -65,6 +65,7 @@ describe('VenueSwitcher', () => {
     sessionStorage.clear();
     localStorage.clear();
     vi.unstubAllGlobals();
+    window.history.pushState({}, '', '/');
   });
 
   it('defaults to All Venues when no venue is selected', async () => {
@@ -187,6 +188,37 @@ describe('VenueSwitcher', () => {
     await user.click(screen.getByTestId('venue-switcher-trigger'));
     expect(screen.getByRole('option', { name: ALL_VENUES_LABEL })).toBeInTheDocument();
     expect(screen.getByRole('option', { name: /Hall A/ })).toBeInTheDocument();
+  });
+
+  it('opens the venue-filtered booking calendar from an event workspace', async () => {
+    window.history.pushState({}, '', `/venues/${VENUE_A.id}/events/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee`);
+    setActiveVenueId(VENUE_A.id);
+    mockWorkspaceFetch({ venues: [VENUE_A, VENUE_B] });
+
+    const user = userEvent.setup();
+    render(<VenueSwitcher />, { wrapper: createWrapper() });
+
+    await waitFor(() => expect(screen.getByTestId('venue-switcher-current')).toHaveTextContent('Hall A'));
+    await user.click(screen.getByTestId('venue-switcher-trigger'));
+
+    expect(window.location.pathname).toBe('/booking');
+    expect(new URLSearchParams(window.location.search).get('venue')).toBe(VENUE_A.id);
+  });
+
+  it('switches venue from a workspace and opens that venue calendar', async () => {
+    window.history.pushState({}, '', `/venues/${VENUE_A.id}/events/eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee`);
+    setActiveVenueId(VENUE_A.id);
+    mockWorkspaceFetch({ venues: [VENUE_A, VENUE_B] });
+
+    const user = userEvent.setup();
+    render(<VenueSwitcher />, { wrapper: createWrapper() });
+
+    await waitFor(() => expect(screen.getByTestId('venue-switcher-current')).toHaveTextContent('Hall A'));
+    await user.click(screen.getByTestId('venue-switcher-menu-toggle'));
+    await user.click(screen.getByTestId(`venue-option-${VENUE_B.id}`));
+
+    expect(window.location.pathname).toBe('/booking');
+    expect(new URLSearchParams(window.location.search).get('venue')).toBe(VENUE_B.id);
   });
 
   describe('region filter (US1)', () => {

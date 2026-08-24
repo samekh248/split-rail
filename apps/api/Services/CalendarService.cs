@@ -104,7 +104,9 @@ public class CalendarService
             evt.LineItems.Count > 0,
             workspaceAllowed,
             evt.EndDate?.ToString("yyyy-MM-dd"),
-            EventTypeFormat.ToApiString(evt.EventType));
+            EventTypeFormat.ToApiString(evt.EventType),
+            FormatTime(evt.ShowStartTime),
+            evt.Notes);
     }
 
     private static string? FormatTime(TimeOnly? time) =>

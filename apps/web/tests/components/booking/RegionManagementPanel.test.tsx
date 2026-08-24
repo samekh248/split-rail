@@ -53,14 +53,21 @@ describe('RegionManagementPanel', () => {
     vi.unstubAllGlobals();
   });
 
-  it('deletes a zero-venue region immediately with no resolution modal (regression baseline)', async () => {
+  it('asks for confirmation before deleting a zero-venue region', async () => {
     stubFetch([REGION_EMPTY]);
     const user = userEvent.setup();
     render(<RegionManagementPanel open onClose={vi.fn()} />, { wrapper: createWrapper() });
 
     await user.click(await screen.findByTestId(`delete-region-${REGION_EMPTY.id}`));
 
+    expect(screen.getByTestId('delete-region-confirm')).toBeInTheDocument();
     expect(screen.queryByTestId('region-delete-resolution-modal')).not.toBeInTheDocument();
+    expect(vi.mocked(globalThis.fetch).mock.calls.some((call) => call[1]?.method === 'DELETE')).toBe(
+      false,
+    );
+
+    await user.click(screen.getByTestId('delete-region-confirm-button'));
+
     await waitFor(() => {
       const fetchMock = vi.mocked(globalThis.fetch);
       expect(

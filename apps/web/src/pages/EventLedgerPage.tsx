@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import {
   useCreateArtist,
   useCreateLineItem,
@@ -34,6 +34,11 @@ interface EventLedgerPageProps {
   venueId: string;
   eventId: string;
   focus?: WorkspaceFocus | null;
+  extraHeaderActions?: ReactNode;
+  eventDetails?: ReactNode;
+  eventHeaderActions?: ReactNode;
+  /** When true, LedgerGrid omits the duplicate event title/meta row. */
+  hideEventHeader?: boolean;
 }
 
 function findRow(ledger: NonNullable<ReturnType<typeof useLedger>['data']>, id: string) {
@@ -42,7 +47,15 @@ function findRow(ledger: NonNullable<ReturnType<typeof useLedger>['data']>, id: 
     .find((row) => row.id === id);
 }
 
-export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProps) {
+export function EventLedgerPage({
+  venueId,
+  eventId,
+  focus,
+  extraHeaderActions,
+  eventDetails,
+  eventHeaderActions,
+  hideEventHeader = false,
+}: EventLedgerPageProps) {
   const { data: ledger, isLoading, error, refetch } = useLedger(venueId, eventId);
   const recalculate = useRecalculateLedger(venueId, eventId);
   const updateLineItem = useUpdateLineItem(venueId, eventId);
@@ -309,7 +322,11 @@ export function EventLedgerPage({ venueId, eventId, focus }: EventLedgerPageProp
         canEditStructure={canEditStructure}
         lockBudgetPending={lockBudget.isPending}
         onLockBudget={() => lockBudget.mutate()}
+        hideEventHeader={hideEventHeader}
         headerActions={canSync ? <SyncNowButton venueId={venueId} eventId={eventId} /> : undefined}
+        trailingHeaderActions={extraHeaderActions}
+        eventDetails={eventDetails}
+        eventHeaderActions={eventHeaderActions}
         onProformaChange={(id, value) => void saveLineItemField(id, 'proformaValue', value)}
         onSettlementChange={(id, value) =>
           void saveLineItemField(id, 'settlementValue', value)

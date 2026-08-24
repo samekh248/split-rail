@@ -1,11 +1,8 @@
-import { BOOKING_PLACEMENT_LEGEND, type BookingPlacementStatus } from '@/lib/bookingCalendar';
-
-const LEGEND_SWATCH_CLASS: Record<BookingPlacementStatus, string> = {
-  CONFIRMED: 'booking-calendar-legend__swatch--confirmed',
-  HOLD_1: 'booking-calendar-legend__swatch--hold-1',
-  HOLD_2: 'booking-calendar-legend__swatch--hold-2',
-  CANCELLED: 'booking-calendar-legend__swatch--cancelled',
-};
+import {
+  BOOKING_PLACEMENT_LEGEND,
+  bookingStatusSwatchClass,
+  type BookingPlacementStatus,
+} from '@/lib/bookingCalendar';
 
 export interface BookingCalendarLegendProps {
   showCancelled?: boolean;
@@ -56,7 +53,7 @@ export function BookingCalendarLegend({
                 onFocus={() => onHighlightStatus?.(item.status)}
               >
                 <span
-                  className={`booking-calendar-legend__swatch ${LEGEND_SWATCH_CLASS[item.status]}`}
+                  className={`booking-calendar-legend__swatch ${bookingStatusSwatchClass(item.status)}`}
                   aria-hidden="true"
                 />
                 <span className="booking-calendar-legend__label">{item.label}</span>

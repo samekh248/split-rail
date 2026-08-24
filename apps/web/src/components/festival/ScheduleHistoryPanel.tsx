@@ -6,6 +6,10 @@ import {
   faTrafficLight,
 } from '@fortawesome/free-solid-svg-icons';
 import type { FestivalAuditEntryResponse } from '@/types/generated-api';
+import {
+  formatDateTimeWithPreference,
+  formatTimeRangeWithPreference,
+} from '@/lib/timeDisplayFormat';
 
 export interface ScheduleHistoryPanelProps {
   entries: FestivalAuditEntryResponse[];
@@ -32,19 +36,7 @@ function parseAuditJson(json: string | null | undefined): ParsedAuditValues {
 }
 
 function formatTimestamp(value?: string): string {
-  if (!value) {
-    return '—';
-  }
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return date.toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-  });
+  return formatDateTimeWithPreference(value);
 }
 
 function describeEntry(entry: FestivalAuditEntryResponse): {
@@ -60,13 +52,13 @@ function describeEntry(entry: FestivalAuditEntryResponse): {
       return {
         icon: faArrowsRotate,
         label: 'Rescheduled',
-        detail: `${prior.StartTime ?? '?'}–${prior.EndTime ?? '?'} → ${next.StartTime ?? '?'}–${next.EndTime ?? '?'}`,
+        detail: `${formatTimeRangeWithPreference(prior.StartTime, prior.EndTime) || '?'} → ${formatTimeRangeWithPreference(next.StartTime, next.EndTime) || '?'}`,
       };
     case 'Moved':
       return {
         icon: faRoute,
         label: 'Moved to another stage',
-        detail: `${prior.StartTime ?? '?'}–${prior.EndTime ?? '?'} on prior stage → ${next.StartTime ?? '?'}–${next.EndTime ?? '?'} on new stage`,
+        detail: `${formatTimeRangeWithPreference(prior.StartTime, prior.EndTime) || '?'} on prior stage → ${formatTimeRangeWithPreference(next.StartTime, next.EndTime) || '?'} on new stage`,
       };
     case 'StatusChange':
       return {

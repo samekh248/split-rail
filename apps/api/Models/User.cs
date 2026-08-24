@@ -6,6 +6,7 @@ public class User
     public string Email { get; set; } = string.Empty;
     public string PasswordHash { get; set; } = string.Empty;
     public string DateDisplayFormat { get; set; } = Constants.DateDisplayFormats.Default;
+    public string TimeDisplayFormat { get; set; } = Constants.TimeDisplayFormats.Default;
     public DateTimeOffset CreatedAt { get; set; }
 
     public ICollection<UserOrganizationMapping> OrganizationMappings { get; set; } = [];

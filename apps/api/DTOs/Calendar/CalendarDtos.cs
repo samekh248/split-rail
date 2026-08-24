@@ -19,4 +19,6 @@ public record CalendarPlacementDto(
     bool HasLineItems,
     bool WorkspaceAllowed,
     string? EndDate = null,
-    string EventType = "STANDARD");
+    string EventType = "STANDARD",
+    string? ShowStartTime = null,
+    string? Notes = null);

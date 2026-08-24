@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus } from '@fortawesome/free-solid-svg-icons';
 import { FormField } from '@/components/auth/FormField';
 import { SelectField } from '@/components/auth/SelectField';
 import { ModalHeader } from '@/components/shell/ModalHeader';
@@ -119,7 +121,11 @@ export function CreateBookingEventModal({
             </p>
           ) : null}
           <div className="team-modal__actions booking-create-modal__actions">
-            <button type="submit" className="team-modal__save">
+            <button type="button" className="team-modal__cancel" onClick={onClose}>
+              Cancel
+            </button>
+            <button type="submit" className="team-modal__save btn-icon-label">
+              <FontAwesomeIcon icon={faPlus} aria-hidden="true" />
               Save
             </button>
           </div>
