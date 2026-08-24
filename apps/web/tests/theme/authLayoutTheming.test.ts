@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 const indexCssPath = resolve(__dirname, '../../src/index.css');
 
 const AUTH_BLOCK_START = '/* Auth layout */';
-const AUTH_BLOCK_END = '.event-form-panel,';
+const AUTH_BLOCK_END = '.event-form-panel {';
 
 function readIndexCss(): string {
   return readFileSync(indexCssPath, 'utf-8');
