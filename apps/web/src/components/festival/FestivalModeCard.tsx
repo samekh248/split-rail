@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faBan,
   faCalendarDays,
   faCheck,
   faCopy,
@@ -9,14 +8,11 @@ import {
   faLayerGroup,
   faPen,
 } from '@fortawesome/free-solid-svg-icons';
-import { FestivalCancelConfirm } from '@/components/festival/FestivalCancelConfirm';
 import { FestivalSetupModal } from '@/components/festival/FestivalSetupModal';
 import { StageManagerPanel } from '@/components/festival/StageManagerPanel';
-import { KebabMenu } from '@/components/shell/KebabMenu';
 import { formatEventDateRange } from '@/lib/eventDateRange';
 import { copyTextToClipboard } from '@/lib/copyToClipboard';
 import { useFestival } from '@/api/festivals';
-import { useDeleteEvent, useUpdateEvent } from '@/api/events';
 import { navigateToFestivalItinerary } from '@/lib/festivalItineraryRoute';
 import { navigateToFestivalLedger } from '@/lib/festivalLedgerRoute';
 import type { EventResponse } from '@/types/generated-api';
@@ -25,48 +21,34 @@ export interface FestivalModeCardProps {
   venueId: string;
   event: EventResponse | null;
   canManage: boolean;
-  canManageEvents?: boolean;
   /** When this matches the current festival, open the edit-festival modal. */
   editRequestedEventId?: string | null;
   onEditRequestHandled?: () => void;
-  onBookingCancelled?: (result: { deleted: boolean }) => void;
-}
-
-function isHoldPlacement(status: string | null | undefined): boolean {
-  return status === 'HOLD_1' || status === 'HOLD_2';
 }
 
 /**
  * Renders the active-festival day/stage structure. Standard (non-festival) events render
- * nothing here — the "Convert to festival" action for those lives in the ledger header
- * via {@link ConvertToFestivalAction}, so festival concepts never appear until the user
- * asks for them (spec FR-001).
+ * nothing here. Both the "Convert to festival" and "Cancel booking" actions live in the
+ * ledger header kebab via {@link ConvertToFestivalAction}, so festival concepts never
+ * appear until the user asks for them (spec FR-001).
  */
 export function FestivalModeCard({
   venueId,
   event,
   canManage,
-  canManageEvents = false,
   editRequestedEventId = null,
   onEditRequestHandled,
-  onBookingCancelled,
 }: FestivalModeCardProps) {
   const [editOpen, setEditOpen] = useState(false);
-  const [cancelOpen, setCancelOpen] = useState(false);
-  const [cancelError, setCancelError] = useState<string | null>(null);
   const [tagCopied, setTagCopied] = useState(false);
   const isFestival = event?.eventType === 'FESTIVAL';
   const isFrozen = event?.status === 'SETTLED' || event?.status === 'RECONCILED';
   const isCancelled = event?.bookingPlacementStatus === 'CANCELLED';
-  const updateEvent = useUpdateEvent(venueId, event?.eventId ?? null);
-  const deleteEvent = useDeleteEvent(venueId);
 
   const festivalQuery = useFestival(venueId, event?.eventId ?? '', isFestival);
 
   useEffect(() => {
     setEditOpen(false);
-    setCancelOpen(false);
-    setCancelError(null);
     setTagCopied(false);
   }, [event?.eventId]);
 
@@ -112,7 +94,6 @@ export function FestivalModeCard({
   const eventId = event.eventId ?? '';
   const masterTag = festival?.qboTagName ?? event.qboTagName ?? '';
   const canEditFestival = canManage && !isFrozen && !isCancelled;
-  const canCancelBooking = canManageEvents && !isFrozen && !isCancelled;
   const eventStatus = event.status ?? 'PRE_SHOW';
   const eventMeta = [
     formatEventDateRange(event.eventDate, event.endDate),
@@ -130,26 +111,6 @@ export function FestivalModeCard({
     setTagCopied(copied);
   };
 
-  const handleCancelConfirm = async () => {
-    setCancelError(null);
-    try {
-      const isHold = isHoldPlacement(event.bookingPlacementStatus);
-      if (isHold) {
-        await deleteEvent.mutateAsync(eventId);
-      } else {
-        await updateEvent.mutateAsync({
-          title: event.title,
-          eventDate: event.eventDate,
-          qboTagName: event.qboTagName ?? null,
-          bookingPlacementStatus: 'CANCELLED',
-        });
-      }
-      setCancelOpen(false);
-      onBookingCancelled?.({ deleted: isHold });
-    } catch (caught) {
-      setCancelError(caught instanceof Error ? caught.message : 'Unable to cancel booking.');
-    }
-  };
 
   return (
     <section className="festival-mode-card festival-mode-card--active" data-testid="festival-mode-card">
@@ -212,24 +173,6 @@ export function FestivalModeCard({
               Edit festival
             </button>
           ) : null}
-          {canCancelBooking ? (
-            <KebabMenu
-              ariaLabel="More festival actions"
-              testId="festival-actions-menu"
-              items={[
-                {
-                  label: 'Cancel booking',
-                  icon: faBan,
-                  testId: 'festival-cancel-booking',
-                  destructive: true,
-                  onSelect: () => {
-                    setCancelError(null);
-                    setCancelOpen(true);
-                  },
-                },
-              ]}
-            />
-          ) : null}
         </div>
       </div>
 
@@ -249,20 +192,6 @@ export function FestivalModeCard({
         initialEndDate={event.endDate ?? event.eventDate ?? ''}
       />
 
-      <FestivalCancelConfirm
-        eventTitle={event.title ?? 'Festival'}
-        open={cancelOpen}
-        isPending={updateEvent.isPending || deleteEvent.isPending}
-        error={cancelError}
-        onCancel={() => {
-          if (updateEvent.isPending || deleteEvent.isPending) {
-            return;
-          }
-          setCancelOpen(false);
-          setCancelError(null);
-        }}
-        onConfirm={() => void handleCancelConfirm()}
-      />
     </section>
   );
 }

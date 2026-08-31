@@ -3,7 +3,7 @@ import { faBan, faLayerGroup } from '@fortawesome/free-solid-svg-icons';
 import { FestivalCancelConfirm } from '@/components/festival/FestivalCancelConfirm';
 import { FestivalSetupModal } from '@/components/festival/FestivalSetupModal';
 import { KebabMenu, type KebabMenuItem } from '@/components/shell/KebabMenu';
-import { useUpdateEvent } from '@/api/events';
+import { useDeleteEvent, useUpdateEvent } from '@/api/events';
 import type { EventResponse } from '@/types/generated-api';
 
 export interface ConvertToFestivalActionProps {
@@ -11,6 +11,12 @@ export interface ConvertToFestivalActionProps {
   event: EventResponse;
   canConvert?: boolean;
   canCancelBooking?: boolean;
+  /** Fired after a successful cancel; `deleted` is true when a hold was released outright. */
+  onBookingCancelled?: (result: { deleted: boolean }) => void;
+}
+
+function isHoldPlacement(status: string | null | undefined): boolean {
+  return status === 'HOLD_1' || status === 'HOLD_2';
 }
 
 export function ConvertToFestivalAction({
@@ -18,11 +24,20 @@ export function ConvertToFestivalAction({
   event,
   canConvert = true,
   canCancelBooking = false,
+  onBookingCancelled,
 }: ConvertToFestivalActionProps) {
   const [setupOpen, setSetupOpen] = useState(false);
   const [cancelOpen, setCancelOpen] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
   const updateEvent = useUpdateEvent(venueId, event.eventId ?? null);
+  const deleteEvent = useDeleteEvent(venueId);
+
+  const isHold = isHoldPlacement(event.bookingPlacementStatus);
+  const cancelPending = updateEvent.isPending || deleteEvent.isPending;
+  const cancelLabel = isHold ? 'Release hold' : 'Cancel booking';
+  const cancelDescription = isHold
+    ? `Release the hold on “${event.title ?? 'this event'}”? The date will be freed up.`
+    : `Cancel the booking for “${event.title ?? 'this event'}”? The date will stay on the calendar as cancelled.`;
 
   const items: KebabMenuItem[] = [];
   if (canConvert) {
@@ -35,7 +50,7 @@ export function ConvertToFestivalAction({
   }
   if (canCancelBooking) {
     items.push({
-      label: 'Cancel booking',
+      label: cancelLabel,
       icon: faBan,
       testId: 'event-workspace-cancel-booking',
       destructive: true,
@@ -52,13 +67,20 @@ export function ConvertToFestivalAction({
     }
     setCancelError(null);
     try {
-      await updateEvent.mutateAsync({
-        title: event.title,
-        eventDate: event.eventDate,
-        qboTagName: event.qboTagName ?? null,
-        bookingPlacementStatus: 'CANCELLED',
-      });
+      // Releasing a hold removes the placement outright; a confirmed booking is retained
+      // on the calendar as cancelled.
+      if (isHold) {
+        await deleteEvent.mutateAsync(event.eventId);
+      } else {
+        await updateEvent.mutateAsync({
+          title: event.title,
+          eventDate: event.eventDate,
+          qboTagName: event.qboTagName ?? null,
+          bookingPlacementStatus: 'CANCELLED',
+        });
+      }
       setCancelOpen(false);
+      onBookingCancelled?.({ deleted: isHold });
     } catch (caught) {
       setCancelError(caught instanceof Error ? caught.message : 'Unable to cancel booking.');
     }
@@ -71,23 +93,25 @@ export function ConvertToFestivalAction({
         testId="festival-convert-menu"
         items={items}
       />
-      <FestivalSetupModal
-        venueId={venueId}
-        open={setupOpen}
-        onClose={() => setSetupOpen(false)}
-        onCreated={() => setSetupOpen(false)}
-        existingEventId={event.eventId}
-        initialTitle={event.title ?? ''}
-        initialStartDate={event.eventDate ?? ''}
-      />
+      {canConvert ? (
+        <FestivalSetupModal
+          venueId={venueId}
+          open={setupOpen}
+          onClose={() => setSetupOpen(false)}
+          onCreated={() => setSetupOpen(false)}
+          existingEventId={event.eventId}
+          initialTitle={event.title ?? ''}
+          initialStartDate={event.eventDate ?? ''}
+        />
+      ) : null}
       <FestivalCancelConfirm
         eventTitle={event.title ?? 'Event'}
         open={cancelOpen}
-        isPending={updateEvent.isPending}
+        isPending={cancelPending}
         error={cancelError}
-        description={`Cancel the booking for “${event.title ?? 'this event'}”? The date will stay on the calendar as cancelled.`}
+        description={cancelDescription}
         onCancel={() => {
-          if (updateEvent.isPending) {
+          if (cancelPending) {
             return;
           }
           setCancelOpen(false);

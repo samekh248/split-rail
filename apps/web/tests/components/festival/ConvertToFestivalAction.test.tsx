@@ -2,7 +2,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConvertToFestivalAction } from '@/components/festival/ConvertToFestivalAction';
 import type { EventResponse } from '@/types/generated-api';
 
@@ -12,9 +12,11 @@ vi.mock('@/components/festival/FestivalSetupModal', () => ({
 }));
 
 const updateEventMutateAsync = vi.fn().mockResolvedValue(undefined);
+const deleteEventMutateAsync = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('@/api/events', () => ({
   useUpdateEvent: () => ({ mutateAsync: updateEventMutateAsync, isPending: false }),
+  useDeleteEvent: () => ({ mutateAsync: deleteEventMutateAsync, isPending: false }),
 }));
 
 const standardEvent: EventResponse = {
@@ -34,6 +36,11 @@ function renderAction(ui: ReactNode) {
 }
 
 describe('ConvertToFestivalAction', () => {
+  beforeEach(() => {
+    updateEventMutateAsync.mockClear();
+    deleteEventMutateAsync.mockClear();
+  });
+
   it('is not present as a top-level button before the kebab menu is opened', () => {
     renderAction(
       <ConvertToFestivalAction venueId="venue-1" event={standardEvent} canCancelBooking />,
@@ -81,6 +88,49 @@ describe('ConvertToFestivalAction', () => {
     expect(updateEventMutateAsync).toHaveBeenCalledWith(
       expect.objectContaining({ bookingPlacementStatus: 'CANCELLED' }),
     );
+  });
+
+  it('offers Cancel booking for a festival, where conversion is not available', async () => {
+    const user = userEvent.setup();
+    renderAction(
+      <ConvertToFestivalAction
+        venueId="venue-1"
+        event={{ ...standardEvent, eventType: 'FESTIVAL' }}
+        canConvert={false}
+        canCancelBooking
+      />,
+    );
+
+    await user.click(screen.getByTestId('festival-convert-menu-trigger'));
+    expect(screen.queryByTestId('festival-convert-button')).not.toBeInTheDocument();
+    await user.click(screen.getByTestId('event-workspace-cancel-booking'));
+    await user.click(screen.getByTestId('festival-cancel-confirm-button'));
+
+    expect(updateEventMutateAsync).toHaveBeenCalledWith(
+      expect.objectContaining({ bookingPlacementStatus: 'CANCELLED' }),
+    );
+  });
+
+  it('releases a hold by deleting it and reports the deletion', async () => {
+    const user = userEvent.setup();
+    const onBookingCancelled = vi.fn();
+    renderAction(
+      <ConvertToFestivalAction
+        venueId="venue-1"
+        event={{ ...standardEvent, bookingPlacementStatus: 'HOLD_1' }}
+        canCancelBooking
+        onBookingCancelled={onBookingCancelled}
+      />,
+    );
+
+    await user.click(screen.getByTestId('festival-convert-menu-trigger'));
+    expect(screen.getByTestId('event-workspace-cancel-booking')).toHaveTextContent('Release hold');
+    await user.click(screen.getByTestId('event-workspace-cancel-booking'));
+    await user.click(screen.getByTestId('festival-cancel-confirm-button'));
+
+    expect(deleteEventMutateAsync).toHaveBeenCalledWith(standardEvent.eventId);
+    expect(updateEventMutateAsync).not.toHaveBeenCalled();
+    expect(onBookingCancelled).toHaveBeenCalledWith({ deleted: true });
   });
 
   it('omits Convert to festival when conversion is not allowed', async () => {
