@@ -447,19 +447,8 @@ export function EventWorkspacePage() {
             venueId={activeVenueId}
             event={selectedEvent}
             canManage={canManageFestivalSchedule}
-            canManageEvents={canManageEvents}
             editRequestedEventId={festivalEditEventId}
             onEditRequestHandled={handleFestivalEditHandled}
-            onBookingCancelled={({ deleted }) => {
-              if (!deleted || !activeVenueId || !selectedEventId) {
-                return;
-              }
-              const remaining = events.filter((item) => item.eventId !== selectedEventId);
-              const nextEventId = resolveActiveEventId(remaining, activeVenueId);
-              if (nextEventId) {
-                navigateToEventWorkspace(activeVenueId, nextEventId);
-              }
-            }}
           />
           <EventLedgerPage
             venueId={activeVenueId}
@@ -488,12 +477,13 @@ export function EventWorkspacePage() {
               ) : undefined
             }
             extraHeaderActions={
-              selectedEvent && selectedEvent.eventType !== 'FESTIVAL' ? (
+              selectedEvent ? (
                 <ConvertToFestivalAction
                   venueId={activeVenueId}
                   event={selectedEvent}
                   canConvert={
-                    canManageFestivalSchedule
+                    selectedEvent.eventType !== 'FESTIVAL'
+                    && canManageFestivalSchedule
                     && selectedEvent.status !== 'SETTLED'
                     && selectedEvent.status !== 'RECONCILED'
                   }
@@ -503,6 +493,16 @@ export function EventWorkspacePage() {
                     && selectedEvent.status !== 'RECONCILED'
                     && selectedEvent.bookingPlacementStatus !== 'CANCELLED'
                   }
+                  onBookingCancelled={({ deleted }) => {
+                    if (!deleted || !activeVenueId || !selectedEventId) {
+                      return;
+                    }
+                    const remaining = events.filter((item) => item.eventId !== selectedEventId);
+                    const nextEventId = resolveActiveEventId(remaining, activeVenueId);
+                    if (nextEventId) {
+                      navigateToEventWorkspace(activeVenueId, nextEventId);
+                    }
+                  }}
                 />
               ) : undefined
             }

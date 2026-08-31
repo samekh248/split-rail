@@ -175,64 +175,21 @@ describe('FestivalModeCard', () => {
     expect(screen.getByTestId('festival-setup-modal')).toHaveAttribute('data-mode', 'edit');
   });
 
-  it('hides edit and cancel on a frozen festival', () => {
+  it('hides edit on a frozen festival', () => {
     render(
-      <FestivalModeCard
-        venueId="venue-1"
-        event={{ ...festivalEvent, status: 'SETTLED' }}
-        canManage
-        canManageEvents
-      />,
+      <FestivalModeCard venueId="venue-1" event={{ ...festivalEvent, status: 'SETTLED' }} canManage />,
     );
 
     expect(screen.getByTestId('festival-mode-card')).toBeInTheDocument();
     expect(screen.queryByTestId('festival-edit-button')).not.toBeInTheDocument();
+  });
+
+  // Cancel booking / release hold now lives in the ledger-header kebab
+  // (ConvertToFestivalAction) for every event type, and is covered there.
+  it('renders no booking-cancel affordance of its own', () => {
+    render(<FestivalModeCard venueId="venue-1" event={festivalEvent} canManage />);
+
     expect(screen.queryByTestId('festival-actions-menu')).not.toBeInTheDocument();
-  });
-
-  it('asks for confirmation before cancelling a festival booking', async () => {
-    mockUpdateEvent.mutateAsync.mockResolvedValue({});
-    const user = userEvent.setup();
-    render(
-      <FestivalModeCard venueId="venue-1" event={festivalEvent} canManage canManageEvents />,
-    );
-
-    await user.click(screen.getByTestId('festival-actions-menu-trigger'));
-    await user.click(screen.getByTestId('festival-cancel-booking'));
-    expect(screen.getByTestId('festival-cancel-confirm')).toBeInTheDocument();
-    expect(mockUpdateEvent.mutateAsync).not.toHaveBeenCalled();
-
-    await user.click(screen.getByTestId('festival-cancel-confirm-button'));
-    await waitFor(() => {
-      expect(mockUpdateEvent.mutateAsync).toHaveBeenCalledWith(
-        expect.objectContaining({ bookingPlacementStatus: 'CANCELLED' }),
-      );
-    });
-  });
-
-  it('does not cancel the booking when the confirmation is dismissed', async () => {
-    const user = userEvent.setup();
-    render(
-      <FestivalModeCard venueId="venue-1" event={festivalEvent} canManage canManageEvents />,
-    );
-
-    await user.click(screen.getByTestId('festival-actions-menu-trigger'));
-    await user.click(screen.getByTestId('festival-cancel-booking'));
-    await user.click(screen.getByRole('button', { name: 'Close' }));
-
-    expect(screen.queryByTestId('festival-cancel-confirm')).not.toBeInTheDocument();
-    expect(mockUpdateEvent.mutateAsync).not.toHaveBeenCalled();
-    expect(mockDeleteEvent.mutateAsync).not.toHaveBeenCalled();
-  });
-
-  it('shows cancel booking inside the kebab menu when permitted', async () => {
-    const user = userEvent.setup();
-    render(
-      <FestivalModeCard venueId="venue-1" event={festivalEvent} canManage canManageEvents />,
-    );
-
     expect(screen.queryByTestId('festival-cancel-booking')).not.toBeInTheDocument();
-    await user.click(screen.getByTestId('festival-actions-menu-trigger'));
-    expect(screen.getByTestId('festival-cancel-booking')).toHaveTextContent('Cancel booking');
   });
 });
